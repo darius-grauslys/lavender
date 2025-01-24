@@ -28,5 +28,5 @@ Item get_item_from__item_manager(
 
 void register_core_items_into__item_manager(
         Item_Manager *p_item_manager) {
-    debug_abort("register_core_items_into__item_manager, impl");
+    debug_warning("register_core_items_into__item_manager, impl");
 }

@@ -2,7 +2,6 @@
 #include "input/sdl_input.h"
 #include "platform_defines.h"
 #include "rendering/sdl_gfx_context.h"
-#include "rendering/sdl_texture_loader.h"
 #include "scene/scene_manager.h"
 #include "sdl_event.h"
 #include "serialization/sdl_filesystem.h"
@@ -29,8 +28,6 @@ int PLATFORM_main(Game *p_game) {
             p_game,
             SDL_Gfx_Sub_Context__OpenGL_3_0);
     SDL_initialize_input_bindings();
-
-    SDL_load_textures(p_game);
 
     PLATFORM_initialize_file_system_context(
             p_game,

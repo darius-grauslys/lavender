@@ -8,5 +8,5 @@
 void register_ui_windows(Gfx_Context *p_gfx_context) {
     UI_Context *p_ui_context =
         get_p_ui_context_from__gfx_context(p_gfx_context);
-    debug_abort("register_ui_windows, impl");
+    debug_warning("register_ui_windows, impl");
 }

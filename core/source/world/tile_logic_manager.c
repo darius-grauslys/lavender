@@ -120,7 +120,7 @@ void register_tile_logic_record_for__cover_kind(
 
 void register_core_tile_logic_handlers(
         Tile_Logic_Manager *p_tile_logic_manager) {
-    debug_abort("register_core_tile_logic_handlers, impl");
+    debug_warning("register_core_tile_logic_handlers, impl");
 }
 
 void determine_tile_flags(

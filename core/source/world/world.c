@@ -97,7 +97,7 @@ void manage_world(
 void manage_world__entity(
         Game *p_game,
         Entity *p_entity) {
-    debug_abort("manage_world__entity, requires impl.");
+    debug_warning("manage_world__entity, requires impl.");
 }
 
 void manage_world__entities(Game *p_game) {
@@ -125,7 +125,7 @@ void render_world__entity(
         Gfx_Context *p_gfx_context,
         Graphics_Window *p_gfx_window,
         Entity *p_entity) {
-    debug_abort("render_world__entity, impl");
+    debug_warning("render_world__entity, impl");
 }
 
 void render_entities_in__world(
