@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<root>
+    <config>
+        <include sub_dir="ui/game/">
+            <header path="ui/handlers/hud/nds_ui_handler__hud_button.h"/>
+            <header path="ui/ui_element.h"/>
+            <header path="ui/ui_button.h"/>
+            <header path="ui/ui_manager.h"/>
+            <header path="vectors.h"/>
+            <header path="defines.h"/>
+            <header path="game.h"/>
+        </include>
+        <output base_dir="./" c_path="./nds/source/ui/game/nds_ui_window__game__hud.c" h_path="./nds/include/ui/game/nds_ui_window__game__hud.h"/>
+        <platform target="NDS" size="256,196"/>
+        <background layer="0" path="./core/assets/ui/default/ui_map_hud.png"/>
+        <ui_func_signature for="grid"/>
+        <ui_func_signature for="group"/>
+        <ui_func_signature for="alloc_child" c_signatures="allocate_ui_element_from__ui_manager_as__child"/>
+        <ui_func_signature for="allocate_ui" c_signatures="allocate_ui_element_from__ui_manager"/>
+        <ui_func_signature for="allocate_ui_container" c_signatures="allocate_many_ui_elements_from__ui_manager_in__succession"/>
+        <ui_func_signature for="code"/>
+        <ui_func_signature for="button" c_signatures="initialize_ui_element_as__button"/>
+        <ui_func_signature for="slider" c_signatures="initialize_ui_element_as__slider"/>
+        <ui_func_signature for="draggable" c_signatures="initialize_ui_element_as__draggable"/>
+        <ui_func_signature for="drop_zone" c_signatures="initialize_ui_element_as__drop_zone"/>
+    </config>
+    <ui>
+        <group x="56" y="52">
+            <allocate_ui_container size="3" name="p_HUD_buttons" stride__x="72">
+                <button width="56" height="16" m_Clicked_Handler="m_NDS_ui_button__clicked_handler__hud" is_toggleable="true"/>
+            </allocate_ui_container>
+        </group>
+    </ui>
+</root>
+
+

@@ -1,0 +1,180 @@
+#ifndef CHUNK_MANAGER_H
+#define CHUNK_MANAGER_H
+
+#include "defines_weak.h"
+#include "world/chunk_vectors.h"
+#include "world/tile_vectors.h"
+#include <defines.h>
+
+void initialize_chunk_manager(
+        Game *p_game,
+        Chunk_Manager* p_chunk_manager);
+
+Index__u32 get_chunk_index_from__chunk_manager(
+        Chunk_Manager *p_chunk_manager,
+        Chunk_Vector__3i32 chunk_vector__3i32);
+
+Chunk_Manager__Chunk_Map_Node* 
+get_p_chunk_map_node_from__chunk_manager_using__i32(
+        Chunk_Manager *p_chunk_manager, 
+        Signed_Index__i32 x__chunk, 
+        Signed_Index__i32 y__chunk, 
+        Signed_Index__i32 z__chunk);
+
+void update_chunk_at__tile_vector__3i32(
+        Game *p_game,
+        Tile_Vector__3i32 tile_vector__3i32);
+
+void move_chunk_manager(
+        Game *p_game,
+        Chunk_Manager *p_chunk_manager,
+        Direction__u8 direction,
+        Quantity__u32 steps);
+
+bool poll_chunk_manager_for__serialization(
+        Game *p_game,
+        Chunk_Manager *p_chunk_manager);
+
+bool poll_chunk_manager_for__chunk_movement(
+        Game *p_game,
+        Chunk_Manager *p_chunk_manager,
+        Vector__3i32F4 position__3i32F4);
+
+bool poll_chunk_manager_for__tile_collision(
+        Game *p_game,
+        Chunk_Manager *p_chunk_manager, 
+        Entity *p_entity,
+        Hitbox_AABB *p_hitbox,
+        m_Entity_Tile_Collision_Handler
+            m_entity_tile_collision_handler);
+
+///
+/// Returns true if some chunks are not ready yet.
+/// Useful for teleportation, and initially loading the world.
+///
+bool is_chunk_manager__resolving_chunks(
+        Chunk_Manager *p_chunk_manager);
+
+///
+/// This will flush all loaded chunks to the file system.
+///
+void save_all_chunks(
+        PLATFORM_File_System_Context *p_PLATFORM_file_system_context,
+        World *p_world,
+        Chunk_Manager *p_chunk_manager);
+
+///
+/// This will flush all loaded chunks to the file system.
+///
+void move_chunk_manager_to__chunk_position(
+        Game *p_game,
+        Chunk_Manager *p_chunk_manager,
+        Chunk_Vector__3i32 chunk_vector__3i32);
+
+Tile *get_p_tile_from__chunk_manager_with__tile_vector_3i32(
+        Chunk_Manager *p_chunk_manager,
+        Tile_Vector__3i32 tile_vector__3i32);
+
+static inline
+Tile *get_p_tile_from__chunk_manager_with__3i32F4(
+        Chunk_Manager *p_chunk_manager,
+        Vector__3i32F4 position) {
+    return get_p_tile_from__chunk_manager_with__tile_vector_3i32(
+            p_chunk_manager, 
+            vector_3i32F4_to__tile_vector(position));
+}
+
+static inline 
+Tile *get_p_tile_from__chunk_node(
+        Chunk_Manager__Chunk_Map_Node *p_chunk_node,
+        Local_Tile_Vector__3u8 local_tile_vector__3u8) {
+#ifndef NDEBUG
+    if (local_tile_vector__3u8.x__u8 < 0 
+            || local_tile_vector__3u8.x__u8 >= CHUNK_WIDTH__IN_TILES
+            || local_tile_vector__3u8.y__u8 >= CHUNK_WIDTH__IN_TILES) {
+        debug_error("get_tile_from__chunk_node out of bounds %d,%d", 
+                local_tile_vector__3u8.x__u8, local_tile_vector__3u8.y__u8);
+        return &p_chunk_node->p_chunk__here->tiles[0];
+    }
+#endif
+    return &p_chunk_node->p_chunk__here->tiles[
+        local_tile_vector__3u8.y__u8 
+            * CHUNK_WIDTH__IN_TILES 
+            + local_tile_vector__3u8.x__u8];
+}
+
+static inline 
+Tile *get_p_tile_from__chunk_node_using__u8(
+        Chunk_Manager__Chunk_Map_Node *p_chunk_node,
+        Index__u8 x__u8,
+        Index__u8 y__u8) {
+#ifndef NDEBUG
+    if (x__u8 < 0 
+            || x__u8 >= CHUNK_WIDTH__IN_TILES
+            || y__u8 < 0
+            || y__u8 >= CHUNK_WIDTH__IN_TILES) {
+        debug_error("get_tile_from__chunk_node out of bounds %d,%d", 
+                x__u8, y__u8);
+        return &p_chunk_node->p_chunk__here->tiles[0];
+    }
+#endif
+    return &p_chunk_node->p_chunk__here->tiles[
+        y__u8 
+            * CHUNK_WIDTH__IN_TILES 
+            + x__u8];
+}
+
+
+static inline
+Chunk *get_p_chunk_from__chunk_manager_using__i32(
+        Chunk_Manager *p_chunk_manager, 
+        Signed_Index__i32 x__i32,
+        Signed_Index__i32 y__i32,
+        Signed_Index__i32 z__i32) {
+    Chunk_Manager__Chunk_Map_Node *p_node = 
+        get_p_chunk_map_node_from__chunk_manager_using__i32(
+            p_chunk_manager, 
+            x__i32, 
+            y__i32, 
+            z__i32);
+    return
+        ((bool)p_node)
+        ? p_node->p_chunk__here
+        : 0
+        ;
+}
+
+static inline 
+Chunk_Manager__Chunk_Map_Node *get_p_chunk_map_node_from__chunk_manager(
+        Chunk_Manager *p_chunk_manager, 
+        Chunk_Vector__3i32 chunk_vector__3i32) {
+    return get_p_chunk_map_node_from__chunk_manager_using__i32(
+            p_chunk_manager,
+            chunk_vector__3i32.x__i32, 
+            chunk_vector__3i32.y__i32, 
+            chunk_vector__3i32.z__i32);
+}
+
+static inline 
+Chunk *get_p_chunk_from__chunk_manager(
+        Chunk_Manager *p_chunk_manager, 
+        Chunk_Vector__3i32 chunk_vector__3i32) {
+    return get_p_chunk_from__chunk_manager_using__i32(
+            p_chunk_manager,
+            chunk_vector__3i32.x__i32, 
+            chunk_vector__3i32.y__i32, 
+            chunk_vector__3i32.z__i32);
+}
+
+static inline
+Chunk_Manager__Chunk_Map_Node* 
+get_p_chunk_map_node_from__chunk_manager_using__tile_vector__3i32(
+        Chunk_Manager *p_chunk_manager, 
+        Tile_Vector__3i32 tile_vector__3i32) {
+    return get_p_chunk_map_node_from__chunk_manager(
+            p_chunk_manager, 
+            tile_vector_3i32_to__chunk_vector_3i32(
+                tile_vector__3i32));
+}
+
+#endif

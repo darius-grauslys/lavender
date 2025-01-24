@@ -1,0 +1,1072 @@
+#include "defines_weak.h"
+#include "inventory/inventory.h"
+#include "inventory/inventory_manager.h"
+#include "platform.h"
+#include "platform_defines.h"
+#include "serialization/serialization_request.h"
+#include "serialization/serialized_field.h"
+#include "world/serialization/world_directory.h"
+#include "world/tile_logic_manager.h"
+#include "world/world.h"
+#include <defines.h>
+#include <stdbool.h>
+#include <world/chunk.h>
+#include <debug/debug.h>
+
+#include <world/tile.h>
+#include <collisions/hitbox_aabb.h>
+#include <vectors.h>
+
+#include <world/chunk_manager.h>
+#include <world/chunk_vectors.h>
+#include <world/tile_vectors.h>
+#include <game.h>
+
+#include <entity/entity.h>
+
+///
+/// Either loads or generates the chunk
+///
+void resolve_chunk(
+        Game *p_game,
+        Chunk_Manager__Chunk_Map_Node *p_chunk_map_node);
+
+void enqueue_chunk_map_node_for__serialization(
+        Chunk_Manager *p_chunk_manager,
+        Chunk_Manager__Chunk_Map_Node *p_chunk_map_node);
+
+void initialize_chunk_manager(
+        Game *p_game,
+        Chunk_Manager *p_chunk_manager) {
+    p_chunk_manager->x__center_chunk__signed_index_i32 =
+        p_chunk_manager->y__center_chunk__signed_index_i32 = 0;
+    for (Index__u32 index_of__chunk_map_node_ptr = 0;
+            index_of__chunk_map_node_ptr
+            < CHUNK_MANAGER__QUANTITY_OF_CHUNKS;
+            index_of__chunk_map_node_ptr++) {
+        p_chunk_manager->ptr_array_queue__serialized_nodes[
+            index_of__chunk_map_node_ptr] = 0;
+    }
+    for (Signed_Index__i32 y=0; y < 
+            CHUNK_MANAGER__QUANTITY_OF_MANAGED_CHUNK_ROWS; y++) {
+        for (Signed_Index__i32 x=0; x <
+                CHUNK_MANAGER__QUANTITY_OF_CHUNKS__PER_ROW; x++) {
+            Chunk_Manager__Chunk_Map_Node *p_chunk_map_node =
+                &p_chunk_manager->chunk_map[
+                    y * CHUNK_MANAGER__QUANTITY_OF_CHUNKS__PER_ROW
+                        + x
+                ];
+
+            Chunk *p_chunk__here =
+                &p_chunk_manager->chunks[
+                    y * CHUNK_MANAGER__QUANTITY_OF_CHUNKS__PER_ROW 
+                    + x];
+
+            initialize_chunk(p_chunk__here);
+
+            p_chunk_map_node->p_chunk__here = p_chunk__here;
+            p_chunk_map_node->position_of__chunk_3i32 =
+                get_vector__3i32(x,y,0);
+
+            Index__u32 x__east, x__west, y__north, y__south;
+
+            if (x == 0)
+                x__west = CHUNK_MANAGER__QUANTITY_OF_CHUNKS__PER_ROW - 1;
+            else
+                x__west = x - 1;
+            if (x == CHUNK_MANAGER__QUANTITY_OF_CHUNKS__PER_ROW - 1)
+                x__east = 0;
+            else
+                x__east = x + 1;
+
+            if (y == CHUNK_MANAGER__QUANTITY_OF_MANAGED_CHUNK_ROWS - 1)
+                y__north = 0;
+            else
+                y__north = y + 1;
+            if (y == 0)
+                y__south = CHUNK_MANAGER__QUANTITY_OF_MANAGED_CHUNK_ROWS - 1;
+            else
+                y__south = y - 1;
+
+            // link north
+            p_chunk_map_node->p_north__chunk_map_node =
+                &p_chunk_manager->chunk_map[
+                y__north * CHUNK_MANAGER__QUANTITY_OF_CHUNKS__PER_ROW 
+                + x
+                ];
+
+            // link east
+            p_chunk_map_node->p_east__chunk_map_node =
+                &p_chunk_manager->chunk_map[
+                y * CHUNK_MANAGER__QUANTITY_OF_CHUNKS__PER_ROW 
+                + x__east
+                ];
+
+            // link south
+            p_chunk_map_node->p_south__chunk_map_node =
+                &p_chunk_manager->chunk_map[
+                y__south * CHUNK_MANAGER__QUANTITY_OF_CHUNKS__PER_ROW
+                + x 
+                ];
+
+            // link west
+            p_chunk_map_node->p_west__chunk_map_node =
+                &p_chunk_manager->chunk_map[
+                y * CHUNK_MANAGER__QUANTITY_OF_CHUNKS__PER_ROW
+                + x__west
+                ];
+        }
+    }
+
+    p_chunk_manager->p_most_north_western__chunk_map_node =
+        &p_chunk_manager->chunk_map[
+        (GFX_CONTEXT__RENDERING_HEIGHT__IN_CHUNKS - 1)
+        * CHUNK_MANAGER__QUANTITY_OF_CHUNKS__PER_ROW
+        ];
+
+    p_chunk_manager->p_most_north_eastern__chunk_map_node =
+        &p_chunk_manager->chunk_map[
+        (GFX_CONTEXT__RENDERING_HEIGHT__IN_CHUNKS - 1)
+        * CHUNK_MANAGER__QUANTITY_OF_CHUNKS__PER_ROW
+        + GFX_CONTEXT__RENDERING_WIDTH__IN_CHUNKS - 1
+        ];
+
+    p_chunk_manager->p_most_south_western__chunk_map_node =
+        &p_chunk_manager->chunk_map[0];
+
+    p_chunk_manager->p_most_south_eastern__chunk_map_node =
+        &p_chunk_manager->chunk_map[
+        GFX_CONTEXT__RENDERING_WIDTH__IN_CHUNKS - 1];
+}
+
+uint32_t get_chunk_index_from__chunk_manager(
+        Chunk_Manager *p_chunk_manager,
+        Chunk_Vector__3i32 chunk_vector__3i32) {
+    // TODO: extend to use z
+
+    if (chunk_vector__3i32.x__i32 < p_chunk_manager
+            ->p_most_north_western__chunk_map_node
+                ->position_of__chunk_3i32.x__i32
+            || chunk_vector__3i32.y__i32 > p_chunk_manager
+                ->p_most_north_western__chunk_map_node
+                    ->position_of__chunk_3i32.y__i32
+            || chunk_vector__3i32.x__i32 > p_chunk_manager
+                ->p_most_south_eastern__chunk_map_node
+                    ->position_of__chunk_3i32.x__i32
+            || chunk_vector__3i32.y__i32 < p_chunk_manager
+                ->p_most_south_eastern__chunk_map_node
+                    ->position_of__chunk_3i32.y__i32) {
+        debug_error("get_chunk_index_from__chunk_manager chunk index out of bounds: (%d, %d, %d)",
+                chunk_vector__3i32.x__i32, 
+                chunk_vector__3i32.y__i32, 
+                chunk_vector__3i32.z__i32);
+        debug_info("bounds are: (%d, %d) - (%d, %d)",
+            p_chunk_manager->p_most_north_western__chunk_map_node
+                ->position_of__chunk_3i32.x__i32,
+            p_chunk_manager->p_most_north_western__chunk_map_node
+                ->position_of__chunk_3i32.y__i32, 
+            p_chunk_manager->p_most_south_eastern__chunk_map_node
+                ->position_of__chunk_3i32.x__i32,
+            p_chunk_manager->p_most_south_eastern__chunk_map_node
+                ->position_of__chunk_3i32.y__i32);
+        return 0;
+    }
+
+    Signed_Index__i32 local_x =
+        chunk_vector__3i32.x__i32 - p_chunk_manager
+        ->p_most_south_western__chunk_map_node
+            ->position_of__chunk_3i32.x__i32;
+    Signed_Index__i32 local_y =
+        chunk_vector__3i32.y__i32 - p_chunk_manager
+        ->p_most_south_western__chunk_map_node
+            ->position_of__chunk_3i32.y__i32;
+
+    return  local_y 
+        * CHUNK_MANAGER__QUANTITY_OF_CHUNKS__PER_ROW
+        + local_x;
+}
+
+Chunk_Manager__Chunk_Map_Node* 
+get_p_chunk_map_node_from__chunk_manager_using__i32(
+        Chunk_Manager *p_chunk_manager, 
+        Signed_Index__i32 x__chunk, 
+        Signed_Index__i32 y__chunk, 
+        Signed_Index__i32 z__chunk) {
+
+    Signed_Index__i32 north_east__x = 
+        p_chunk_manager
+        ->p_most_north_eastern__chunk_map_node
+        ->position_of__chunk_3i32.x__i32
+        ;
+    Signed_Index__i32 north_east__y = 
+        p_chunk_manager
+        ->p_most_north_eastern__chunk_map_node
+        ->position_of__chunk_3i32.y__i32
+        ;
+    Signed_Index__i32 south_west__x = 
+        p_chunk_manager
+        ->p_most_south_western__chunk_map_node
+        ->position_of__chunk_3i32.x__i32
+        ;
+    Signed_Index__i32 south_west__y = 
+        p_chunk_manager
+        ->p_most_south_western__chunk_map_node
+        ->position_of__chunk_3i32.y__i32
+        ;
+
+    if (x__chunk < south_west__x
+            || y__chunk > north_east__y
+            || x__chunk > north_east__x
+            || y__chunk < south_west__y) {
+        debug_info("bounds are: (%d, %d) - (%d, %d)",
+                south_west__x, south_west__y,
+                north_east__x, north_east__y);
+        debug_error("get_p_chunk_map_node_from__chunk_manager_using__i32, chunk index out of bounds: (%d, %d, %d)",
+                x__chunk, y__chunk, z__chunk);
+        return 0;
+    }
+
+    Chunk_Manager__Chunk_Map_Node *p_node =
+        p_chunk_manager->p_most_south_western__chunk_map_node;
+    for (Signed_Index__i32 x = south_west__x; x < x__chunk; x++) {
+        p_node = p_node->p_east__chunk_map_node;
+    }
+    for (Signed_Index__i32 y = south_west__y; y < y__chunk; y++) {
+        p_node = p_node->p_north__chunk_map_node;
+    }
+
+    return p_node;
+}
+
+void save_chunk(
+        PLATFORM_File_System_Context *p_PLATFORM_file_system_context,
+        Chunk_Manager *p_chunk_manager,
+        Chunk_Manager__Chunk_Map_Node *p_chunk_map_node,
+        char *p_file_path_to__chunk) {
+    enqueue_chunk_map_node_for__serialization(
+            p_chunk_manager,
+            p_chunk_map_node);
+    Serialization_Request *p_serialization_request =
+        PLATFORM_allocate_serialization_request(
+                p_PLATFORM_file_system_context);
+    if (!p_serialization_request) {
+        debug_error("save_chunk failed to allocate serialization request.");
+        clear_chunk_flags(p_chunk_map_node->p_chunk__here);
+        set_chunk_as__visually_updated(p_chunk_map_node->p_chunk__here);
+        return;
+    }
+
+    p_serialization_request
+        ->position_of__serialization_3i32 =
+        p_chunk_map_node->position_of__chunk_3i32;
+
+    enum PLATFORM_Open_File_Error error =
+        PLATFORM_open_file(
+                p_PLATFORM_file_system_context,
+                p_file_path_to__chunk, 
+                "wb", 
+                p_serialization_request);
+
+    set_serialization_request_as__fire_and_forget(p_serialization_request);
+    if (error) {
+        PLATFORM_release_serialization_request(
+                p_PLATFORM_file_system_context,
+                p_serialization_request);
+        debug_error("save_chunk, error opening file: %d, %s", 
+                error,
+                p_file_path_to__chunk);
+        return;
+    }
+
+    set_serialization_request_as__fire_and_forget(
+            p_serialization_request);
+    set_serialization_request_as__using_serializer(
+            p_serialization_request);
+    set_serialization_request_as__write(
+            p_serialization_request);
+    p_serialization_request->p_serializer =
+        &p_chunk_map_node->p_chunk__here->_serializer;
+
+    set_chunk_as__awaiting_serialization(
+            p_chunk_map_node->p_chunk__here);
+}
+
+void load_chunk(
+        PLATFORM_File_System_Context *p_PLATFORM_file_system_context,
+        Chunk_Manager__Chunk_Map_Node *p_chunk_map_node,
+        char *p_file_path_to__chunk) {
+    Serialization_Request *p_serialization_request =
+        PLATFORM_allocate_serialization_request(
+                p_PLATFORM_file_system_context);
+    if (!p_serialization_request) {
+        debug_error("load_chunk, failed to allocate serialization request (%d, %d).",
+                p_chunk_map_node->position_of__chunk_3i32.x__i32,
+                p_chunk_map_node->position_of__chunk_3i32.y__i32);
+        clear_chunk_flags(p_chunk_map_node->p_chunk__here);
+        set_chunk_as__visually_updated(p_chunk_map_node->p_chunk__here);
+        return;
+    }
+
+    p_serialization_request
+        ->position_of__serialization_3i32 =
+        p_chunk_map_node->position_of__chunk_3i32;
+
+    enum PLATFORM_Open_File_Error error =
+        PLATFORM_open_file(
+                p_PLATFORM_file_system_context,
+                p_file_path_to__chunk, 
+                "rb", 
+                p_serialization_request);
+
+    set_serialization_request_as__fire_and_forget(p_serialization_request);
+    if (error) {
+        PLATFORM_release_serialization_request(
+                p_PLATFORM_file_system_context,
+                p_serialization_request);
+        debug_error("save_chunk, error opening file: %d, %s", 
+                error,
+                p_file_path_to__chunk);
+        return;
+    }
+
+    set_serialization_request_as__fire_and_forget(
+            p_serialization_request);
+    set_serialization_request_as__using_serializer(
+            p_serialization_request);
+    set_serialization_request_as__read(
+            p_serialization_request);
+    p_serialization_request->p_serializer =
+        &p_chunk_map_node->p_chunk__here->_serializer;
+
+    set_chunk_as__awaiting_deserialization(
+            p_chunk_map_node->p_chunk__here);
+}
+
+void resolve_chunk(
+        Game *p_game,
+        Chunk_Manager__Chunk_Map_Node *p_chunk_map_node) {
+    PLATFORM_File_System_Context *p_PLATFORM_file_system_context =
+        get_p_PLATFORM_file_system_context_from__game(p_game);
+    World *p_world = get_p_world_from__game(p_game);
+    Chunk *p_chunk =
+        p_chunk_map_node->p_chunk__here;
+    for (u8 y=0;y<CHUNK_WIDTH__IN_TILES;y++) {
+        for (u8 x=0;x<CHUNK_WIDTH__IN_TILES;x++) {
+            Tile *p_tile =
+                get_p_tile_from__chunk_using__u8(
+                        p_chunk, x, y, 0);
+            if (!is_tile__container(p_tile))
+                continue;
+
+            Vector__3i32 vector__3i32 =
+                get_vector__3i32(
+                        x + (p_chunk_map_node
+                            ->position_of__chunk_3i32.x__i32 << 3), 
+                        y + (p_chunk_map_node
+                            ->position_of__chunk_3i32.y__i32 << 3),
+                        0);
+
+            Serialized_Field s_inventory;
+            initialize_serialized_field_as__unlinked(
+                    &s_inventory,
+                    get_uuid_for__container(
+                        vector__3i32));
+
+            if (!resolve_s_inventory_ptr_to__inventory_manager(
+                        get_p_inventory_manager_from__world(p_world),
+                        &s_inventory)) {
+                continue;
+            }
+
+            release_p_inventory_in__inventory_manager(
+                    get_p_inventory_manager_from__world(p_world), 
+                    s_inventory.p_serialized_field__inventory);
+        }
+    }
+
+    char file_path_to__chunk[MAX_LENGTH_OF__IO_PATH];
+    memset(file_path_to__chunk, 0, sizeof(file_path_to__chunk));
+    if (stat_chunk_file__tiles(
+                p_PLATFORM_file_system_context,
+                p_world,
+                p_chunk_map_node,
+                file_path_to__chunk)) {
+        load_chunk(
+                p_PLATFORM_file_system_context, 
+                p_chunk_map_node,
+                file_path_to__chunk);
+        return;
+    }
+
+    p_world->world_parameters
+        .f_chunk_generator(
+                p_game,
+                p_chunk_map_node);
+    // TODO: uncomment this and shit breaks:
+    set_chunk_as__updated(p_chunk_map_node->p_chunk__here);
+}
+
+void enqueue_chunk_map_node_for__serialization(
+        Chunk_Manager *p_chunk_manager,
+        Chunk_Manager__Chunk_Map_Node *p_chunk_map_node) {
+    Chunk_Manager__Chunk_Map_Node **p_chunk_map_node_ptr =
+        p_chunk_manager->ptr_array_queue__serialized_nodes;
+
+    Index__u32 index_of__chunk_map_node_ptr = 0;
+    while (*p_chunk_map_node_ptr
+            && index_of__chunk_map_node_ptr++
+            < CHUNK_MANAGER__QUANTITY_OF_IO_QUEUED_CHUNKS) {
+        p_chunk_map_node_ptr++;
+    }
+
+#ifndef NDEBUG
+    if (index_of__chunk_map_node_ptr
+            >= CHUNK_MANAGER__QUANTITY_OF_IO_QUEUED_CHUNKS) {
+        debug_abort("enqueue_chunk_map_node_for__serialization, failed to enqueue: %d", index_of__chunk_map_node_ptr);
+        return;
+    }
+#endif
+
+    *p_chunk_map_node_ptr = 
+        p_chunk_map_node;
+}
+
+void dequeue_chunk_map_node_for__serialization(
+        Chunk_Manager *p_chunk_manager,
+        Chunk_Manager__Chunk_Map_Node *p_chunk_map_node) {
+    Chunk_Manager__Chunk_Map_Node **p_chunk_map_node_ptr =
+        p_chunk_manager->ptr_array_queue__serialized_nodes;
+
+    if (!*p_chunk_map_node_ptr)
+        return;
+
+    Chunk_Manager__Chunk_Map_Node **p_chunk_map_node_ptr_of__dequeue = 0;
+
+    Index__u32 index_of__chunk_map_node_ptr = 0;
+    do {
+        if ((*p_chunk_map_node_ptr) == p_chunk_map_node)
+            p_chunk_map_node_ptr_of__dequeue =
+                p_chunk_map_node_ptr;
+    } while (index_of__chunk_map_node_ptr++
+            < CHUNK_MANAGER__QUANTITY_OF_IO_QUEUED_CHUNKS
+            && *(++p_chunk_map_node_ptr));
+    p_chunk_map_node_ptr--;
+
+#ifndef NDEBUG
+    if (!p_chunk_map_node_ptr_of__dequeue) {
+        debug_abort("dequeue_chunk_map_node_for__serialization, failed to dequeue.");
+        return;
+    }
+#endif
+
+    *p_chunk_map_node_ptr_of__dequeue =
+        *p_chunk_map_node_ptr;
+    *p_chunk_map_node_ptr = 0;
+}
+
+bool poll_chunk_manager_for__serialization(
+        Game *p_game,
+        Chunk_Manager *p_chunk_manager) {
+    Chunk_Manager__Chunk_Map_Node **p_chunk_map_node_ptr =
+        p_chunk_manager->ptr_array_queue__serialized_nodes;
+
+    if (!*p_chunk_map_node_ptr) {
+        return false;
+    }
+
+    Index__u32 index_of__chunk_map_node_ptr = 0;
+    do {
+skip:
+        ;
+        Chunk *p_chunk =
+            (*p_chunk_map_node_ptr)->p_chunk__here;
+        if (!is_chunk__awaiting_serialization(p_chunk)) {
+            resolve_chunk(
+                    p_game,
+                    *p_chunk_map_node_ptr);
+            PLATFORM_update_chunk(
+                    get_p_PLATFORM_gfx_context_from__game(p_game),
+                    p_chunk_manager,
+                    *p_chunk_map_node_ptr);
+            dequeue_chunk_map_node_for__serialization(
+                    p_chunk_manager, 
+                    *p_chunk_map_node_ptr);
+            if (*p_chunk_map_node_ptr)
+                goto skip;
+        }
+    } while (++index_of__chunk_map_node_ptr
+            < CHUNK_MANAGER__QUANTITY_OF_IO_QUEUED_CHUNKS
+            && *(++p_chunk_map_node_ptr));
+    return (bool)(p_chunk_manager->ptr_array_queue__serialized_nodes[0]);
+}
+
+void replace_chunk(
+        Game *p_game,
+        Chunk_Manager__Chunk_Map_Node *p_chunk_map_node,
+        i32 x__new,
+        i32 y__new) {
+
+    World *p_world =
+        get_p_world_from__game(p_game);
+    PLATFORM_File_System_Context *p_PLATFORM_file_system_context =
+        get_p_PLATFORM_file_system_context_from__game(p_game);
+
+    if (is_chunk__updated(p_chunk_map_node->p_chunk__here)) {
+        char file_path_to__chunk[MAX_LENGTH_OF__IO_PATH];
+        memset(file_path_to__chunk, 0, sizeof(file_path_to__chunk));
+        Quantity__u32 length_of__path_to__chunk =
+            stat_chunk_directory(
+                    p_PLATFORM_file_system_context,
+                    p_world,
+                    p_chunk_map_node,
+                    file_path_to__chunk);
+        if (length_of__path_to__chunk) {
+            if (append_chunk_file__tiles_to__path(
+                    file_path_to__chunk, 
+                    length_of__path_to__chunk, 
+                    sizeof(file_path_to__chunk))) {
+                save_chunk(
+                        p_PLATFORM_file_system_context, 
+                        get_p_chunk_manager_from__world(p_world),
+                        p_chunk_map_node,
+                        file_path_to__chunk);
+            } else {
+                debug_error("replace_chunk, failed to append to path.");
+                goto fail_save;
+            }
+        } else {
+fail_save:
+            clear_chunk_flags(p_chunk_map_node->p_chunk__here);
+        }
+    }
+
+    p_chunk_map_node->position_of__chunk_3i32.x__i32 = x__new;
+    p_chunk_map_node->position_of__chunk_3i32.y__i32 = y__new;
+
+    if (!is_chunk__updated(p_chunk_map_node->p_chunk__here)) {
+        resolve_chunk(
+                p_game,
+                p_chunk_map_node);
+    }
+}
+
+// TODO: find a way to consolidate this helpers without macros?
+void move_chunk_manager__chunks_north(
+    Game *p_game,
+    Chunk_Manager *p_chunk_manager) {
+    Signed_Index__i32 x__old_most_north_western_chunk =
+        p_chunk_manager->p_most_north_western__chunk_map_node
+            ->position_of__chunk_3i32.x__i32;
+    Signed_Index__i32 y__new_most_north_western_chunk =
+        p_chunk_manager->p_most_north_western__chunk_map_node
+            ->position_of__chunk_3i32.y__i32 + 1;
+    p_chunk_manager->p_most_north_western__chunk_map_node =
+        p_chunk_manager->p_most_north_western__chunk_map_node
+            ->p_north__chunk_map_node;
+    p_chunk_manager->p_most_north_eastern__chunk_map_node =
+        p_chunk_manager->p_most_north_eastern__chunk_map_node
+            ->p_north__chunk_map_node;
+    p_chunk_manager->p_most_south_western__chunk_map_node =
+        p_chunk_manager->p_most_south_western__chunk_map_node
+            ->p_north__chunk_map_node;
+    p_chunk_manager->p_most_south_eastern__chunk_map_node =
+            p_chunk_manager->p_most_south_eastern__chunk_map_node
+                ->p_north__chunk_map_node;
+
+    Chunk_Manager__Chunk_Map_Node *p_current__chunk_map_node =
+        p_chunk_manager->p_most_north_western__chunk_map_node;
+
+    for (Quantity__u32 step = 0; 
+            step < GFX_CONTEXT__RENDERING_WIDTH__IN_CHUNKS;
+            step++) {
+        if (p_current__chunk_map_node
+                ->position_of__chunk_3i32.x__i32 !=
+                (x__old_most_north_western_chunk + step)
+                || p_current__chunk_map_node
+                    ->position_of__chunk_3i32.y__i32 
+                != y__new_most_north_western_chunk) {
+
+            replace_chunk(
+                    p_game,
+                    p_current__chunk_map_node,
+                    x__old_most_north_western_chunk + step,
+                    y__new_most_north_western_chunk
+                    );
+        }
+
+        p_current__chunk_map_node = 
+            p_current__chunk_map_node->p_east__chunk_map_node;
+    }
+}
+
+void move_chunk_manager__chunks_east(
+        Game *p_game,
+        Chunk_Manager *p_chunk_manager) {
+    int32_t x__new_most_north_eastern_chunk =
+        p_chunk_manager->p_most_north_eastern__chunk_map_node
+            ->position_of__chunk_3i32.x__i32 + 1;
+    int32_t y__old_most_south_eastern_chunk =
+        p_chunk_manager->p_most_south_eastern__chunk_map_node
+            ->position_of__chunk_3i32.y__i32;
+
+    p_chunk_manager->p_most_north_western__chunk_map_node =
+        p_chunk_manager->p_most_north_western__chunk_map_node
+            ->p_east__chunk_map_node;
+    p_chunk_manager->p_most_north_eastern__chunk_map_node =
+        p_chunk_manager->p_most_north_eastern__chunk_map_node
+            ->p_east__chunk_map_node;
+    p_chunk_manager->p_most_south_western__chunk_map_node =
+        p_chunk_manager->p_most_south_western__chunk_map_node
+            ->p_east__chunk_map_node;
+    p_chunk_manager->p_most_south_eastern__chunk_map_node =
+        p_chunk_manager->p_most_south_eastern__chunk_map_node
+            ->p_east__chunk_map_node;
+
+    Chunk_Manager__Chunk_Map_Node *p_current__chunk_map_node =
+        p_chunk_manager->p_most_south_eastern__chunk_map_node;
+
+    for (uint32_t step = 0; 
+            step < GFX_CONTEXT__RENDERING_HEIGHT__IN_CHUNKS;
+            step++) {
+        if (p_current__chunk_map_node
+                ->position_of__chunk_3i32.x__i32 !=
+                x__new_most_north_eastern_chunk
+                || (p_current__chunk_map_node
+                    ->position_of__chunk_3i32.y__i32 != 
+                    y__old_most_south_eastern_chunk + step)) {
+
+            replace_chunk(
+                    p_game,
+                    p_current__chunk_map_node,
+                    x__new_most_north_eastern_chunk,
+                    y__old_most_south_eastern_chunk + step
+                    );
+        }
+
+        p_current__chunk_map_node = 
+            p_current__chunk_map_node->p_north__chunk_map_node;
+    }
+}
+
+void move_chunk_manager__chunks_south(
+        Game *p_game,
+        Chunk_Manager *p_chunk_manager) {
+    int32_t x__old_most_south_western_chunk=
+        p_chunk_manager->p_most_south_western__chunk_map_node
+            ->position_of__chunk_3i32.x__i32;
+    int32_t y__new_most_south_western_chunk=
+        p_chunk_manager->p_most_south_western__chunk_map_node
+            ->position_of__chunk_3i32.y__i32 - 1;
+    p_chunk_manager->p_most_north_western__chunk_map_node =
+        p_chunk_manager->p_most_north_western__chunk_map_node
+            ->p_south__chunk_map_node;
+    p_chunk_manager->p_most_north_eastern__chunk_map_node =
+        p_chunk_manager->p_most_north_eastern__chunk_map_node
+            ->p_south__chunk_map_node;
+    p_chunk_manager->p_most_south_western__chunk_map_node =
+        p_chunk_manager->p_most_south_western__chunk_map_node
+            ->p_south__chunk_map_node;
+    p_chunk_manager->p_most_south_eastern__chunk_map_node =
+        p_chunk_manager->p_most_south_eastern__chunk_map_node
+            ->p_south__chunk_map_node;
+
+    Chunk_Manager__Chunk_Map_Node *p_current__chunk_map_node =
+        p_chunk_manager->p_most_south_western__chunk_map_node;
+
+    for (uint32_t step = 0; 
+            step < GFX_CONTEXT__RENDERING_WIDTH__IN_CHUNKS;
+            step++) {
+        if (p_current__chunk_map_node
+                ->position_of__chunk_3i32.x__i32 !=
+                (x__old_most_south_western_chunk + step)
+                || p_current__chunk_map_node
+                ->position_of__chunk_3i32.y__i32 
+                != y__new_most_south_western_chunk) {
+
+            replace_chunk(
+                    p_game,
+                    p_current__chunk_map_node,
+                    x__old_most_south_western_chunk + step,
+                    y__new_most_south_western_chunk
+                    );
+        }
+
+        p_current__chunk_map_node = 
+            p_current__chunk_map_node->p_east__chunk_map_node;
+    }
+}
+
+void move_chunk_manager__chunks_west(
+        Game *p_game,
+        Chunk_Manager *p_chunk_manager) {
+    int32_t x__new_most_north_western_chunk =
+        p_chunk_manager->p_most_north_western__chunk_map_node
+            ->position_of__chunk_3i32.x__i32 - 1;
+    int32_t y__old_most_south_western_chunk =
+        p_chunk_manager->p_most_south_western__chunk_map_node
+            ->position_of__chunk_3i32.y__i32;
+
+    p_chunk_manager->p_most_north_western__chunk_map_node =
+        p_chunk_manager->p_most_north_western__chunk_map_node
+            ->p_west__chunk_map_node;
+    p_chunk_manager->p_most_north_eastern__chunk_map_node =
+        p_chunk_manager->p_most_north_eastern__chunk_map_node
+            ->p_west__chunk_map_node;
+    p_chunk_manager->p_most_south_western__chunk_map_node =
+        p_chunk_manager->p_most_south_western__chunk_map_node
+            ->p_west__chunk_map_node;
+    p_chunk_manager->p_most_south_eastern__chunk_map_node =
+        p_chunk_manager->p_most_south_eastern__chunk_map_node
+            ->p_west__chunk_map_node;
+
+    Chunk_Manager__Chunk_Map_Node *p_current__chunk_map_node =
+        p_chunk_manager->p_most_south_western__chunk_map_node;
+
+    for (uint32_t step = 0; 
+            step < GFX_CONTEXT__RENDERING_HEIGHT__IN_CHUNKS;
+            step++) {
+        if (p_current__chunk_map_node
+                ->position_of__chunk_3i32.x__i32 !=
+                x__new_most_north_western_chunk
+                || (p_current__chunk_map_node
+                    ->position_of__chunk_3i32.y__i32 != 
+                    y__old_most_south_western_chunk + step)) {
+
+            replace_chunk(
+                    p_game,
+                    p_current__chunk_map_node,
+                    x__new_most_north_western_chunk,
+                    y__old_most_south_western_chunk + step
+                    );
+        }
+
+        p_current__chunk_map_node = 
+            p_current__chunk_map_node->p_north__chunk_map_node;
+    }
+}
+
+void move_chunk_manager(
+        Game *p_game,
+        Chunk_Manager *p_chunk_manager,
+        Direction__u8 direction,
+        Quantity__u32 steps) {
+    for (Quantity__u32 step=0; step < steps; step++) {
+        if (direction & DIRECTION__NORTH) {
+            move_chunk_manager__chunks_north(
+                    p_game,
+                    p_chunk_manager);
+        }
+        if (direction & DIRECTION__EAST) {
+            move_chunk_manager__chunks_east(
+                    p_game,
+                    p_chunk_manager);
+        }
+        if (direction & DIRECTION__SOUTH) {
+            move_chunk_manager__chunks_south(
+                    p_game,
+                    p_chunk_manager);
+        }
+        if (direction & DIRECTION__WEST) {
+            move_chunk_manager__chunks_west(
+                    p_game,
+                    p_chunk_manager);
+        }
+    }
+}
+
+void save_all_chunks(
+        PLATFORM_File_System_Context *p_PLATFORM_file_system_context,
+        World *p_world,
+        Chunk_Manager *p_chunk_manager) {
+    Chunk_Manager__Chunk_Map_Node *p_chunk_map_node__beginning =
+        p_chunk_manager
+        ->p_most_south_western__chunk_map_node;
+    Chunk_Manager__Chunk_Map_Node *p_chunk_map_node__current_row =
+        p_chunk_map_node__beginning;
+    do {
+        Chunk_Manager__Chunk_Map_Node *p_chunk_map_node__current_column =
+            p_chunk_map_node__current_row;
+        do {
+            char file_path_to__chunk[MAX_LENGTH_OF__IO_PATH];
+            memset(file_path_to__chunk, 0, sizeof(file_path_to__chunk));
+            Quantity__u32 length_of__path_to__chunk =
+                stat_chunk_directory(
+                        p_PLATFORM_file_system_context,
+                        p_world,
+                        p_chunk_map_node__current_column,
+                        file_path_to__chunk);
+            if (length_of__path_to__chunk) {
+                if (append_chunk_file__tiles_to__path(
+                        file_path_to__chunk, 
+                        length_of__path_to__chunk, 
+                        sizeof(file_path_to__chunk))) {
+                    save_chunk(
+                            p_PLATFORM_file_system_context,
+                            p_chunk_manager,
+                            p_chunk_map_node__current_column,
+                            file_path_to__chunk);
+                }
+            }
+            p_chunk_map_node__current_column =
+                p_chunk_map_node__current_column
+                ->p_east__chunk_map_node;
+        } while (
+                p_chunk_map_node__current_column
+                != p_chunk_map_node__current_row);
+        p_chunk_map_node__current_row =
+            p_chunk_map_node__current_row
+            ->p_north__chunk_map_node;
+    } while(p_chunk_map_node__current_row
+            != p_chunk_map_node__beginning);
+}
+
+void move_chunk_manager_to__chunk_position(
+        Game *p_game,
+        Chunk_Manager *p_chunk_manager,
+        Chunk_Vector__3i32 chunk_vector__3i32) {
+
+    p_chunk_manager->x__center_chunk__signed_index_i32 =
+        chunk_vector__3i32.x__i32;
+    p_chunk_manager->y__center_chunk__signed_index_i32 =
+        chunk_vector__3i32.y__i32;
+
+    //TODO: z axis
+    i32 x, y;
+    
+    x = chunk_vector__3i32.x__i32 - 3;
+    y = chunk_vector__3i32.y__i32 - 2;
+
+    Chunk_Manager__Chunk_Map_Node *p_chunk_map_node__beginning =
+        p_chunk_manager
+        ->p_most_south_western__chunk_map_node;
+    Chunk_Manager__Chunk_Map_Node *p_chunk_map_node__current_row =
+        p_chunk_map_node__beginning;
+    do {
+        Chunk_Manager__Chunk_Map_Node *p_chunk_map_node__current_column =
+            p_chunk_map_node__current_row;
+        x = chunk_vector__3i32.x__i32 - 2;
+        do {
+            replace_chunk(
+                    p_game,
+                    p_chunk_map_node__current_column,
+                    x, y);
+            p_chunk_map_node__current_column =
+                p_chunk_map_node__current_column
+                ->p_east__chunk_map_node;
+            x++;
+        } while (
+                p_chunk_map_node__current_column
+                != p_chunk_map_node__current_row);
+        p_chunk_map_node__current_row =
+            p_chunk_map_node__current_row
+            ->p_north__chunk_map_node;
+        y++;
+    } while(p_chunk_map_node__current_row
+            != p_chunk_map_node__beginning);
+}
+
+bool poll_chunk_manager_for__chunk_movement(
+        Game *p_game,
+        Chunk_Manager *p_chunk_manager,
+        Vector__3i32F4 position__3i32F4) {
+
+    Chunk_Vector__3i32 chunk_vector__3i32 =
+        vector_3i32F4_to__chunk_vector_3i32(position__3i32F4);
+
+    Direction__u8 direction__move_chunks = DIRECTION__NONE;
+
+    if (chunk_vector__3i32.x__i32 
+            != p_chunk_manager->x__center_chunk__signed_index_i32 
+            || chunk_vector__3i32.y__i32 
+            != p_chunk_manager->y__center_chunk__signed_index_i32) {
+        if (p_chunk_manager->x__center_chunk__signed_index_i32 
+                < chunk_vector__3i32.x__i32) {
+            direction__move_chunks |=
+                DIRECTION__EAST;
+        } else if (p_chunk_manager->x__center_chunk__signed_index_i32 
+                > chunk_vector__3i32.x__i32) {
+            direction__move_chunks |=
+                DIRECTION__WEST;
+        }
+        if (p_chunk_manager->y__center_chunk__signed_index_i32 
+                < chunk_vector__3i32.y__i32) {
+            direction__move_chunks |=
+                DIRECTION__NORTH;
+        } else if (p_chunk_manager->y__center_chunk__signed_index_i32 
+                > chunk_vector__3i32.y__i32) {
+            direction__move_chunks |=
+                DIRECTION__SOUTH;
+        }
+        p_chunk_manager->x__center_chunk__signed_index_i32 = 
+            chunk_vector__3i32.x__i32;
+        p_chunk_manager->y__center_chunk__signed_index_i32 = 
+            chunk_vector__3i32.y__i32;
+    }
+
+    if(direction__move_chunks != DIRECTION__NONE) {
+        move_chunk_manager(
+                p_game,
+                p_chunk_manager, 
+                direction__move_chunks,
+                1);
+        return true;
+    }
+
+    return false;
+}
+
+bool poll_chunk_manager_for__tile_collision(
+        Game *p_game,
+        Chunk_Manager *p_chunk_manager, 
+        Entity *p_entity,
+        Hitbox_AABB *p_hitbox,
+        m_Entity_Tile_Collision_Handler
+            m_entity_tile_collision_handler) {
+    if (p_hitbox->velocity__3i32F4.x__i32F4 == 0
+            && p_hitbox->velocity__3i32F4.y__i32F4 == 0) {
+        return true;
+    }
+    Tile_Vector__3i32 tile_vector__3i32 =
+        get_tile_vector_using__3i32F4(
+                p_hitbox->position__3i32F4);
+
+    Vector__3i32F4 aa, bb;
+    get_aa_bb_as__vectors_3i32F4_from__hitbox(
+            p_hitbox, &aa, &bb);
+
+    //TODO: magic num
+    i32F4 chunk_xy_vectors[8] = {
+        get_chunk_x_i32_from__vector_3i32F4(aa),
+        get_chunk_y_i32_from__vector_3i32F4(aa),
+        get_chunk_x_i32_from__vector_3i32F4(bb),
+        get_chunk_y_i32_from__vector_3i32F4(aa),
+        get_chunk_x_i32_from__vector_3i32F4(aa),
+        get_chunk_y_i32_from__vector_3i32F4(bb),
+        get_chunk_x_i32_from__vector_3i32F4(bb),
+        get_chunk_y_i32_from__vector_3i32F4(bb),
+    };
+    Signed_Index__i32 local_positions[8] = {
+        get_tile_x_u8_from__vector_3i32F4(aa),
+        get_tile_y_u8_from__vector_3i32F4(aa),
+        get_tile_x_u8_from__vector_3i32F4(bb),
+        get_tile_y_u8_from__vector_3i32F4(aa),
+        get_tile_x_u8_from__vector_3i32F4(aa),
+        get_tile_y_u8_from__vector_3i32F4(bb),
+        get_tile_x_u8_from__vector_3i32F4(bb),
+        get_tile_y_u8_from__vector_3i32F4(bb),
+    };
+    Signed_Index__i32 corner_positions[8] = {
+        i32F4_to__i32(aa.x__i32F4), i32F4_to__i32(aa.y__i32F4),
+        i32F4_to__i32(bb.x__i32F4), i32F4_to__i32(aa.y__i32F4),
+        i32F4_to__i32(aa.x__i32F4), i32F4_to__i32(bb.y__i32F4),
+        i32F4_to__i32(bb.x__i32F4), i32F4_to__i32(bb.y__i32F4)
+    };
+    Direction__u8 directions[4] = {
+        DIRECTION__SOUTH_EAST,
+        DIRECTION__SOUTH_WEST,
+        DIRECTION__NORTH_EAST,
+        DIRECTION__NORTH_WEST
+    };
+
+    for (Index__u32 index=0;index<8;index+=2) {
+        Signed_Index__i32 x__chunk =
+            chunk_xy_vectors[index]; //entity->hitbox.x__chunk;
+        Signed_Index__i32 y__chunk =
+            chunk_xy_vectors[index+1]; //entity->hitbox.y__chunk;
+
+        Chunk *p_chunk =
+            get_p_chunk_from__chunk_manager_using__i32(
+                    p_chunk_manager,
+                    x__chunk,
+                    y__chunk,
+                    0);
+
+        if (!p_chunk) {
+            debug_warning__verbose("poll_chunk_manager_for__tile_collision, entity out of tile collision bounds.");
+            debug_warning__verbose("access attempt: %d, %d",
+                    x__chunk, y__chunk);
+            return false;
+        }
+
+        Tile *p_tile =
+            get_p_tile_from__chunk_using__u8(
+                    p_chunk,
+                    local_positions[index],
+                    local_positions[index+1],
+                    0);
+
+        if (m_entity_tile_collision_handler) {
+            if (is_tile__unpassable(p_tile)) {
+                m_entity_tile_collision_handler(
+                        p_entity,
+                        p_tile,
+                        corner_positions[index],
+                        corner_positions[index+1],
+                        directions[index>>2]);
+            }
+            (void)poll_tile_for__touch(
+                    p_game,
+                    p_entity,
+                    tile_vector__3i32);
+        }
+    }
+
+    return true;
+}
+
+// TODO: replace all the other tile getters to convert the vector
+// to tile_vector__3i32 and call this function.
+Tile *get_p_tile_from__chunk_manager_with__tile_vector_3i32(
+        Chunk_Manager *p_chunk_manager,
+        Tile_Vector__3i32 tile_vector__3i32) {
+    Vector__3i32 chunk_index =
+        tile_vector_3i32_to__chunk_vector_3i32(tile_vector__3i32);
+    Vector__3u8 local_position =
+        tile_vector_3i32_to__local_tile_vector_3u8(
+                tile_vector__3i32);
+
+    Chunk *p_chunk =
+        get_p_chunk_from__chunk_manager(
+                p_chunk_manager, 
+                chunk_index);
+#ifndef NDEBUG
+    if (!p_chunk) {
+        debug_warning("nullptr: get_p_tile_from__chunk_manager_with__3i32F4");
+        return 0;
+    }
+#endif
+    Tile *p_tile =
+        get_p_tile_from__chunk(
+                p_chunk, 
+                local_position);
+
+    return p_tile;
+}
+
+bool is_chunk_manager__resolving_chunks(
+        Chunk_Manager *p_chunk_manager) {
+    return p_chunk_manager->ptr_array_queue__serialized_nodes[0]
+        != 0;
+}
+
+void update_chunk_at__tile_vector__3i32(
+        Game *p_game,
+        Tile_Vector__3i32 tile_vector__3i32) {
+    Chunk_Manager__Chunk_Map_Node *p_chunk_map_node =
+        get_p_chunk_map_node_from__chunk_manager_using__tile_vector__3i32(
+                get_p_chunk_manager_from__game(p_game), 
+                tile_vector__3i32);
+
+    if (!p_chunk_map_node) {
+        debug_warning__verbose("update_chunk_at__tile_vector__3i32, p_chunk_map_node == 0.");
+        return;
+    }
+    
+    PLATFORM_update_chunk(
+            get_p_PLATFORM_gfx_context_from__game(p_game), 
+            get_p_chunk_manager_from__game(p_game), 
+            p_chunk_map_node);
+    set_chunk_as__updated(
+            p_chunk_map_node
+            ->p_chunk__here);
+}

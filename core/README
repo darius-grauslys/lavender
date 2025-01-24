@@ -1,0 +1,15 @@
+
+--- HOW TO PORT ---
+Create a backend definition for everything you
+see in platform.h
+
+For struct, and macro definitions, put it in a platform_defines.h
+located at the base level of your include folder.
+
+You can put the function definitions for functions in platform.h
+where ever you want. (hint: be organized about it.)
+
+
+
+
+
