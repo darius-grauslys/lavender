@@ -5,7 +5,6 @@
 #include "rendering/sdl_gfx_context.h"
 #include "rendering/sdl_sprite.h"
 #include "rendering/sdl_texture_manager.h"
-#include "rendering/sdl_texture_strings.h"
 #include "rendering/texture.h"
 #include "sdl_defines.h"
 #include <rendering/sdl_sprite_manager.h>

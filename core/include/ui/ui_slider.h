@@ -97,22 +97,6 @@ void set_ui_slider_at__this_distance_u32(
 }
 
 static inline
-void allocate_sprite_for__ui_slider(
-        Gfx_Context *p_gfx_context,
-        Graphics_Window *p_graphics_window,
-        UI_Element *p_ui_slider) {
-    allocate_sprite__ui(
-        p_gfx_context, 
-        p_graphics_window, 
-        get_p_sprite_gfx_allocation_manager_from__gfx_context(
-            p_gfx_context),
-        &p_ui_slider->ui_sprite_wrapper,
-        (is_ui_element__snapped_x_or_y_axis(p_ui_slider))
-        ? UI_Sprite_Kind__16x16__Slider__Horizontal
-        : UI_Sprite_Kind__16x16__Slider__Vertical);
-}
-
-static inline
 Vector__3i32 get_ui_slider__spanning_length(
         UI_Element *p_ui_element) {
     //TODO: validate ui_element enum

@@ -11,7 +11,7 @@ void initialize_sprite_wrapper(
         DIRECTION__EAST;
     sprite_wrapper->
         the_kind_of_animation__this_sprite_has =
-        Sprite_Animation_Kind__Idle;
+        Sprite_Animation_Kind__None;
     
     sprite_wrapper->
         frame__initial = 0;

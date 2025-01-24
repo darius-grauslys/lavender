@@ -8,7 +8,6 @@
 
 void initialize_tile(Tile *tile, 
         enum Tile_Kind kind_of_tile,
-        enum Tile_Cover_Kind kind_of_tile_cover,
         Tile_Flags__u8 flags);
 
 Index__u16 get_tile_sheet_index_offset_for__cover_from__wall_adjacency(
@@ -16,9 +15,6 @@ Index__u16 get_tile_sheet_index_offset_for__cover_from__wall_adjacency(
 
 bool is_tile_kind__illegal(
         Tile_Kind the_kind_of__tile);
-
-bool is_tile_cover_kind__illegal(
-        Tile_Cover_Kind the_kind_of__tile_cover_kind);
 
 static inline Index__u16 
 get_tile_sheet_index_offset_for__sprite_cover_from__wall_adjacency(
@@ -34,43 +30,6 @@ bool does_wall_adjacency_require__vflip(
     return
         (bool)(wall_adjacency
                 & TILE_RENDER__WALL_ADJACENCY__BIT_VFLIP);
-}
-
-static inline 
-bool is_tile_cover__a_wall(
-        enum Tile_Cover_Kind kind_of_tile_cover) {
-    return kind_of_tile_cover & TILE_COVER__BIT_IS_WALL;
-}
-
-static inline
-bool is_tile_with__this_kind_of__tile_cover(
-        Tile *p_tile,
-        Tile_Cover_Kind the_kind_of__tile_cover) {
-    return p_tile->the_kind_of_tile_cover__this_tile_has
-        == the_kind_of__tile_cover;
-}
-
-
-static inline
-bool is_tile_without_a__cover(
-        Tile *p_tile) {
-    return is_tile_with__this_kind_of__tile_cover(
-            p_tile, Tile_Cover_Kind__None);
-}
-
-
-static inline 
-bool does_tile__have_a_wall(
-        Tile *tile) {
-    return is_tile_cover__a_wall(tile->the_kind_of_tile_cover__this_tile_has);
-}
-
-static inline 
-enum Tile_Cover_Kind get_tile_cover_wall_for__tile_kind(
-        enum Tile_Kind kind_of_tile) {
-    return (enum Tile_Cover_Kind)(
-            kind_of_tile
-            | TILE_COVER__BIT_IS_WALL);
 }
 
 static inline 
@@ -139,22 +98,6 @@ void set_tile_kind_of__tile(
 }
 
 static inline
-void set_tile_cover_kind_of__tile(
-        Tile *p_tile,
-        Tile_Cover_Kind the_kind_of__tile_cover) {
-    p_tile->the_kind_of_tile_cover__this_tile_has =
-        the_kind_of__tile_cover;
-}
-
-static inline
-void clear_tile_cover(
-        Tile *p_tile) {
-    p_tile->the_kind_of_tile_cover__this_tile_has =
-        Tile_Cover_Kind__None;
-    set_tile__is_unpassable(p_tile, false);
-}
-
-static inline
 Tile_Kind get_tile_kind_from__tile(
         Tile *p_tile) {
     return p_tile->the_kind_of_tile__this_tile_is;
@@ -166,20 +109,6 @@ bool is_tile_of__this_kind(
         Tile_Kind the_kind_of__tile) {
     return p_tile->the_kind_of_tile__this_tile_is
         == the_kind_of__tile;
-}
-
-static inline
-Tile_Cover_Kind get_tile_cover_kind_from__tile(
-        Tile *p_tile) {
-    return p_tile->the_kind_of_tile_cover__this_tile_has;
-}
-
-static inline
-bool is_tiles_with__same_tile_cover(
-        Tile *p_tile__one,
-        Tile *p_tile__two) {
-    return get_tile_cover_kind_from__tile(p_tile__one)
-        == get_tile_cover_kind_from__tile(p_tile__two);
 }
 
 // TODO: make this PLATFORM_render_tile
@@ -201,7 +130,6 @@ bool poll_tile_for__touch(
 bool attempt_tile_placement(
         Game *p_game,
         Tile_Kind the_kind_of__tile,
-        Tile_Cover_Kind the_kind_of__tile_cover,
         Tile_Vector__3i32 tile_vector__3i32);
 
 bool remove_tile__cover(

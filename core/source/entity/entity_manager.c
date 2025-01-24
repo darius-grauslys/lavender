@@ -41,15 +41,6 @@ Entity *allocate_entity_in__entity_manager(
                     kind_of_entity);
             debug_warning("Did you forget to include your new entity kind within entity_manager.c, allocate__entity?");
             return 0;
-        case Entity_Kind__Player:
-        case Entity_Kind__Skeleton:
-        case Entity_Kind__Zombie:
-            if (entity_manager->entity_count__quantity_u32 
-                    >= ENTITY_MAXIMUM_QUANTITY_OF__COLLIDABLE) {
-                debug_error("Entity limit reached.");
-                return 0;
-            }
-            break;
     }
 
     Identifier__u32 uuid__u32 =

@@ -253,66 +253,6 @@ void GL_update_chunk(
                     break;
             }
 
-            switch (p_tile->the_kind_of_tile_cover__this_tile_has) {
-                case Tile_Cover_Kind__None:
-                    break;
-                default:
-                    ;
-                    int index = 
-                        (render_result.tile_index__cover
-                        & MASK(10))
-                        - 1
-                        ;
-                    GL_bind_texture_to__framebuffer(
-                            p_GL_framebuffer, 
-                            p_GL_chunk_texture
-                            ->p_GL_chunk_texture);
-                    PLATFORM_use_texture(
-                            p_PLATFORM_gfx_context, 
-                            p_GL_chunk_texture_manager
-                            ->p_PLATFORM_texture_of__tilesheet_cover);
-                    GL_render_with__shader__passthrough_using__index_sampling(
-                            p_GL_shader__passthrough, 
-                            index % 32, 
-                            (int)(index / 32), 
-                            width_of__uv, 
-                            height_of__uv,
-                            does_wall_adjacency_require__vflip(
-                                render_result.wall_adjacency),
-                            false);
-                    break;
-            }
-
-            switch (p_tile->the_kind_of_tile_cover__this_tile_has) {
-                case Tile_Cover_Kind__None:
-                    break;
-                default:
-                    ;
-                    int index = 
-                        (render_result.tile_index__sprite_cover
-                        & MASK(10))
-                        - 1
-                        ;
-                    GL_bind_texture_to__framebuffer(
-                            p_GL_framebuffer, 
-                            p_GL_chunk_texture
-                            ->p_GL_chunk_texture__sprite_cover);
-                    PLATFORM_use_texture(
-                            p_PLATFORM_gfx_context, 
-                            p_GL_chunk_texture_manager
-                            ->p_PLATFORM_texture_of__tilesheet_cover);
-                    GL_render_with__shader__passthrough_using__index_sampling(
-                            p_GL_shader__passthrough, 
-                            index % 32, 
-                            (int)(index / 32), 
-                            width_of__uv, 
-                            height_of__uv,
-                            does_wall_adjacency_require__vflip(
-                                render_result.wall_adjacency),
-                            false);
-                    break;
-            }
-
             GL_pop_viewport(p_GL_viewport_stack);
         }
     }

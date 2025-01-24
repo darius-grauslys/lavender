@@ -428,19 +428,9 @@ typedef bool (*f_Sprite_Gfx_Allocator)(
         Sprite_Wrapper *p_sprite_wrapper,
         u32 enum_value);
 
-typedef f_Sprite_Gfx_Allocator 
-    F_Sprite_Gfx_Allocator__Lookup_Table_For__Entities[
-    6];
-
-typedef f_Sprite_Gfx_Allocator 
-    F_Sprite_Gfx_Allocator__Lookup_Table_For__Particles[
-    Particle_Kind__Unknown];
-
 typedef struct Sprite_Gfx_Allocation_Manager_t {
     f_Sprite_Gfx_Allocator F_sprite_gfx_allocators_for__entities[
         Entity_Kind__Unknown];
-    f_Sprite_Gfx_Allocator F_sprite_gfx_allocators_for__particles[
-        Particle_Kind__Unknown];
     f_Sprite_Gfx_Allocator F_sprite_gfx_allocators_for__ui[
         UI_Sprite_Kind__Unknown];
     f_Sprite_Gfx_Allocator F_sprite_gfx_allocators_for__items[
@@ -710,9 +700,6 @@ typedef struct Sprite_Allocation_Specification_t {
         struct { // Sprite_Allocation_Kind__Item
             enum Item_Kind the_kind_of__item_this__sprite_is;
         };
-        struct { // Sprite_Allocation_Kind__Particle
-            enum Particle_Kind the_kind_of__particle_this__sprite_is;
-        };
         struct { // Sprite_Allocation_Kind__UI
             enum UI_Sprite_Kind the_kind_of__ui__this_sprite_is;
         };
@@ -796,58 +783,6 @@ typedef struct Typer_t {
 
 typedef struct Item_t Item;
 
-typedef uint8_t Item_Filter_Flags;
-
-#define ITEM_FILTER_FLAGS__NONE 0
-#define ITEM_FILTER_FLAG__INTERACTABLE 1
-#define ITEM_FILTER_FLAG__ARMOR \
-        (ITEM_FILTER_FLAG__INTERACTABLE << 1)
-#define ITEM_FILTER_FLAG__CONSUMABLE \
-        (ITEM_FILTER_FLAG__ARMOR << 1)
-
-typedef uint8_t Item_Usage_Flags;
-
-#define ITEM_USAGE_FLAGS__NONE 0
-#define ITEM_USAGE_FLAG__IS_LABOR BIT(0)
-#define ITEM_USAGE_FLAG__IS_LABOR__SECONDARY BIT(1)
-#define ITEM_USAGE_FLAG__IS_COMBAT BIT(2)
-
-typedef void (*m_Item_Use)(
-        Item *p_item_self, 
-        Entity *p_entity_user, 
-        Game_Action *p_game_action,
-        Game *p_game);
-
-///
-/// Returns false if the event failed.
-/// Example: equip stick to armor.
-///
-typedef bool (*m_Item_Equip_Event)(
-        Item *p_item_self, 
-        Entity *p_entity_user,
-        enum Entity_Equipment_Slot_Kind the_kind_of__slot,
-        Game *p_game);
-
-typedef struct Hearts_Damaging_Specifier_t Hearts_Damaging_Specifier;
-typedef uint8_t Hearts_Damaging_Flags;
-typedef void (*m_Item_Protect)(
-        Item *p_item_self, 
-        Entity *p_entity_user, 
-        Game *p_game,
-        Hearts_Damaging_Specifier *p_hearts_damage);
-
-typedef uint8_t Item_Recipe_Flags;
-
-#define ITEM_RECIPE_FLAGS__NONE 0
-#define ITEM_RECIPE_FLAG__IS_COST_REDUCTION__ONE BIT(0)
-#define ITEM_RECIPE_FLAG__IS_COST_REDUCTION__TWO BIT(1)
-#define ITEM_RECIPE_FLAG__IS_COST_REDUCTION__THREE BIT(2)
-#define ITEM_RECIPE_FLAG__IS_COST_REDUCTION__FOUR BIT(3)
-#define ITEM_RECIPE_FLAG__DOUBLE_PRODUCITON BIT(4)
-#define ITEM_RECIPE_FLAG__HALF_TOOL_CONSUMPTION BIT(5)
-
-#define ITEM_TOOL_MAX_QUANTITY_OF 32
-
 typedef struct Item_t {
     enum Item_Kind      the_kind_of_item__this_item_is;
 } Item;
@@ -855,24 +790,6 @@ typedef struct Item_t {
 typedef struct Item_Manager_t {
     Item item_templates[(u16)Item_Kind__Unknown];
 } Item_Manager;
-
-typedef struct Item_Recipe_Requirement_t {
-    Item_Kind the_kind_of__item_that_is__required;
-    Quantity__u32 the_quantity_of__items_required;
-} Item_Recipe_Requirement;
-
-#define ITEM_REQUIREMENT_MAX_QUANTITY_OF 4
-
-typedef struct Item_Recipe_Record_t {
-    Item_Recipe_Requirement requirements[
-        ITEM_REQUIREMENT_MAX_QUANTITY_OF];
-    Item_Kind the_kind_of__item_this__recipe_makes;
-    Quantity__u32 the_quantity_of__items_this__recipe_makes;
-} Item_Recipe_Record;
-
-typedef struct Item_Recipe_Manager_t {
-    Item_Recipe_Record recipes[Item_Kind__Unknown - 1];
-} Item_Recipe_Manager;
 
 typedef struct Item_Stack_t {
     union {
@@ -955,74 +872,11 @@ typedef struct Inventory_Manager_t {
     Quantity__u8 quantity_of__active_inventories_for__entities;
 } Inventory_Manager;
 
-#define EQUIPMENT_ITEM_STACK_QUANTITY_OF 6
-
-typedef union Equipment_t {
-    struct {
-        Item_Stack item_stacks[
-            EQUIPMENT_ITEM_STACK_QUANTITY_OF];
-    };
-    struct {
-        Item_Stack item_stacks__equipment[
-            EQUIPMENT_ITEM_STACK_QUANTITY_OF
-                - INVENTORY_CONSUMABLES_QUANTITY_OF];
-        Item_Stack item_stack__consumables[
-            INVENTORY_CONSUMABLES_QUANTITY_OF];
-    };
-    struct {
-        Item_Stack item_stack__armor;
-        Item_Stack item_stack__main_hand;
-        Item_Stack item_stack__off_hand;
-
-        Item_Stack item_stack__consumable_1;
-        Item_Stack item_stack__consumable_2;
-        Item_Stack item_stack__consumable_3;
-    };
-} Equipment;
-
-typedef bool (*f_Station_Handler__Use)(
-        Game *p_game,
-        Entity *p_entity__user,
-        Inventory *p_station__inventory);
-
-typedef struct Station_Record_t {
-    f_Station_Handler__Use f_station_handler__use;
-    Item_Kind first_required__tool;
-    Item_Kind second_required__tool;
-} Station_Record;
-
-///
-/// Maps the item_stacks of an inventory to
-/// a struct of aliased pointer fields.
-///
-/// These pointers are non-owning.
-///
-typedef struct Station_Inventory_Map_t {
-    Item_Stack *p_item_stack__recipe;
-    Item_Stack *p_item_stack__required_items;
-    Item_Stack *p_item_stack__tool_one;
-    Item_Stack *p_item_stack__tool_two;
-} Station_Inventory_Map;
-
-typedef struct Station_Manager_t {
-    Station_Record stations[Station_Kind__Unknown];
-    Station_Kind map_of__tools_to__station[
-        ITEM_TOOL_MAX_QUANTITY_OF
-            * ITEM_TOOL_MAX_QUANTITY_OF];
-} Station_Manager;
-
 ///
 /// SECTION_entity
 ///
 
 typedef struct Entity_t Entity;
-
-typedef struct Armor_Properties_t {
-    enum Entity_Armor_Kind                  
-        the_kind_of_armor__this_armor_is;
-    enum Entity_Armor_Modification_Kind     
-        the_kind_of_modification__this_armor_has;
-} Armor_Properties;
 
 typedef void (*m_Entity_Dispose_Handler)(
         Entity *p_entity_self, 
@@ -2034,12 +1888,6 @@ typedef void (*f_Voxel_Render_Kernel)(
         u8 z__local,
         Index__u16 texture_indices[6]);
 
-typedef void (*f_Tile_Handler__Interact)(
-        Game *p_game,
-        Tile *p_tile,
-        Tile_Vector__3i32 tile_vector__3i32,
-        Entity *p_entity);
-
 typedef void (*f_Tile_Handler__Touch)(
         Game *p_game,
         Tile *p_tile,
@@ -2052,15 +1900,13 @@ typedef void (*f_Tile_Handler__Touch)(
 typedef bool (*f_Tile_Handler__Place)(
         Game *p_game,
         Tile *p_tile,
-        Tile_Kind the_kind_of__tile,
-        Tile_Cover_Kind the_kind_of__tile_cover,
+        u32 tile__placement_code__u32,
         Tile_Vector__3i32 tile_vector__3i32);
 
 typedef bool (*f_Tile_Handler__Destroy)(
         Game *p_game,
         Tile *p_tile,
-        Tile_Kind the_kind_of__tile,
-        Tile_Cover_Kind the_kind_of__tile_cover,
+        u32 tile__destruction_code__u32,
         Tile_Vector__3i32 tile_vector__3i32);
 
 typedef uint8_t Tile_Logic_Flags__u8;
@@ -2069,14 +1915,10 @@ typedef uint8_t Tile_Logic_Flags__u8;
 #define TILE_LOGIC_FLAG__IS_SIGHT_BLOCKING BIT(1)
 
 typedef struct Tile_Logic_Record_t {
-    f_Tile_Handler__Interact    f_tile_handler__interact;
     f_Tile_Handler__Touch       f_tile_handler__touch;
     f_Tile_Handler__Place       f_tile_handler__place;
     f_Tile_Handler__Destroy     f_tile_handler__destroy;
     Tile_Logic_Flags__u8        tile_logic_flags__u8;
-    Tool_Kind                   the_kind_of__tool_for__harvesting;
-    Item_Kind                   the_kind_of__resource_when__harvested;
-    Quantity__u32               quantity_of__resources_harvested;
 } Tile_Logic_Record;
 
 ///
@@ -2086,18 +1928,12 @@ typedef struct Tile_Logic_Record_t {
 typedef struct Tile_Logic_Manager_t {
     Tile_Logic_Record tile_logic_records_for__ground_kinds[
         Tile_Kind__Unknown];
-    Tile_Logic_Record tile_logic_records_for__cover_kinds[
-        Tile_Cover_Kind__Unknown];
 } Tile_Logic_Manager;
 
-// TODO: Might need to make a Tile_Raw variant of u8[3]
-// to be endian-proof on serialization.
 typedef struct Tile_t {
     enum Tile_Kind                  
         the_kind_of_tile__this_tile_is          :10;
-    enum Tile_Cover_Kind            
-        the_kind_of_tile_cover__this_tile_has   :10;
-    Tile_Flags__u8 tile_flags                   :4;
+    Tile_Flags__u8 tile_flags                   :6;
 } Tile;
 
 typedef uint16_t Tile_Render_Index__u16;
@@ -2217,8 +2053,6 @@ typedef struct World_t {
 
     Inventory_Manager   inventory_manager;
     Item_Manager        item_manager;
-    Item_Recipe_Manager item_recipe_manager;
-    Station_Manager     station_manager;
 
     Camera camera;
     PLATFORM_Graphics_Window *p_PLATFORM_graphics_window_for__world;
@@ -2324,88 +2158,6 @@ typedef uint8_t Game_Action_Flags;
 /// for updating the enum list!!!
 ///
 typedef struct Game_Action_t {
-    union {
-        struct { //Game_Action_Kind__Entity
-            struct {
-                Serialized_Entity_Ptr s_entity__source;
-                Serialized_Entity_Ptr s_entity__target;
-            };
-            union {
-                struct {//...Entity__Allocate
-                    enum Entity_Kind allocate__kind_of__entity;
-                    Vector__3i32F4 allocate__position;
-                };
-                struct { //...Entity__Flags
-                    Entity_Flags__u8 entity_flags;
-                };
-                struct { //...Entity__Hitbox
-                    union {
-                        struct { //...Hitbox__Apply_Velocity
-                            Vector__3i32F4 velocity_vector__apply;
-                        };
-                        struct { //...Hitbox__Set_Velocity
-                            Vector__3i32F4 velocity_vector__set;
-                        };
-                    };
-                };
-                struct { //...Entity__Health
-                         //...Entity__Energy
-                    union {
-                        struct { //...Health__Set
-                            Resource_Reserve hearts;
-                        };
-                        struct { //...Energy__Set
-                            Resource_Reserve energy_orbs;
-                        };
-                        struct { //...Health__Apply_Healing
-                                 //...Energy__Apply_Healing
-                            union {
-                                Hearts_Healing_Specifier 
-                                    hearts_healing_specifier;
-                                Energy_Healing_Specifier 
-                                    energy_healing_specifier;
-                            };
-                        };
-                        struct { //...Health__Apply_Damage
-                                 //...Energy__Apply_Damage
-                            union {
-                                Hearts_Damaging_Specifier 
-                                    hearts_damaging_specifier;
-                                Energy_Damaging_Specifier 
-                                    energy_damage_specifier;
-                            };
-                        };
-                    };
-                };
-                struct { //...Entity__Sustenance__Increase
-                         //...Entity__Sustenance__Decrease
-                    enum Sustenance_Kind kind_of_sustenance;
-                    Sustenance__u8 change_in__sustenance;
-                };
-                struct { //...Entity__Homeostasis__Increase
-                         //...Entity__Homeostasis__Decrease
-                    Quantity__u8 change_in__homeostasis;
-                };
-                struct { //...Entity__Place_Tile
-                    Tile tile_to_place;
-                    Direction__u8 direction_to_place_the__tile;
-                };
-                struct { //...Entity__Item
-                    Item_Stack item_stack;
-                    Identifier__u16 identifier_for__item_stack;
-                };
-            };
-        }; // </Game_Action_Kind__Entity>
-        struct { // Game_Action_Kind__Inventory
-            Serialized_Entity_Ptr s_game_action__inventory__entity_source;
-            union { //Game_Action_Kind__Container
-                struct {
-                    Tile_Vector__3i32 game_action__container__tile_vector_3i32;
-                };
-            };
-        };
-    };
-    Index__u8 a[2];
     enum Game_Action_Kind the_kind_of_game_action__this_action_is;
     Game_Action_Flags game_action_flags;
 } Game_Action;

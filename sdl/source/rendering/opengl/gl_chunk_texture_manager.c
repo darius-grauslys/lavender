@@ -6,7 +6,6 @@
 #include "rendering/opengl/gl_shader_manager.h"
 #include "rendering/sdl_gfx_context.h"
 #include "rendering/sdl_texture_manager.h"
-#include "rendering/sdl_texture_strings.h"
 #include <rendering/opengl/gl_chunk_texture_manager.h>
 
 static inline
@@ -57,54 +56,6 @@ void GL_initialize_chunk_texture_manager(
         debug_error("SDL::GL::GL_initialize_chunk_texture_manager, failed to allocate framebuffer for GL_Chunk_Manager.");
         return;
     }
-
-    PLATFORM_Texture *p_PLATFORM_texture_of__tilesheet_cover;
-    PLATFORM_Texture *p_PLATFORM_texture_of__tilesheet_ground;
-
-    p_PLATFORM_texture_of__tilesheet_cover =
-        SDL_get_texture_from__texture_manager(
-                SDL_get_p_texture_manager_from__gfx_context(
-                    p_PLATFORM_gfx_context), 
-                SDL_texture_string__tilesheet_cover);
-
-    if (!p_PLATFORM_texture_of__tilesheet_cover) {
-        GL_release_shader_from__shader_manager(
-                GL_get_p_shader_manager_from__PLATFORM_gfx_context(
-                    p_PLATFORM_gfx_context), 
-                p_GL_shader_for__chunk_texture_manager);
-        GL_release_framebuffer_from__framebuffer_manager(
-                p_PLATFORM_gfx_context, 
-                GL_get_p_framebuffer_manager_from__PLATFORM_gfx_context(
-                    p_PLATFORM_gfx_context), 
-                p_GL_framebuffer);
-        debug_abort("SDL::GL::GL_initialize_chunk_texture_manager, failed to acquire p_PLATFORM_texture_of__tilesheet_cover");
-        return;
-    }
-
-    p_PLATFORM_texture_of__tilesheet_ground =
-        SDL_get_texture_from__texture_manager(
-                SDL_get_p_texture_manager_from__gfx_context(
-                    p_PLATFORM_gfx_context), 
-                SDL_texture_string__tilesheet_ground);
-
-    if (!p_PLATFORM_texture_of__tilesheet_ground) {
-        GL_release_shader_from__shader_manager(
-                GL_get_p_shader_manager_from__PLATFORM_gfx_context(
-                    p_PLATFORM_gfx_context), 
-                p_GL_shader_for__chunk_texture_manager);
-        GL_release_framebuffer_from__framebuffer_manager(
-                p_PLATFORM_gfx_context, 
-                GL_get_p_framebuffer_manager_from__PLATFORM_gfx_context(
-                    p_PLATFORM_gfx_context), 
-                p_GL_framebuffer);
-        debug_abort("SDL::GL::GL_initialize_chunk_texture_manager, failed to acquire p_PLATFORM_texture_of__tilesheet_ground");
-        return;
-    }
-
-    p_GL_chunk_texture_manager->p_PLATFORM_texture_of__tilesheet_cover =
-        p_PLATFORM_texture_of__tilesheet_cover;
-    p_GL_chunk_texture_manager->p_PLATFORM_texture_of__tilesheet_ground =
-        p_PLATFORM_texture_of__tilesheet_ground;
     
     p_GL_chunk_texture_manager
         ->p_GL_framebuffer__chunk_rendering =

@@ -117,18 +117,6 @@ Item_Manager *get_p_item_manager_from__game(Game *p_game) {
             get_p_world_from__game(p_game));
 }
 
-static inline
-Item_Recipe_Manager *get_p_item_recipe_manager_from__game(Game *p_game) {
-    return get_p_item_recipe_manager_from__world(
-            get_p_world_from__game(p_game));
-}
-
-static inline
-Station_Manager *get_p_station_manager_from__game(Game *p_game) {
-    return get_p_station_manager_from__world(
-            get_p_world_from__game(p_game));
-}
-
 static inline 
 Scene_Manager *get_p_scene_manager_from__game(Game *p_game) {
     return &p_game->scene_manager;

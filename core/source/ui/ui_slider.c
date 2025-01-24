@@ -204,10 +204,5 @@ bool f_sprite_gfx_allocator__ui_slider(
             p_PLATFORM_texture_for__items, 
             TEXTURE_FLAG__SIZE_16x16);
 
-    p_sprite_wrapper->frame__current = 
-        (UI_Sprite_Kind__16x16__Slider__Horizontal == enum_value)
-        ? 1
-        : 2
-        ;
     return p_sprite_wrapper->p_sprite;
 }
