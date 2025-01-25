@@ -7,6 +7,8 @@
 #include "process/process_manager.h"
 #include "rendering/aliased_texture_manager.h"
 #include "rendering/sprite_gfx_allocator_manager.h"
+#include "scene/implemented/scene__test.h"
+#include "scene/scene.h"
 #include "scene/scene_manager.h"
 #include "sort/sort_list/sort_list_manager.h"
 #include "world/path_finding/path_list_manager.h"
@@ -32,6 +34,7 @@ void initialize_game(
         Game *p_game,
         m_Game_Action_Handler m_game_action_handler) {
     initialize_scene_manager(&p_game->scene_manager);
+    register_scene__test(&p_game->scene_manager);
     initialize_process_manager(
             get_p_process_manager_from__game(p_game));
     initialize_sort_list_manager(
@@ -117,9 +120,18 @@ bool print_log__system(Game *p_game, char *cstr) {
 
 int run_game(Game *p_game) {
     if (!p_game->scene_manager.p_active_scene) {
-        debug_abort("Active scene not established.");
-        debug_warning("PLATFORM_establish_scenes, did you forget to implement?");
-        return -1;
+        Scene *p_scene =
+            get_p_scene_from__scene_manager(
+                    &p_game->scene_manager, Scene_Kind__None);
+        if (!is_scene__valid(p_scene)) {
+            debug_warning("Did you forget to assign a Scene_Kind to Scene_Kind__None?");
+            debug_abort("Active scene not established.");
+            return -1;
+        }
+
+        set_p_active_scene_for__scene_manager(
+                &p_game->scene_manager, 
+                Scene_Kind__None);
     }
     Scene_Manager *p_scene_manager =
         &p_game->scene_manager;

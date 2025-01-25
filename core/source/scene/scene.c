@@ -5,12 +5,12 @@
 #include <scene/scene.h>
 #include <game.h>
 
-void m_enter_scene_handler__default(
-        Scene *p_this_scene,
-        Game *p_game) {
-    while (p_game->scene_manager.p_active_scene
-            == p_this_scene) {
-        manage_game__pre_render(p_game);
-        manage_game__post_render(p_game);
-    }
+void initialize_scene(Scene* scene) {
+    scene->m_enter_scene_handler = 0;
+    scene->m_load_scene_handler = 0;
+    scene->m_unload_scene_handler = 0;
+    scene->p_parent_scene = 0;
+    scene->scene__identifier_u16 = IDENTIFIER__UNKNOWN__u16;
+    scene->p_scene_data = 0;
+    scene->is_active = false;
 }

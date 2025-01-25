@@ -185,6 +185,12 @@ typedef struct Texture_Allocation_Specification_t
 /// SECTION_scene
 ///
 
+typedef enum Scene_Kind {
+    Scene_Kind__None,
+    Scene_Kind__Test = Scene_Kind__None,
+    Scene_Kind__Unknown
+} Scene_Kind;
+
 typedef struct Scene_t Scene;
 typedef struct Scene_Manager_t Scene_Manager;
 
