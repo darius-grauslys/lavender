@@ -484,10 +484,6 @@ skip:
             resolve_chunk(
                     p_game,
                     *p_chunk_map_node_ptr);
-            PLATFORM_update_chunk(
-                    get_p_PLATFORM_gfx_context_from__game(p_game),
-                    p_chunk_manager,
-                    *p_chunk_map_node_ptr);
             dequeue_chunk_map_node_for__serialization(
                     p_chunk_manager, 
                     *p_chunk_map_node_ptr);
@@ -1062,10 +1058,6 @@ void update_chunk_at__tile_vector__3i32(
         return;
     }
     
-    PLATFORM_update_chunk(
-            get_p_PLATFORM_gfx_context_from__game(p_game), 
-            get_p_chunk_manager_from__game(p_game), 
-            p_chunk_map_node);
     set_chunk_as__updated(
             p_chunk_map_node
             ->p_chunk__here);

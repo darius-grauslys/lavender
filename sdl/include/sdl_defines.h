@@ -120,12 +120,10 @@ typedef void (*f_SDL_Release_Gfx_Window)(
 
 typedef void (*f_SDL_Compose_Gfx_Window)(
         Gfx_Context *p_gfx_context,
-        Graphics_Window *p_gfx_window,
-        World *p_world);
+        Graphics_Window *p_gfx_window);
 typedef void (*f_SDL_Render_Gfx_Window)(
         Gfx_Context *p_gfx_context,
-        Graphics_Window *p_gfx_window,
-        World *p_world);
+        Graphics_Window *p_gfx_window);
 
 typedef PLATFORM_Texture *(*f_SDL_Allocate_Texture)(
         PLATFORM_Gfx_Context *p_PLATFORM_gfx_context,
@@ -169,21 +167,13 @@ typedef void (*f_SDL_Render_Entity)(
         Entity *p_entity);
 
 
-
-
-typedef void (*f_SDL_Render_Chunk)(
-        Gfx_Context *p_PLATFORM_gfx_context,
-        Graphics_Window *p_PLATFORM_gfx_window,
-        Chunk_Manager__Chunk_Map_Node *p_chunk_map_node);
-
-typedef void (*f_SDL_Update_Chunk)(
-        PLATFORM_Gfx_Context *p_PLATFORM_gfx_context,
-        Chunk_Manager *p_chunk_manager,
-        Chunk_Manager__Chunk_Map_Node *p_chunk_map_node);
-
-typedef void (*f_SDL_Update_Chunks)(
-        PLATFORM_Gfx_Context *p_PLATFORM_gfx_context,
-        Chunk_Manager *p_chunk_manager);
+typedef void (*f_SDL_Compose_World)(
+        Gfx_Context *p_gfx_context,
+        Graphics_Window **p_ptr_array_of__gfx_windows,
+        World *p_world,
+        PLATFORM_Texture **p_ptr_array_of__PLATFORM_textures,
+        Quantity__u32 quantity_of__gfx_windows,
+        f_Tile_Render_Kernel f_tile_render_kernel);
 
 
 
@@ -264,9 +254,7 @@ typedef struct SDL_Gfx_Sub_Context__Wrapper_t {
     f_SDL_Render_Sprite                 f_SDL_render_sprite;
     f_SDL_Release_Sprite                f_SDL_release_sprite;
 
-    f_SDL_Render_Chunk                  f_SDL_render_chunk;
-    f_SDL_Update_Chunk                  f_SDL_update_chunk;
-    f_SDL_Update_Chunks                 f_SDL_update_chunks;
+    f_SDL_Compose_World                 f_SDL_compose_world;
 
 } SDL_Gfx_Sub_Context__Wrapper;
 

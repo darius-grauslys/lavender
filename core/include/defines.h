@@ -1869,25 +1869,6 @@ typedef struct Tile_t Tile;
 
 typedef uint8_t Tile_Flags__u8;
 
-///
-/// Examines area local, possibly changing the tile to be rendered.
-///
-typedef Index__u16 (*f_Tile_Render_Kernel)(
-        Chunk_Manager__Chunk_Map_Node *p_chunk_map_node,
-        u8 x__local,
-        u8 y__local,
-        u8 z__local);
-
-///
-/// Examines area local, possibly changing the tile to be rendered.
-///
-typedef void (*f_Voxel_Render_Kernel)(
-        Chunk_Manager__Chunk_Map_Node *p_chunk_map_node,
-        u8 x__local,
-        u8 y__local,
-        u8 z__local,
-        Index__u16 texture_indices[6]);
-
 typedef void (*f_Tile_Handler__Touch)(
         Game *p_game,
         Tile *p_tile,
@@ -1938,6 +1919,13 @@ typedef struct Tile_t {
 
 typedef uint16_t Tile_Render_Index__u16;
 typedef uint16_t Tile_Wall_Adjacency_Code__u16;
+
+typedef struct Tile_Render_Kernel_Result_t {
+    Index__u16 index_of__texture;
+    bool is_flipped__x    :1;
+    bool is_flipped__y    :1;
+    u8                    :6;
+} Tile_Render_Kernel_Result;
 
 typedef struct Tile_Render_Result_t {
     Tile_Render_Index__u16 tile_index__ground;
@@ -2075,12 +2063,12 @@ typedef uint8_t Graphics_Window_Flags__u8;
 #define GRAPHICS_WINDOW__FLAGS__NONE 0
 
 typedef struct Graphics_Window_t {
-    Camera camera;
     UI_Tile_Map__Wrapper ui_tile_map__wrapper;
     Vector__3i32 origin_of__gfx_window;
     Vector__3i32 position_of__gfx_window;
     Vector__3i32 position_of__gfx_window__minimum;
     Vector__3i32 position_of__gfx_window__maximum;
+    Camera *p_camera;
     UI_Manager *p_ui_manager;
     PLATFORM_Graphics_Window *p_PLATFORM_gfx_window;
     struct Graphics_Window_t *p_child__graphics_window;

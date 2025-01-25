@@ -81,16 +81,16 @@ Graphics_Window *allocate_graphics_window_with__graphics_window_manager(
         ->p_PLATFORM_gfx_window = 
         p_PLATFORM_gfx_window;
 
-    initialize_camera(
-            &p_graphics_window__available->camera,
-            get_vector__3i32F4_using__i32(
-                0, 0, 0),
-            0, //nullptr handler
-            CAMERA_FULCRUM__WIDTH,
-            CAMERA_FULCRUM__HEIGHT,
-            -BIT(18),
-            i32_to__i32F20(100)
-            );
+    // initialize_camera(
+    //         p_graphics_window__available->p_camera,
+    //         get_vector__3i32F4_using__i32(
+    //             0, 0, 0),
+    //         0, //nullptr handler
+    //         CAMERA_FULCRUM__WIDTH,
+    //         CAMERA_FULCRUM__HEIGHT,
+    //         -BIT(18),
+    //         i32_to__i32F20(100)
+    //         );
 
     return p_graphics_window__available;
 }
@@ -223,9 +223,7 @@ Quantity__u8 get_graphics_windows_from__graphics_window_manager(
 void render_graphics_window(
         Game *p_game,
         Gfx_Context *p_gfx_context,
-        Graphics_Window *p_gfx_window,
-        Graphics_Window *p_gfx_window__parent,
-        World *p_world) {
+        Graphics_Window *p_gfx_window) {
     if (p_gfx_window->p_ui_manager) {
         render_all_ui_elements_in__ui_manager(
                 p_gfx_window->p_ui_manager, 
@@ -235,9 +233,7 @@ void render_graphics_window(
 
     PLATFORM_render_gfx_window(
             p_gfx_context, 
-            p_gfx_window, 
-            p_gfx_window__parent,
-            p_world);
+            p_gfx_window);
 }
 
 void render_graphic_windows_in__graphics_window_manager(
@@ -286,17 +282,13 @@ void render_graphic_windows_in__graphics_window_manager(
             render_graphics_window(
                     p_game,
                     p_gfx_context, 
-                    p_gfx_window->p_child__graphics_window, 
-                    p_gfx_window, 
-                    p_world);
+                    p_gfx_window);
         }
 
         render_graphics_window(
                 p_game,
                 p_gfx_context, 
-                p_gfx_window, 
-                0, 
-                p_world);
+                p_gfx_window);
     }
 }
 
@@ -349,8 +341,7 @@ void compose_graphic_windows_in__graphics_window_manager(
 
         PLATFORM_compose_gfx_window(
                 p_gfx_context, 
-                p_gfx_window, 
-                p_world);
+                p_gfx_window);
 #warning compose ui_elements after
 
         if (is_graphics_window_possessing__a_child(
@@ -363,8 +354,7 @@ void compose_graphic_windows_in__graphics_window_manager(
                     true);
             PLATFORM_compose_gfx_window(
                     p_gfx_context, 
-                    p_gfx_window->p_child__graphics_window, 
-                    p_world);
+                    p_gfx_window->p_child__graphics_window);
         }
     }
 }

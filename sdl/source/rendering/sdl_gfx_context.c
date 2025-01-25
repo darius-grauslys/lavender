@@ -7,8 +7,8 @@
 #include "rendering/opengl/gl_sprite.h"
 #include "rendering/opengl/gl_sprite_manager.h"
 #include "rendering/opengl/gl_texture.h"
-#include "rendering/opengl/gl_chunk.h"
 #include "rendering/opengl/gl_gfx_window.h"
+#include "rendering/opengl/gl_render_world.h"
 #include "rendering/sdl_gfx_window.h"
 #include "rendering/sdl_sprite_manager.h"
 #include "rendering/sdl_texture_manager.h"
@@ -142,14 +142,8 @@ bool _SDL_link_opengl_3_0(
         GL_release_sprite;
 
     p_SDL_gfx_sub_context__wrapper
-        ->f_SDL_render_chunk =
-        GL_render_chunk;
-    p_SDL_gfx_sub_context__wrapper
-        ->f_SDL_update_chunk =
-        GL_update_chunk;
-    p_SDL_gfx_sub_context__wrapper
-        ->f_SDL_update_chunks =
-        GL_update_chunks;
+        ->f_SDL_compose_world =
+        GL_compose_world;
 
     GL_initialize_gfx_sub_context(
             p_PLATFORM_gfx_context,

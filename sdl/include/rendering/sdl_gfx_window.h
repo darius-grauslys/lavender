@@ -14,13 +14,11 @@ void SDL_initialize_gfx_window(
 
 void SDL_compose_gfx_window(
         Gfx_Context *p_gfx_context,
-        Graphics_Window *p_gfx_window,
-        World *p_world);
+        Graphics_Window *p_gfx_window);
 
 void SDL_render_gfx_window(
         Gfx_Context *p_gfx_context,
-        Graphics_Window *p_gfx_window,
-        World *p_world);
+        Graphics_Window *p_gfx_window);
 
 static inline
 void SDL_initialize_gfx_window_as__deallocated(

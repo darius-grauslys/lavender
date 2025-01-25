@@ -295,24 +295,18 @@ typedef struct Chunk_t Chunk;
 typedef struct Chunk_Manager__Chunk_Map_Node_t Chunk_Manager__Chunk_Map_Node;
 typedef struct Tile_t Tile;
 
-///
-/// Examines area local, possibly changing the tile to be rendered.
-///
-typedef Index__u16 (*f_Tile_Render_Kernel)(
-        Chunk_Manager__Chunk_Map_Node *p_chunk_map_node,
-        u8 x__local,
-        u8 y__local,
-        u8 z__local);
+typedef struct Tile_Render_Kernel_Result_t Tile_Render_Kernel_Result;
 
 ///
 /// Examines area local, possibly changing the tile to be rendered.
 ///
-typedef void (*f_Voxel_Render_Kernel)(
+typedef void (*f_Tile_Render_Kernel)(
         Chunk_Manager__Chunk_Map_Node *p_chunk_map_node,
+        Tile_Render_Kernel_Result *p_tile_kernel_render_results,
+        Quantity__u32 quantity_of__tile_kernel_render_results,
         u8 x__local,
         u8 y__local,
-        u8 z__local,
-        Index__u16 texture_indices[6]);
+        u8 z__local);
 
 ///
 /// SECTION_core

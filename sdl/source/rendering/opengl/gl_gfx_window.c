@@ -16,7 +16,6 @@
 #include "rendering/opengl/gl_shader_passthrough.h"
 #include "rendering/opengl/gl_viewport.h"
 #include "rendering/opengl/glad/glad.h"
-#include "rendering/sdl_chunk.h"
 #include "rendering/sdl_gfx_context.h"
 #include "rendering/sdl_gfx_window.h"
 #include "rendering/sdl_render_world.h"
@@ -71,13 +70,7 @@ void GL_allocate_gfx_window(
 
 void GL_compose_gfx_window(
         Gfx_Context *p_gfx_context,
-        Graphics_Window *p_gfx_window,
-        World *p_world) {
-    if (p_gfx_window->camera.m_camera_handler) {
-        p_gfx_window->camera.m_camera_handler(
-                &p_gfx_window->camera,
-                p_world);
-    }
+        Graphics_Window *p_gfx_window) {
 
     GL_Framebuffer *p_GL_framebuffer =
         (GL_Framebuffer*)p_gfx_window
@@ -95,37 +88,6 @@ void GL_compose_gfx_window(
     GL_Viewport_Stack *p_GL_viewport_stack =
         GL_get_p_viewport_stack_from__PLATFORM_gfx_context(
                 p_PLATFORM_gfx_context);
-
-    if (is_graphics_window__rendering_world(
-                p_gfx_window)) {
-        GL_use_framebuffer_as__target(
-                p_GL_framebuffer);
-        GL_bind_texture_to__framebuffer(
-                p_GL_framebuffer, 
-                p_gfx_window
-                ->p_PLATFORM_gfx_window
-                ->p_SDL_graphics_window__texture);
-        glClear(GL_COLOR_BUFFER_BIT);
-        GL_push_viewport(
-                p_GL_viewport_stack, 
-                0, 0,
-                p_gfx_window
-                ->p_PLATFORM_gfx_window
-                ->p_SDL_graphics_window__texture
-                ->width,
-                p_gfx_window
-                ->p_PLATFORM_gfx_window
-                ->p_SDL_graphics_window__texture
-                ->height);
-        SDL_compose_world(
-                p_gfx_context, 
-                p_gfx_window, 
-                p_world);
-        GL_pop_viewport(p_GL_viewport_stack);
-        GL_unbind_framebuffer();
-
-        return;
-    }
 
     GL_Shader_2D *p_GL_shader__passthrough=
         GL_get_shader_from__shader_manager(
@@ -240,8 +202,7 @@ void GL_compose_gfx_window(
 
 void GL_render_gfx_window(
         Gfx_Context *p_gfx_context,
-        Graphics_Window *p_gfx_window,
-        World *p_world) {
+        Graphics_Window *p_gfx_window) {
     PLATFORM_Gfx_Context *p_PLATFORM_gfx_context =
         get_p_PLATFORM_gfx_context_from__gfx_context(p_gfx_context);
 

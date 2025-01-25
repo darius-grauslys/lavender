@@ -88,9 +88,6 @@ void manage_world(
                 &p_game->world.collision_manager,
                 p_game->world.chunk_manager.x__center_chunk__signed_index_i32,
                 p_game->world.chunk_manager.y__center_chunk__signed_index_i32);
-        PLATFORM_update_chunks(
-                get_p_PLATFORM_gfx_context_from__game(p_game),
-                get_p_chunk_manager_from__game(p_game));
     }
 }
 
@@ -159,7 +156,7 @@ bool poll_world_for__scrolling(
         poll_chunk_manager_for__chunk_movement(
                 p_game,
                 &p_world->chunk_manager,
-                p_gfx_window->camera.position);
+                p_gfx_window->p_camera->position);
 
     return is_chunks_moved;
 }

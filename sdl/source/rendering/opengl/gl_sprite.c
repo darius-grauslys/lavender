@@ -112,8 +112,8 @@ void GL_render_sprite(
         p_GL_sprite->p_GL_shader;
 
     Camera *p_SDL_camera__active =
-        &p_gfx_window
-        ->camera;
+        p_gfx_window
+        ->p_camera;
 
     position__3i32F4.z__i32F4 = 
         i32_to__i32F4(2);

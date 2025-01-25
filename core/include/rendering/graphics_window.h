@@ -67,7 +67,14 @@ void set_graphics_window_as__no_longer_needing__composition(
 static inline
 Camera *get_p_camera_from__graphics_window(
         Graphics_Window *p_graphics_window) {
-    return &p_graphics_window->camera;
+    return p_graphics_window->p_camera;
+}
+
+static inline
+void set_p_camera_from__graphics_window(
+        Graphics_Window *p_graphics_window,
+        Camera *p_camera) {
+    p_graphics_window->p_camera = p_camera;
 }
 
 static inline

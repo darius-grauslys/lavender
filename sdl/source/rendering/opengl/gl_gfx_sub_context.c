@@ -2,7 +2,6 @@
 #include "defines_weak.h"
 #include "game.h"
 #include <world/camera.h>
-#include "rendering/opengl/gl_chunk_texture_manager.h"
 #include "rendering/opengl/gl_defines.h"
 #include "rendering/opengl/gl_framebuffer_manager.h"
 #include "rendering/opengl/gl_numerics.h"
@@ -133,12 +132,4 @@ void GL_initialize_rendering__worldspace(
     GL_Gfx_Sub_Context *p_GL_gfx_sub_context =
         GL_get_p_gfx_sub_context_from__PLATFORM_gfx_context(
                 p_PLATFORM_gfx_context);
-
-    GL_Chunk_Texture_Manager *p_GL_chunk_texture_manager =
-        GL_get_p_chunk_texture_manager_from__gfx_sub_context(
-                p_GL_gfx_sub_context);
-
-    GL_initialize_chunk_texture_manager(
-            p_PLATFORM_gfx_context, 
-            p_GL_chunk_texture_manager);
 }
