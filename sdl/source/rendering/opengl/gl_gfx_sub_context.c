@@ -107,7 +107,9 @@ void f_SDL_event_handler__GL_resize(
         GL_get_p_viewport_stack_from__PLATFORM_gfx_context(
                 p_PLATFORM_gfx_context);
 
-    debug_info("RESIZE: %d, %d",
+    debug_info("RESIZE: %d, %d, %d, %d",
+            (width - width__fixed) / 2,
+            (height - height__fixed) / 2,
             width__fixed,
             height__fixed);
 

@@ -1,5 +1,6 @@
         
         1) Remove Tile_Render_Result, and use f_Tile_Render_Kernel.
+            (in progress, not rendering right yet, needs correct shader usage.)
         2) Add enum utils:
             ENUM_MAP(name, type__enum, type__result)    <- good for "Archetypes"
             HASH_MAP(name, type__result)                <- ECS, uses Serialization_Header uuid.

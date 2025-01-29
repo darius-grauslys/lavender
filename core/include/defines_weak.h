@@ -274,7 +274,9 @@ typedef struct World_t World;
 
 // TODO: change this to reflect new tileset
 typedef enum Tile_Kind {
-    Tile_Kind__None,
+    Tile_Kind__None = 0,
+    Tile_Kind__One = 1,
+    Tile_Kind__Two,
     Tile_Kind__Unknown
 } Tile_Kind;
 

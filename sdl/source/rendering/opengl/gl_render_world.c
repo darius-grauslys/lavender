@@ -28,7 +28,7 @@ void GL_compose_chunk(
         GL_get_shader_from__shader_manager(
                 GL_get_p_shader_manager_from__PLATFORM_gfx_context(
                     p_PLATFORM_gfx_context),
-                shader_string__sprite);
+                shader_string__chunk);
 
     if (!p_GL_shader__chunk) {
         debug_warning("Did you forget to attach a chunk shader?");
@@ -40,43 +40,39 @@ void GL_compose_chunk(
         GL_get_p_viewport_stack_from__PLATFORM_gfx_context(
                 p_PLATFORM_gfx_context);
 
-    float clear_color[4];
-    glGetFloatv(GL_COLOR_CLEAR_VALUE, clear_color);
+    // float clear_color[4];
+    // glGetFloatv(GL_COLOR_CLEAR_VALUE, clear_color);
 
-    glClearColor(0.0, 0.0, 0.0, 0.0);
-    for (Index__u32 index_of__gfx_window = 0;
-            index_of__gfx_window
-            < quantity_of__gfx_windows;
-            index_of__gfx_window++) {
-        Graphics_Window *p_gfx_window =
-            p_ptr_array_of__gfx_windows[
-                index_of__gfx_window];
-        GL_Framebuffer *p_GL_framebuffer =
-            (GL_Framebuffer*)p_gfx_window
-            ->p_PLATFORM_gfx_window
-            ->p_SDL_graphics_window__data;
-        GL_use_framebuffer_as__target(
-                p_GL_framebuffer);
-        GL_bind_texture_to__framebuffer(
-                p_GL_framebuffer, 
-                p_gfx_window
-                ->p_PLATFORM_gfx_window
-                ->p_SDL_graphics_window__texture);
-        glClear(GL_COLOR_BUFFER_BIT);
-    }
-    glClearColor(
-            clear_color[0],
-            clear_color[1],
-            clear_color[2],
-            clear_color[3]);
+    // glClearColor(0.0, 0.0, 0.0, 0.0);
+    // for (Index__u32 index_of__gfx_window = 0;
+    //         index_of__gfx_window
+    //         < quantity_of__gfx_windows;
+    //         index_of__gfx_window++) {
+    //     Graphics_Window *p_gfx_window =
+    //         p_ptr_array_of__gfx_windows[
+    //             index_of__gfx_window];
+    //     GL_Framebuffer *p_GL_framebuffer =
+    //         (GL_Framebuffer*)p_gfx_window
+    //         ->p_PLATFORM_gfx_window
+    //         ->p_SDL_graphics_window__data;
+    //     GL_use_framebuffer_as__target(
+    //             p_GL_framebuffer);
+    //     GL_bind_texture_to__framebuffer(
+    //             p_GL_framebuffer, 
+    //             p_gfx_window
+    //             ->p_PLATFORM_gfx_window
+    //             ->p_SDL_graphics_window__texture);
+    //     glClear(GL_COLOR_BUFFER_BIT);
+    // }
+    // glClearColor(
+    //         clear_color[0],
+    //         clear_color[1],
+    //         clear_color[2],
+    //         clear_color[3]);
 
     Chunk *p_chunk = 
         p_chunk_map_node
         ->p_chunk__here;
-
-    // TODO: magic numbers
-    float width_of__uv  = 1.0 / (256.0 / 8);
-    float height_of__uv = 1.0 / (256.0 / 8);
 
     Tile_Render_Kernel_Result tile_render_kernel_results[
         quantity_of__gfx_windows];
@@ -96,9 +92,9 @@ void GL_compose_chunk(
         vector_3i32_to__vector_3i32F4(
                 p_chunk_map_node->position_of__chunk_3i32);
 
-    chunk_pos_in__world__3i32f4.x__i32F4 *= 64;
-    chunk_pos_in__world__3i32f4.y__i32F4 *= 64;
-    chunk_pos_in__world__3i32f4.x__i32F4 += i32_to__i32F4(32);
+    chunk_pos_in__world__3i32f4.x__i32F4 *= 1<<6;
+    chunk_pos_in__world__3i32f4.y__i32F4 *= 1<<6;
+    // chunk_pos_in__world__3i32f4.x__i32F4 += i32_to__i32F4(32);
     chunk_pos_in__world__3i32f4.y__i32F4 += i32_to__i32F4(28);
     chunk_pos_in__world__3i32f4.z__i32F4 = 
         i32_to__i32F4(10);
@@ -109,12 +105,6 @@ void GL_compose_chunk(
         for (Index__u8 index_of__x_tile = 0;
                 index_of__x_tile < CHUNK_WIDTH__IN_TILES;
                 index_of__x_tile++) {
-            GL_push_viewport(
-                    p_GL_viewport_stack, 
-                    index_of__x_tile * TILE_WIDTH__IN_PIXELS, 
-                    index_of__y_tile * TILE_WIDTH__IN_PIXELS, 
-                    TILE_WIDTH__IN_PIXELS, 
-                    TILE_WIDTH__IN_PIXELS);
 
             f_tile_render_kernel(
                     p_chunk_map_node,
@@ -128,9 +118,42 @@ void GL_compose_chunk(
                     index_of__gfx_window
                     < quantity_of__gfx_windows;
                     index_of__gfx_window++) {
+                Tile_Render_Kernel_Result *p_tile_render_kernel_result =
+                    &tile_render_kernel_results[index_of__gfx_window];
+                
+                if (!p_tile_render_kernel_result->index_of__texture) {
+                    continue;
+                }
+                p_tile_render_kernel_result->index_of__texture--;
+
                 Graphics_Window *p_gfx_window =
                     p_ptr_array_of__gfx_windows[
                         index_of__gfx_window];
+
+                GL_Framebuffer *p_GL_framebuffer =
+                    (GL_Framebuffer*)p_gfx_window
+                    ->p_PLATFORM_gfx_window
+                    ->p_SDL_graphics_window__data;
+                GL_use_framebuffer_as__target(
+                        p_GL_framebuffer);
+                GL_bind_texture_to__framebuffer(
+                        p_GL_framebuffer, 
+                        p_gfx_window
+                        ->p_PLATFORM_gfx_window
+                        ->p_SDL_graphics_window__texture);
+
+                GL_push_viewport(
+                        p_GL_viewport_stack, 
+                        0, 
+                        0, 
+                        p_gfx_window
+                        ->p_PLATFORM_gfx_window
+                        ->p_SDL_graphics_window__texture
+                        ->width, 
+                        p_gfx_window
+                        ->p_PLATFORM_gfx_window
+                        ->p_SDL_graphics_window__texture
+                        ->height);
 
                 Camera *p_camera =
                     p_gfx_window
@@ -149,30 +172,42 @@ void GL_compose_chunk(
                         p_GL_shader__chunk,
                         p_camera,
                         tile_pos_in__world__3i32F4,
-                        i32_to__i32F4(4));
+                        0b1000);
                 
                 PLATFORM_use_texture(
                         p_PLATFORM_gfx_context, 
                         p_ptr_array_of__PLATFORM_textures[
                             index_of__gfx_window]);
+
+                float index_x, index_y;
+                float width, height;
+                float flip_x, flip_y;
+
+                index_x =
+                    tile_render_kernel_results[index_of__gfx_window]
+                        .index_of__texture % TILE_SHEET_WIDTH__IN_TILES;
+                index_y =
+                    (int)(TILE_SHEET_WIDTH__IN_TILES-1)
+                        - (int)(tile_render_kernel_results[
+                                index_of__gfx_window]
+                            .index_of__texture 
+                            / (int)TILE_SHEET_WIDTH__IN_TILES);
+
                 glUniform2f(
                         p_GL_shader__chunk
                             ->location_of__general_uniform_0,
-                        tile_render_kernel_results[index_of__gfx_window]
-                            .index_of__texture % TILE_SHEET_WIDTH__IN_TILES, 
-                        (int)TILE_SHEET_WIDTH__IN_TILES
-                            - (int)(tile_render_kernel_results[
-                                    index_of__gfx_window]
-                                .index_of__texture 
-                                / (int)TILE_SHEET_WIDTH__IN_TILES)
+                        index_x,
+                        index_y
                         );
+                width =
+                    1.0f / (int)TILE_SHEET_WIDTH__IN_TILES;
+                height =
+                    1.0f / (int)TILE_SHEET_WIDTH__IN_TILES;
                 glUniform2f(
                         p_GL_shader__chunk
                             ->location_of__general_uniform_1,
-                        TILE_WIDTH__IN_PIXELS
-                            * (int)TILE_SHEET_WIDTH__IN_TILES, 
-                        TILE_WIDTH__IN_PIXELS
-                            * (int)TILE_SHEET_WIDTH__IN_TILES);
+                        width,
+                        height);
                 glUniform2f(
                         p_GL_shader__chunk
                             ->location_of__general_uniform_2,
@@ -184,11 +219,15 @@ void GL_compose_chunk(
                         0.0);
 
                 glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-            }
 
-            GL_pop_viewport(
-                    p_GL_viewport_stack);
+                GL_pop_viewport(
+                        p_GL_viewport_stack);
+
+                GL_unbind_framebuffer();
+            }
+            // break;
         }
+        // break;
     }
 }
 
@@ -227,8 +266,10 @@ void GL_compose_world(
 
             p_current_sub__chunk_map_node =
                 p_current_sub__chunk_map_node->p_east__chunk_map_node;
+            // break;
         }
         p_current__chunk_map_node =
             p_current__chunk_map_node->p_south__chunk_map_node;
+        // break;
     }
 }

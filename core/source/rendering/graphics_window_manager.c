@@ -80,17 +80,10 @@ Graphics_Window *allocate_graphics_window_with__graphics_window_manager(
     p_graphics_window__available
         ->p_PLATFORM_gfx_window = 
         p_PLATFORM_gfx_window;
-
-    // initialize_camera(
-    //         p_graphics_window__available->p_camera,
-    //         get_vector__3i32F4_using__i32(
-    //             0, 0, 0),
-    //         0, //nullptr handler
-    //         CAMERA_FULCRUM__WIDTH,
-    //         CAMERA_FULCRUM__HEIGHT,
-    //         -BIT(18),
-    //         i32_to__i32F20(100)
-    //         );
+    
+    p_graphics_window__available
+        ->graphics_window__flags =
+        texture_flags_for__gfx_window;
 
     return p_graphics_window__available;
 }
@@ -243,8 +236,6 @@ void render_graphic_windows_in__graphics_window_manager(
     Graphics_Window_Manager *p_graphics_window__manager = 
         get_p_graphics_window_manager_from__gfx_context(
                 p_gfx_context);
-    World *p_world = 
-        get_p_world_from__game(p_game);
 
     BITMAP(bitmap__gfx_windows__visited, MAX_QUANTITY_OF__GRAPHICS_WINDOWS);
     memset(
@@ -299,8 +290,6 @@ void compose_graphic_windows_in__graphics_window_manager(
     Graphics_Window_Manager *p_graphics_window__manager = 
         get_p_graphics_window_manager_from__gfx_context(
                 p_gfx_context);
-    World *p_world = 
-        get_p_world_from__game(p_game);
 
     BITMAP(bitmap__gfx_windows__visited, MAX_QUANTITY_OF__GRAPHICS_WINDOWS);
     memset(
