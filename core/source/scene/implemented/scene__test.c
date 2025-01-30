@@ -161,7 +161,7 @@ void m_enter_scene__test(
                 0, 0, 0),
             0, //nullptr handler
             CAMERA_FULCRUM__WIDTH,
-            CAMERA_FULCRUM__HEIGHT,
+            CAMERA_FULCRUM__WIDTH,
             -BIT(18),
             i32_to__i32F20(100)
             );

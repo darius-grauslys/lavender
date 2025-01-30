@@ -40,36 +40,6 @@ void GL_compose_chunk(
         GL_get_p_viewport_stack_from__PLATFORM_gfx_context(
                 p_PLATFORM_gfx_context);
 
-    // float clear_color[4];
-    // glGetFloatv(GL_COLOR_CLEAR_VALUE, clear_color);
-
-    // glClearColor(0.0, 0.0, 0.0, 0.0);
-    // for (Index__u32 index_of__gfx_window = 0;
-    //         index_of__gfx_window
-    //         < quantity_of__gfx_windows;
-    //         index_of__gfx_window++) {
-    //     Graphics_Window *p_gfx_window =
-    //         p_ptr_array_of__gfx_windows[
-    //             index_of__gfx_window];
-    //     GL_Framebuffer *p_GL_framebuffer =
-    //         (GL_Framebuffer*)p_gfx_window
-    //         ->p_PLATFORM_gfx_window
-    //         ->p_SDL_graphics_window__data;
-    //     GL_use_framebuffer_as__target(
-    //             p_GL_framebuffer);
-    //     GL_bind_texture_to__framebuffer(
-    //             p_GL_framebuffer, 
-    //             p_gfx_window
-    //             ->p_PLATFORM_gfx_window
-    //             ->p_SDL_graphics_window__texture);
-    //     glClear(GL_COLOR_BUFFER_BIT);
-    // }
-    // glClearColor(
-    //         clear_color[0],
-    //         clear_color[1],
-    //         clear_color[2],
-    //         clear_color[3]);
-
     Chunk *p_chunk = 
         p_chunk_map_node
         ->p_chunk__here;
@@ -95,7 +65,7 @@ void GL_compose_chunk(
     chunk_pos_in__world__3i32f4.x__i32F4 *= 1<<6;
     chunk_pos_in__world__3i32f4.y__i32F4 *= 1<<6;
     // chunk_pos_in__world__3i32f4.x__i32F4 += i32_to__i32F4(32);
-    chunk_pos_in__world__3i32f4.y__i32F4 += i32_to__i32F4(28);
+    // chunk_pos_in__world__3i32f4.y__i32F4 += i32_to__i32F4(28);
     chunk_pos_in__world__3i32f4.z__i32F4 = 
         i32_to__i32F4(10);
 
@@ -245,6 +215,36 @@ void GL_compose_world(
     Chunk_Manager__Chunk_Map_Node *p_current__chunk_map_node =
         p_chunk_manager->p_most_north_western__chunk_map_node;
     Chunk_Manager__Chunk_Map_Node *p_current_sub__chunk_map_node;
+
+    float clear_color[4];
+    glGetFloatv(GL_COLOR_CLEAR_VALUE, clear_color);
+
+    glClearColor(1.0f, 0.0f, 1.0f, 0.0f);
+    for (Index__u32 index_of__gfx_window = 0;
+            index_of__gfx_window
+            < quantity_of__gfx_windows;
+            index_of__gfx_window++) {
+        Graphics_Window *p_gfx_window =
+            p_ptr_array_of__gfx_windows[
+                index_of__gfx_window];
+        GL_Framebuffer *p_GL_framebuffer =
+            (GL_Framebuffer*)p_gfx_window
+            ->p_PLATFORM_gfx_window
+            ->p_SDL_graphics_window__data;
+        GL_use_framebuffer_as__target(
+                p_GL_framebuffer);
+        GL_bind_texture_to__framebuffer(
+                p_GL_framebuffer, 
+                p_gfx_window
+                ->p_PLATFORM_gfx_window
+                ->p_SDL_graphics_window__texture);
+        glClear(GL_COLOR_BUFFER_BIT);
+    }
+    glClearColor(
+            clear_color[0],
+            clear_color[1],
+            clear_color[2],
+            clear_color[3]);
 
     for (uint8_t y=0; 
             y 

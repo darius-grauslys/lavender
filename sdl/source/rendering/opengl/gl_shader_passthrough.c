@@ -29,9 +29,12 @@ out vec4 color;\n\
 void main()\n\
 {\n\
     color = texture(_sample, TexCoord);\n\
+    if (color.a == 0.0) {\n\
+        discard;\n\
+    }\n\
     color.a = 1.0;\n\
     if (color.r == 1.0 && color.g == 0.0 && color.b == 1.0) {\n\
-        color.a = 0.0;\n\
+        discard;\n\
     }\n\
 }";
 
