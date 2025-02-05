@@ -7,12 +7,24 @@
 void initialize_serialization_request(
         Serialization_Request *p_serialization_request,
         void *p_file_handler,
-        Serializer *p_serializer,
-        Quantity__u16 size_of__serialization,
         Serialization_Request_Flags serialization_request_flags);
 
 void initialize_serialization_request_as__uninitalized(
         Serialization_Request *p_serialization_request);
+
+static inline
+void set_serialization_request_as__allocated(
+        Serialization_Request *p_serialization_request) {
+    p_serialization_request->serialization_request_flags |=
+        SERIALZIATION_REQUEST_FLAG__IS_ALLOCATED;
+}
+
+static inline
+void set_serialization_request_as__deallocated(
+        Serialization_Request *p_serialization_request) {
+    p_serialization_request->serialization_request_flags &=
+        ~SERIALZIATION_REQUEST_FLAG__IS_ALLOCATED;
+}
 
 static inline
 void set_serialization_request_as__active(
@@ -26,20 +38,6 @@ void set_serialization_request_as__inactive(
         Serialization_Request *p_serialization_request) {
     p_serialization_request->serialization_request_flags &=
         ~SERIALZIATION_REQUEST_FLAG__IS_ACTIVE;
-}
-
-static inline
-void set_serialization_request_as__using_serializer(
-        Serialization_Request *p_serialization_request) {
-    p_serialization_request->serialization_request_flags |=
-        SERIALZIATION_REQUEST_FLAG__USE_SERIALIZER_OR_BUFFER;
-}
-
-static inline
-void set_serialization_request_as__using_buffer(
-        Serialization_Request *p_serialization_request) {
-    p_serialization_request->serialization_request_flags &=
-        ~SERIALZIATION_REQUEST_FLAG__USE_SERIALIZER_OR_BUFFER;
 }
 
 static inline
@@ -71,24 +69,17 @@ void set_serialization_request_as__fire_and_forget(
 }
 
 static inline
+bool is_serialization_request__allocated(
+        Serialization_Request *p_serialization_request) {
+    return p_serialization_request->serialization_request_flags
+        & SERIALZIATION_REQUEST_FLAG__IS_ALLOCATED;
+}
+
+static inline
 bool is_serialization_request__active(
         Serialization_Request *p_serialization_request) {
     return p_serialization_request->serialization_request_flags
         & SERIALZIATION_REQUEST_FLAG__IS_ACTIVE;
-}
-
-static inline
-bool is_serialization_request__using_serializer(
-        Serialization_Request *p_serialization_request) {
-    return p_serialization_request->serialization_request_flags
-        & SERIALZIATION_REQUEST_FLAG__USE_SERIALIZER_OR_BUFFER;
-}
-
-static inline
-bool is_serialization_request__using_buffer(
-        Serialization_Request *p_serialization_request) {
-    return !is_serialization_request__using_serializer(
-            p_serialization_request);
 }
 
 static inline

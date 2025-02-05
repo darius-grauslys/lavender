@@ -6,7 +6,6 @@
 #include "platform_defines.h"
 #include "rendering/graphics_window.h"
 #include "serialization/serialization_request.h"
-#include "serialization/serializer.h"
 #include "world/camera.h"
 #include "world/chunk_vectors.h"
 #include "world/serialization/world_directory.h"
@@ -23,26 +22,22 @@
 #include <debug/debug.h>
 #include <vectors.h>
 
-void m_serialize_handler__world(
-        Game *p_game,
-        Serialization_Request *p_serialization_request,
-        Serializer *p_this_serializer);
-void m_deserialize_handler__world(
-        Game *p_game,
-        Serialization_Request *p_serialization_request,
-        Serializer *p_this_serializer);
+void m_process__serialize_world(
+        Process *p_this_process,
+        Game *p_game);
+void m_process__deserialize_world(
+        Process *p_this_process,
+        Game *p_game);
 
 void initialize_world(
         Game *p_game,
         World *p_world,
         f_Chunk_Generator f_chunk_generator) {
 
-    intialize_serializer(
-            &p_world->_serializer, 
-            sizeof(World), 
-            0, 
-            m_serialize_handler__world, 
-            m_deserialize_handler__world);
+    initialize_serialization_header(
+            &p_world->_serialization_header, 
+            0,
+            sizeof(World));
 
     initialize_repeatable_psuedo_random(
             &p_world->repeatable_pseudo_random, 
@@ -229,12 +224,8 @@ void save_world(
     
     set_serialization_request_as__fire_and_forget(
             p_serialization_request);
-    set_serialization_request_as__using_serializer(
-            p_serialization_request);
     set_serialization_request_as__write(
             p_serialization_request);
-    p_serialization_request->p_serializer =
-        &p_world->_serializer;
 }
 
 void load_world(Game *p_game) {
@@ -291,12 +282,8 @@ void load_world(Game *p_game) {
     
     set_serialization_request_as__fire_and_forget(
             p_serialization_request);
-    set_serialization_request_as__using_serializer(
-            p_serialization_request);
     set_serialization_request_as__read(
             p_serialization_request);
-    p_serialization_request->p_serializer =
-        &p_world->_serializer;
 }
 
 Entity *get_p_entity_from__world_using__3i32F4(
@@ -315,11 +302,14 @@ Entity *get_p_entity_from__world_using__3i32F4(
     return 0;
 }
 
-void m_serialize_handler__world(
-        Game *p_game,
-        Serialization_Request *p_serialization_request,
-        Serializer *p_this_serializer) {
-    World *p_world = get_p_world_from__game(p_game);
+void m_process__serialize_world(
+        Process *p_this_process,
+        Game *p_game) {
+    Serialization_Request *p_serialization_request =
+        (Serialization_Request*)p_this_process->p_process_data;
+
+    World *p_world = 
+        (World*)p_serialization_request->p_data;
 
     Quantity__u32 length_of__read = WORLD_NAME_MAX_SIZE_OF;
     PLATFORM_write_file(
@@ -355,17 +345,21 @@ void m_serialize_handler__world(
     Entity *p_local_player =
         get_p_local_player_from__game(p_game);
 
-    p_local_player->_serializer.m_serialize_handler(
-            p_game,
-            p_serialization_request,
-            &p_local_player->_serializer);
+#warning serialize player as sub_process
+    // p_local_player->_serializer.m_serialize_handler(
+    //         p_game,
+    //         p_serialization_request,
+    //         &p_local_player->_serializer);
 }
 
-void m_deserialize_handler__world(
-        Game *p_game,
-        Serialization_Request *p_serialization_request,
-        Serializer *p_this_serializer) {
-    World *p_world = get_p_world_from__game(p_game);
+void m_process__deserialize_world(
+        Process *p_this_process,
+        Game *p_game) {
+    Serialization_Request *p_serialization_request =
+        (Serialization_Request*)p_this_process->p_process_data;
+
+    World *p_world = 
+        (World*)p_serialization_request->p_data;
 #warning [***] load_world, manage player
     Entity *p_player = 0;
     // Entity *p_player =
@@ -412,8 +406,9 @@ void m_deserialize_handler__world(
         return;
     }
 
-    p_player->_serializer.m_deserialize_handler(
-            p_game,
-            p_serialization_request,
-            &p_player->_serializer);
+#warning TODO: deserialize player as sub process
+    // p_player->_serializer.m_deserialize_handler(
+    //         p_game,
+    //         p_serialization_request,
+    //         &p_player->_serializer);
 }

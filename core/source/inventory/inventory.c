@@ -11,7 +11,6 @@
 #include "serialization/serialization_header.h"
 #include "serialization/serialized_field.h"
 #include "inventory/inventory.h"
-#include "serialization/serializer.h"
 
 void remove_all_unequiped_item_stacks_from__inventory(
         Inventory *p_inventory) {
@@ -33,12 +32,10 @@ void initialize_inventory(
         Inventory *p_inventory,
         Identifier__u32 identifier_for__inventory) {
     // TODO: replace the 0, 0 with serialize/deserialize handlers.
-    intialize_serializer(
-            &p_inventory->_serializer, 
-            sizeof(Inventory),
+    initialize_serialization_header(
+            &p_inventory->_serialization_header, 
             identifier_for__inventory, 
-            m_serialize__inventory,
-            m_deserialize__inventory);
+            sizeof(Inventory));
     remove_all_unequiped_item_stacks_from__inventory(
             p_inventory);
 }
@@ -52,13 +49,16 @@ void initialize_inventory_as__empty(
             p_inventory);
 }
 
-void m_serialize__inventory(
-        Game *p_game,
-        Serialization_Request *p_serialization_request,
-        Serializer *p_this_serializer) {
+void m_process__serialize_inventory(
+        Process *p_this_process,
+        Game *p_game) {
 
+    Serialization_Request *p_serialization_request =
+        (Serialization_Request*)p_this_process
+        ->p_process_data;
     Inventory *p_inventory =
-        (Inventory*)p_this_serializer;
+        (Inventory*)p_serialization_request
+        ->p_data;
 
     void *p_file_handler =
         p_serialization_request
@@ -93,10 +93,11 @@ void m_serialize__inventory(
 
         quantity_of__serialized_item_stacks++;
 
-        p_item_stack->_serializer.m_serialize_handler(
-                p_game,
-                p_serialization_request,
-                (Serializer*)p_item_stack);
+#warning TODO: serialize item_stack as a sub-process
+        // p_item_stack->_serializer.m_serialize_handler(
+        //         p_game,
+        //         p_serialization_request,
+        //         (Serializer*)p_item_stack);
     }
 
     Index__u32 position_at__end_of__file =
@@ -122,13 +123,16 @@ void m_serialize__inventory(
             p_file_handler);
 }
 
-void m_deserialize__inventory(
-        Game *p_game,
-        Serialization_Request *p_serialization_request,
-        Serializer *p_inventory__serializer) {
+void m_process__deserialize_inventory(
+        Process *p_this_process,
+        Game *p_game) {
 
+    Serialization_Request *p_serialization_request =
+        (Serialization_Request*)p_this_process
+        ->p_process_data;
     Inventory *p_inventory =
-        (Inventory*)p_inventory__serializer;
+        (Inventory*)p_serialization_request
+        ->p_data;
 
     void *p_file_handler =
         p_serialization_request
@@ -165,10 +169,11 @@ void m_deserialize__inventory(
             get_p_item_stack_from__inventory_by__index(
                     p_inventory, index_of__item_stack);
 
-        p_item_stack->_serializer.m_deserialize_handler(
-                p_game,
-                p_serialization_request,
-                (Serializer*)p_item_stack);
+#warning TODO: deserialize item_stack as a sub-process
+        // p_item_stack->_serializer.m_deserialize_handler(
+        //        p_game,
+        //        p_serialization_request,
+        //        (Serializer*)p_item_stack);
     }
 }
 

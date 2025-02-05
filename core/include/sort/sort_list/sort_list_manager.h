@@ -64,4 +64,13 @@ Sort_Node *get_p_sort_node_by__index_in__sort_list_manager(
     return &p_sort_list_manager->sort_nodes[index_of__sort_node];
 }
 
+static inline
+bool is_sort_node_a__sort_list(
+        Sort_List_Manager *p_sort_list_manager,
+        Sort_Node *p_sort_node) {
+    return ((Sort_List*)p_sort_node->p_node_data
+            - p_sort_list_manager->sort_lists)
+        < SORT_LIST__MAXIMUM_QUANTITY_OF;
+}
+
 #endif

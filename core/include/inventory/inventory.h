@@ -11,15 +11,13 @@ void initialize_inventory(
 void initialize_inventory_as__empty(
         Inventory *p_inventory);
 
-void m_serialize__inventory(
-        Game *p_game,
-        Serialization_Request *p_serialization_request,
-        Serializer *p_this_serializer);
+void m_process__serialize_inventory(
+        Process *p_this_process,
+        Game *p_game);
 
-void m_deserialize__inventory(
-        Game *p_game,
-        Serialization_Request *p_serialization_request,
-        Serializer *p_inventory__serializer);
+void m_process__deserialize_inventory(
+        Process *p_this_process,
+        Game *p_game);
 
 bool is_inventory__empty(Inventory *p_inventory);
 

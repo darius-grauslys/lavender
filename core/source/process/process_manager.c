@@ -243,12 +243,7 @@ void remove_process_from__process_manager(
         return;
     }
 #endif
-    if (does_process_have__removed_handler(p_process)) {
-        p_process->m_process_removed__handler(
-                p_process,
-                p_game);
-    }
-    
+#warning TODO: currently, processes are removed WITHOUT warning to the process.
     p_process->the_kind_of_status__this_process_has =
         Process_Status_Kind__Removed;
 }

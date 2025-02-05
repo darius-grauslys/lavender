@@ -119,6 +119,13 @@ typedef struct Entity_t Entity;
 typedef struct Input_t Input;
 
 ///
+/// SECTION_process
+///
+
+typedef struct Process_t Process;
+typedef struct Process_Manager_t Process_Manager;
+
+///
 /// SECTION_inventory
 ///
 
@@ -198,14 +205,12 @@ typedef struct Scene_Manager_t Scene_Manager;
 /// SECTION_serialization
 ///
 
-
 typedef struct Serialized_Field_t Serialized_Field;
 typedef struct Serialized_Field_t Serialized_Item_Stack_Ptr;
 typedef struct Serialized_Field_t Serialized_Inventory_Ptr;
 typedef struct Serialized_Field_t Serialized_Entity_Ptr;
 typedef struct Serialized_Field_t Serialized_Chunk_Ptr;
 typedef struct Serialization_Request_t Serialization_Request;
-typedef struct Serializer_t Serializer;
 
 typedef enum IO_Access_Kind {
     IO_Access_Kind__None,

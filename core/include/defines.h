@@ -190,15 +190,6 @@ typedef struct Chunk_Identifier__u32_t {
 /// SECTION_serialization
 ///
 
-typedef void (*m_Serialize)(
-        Game *p_game,
-        Serialization_Request *p_serialization_request,
-        Serializer *p_this_serializer);
-typedef void (*m_Deserialize)(
-        Game *p_game,
-        Serialization_Request *p_serialization_request,
-        Serializer *p_this_serializer);
-
 ///
 /// This must be the FIRST field to appear
 /// in a serialized struct.
@@ -208,11 +199,11 @@ typedef struct Serialization_Header_t {
     Quantity__u32       size_of__struct;
 } Serialization_Header;
 
-typedef struct Serializer_t {
-    Serialization_Header _serialization_header;
-    m_Serialize m_serialize_handler;
-    m_Deserialize m_deserialize_handler;
-} Serializer;
+typedef struct Serialization_Pool_t {
+    Quantity__u32 quantity_of__pool_elements;
+    Quantity__u32 size_of__element;
+    Serialization_Header *p_headers;
+} Serialization_Pool;
 
 typedef struct Serialized_Field_t {
     union {
@@ -247,33 +238,19 @@ typedef struct Serialized_Field_t {
 } Serialized_Field;
 
 #define SERIALIZATION_REQUEST_FLAGS__NONE 0
-#define SERIALZIATION_REQUEST_FLAG__IS_ACTIVE BIT(0)
-#define SERIALZIATION_REQUEST_FLAG__USE_SERIALIZER_OR_BUFFER BIT(1)
-#define SERIALIZATION_REQUEST_FLAG__READ_OR_WRITE BIT(2)
-#define SERIALIZATION_REQUEST_FLAG__KEEP_ALIVE BIT(3)
+#define SERIALZIATION_REQUEST_FLAG__IS_ALLOCATED BIT(0)
+#define SERIALZIATION_REQUEST_FLAG__IS_ACTIVE BIT(1)
+#define SERIALZIATION_REQUEST_FLAG__USE_SERIALIZER_OR_BUFFER BIT(2)
+#define SERIALIZATION_REQUEST_FLAG__READ_OR_WRITE BIT(3)
+#define SERIALIZATION_REQUEST_FLAG__KEEP_ALIVE BIT(4)
 
 typedef uint8_t Serialization_Request_Flags;
 
 typedef struct Serialization_Request_t {
     void *p_file_handler;
-    union {
-        struct {
-            union {
-                Vector__3i32 position_of__serialization_3i32;
-                Vector__3i32F4 position_of__serialization_3i32F4;
-            };
-        };
-    };
-    Quantity__u32 size_of__serialization;
-    Quantity__u32 quantity_of__sub_serializations;
+    void *p_data;
+    Serialization_Header *p_serialization_header;
     Serialization_Request_Flags serialization_request_flags;
-    union {
-        Serializer *p_serializer;
-        struct {
-            u8 *p_buffer;
-            Quantity__u16 quantity_of__writes_or_reads;
-        };
-    };
 } Serialization_Request;
 
 ///
@@ -792,10 +769,7 @@ typedef struct Item_Manager_t {
 } Item_Manager;
 
 typedef struct Item_Stack_t {
-    union {
-        Serialization_Header        _serialization_header;
-        Serializer                  _serializer;
-    };
+    Serialization_Header        _serialization_header;
     Item                        item;
     Quantity__u8                quantity_of__items;
     Quantity__u8                max_quantity_of__items;
@@ -853,10 +827,7 @@ typedef struct Inventory_t {
     ///
     /// Do not interact with this.
     ///
-    union {
-        Serialization_Header    _serialization_header;
-        Serializer              _serializer;
-    };
+    Serialization_Header    _serialization_header;
     Item_Stack items[INVENTORY_ITEM_MAXIMUM_QUANTITY_OF];
     Quantity__u8 quantity_of__item_stacks;
 } Inventory;
@@ -1061,10 +1032,7 @@ typedef struct Entity_t {
     ///
     /// Do not interact with this.
     ///
-    union {
-        Serialization_Header            _serialization_header;
-        Serializer                      _serializer;
-    };
+    Serialization_Header            _serialization_header;
 
     m_Entity_Dispose_Handler m_entity_dispose_handler;
 } Entity;
@@ -1134,6 +1102,7 @@ enum Process_Status_Kind {
     Process_Status_Kind__Stopped,
     Process_Status_Kind__Idle,
     Process_Status_Kind__Busy,
+    Process_Status_Kind__Enqueued,
     Process_Status_Kind__Complete,
     Process_Status_Kind__Fail,
     Process_Status_Kind__Removed,
@@ -1168,24 +1137,32 @@ enum Process_Priority_Kind {
     Process_Priority_Kind__Low,
     Process_Priority_Kind__Medium,
     Process_Priority_Kind__High,
-    Process_Priority_Kind__Critical
+    Process_Priority_Kind__Critical // TODO: remove
 };
 
 typedef void (*m_Process)(
         Process *p_this_process,
         Game *p_game);
 
+typedef uint8_t Process_Flags__u8;
+
+#define PROCESS_FLAG__IS_CRITICAL BIT(0)
+#define PROCESS_FLAGS__NONE 0
+
 ///
 /// Multithreading abstraction.
 ///
 typedef struct Process_t {
     m_Process m_process_run__handler;
-    m_Process m_process_removed__handler;
+    Process *p_queued_process;
     void *p_process_data;
     Timer__u32 process_timer__u32;
     Quantity__u32 quantity_of__steps_per_cycle;
+    Quantity__u32 quantity_of__process_steps;
     enum Process_Status_Kind the_kind_of_status__this_process_has;
     enum Process_Priority_Kind the_kind_of_priority__this_process_has;
+    u8 process_sub_state__u8;
+    Process_Flags__u8 process_flags__u8;
 } Process;
 
 #define PROCESS_MAX_QUANTITY_OF 16
@@ -1297,6 +1274,7 @@ typedef struct Sort_List_t {
     Sort_Node *p_node_list;
     f_Sort_Heuristic f_sort_heuristic;
     m_Sort m_sort;
+    struct Sort_List_t *p_sort_list__next;
     Quantity__u32 size_of__p_node_list  :31;
     bool is_allocated                   :1;
 
@@ -1686,7 +1664,7 @@ typedef uint8_t Room_Flags__u8;
 #define ROOM_FLAG__IS_ALLOCATED BIT(0)
 
 typedef struct Room_t {
-    Serializer _serializer;
+    Serialization_Header _serialization_header;
     Hitbox_AABB bounding_box_of__room;
     Vector__3i32F4 entrances__3i32F4
         [ROOM_ENTRANCE_MAX_QUANTITY_OF];
@@ -1708,7 +1686,7 @@ typedef Room* Structure_Ptr_Array_Of__Rooms[
     ROOMS_IN_STRUCTURE__MAX_QUANTITY_OF];
 
 typedef struct Structure_t {
-    Serializer _serializer;
+    Serialization_Header _serialization_header;
     Structure_Ptr_Array_Of__Rooms ptr_array_of__rooms;
     Hitbox_AABB bounding_box_of__structure;
     Structure_Type__u16 the_kind_of__structure;
@@ -1734,7 +1712,7 @@ typedef Structure *Site_Ptr_Array_Of__Structures[
     STRUCTURES_IN_SITE__MAX_QUANTITY_OF];
 
 typedef struct Site_t {
-    Serializer _serializer;
+    Serialization_Header _serialization_header;
     Site_Ptr_Array_Of__Structures ptr_array_of__structures_in__site;
     Hitbox_AABB bounding_box_of__site;
     Quantity__u8 quantity_of__structures_in__site;
@@ -1753,7 +1731,7 @@ typedef struct Site_t {
          * SITE__HEIGHT_IN__TILES))
 
 typedef struct Region_t {
-    Serializer _serializer;
+    Serialization_Header _serialization_header;
     u8 bitmap_of__serialized_chunks[
         (REGION__WIDTH_IN__CHUNKS
             * REGION__HEIGHT_IN__CHUNKS
@@ -1989,10 +1967,8 @@ typedef struct Chunk_t {
     ///
     /// Do not interact with this.
     ///
-    union {
-        Serializer              _serializer;
-        Serialization_Header    _serialization_header;
-    };
+    Serialization_Header    _serialization_header;
+
     Tile tiles[CHUNK__WIDTH * CHUNK__HEIGHT * CHUNK__DEPTH];
     Chunk_Flags chunk_flags;
 } Chunk;
@@ -2030,7 +2006,7 @@ typedef struct Chunk_Manager_t {
 typedef char World_Name_String[WORLD_NAME_MAX_SIZE_OF];
 
 typedef struct World_t {
-    Serializer _serializer;
+    Serialization_Header _serialization_header;
     Entity_Manager entity_manager;
     Chunk_Manager chunk_manager;
     Collision_Manager collision_manager;

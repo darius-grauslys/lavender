@@ -46,6 +46,16 @@ void fail_process(
 }
 
 static inline
+void enqueue_process(
+        Process *p_process_thats__first,
+        Process *p_process_thats__next) {
+    p_process_thats__first->p_queued_process =
+        p_process_thats__next;
+    p_process_thats__next->the_kind_of_status__this_process_has =
+        Process_Status_Kind__Enqueued;
+}
+
+static inline
 Timer__u32 *get_p_timer_u32_from__process(
         Process *p_process) {
 #ifndef NDEBUG
@@ -143,6 +153,19 @@ bool is_process__complete(
 }
 
 static inline
+bool is_process__enqueued(
+        Process *p_process) {
+#ifndef NDEBUG
+    if (!p_process) {
+        debug_abort("is_process__enqueued, p_process is null.");
+        return false;
+    }
+#endif
+    return p_process && p_process->the_kind_of_status__this_process_has
+        == Process_Status_Kind__Enqueued;
+}
+
+static inline
 bool is_process__available(
         Process *p_process) {
 #ifndef NDEBUG
@@ -195,15 +218,11 @@ bool does_process_have__run_handler(
 }
 
 static inline
-bool does_process_have__removed_handler(
-        Process *p_process) {
-#ifndef NDEBUG
-    if (!p_process) {
-        debug_abort("does_process_have__removed_handler, p_process is null.");
-        return false;
-    }
-#endif
-    return p_process->m_process_removed__handler;
+void set_process__sub_state(
+        Process *p_this_process,
+        u8 sub_state__u8) {
+    p_this_process->process_sub_state__u8 = sub_state__u8;
+    p_this_process->quantity_of__process_steps = 0;
 }
 
 #define LOOP_PROCESS(p_process) \

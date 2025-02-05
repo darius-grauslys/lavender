@@ -470,78 +470,10 @@ void m_SDL_process__serialization(
             ->SDL_serialization_requests[
                 index_of__serialization_request];
 
-        if (!is_serialization_request__active(p_serialization_request)) {
+        if (!is_serialization_request__allocated(p_serialization_request)) {
             continue;
         }
-
-        if (is_serialization_request__writing(
-                    p_serialization_request)) {
-            if (is_serialization_request__using_serializer(
-                        p_serialization_request)) {
-                p_serialization_request
-                    ->p_serializer
-                    ->m_serialize_handler(
-                            p_game,
-                            p_serialization_request,
-                            p_serialization_request
-                            ->p_serializer);
-                goto fire_and_forget;
-            }
-            if (is_serialization_request__using_buffer(
-                        p_serialization_request)) {
-                PLATFORM_write_file(
-                        p_PLATFORM_file_system_context, 
-                        p_serialization_request
-                        ->p_buffer, 
-                        p_serialization_request
-                        ->size_of__serialization, 
-                        p_serialization_request
-                        ->quantity_of__writes_or_reads, 
-                        p_serialization_request
-                        ->p_file_handler);
-                PLATFORM_release_serialization_request(
-                        p_PLATFORM_file_system_context, 
-                        p_serialization_request);
-                goto fire_and_forget;
-            }
-        }
-
-        if (is_serialization_request__reading(
-                    p_serialization_request)) {
-            if (is_serialization_request__using_serializer(
-                        p_serialization_request)) {
-                p_serialization_request
-                    ->p_serializer
-                    ->m_deserialize_handler(
-                            p_game,
-                            p_serialization_request,
-                            p_serialization_request
-                            ->p_serializer);
-                goto fire_and_forget;
-            }
-            if (is_serialization_request__using_buffer(
-                        p_serialization_request)) {
-                PLATFORM_read_file(
-                        p_PLATFORM_file_system_context,
-                        p_serialization_request
-                        ->p_buffer,
-                        &p_serialization_request
-                        ->size_of__serialization,
-                        p_serialization_request
-                        ->quantity_of__writes_or_reads,
-                        p_serialization_request
-                        ->p_file_handler);
-                goto fire_and_forget;
-            }
-        }
-
-        PLATFORM_release_serialization_request(
-                p_PLATFORM_file_system_context, 
-                p_serialization_request);
-        continue;
-fire_and_forget:
-        if (is_serialization_request__fire_and_forget(
-                    p_serialization_request)) {
+        if (!is_serialization_request__active(p_serialization_request)) {
             PLATFORM_release_serialization_request(
                     p_PLATFORM_file_system_context, 
                     p_serialization_request);

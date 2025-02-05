@@ -16,14 +16,14 @@ void initialize_process(
         quantity_of__steps_per_cycle;
     p_process->m_process_run__handler =
         m_process_run__handler;
-    p_process->m_process_removed__handler =
-        m_process_removed__handler;
     p_process->the_kind_of_priority__this_process_has =
         Process_Priority_Kind__None;
     p_process->the_kind_of_status__this_process_has =
         Process_Status_Kind__None;
     p_process->p_process_data =
         p_process_data;
+    p_process->process_sub_state__u8 = 0;
+    p_process->quantity_of__process_steps = 0;
 }
 
 void initialize_process_as__empty_process(

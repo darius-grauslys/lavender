@@ -10,64 +10,52 @@
 #include "platform.h"
 #include "platform_defines.h"
 #include "serialization/serialized_field.h"
-#include "serialization/serializer.h"
+#include "serialization/serialization_header.h"
 #include "vectors.h"
 #include "world/tile.h"
 #include <world/chunk.h>
+#include "process/process.h"
+#include "process/process_manager.h"
 
 void initialize_chunk(Chunk *p_chunk) {
-    intialize_serializer(
-            &p_chunk->_serializer, 
-            sizeof(Chunk), 
+    initialize_serialization_header(
+            &p_chunk->_serialization_header, 
             get_uuid__chunk(p_chunk), 
-            m_serialize__chunk, 
-            m_deserialize__chunk);
+            sizeof(Chunk));
 }
 
-void f_foreach_inventory_container__serialize_into__chunk(
-        Game *p_game,
-        Inventory *p_inventory,
-        Inventory_Manager *p_inventory_manager,
-        void *p_data) {
+typedef enum Process_Sub_State__Chunk_Serialize {
+    Sub_State__Chunk_Serialize__Write_Tiles,
+    Sub_State__Chunk_Serialize__Write_Inventories,
+    Sub_State__Chunk_Serialize__Write_Entities,
+    Sub_State__Chunk_Serialize__Finish
+} Process_Sub_State__Chunk_Serialize;
+
+void m_process__serialize_chunk(
+        Process *p_this_process,
+        Game *p_game) {
+
     Serialization_Request *p_serialization_request =
-        (Serialization_Request*)p_data;
-    p_serialization_request->quantity_of__sub_serializations++;
-    void *p_file_handler =
-        p_serialization_request->p_file_handler;
+        (Serialization_Request*)p_this_process
+        ->p_process_data;
 
-    Quantity__u32 length_of__write =
-        sizeof(Serialization_Header);
-    enum PLATFORM_Write_File_Error error = PLATFORM_write_file(
-                get_p_PLATFORM_file_system_context_from__game(p_game), 
-                (u8*)&p_inventory->_serialization_header, 
-                length_of__write, 
-                1, 
-                p_file_handler);
-    if (error) {
-        debug_error("f_foreach_inventory_container__serialize_into__chunk, error: %d", error);
-        return;
-    }
-
-    p_inventory->_serializer.m_serialize_handler(
-            p_game,
-            p_serialization_request,
-            (Serializer*)p_inventory);
-
-    release_p_inventory_in__inventory_manager(
-            p_inventory_manager, 
-            p_inventory);
-}
-
-void m_serialize__chunk(
-        Game *p_game,
-        Serialization_Request *p_serialization_request,
-        Serializer *p_this_chunk__serializer) {
-
-    Chunk *p_chunk = (Chunk*)p_this_chunk__serializer;
+    Chunk *p_chunk = (Chunk*)p_serialization_request
+        ->p_data;
 
     void *p_file_handler =
         p_serialization_request
         ->p_file_handler;
+
+    switch (p_this_process->process_sub_state__u8) {
+        default:
+            goto serialize_chunk__finish;
+        case Sub_State__Chunk_Serialize__Write_Tiles:
+            break;
+        case Sub_State__Chunk_Serialize__Write_Inventories:
+            goto serialize_chunk__inventories;
+        case Sub_State__Chunk_Serialize__Write_Entities:
+            goto serialize_chunk__entities;
+    }
 
     enum PLATFORM_Write_File_Error error = 
         PLATFORM_write_file(
@@ -77,9 +65,28 @@ void m_serialize__chunk(
                 1, 
                 p_file_handler);
     if (error) {
-        debug_error("m_serialize__chunk, failed error: %d", error);
-        set_chunk_as__inactive(p_chunk);
-        set_chunk_as__visually_updated(p_chunk);
+        goto serialize_chunk__error;
+    }
+
+    set_process__sub_state(
+            p_this_process, 
+            Sub_State__Chunk_Serialize__Write_Entities);
+    return;
+serialize_chunk__inventories:
+    Process *p_sub_process =
+        p_this_process->p_queued_process;
+
+    if (!p_sub_process) {
+        p_sub_process = allocate_process_in__process_manager(
+                get_p_process_manager_from__game(p_game));
+        if (!p_sub_process) {
+            // try again later.
+            // TODO: increment an error level
+            return;
+        }
+        enqueue_process(
+                p_this_process, 
+                p_sub_process);
         return;
     }
 
@@ -97,69 +104,61 @@ void m_serialize__chunk(
             1,
             p_file_handler);
     if (error) {
-        debug_error("m_serialize__chunk, failed error: %d", error);
-        set_chunk_as__inactive(p_chunk);
-        set_chunk_as__visually_updated(p_chunk);
-        return;
+        goto serialize_chunk__error;
     }
 
-    p_serialization_request->quantity_of__sub_serializations = 0;
-    foreach_p_inventory_container_in__chunk_vector(
-            get_p_inventory_manager_from__game(p_game), 
-            p_serialization_request->position_of__serialization_3i32, 
-            f_foreach_inventory_container__serialize_into__chunk, 
-            p_game, 
-            p_serialization_request);
-    quantity_of__serialized__containers =
-        p_serialization_request->quantity_of__sub_serializations;
-
-    Quantity__u8 quantity_of__serialized__entities = 0;
+    // foreach_p_inventory_container_in__chunk_vector(
+    //         get_p_inventory_manager_from__game(p_game), 
+    //         p_serialization_request->position_of__serialization_3i32, 
+    //         f_foreach_inventory_container__serialize_into__chunk, 
+    //         p_game, 
+    //         p_sub_process);
 
     Index__u32 position_of__entity_quantity_in__file =
         PLATFORM_get_position_in__file(
                 get_p_PLATFORM_file_system_context_from__game(p_game), 
                 p_file_handler);
 
-    error = PLATFORM_write_file(
-            get_p_PLATFORM_file_system_context_from__game(p_game),
-            &quantity_of__serialized__entities,
-            1,
-            1,
-            p_file_handler);
-    if (error) {
-        debug_error("m_serialize__chunk, failed error: %d", error);
-        set_chunk_as__inactive(p_chunk);
-        set_chunk_as__visually_updated(p_chunk);
-        return;
-    }
+    // error = PLATFORM_write_file(
+    //         get_p_PLATFORM_file_system_context_from__game(p_game),
+    //         &quantity_of__serialized__entities,
+    //         1,
+    //         1,
+    //         p_file_handler);
+    // if (error) {
+    //     goto serialize_chunk__error;
+    // }
+    set_process__sub_state(
+            p_this_process, 
+            Sub_State__Chunk_Serialize__Write_Entities);
+serialize_chunk__entities:
 
     // center hitbox to the center of the chunk.
-    Vector__3i32F4 position_of__hitbox_3i32F4 =
-        get_vector__3i32F4_using__i32(
-                (p_serialization_request
-                    ->position_of__serialization_3i32.x__i32
-                    * CHUNK_WIDTH__IN_TILES * TILE_WIDTH__IN_PIXELS)
-                + (CHUNK_WIDTH__IN_TILES * TILE_WIDTH__IN_PIXELS >> 1),
-                (p_serialization_request
-                    ->position_of__serialization_3i32.y__i32
-                    * CHUNK_WIDTH__IN_TILES * TILE_WIDTH__IN_PIXELS)
-                + (CHUNK_WIDTH__IN_TILES * TILE_WIDTH__IN_PIXELS >> 1),
-                (p_serialization_request
-                    ->position_of__serialization_3i32.z__i32
-                    * CHUNK_DEPTH__IN_TILES * TILE_WIDTH__IN_PIXELS)
-                + (CHUNK_WIDTH__IN_TILES * TILE_WIDTH__IN_PIXELS >> 1)
-                );
+    // Vector__3i32F4 position_of__hitbox_3i32F4 =
+    //     get_vector__3i32F4_using__i32(
+    //             (p_serialization_request
+    //                 ->position_of__serialization_3i32.x__i32
+    //                 * CHUNK_WIDTH__IN_TILES * TILE_WIDTH__IN_PIXELS)
+    //             + (CHUNK_WIDTH__IN_TILES * TILE_WIDTH__IN_PIXELS >> 1),
+    //             (p_serialization_request
+    //                 ->position_of__serialization_3i32.y__i32
+    //                 * CHUNK_WIDTH__IN_TILES * TILE_WIDTH__IN_PIXELS)
+    //             + (CHUNK_WIDTH__IN_TILES * TILE_WIDTH__IN_PIXELS >> 1),
+    //             (p_serialization_request
+    //                 ->position_of__serialization_3i32.z__i32
+    //                 * CHUNK_DEPTH__IN_TILES * TILE_WIDTH__IN_PIXELS)
+    //             + (CHUNK_WIDTH__IN_TILES * TILE_WIDTH__IN_PIXELS >> 1)
+    //             );
 
-    Hitbox_AABB serialization_hitbox;
-    initialize_hitbox(
-            &serialization_hitbox, 
-            TILE_WIDTH__IN_PIXELS
-            * CHUNK_WIDTH__IN_TILES, 
-            TILE_WIDTH__IN_PIXELS
-            * CHUNK_WIDTH__IN_TILES, 
-            position_of__hitbox_3i32F4);
+    // Hitbox_AABB serialization_hitbox;
+    // initialize_hitbox(
+    //         &serialization_hitbox, 
+    //         TILE_WIDTH__IN_PIXELS
+    //         * CHUNK_WIDTH__IN_TILES, 
+    //         TILE_WIDTH__IN_PIXELS
+    //         * CHUNK_WIDTH__IN_TILES, 
+    //         position_of__hitbox_3i32F4);
 
-    p_serialization_request->quantity_of__sub_serializations = 0;
     // foreach_p_entity_within__hitbox(
     //         get_p_collision_manager_from__game(p_game), 
     //         &serialization_hitbox, 
@@ -173,55 +172,66 @@ void m_serialize__chunk(
                 p_file_handler);
 
 
-    PLATFORM_set_position_in__file(
-            get_p_PLATFORM_file_system_context_from__game(p_game), 
-            position_of__container_quantity_in__file, 
-            p_file_handler);
-    error = PLATFORM_write_file(
-            get_p_PLATFORM_file_system_context_from__game(p_game),
-            &quantity_of__serialized__containers,
-            1,
-            1,
-            p_file_handler);
-    if (error) {
-        debug_error("m_serialize__chunk, failed error: %d", error);
-        set_chunk_as__inactive(p_chunk);
-        set_chunk_as__visually_updated(p_chunk);
-        return;
-    }
+    // PLATFORM_set_position_in__file(
+    //         get_p_PLATFORM_file_system_context_from__game(p_game), 
+    //         position_of__container_quantity_in__file, 
+    //         p_file_handler);
+    // error = PLATFORM_write_file(
+    //         get_p_PLATFORM_file_system_context_from__game(p_game),
+    //         &quantity_of__serialized__containers,
+    //         1,
+    //         1,
+    //         p_file_handler);
+    // if (error) {
+    //     goto serialize_chunk__error;
+    // }
 
-    PLATFORM_set_position_in__file(
-            get_p_PLATFORM_file_system_context_from__game(p_game), 
-            position_of__entity_quantity_in__file, 
-            p_file_handler);
-    error = PLATFORM_write_file(
-            get_p_PLATFORM_file_system_context_from__game(p_game),
-            &quantity_of__serialized__entities,
-            1,
-            1,
-            p_file_handler);
-    if (error) {
-        debug_error("m_serialize__chunk, failed error: %d", error);
-        set_chunk_as__inactive(p_chunk);
-        set_chunk_as__visually_updated(p_chunk);
-        return;
-    }
+    // PLATFORM_set_position_in__file(
+    //         get_p_PLATFORM_file_system_context_from__game(p_game), 
+    //         position_of__entity_quantity_in__file, 
+    //         p_file_handler);
+    // error = PLATFORM_write_file(
+    //         get_p_PLATFORM_file_system_context_from__game(p_game),
+    //         &quantity_of__serialized__entities,
+    //         1,
+    //         1,
+    //         p_file_handler);
+    // if (error) {
+    //     goto serialize_chunk__error;
+    // }
 
     PLATFORM_set_position_in__file(
             get_p_PLATFORM_file_system_context_from__game(p_game), 
             position_at__end_of__file, 
             p_file_handler);
 
+    set_process__sub_state(
+            p_this_process,
+            Sub_State__Chunk_Serialize__Finish);
+    return;
+serialize_chunk__finish:
     clear_chunk_flags(p_chunk);
+    return;
+
+serialize_chunk__error:
+    debug_error("m_serialize__chunk, failed error: %d", error);
+    set_chunk_as__inactive(p_chunk);
+    set_chunk_as__visually_updated(p_chunk);
+    fail_process(p_this_process);
 }
 
-void m_deserialize__chunk(
-        Game *p_game,
-        Serialization_Request *p_serialization_request,
-        Serializer *p_this_chunk__serializer) {
+void m_process__deserialize_chunk(
+        Process *p_this_process,
+        Game *p_game) {
+
+    Serialization_Request *p_serialization_request =
+        (Serialization_Request*)p_this_process
+        ->p_process_data;
 
     Chunk *p_chunk =
-        (Chunk*)p_this_chunk__serializer;
+        (Chunk*)p_serialization_request
+        ->p_data;
+
     void *p_file_handler =
         p_serialization_request->p_file_handler;
 
@@ -298,10 +308,7 @@ void m_deserialize__chunk(
             break;
         }
 
-        p_inventory->_serializer.m_deserialize_handler(
-                p_game,
-                p_serialization_request,
-                (Serializer*)p_inventory);
+#warning TODO: deserialize using sub-process
     }
 
     length_of__read = 1;

@@ -181,4 +181,16 @@ void set_sort_list__sort_heuristic(
         f_sort_heuristic;
 }
 
+static inline
+bool is_sort_list__extexted(
+        Sort_List *p_sort_list) {
+    return p_sort_list->p_sort_list__next;
+}
+
+static inline
+Sort_List *get_extension_of__sort_list(
+        Sort_List *p_sort_list) {
+    return p_sort_list->p_sort_list__next;
+}
+
 #endif

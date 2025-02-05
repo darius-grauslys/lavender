@@ -256,10 +256,6 @@ void save_chunk(
         return;
     }
 
-    p_serialization_request
-        ->position_of__serialization_3i32 =
-        p_chunk_map_node->position_of__chunk_3i32;
-
     enum PLATFORM_Open_File_Error error =
         PLATFORM_open_file(
                 p_PLATFORM_file_system_context,
@@ -280,12 +276,8 @@ void save_chunk(
 
     set_serialization_request_as__fire_and_forget(
             p_serialization_request);
-    set_serialization_request_as__using_serializer(
-            p_serialization_request);
     set_serialization_request_as__write(
             p_serialization_request);
-    p_serialization_request->p_serializer =
-        &p_chunk_map_node->p_chunk__here->_serializer;
 
     set_chunk_as__awaiting_serialization(
             p_chunk_map_node->p_chunk__here);
@@ -307,10 +299,6 @@ void load_chunk(
         return;
     }
 
-    p_serialization_request
-        ->position_of__serialization_3i32 =
-        p_chunk_map_node->position_of__chunk_3i32;
-
     enum PLATFORM_Open_File_Error error =
         PLATFORM_open_file(
                 p_PLATFORM_file_system_context,
@@ -331,12 +319,8 @@ void load_chunk(
 
     set_serialization_request_as__fire_and_forget(
             p_serialization_request);
-    set_serialization_request_as__using_serializer(
-            p_serialization_request);
     set_serialization_request_as__read(
             p_serialization_request);
-    p_serialization_request->p_serializer =
-        &p_chunk_map_node->p_chunk__here->_serializer;
 
     set_chunk_as__awaiting_deserialization(
             p_chunk_map_node->p_chunk__here);

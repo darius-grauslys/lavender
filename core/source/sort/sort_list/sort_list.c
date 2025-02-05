@@ -25,6 +25,8 @@ void initialize_sort_list_as__allocated(
     p_sort_list->size_of__p_node_list =
         size_of__sort_list;
     p_sort_list->is_allocated = true;
+    p_sort_list
+        ->p_sort_list__next = 0;
 
     for (Index__u16 index_of__sort_node = 0;
             index_of__sort_node

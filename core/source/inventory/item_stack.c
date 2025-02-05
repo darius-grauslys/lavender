@@ -3,7 +3,6 @@
 #include "inventory/item_manager.h"
 #include "numerics.h"
 #include "serialization/serialization_header.h"
-#include "serialization/serializer.h"
 #include <inventory/item_stack.h>
 #include <inventory/item.h>
 
@@ -19,12 +18,10 @@ void initialize_item_stack(
         return;
     }
 #endif
-    intialize_serializer(
-            &p_item_stack->_serializer, 
-            sizeof(Item_Stack),
+    initialize_serialization_header(
+            &p_item_stack->_serialization_header, 
             identifier_for__item_stack,
-            m_serialize__item_stack,
-            m_deserialize__item_stack);
+            sizeof(Item_Stack));
     p_item_stack->item = item;
     p_item_stack->quantity_of__items =
         quantity_of__items;
@@ -41,24 +38,24 @@ void initialize_item_stack_as__empty(
         return;
     }
 #endif
-    intialize_serializer(
-            &p_item_stack->_serializer, 
-            sizeof(Item_Stack),
+    initialize_serialization_header(
+            &p_item_stack->_serialization_header, 
             identifier_for__item_stack__u32,
-            m_serialize__item_stack,
-            m_deserialize__item_stack);
+            sizeof(Item_Stack));
     p_item_stack->item = get_item__empty();
     p_item_stack->quantity_of__items = 0;
     p_item_stack->max_quantity_of__items = 0;
 }
 
-void m_serialize__item_stack(
-        Game *p_game,
-        Serialization_Request *p_serialization_request,
-        Serializer *p_this_serializer) {
+void m_process__serialize_item_stack(
+        Process *p_this_process,
+        Game *p_game) {
     
+    Serialization_Request *p_serialization_request =
+        (Serialization_Request*)p_this_process->p_process_data;
+
     Item_Stack *p_item_stack =
-        (Item_Stack*)p_this_serializer;
+        (Item_Stack*)p_serialization_request->p_data;
 
     void *p_file_handler =
         p_serialization_request
@@ -67,7 +64,7 @@ void m_serialize__item_stack(
     enum PLATFORM_Write_File_Error error = 
         PLATFORM_write_file(
                 get_p_PLATFORM_file_system_context_from__game(p_game), 
-                (u8*)&p_this_serializer->_serialization_header, 
+                (u8*)&p_item_stack->_serialization_header, 
                 sizeof(Serialization_Header), 
                 1, 
                 p_file_handler);
@@ -101,13 +98,15 @@ void m_serialize__item_stack(
     }
 }
 
-void m_deserialize__item_stack(
-        Game *p_game,
-        Serialization_Request *p_serialization_request,
-        Serializer *p_item_stack__serializer) {
+void m_process__deserialize_item_stack(
+        Process *p_this_process,
+        Game *p_game) {
+
+    Serialization_Request *p_serialization_request =
+        (Serialization_Request*)p_this_process->p_process_data;
 
     Item_Stack *p_item_stack =
-        (Item_Stack*)p_item_stack__serializer;
+        (Item_Stack*)p_serialization_request->p_data;
 
     void *p_file_handler =
         p_serialization_request
@@ -119,7 +118,7 @@ void m_deserialize__item_stack(
     enum PLATFORM_Read_File_Error error = 
         PLATFORM_read_file(
                 get_p_PLATFORM_file_system_context_from__game(p_game), 
-                (u8*)&p_item_stack__serializer->_serialization_header, 
+                (u8*)&p_item_stack->_serialization_header, 
                 &length_of__read, 
                 1, 
                 p_file_handler);
