@@ -20,13 +20,27 @@ void initialize_game(
         m_Game_Action_Handler m_game_action_handler);
 int run_game(Game *p_game);
 
-bool await_game_tick(Game *p_game);
+i32F20 get_elapsed_time__i32F20_of__game(
+        Game *p_game);
+
+///
+/// Returns the number of elapsed game ticks
+/// since manage_game__post_render.
+///
+Quantity__u32 poll__game_tick_timer(Game *p_game);
+
+///
+/// This is called after each instance of
+/// manage_game__post_render.
+///
+void reset__game_tick_timer(Game *p_game);
 
 void manage_game(Game *p_game);
 
 void manage_game__pre_render(Game *p_game);
 void manage_game__post_render(Game *p_game);
 
+/// TODO: obsolete, and inaccurate
 static inline
 Quantity__u32 get_ticks_elapsed__game(Game *p_game) {
     return get_time_elapsed_from__timer_u32(&p_game->tick__timer_u32);

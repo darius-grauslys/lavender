@@ -7,13 +7,17 @@
 
 void initialize_process(
         Process *p_process,
+        Identifier__u32 uuid__u32,
         m_Process m_process_run__handler,
-        m_Process m_process_removed__handler,
-        void *p_process_data,
-        Quantity__u32 quantity_of__steps_per_cycle);
+        void *p_process_data);
 
+static inline
 void initialize_process_as__empty_process(
-        Process *p_process);
+        Process *p_process) {
+    initialize_process(
+            p_process, 
+            IDENTIFIER__UNKNOWN__u32, 0, 0);
+}
 
 static inline
 void complete_process(
@@ -46,28 +50,6 @@ void fail_process(
 }
 
 static inline
-void enqueue_process(
-        Process *p_process_thats__first,
-        Process *p_process_thats__next) {
-    p_process_thats__first->p_queued_process =
-        p_process_thats__next;
-    p_process_thats__next->the_kind_of_status__this_process_has =
-        Process_Status_Kind__Enqueued;
-}
-
-static inline
-Timer__u32 *get_p_timer_u32_from__process(
-        Process *p_process) {
-#ifndef NDEBUG
-    if (!p_process) {
-        debug_abort("get_p_timer_u32_from__process, p_process is null.");
-        return 0;
-    }
-#endif
-    return &p_process->process_timer__u32;
-}
-
-static inline
 enum Process_Status_Kind get_process_status(
         Process *p_process) {
 #ifndef NDEBUG
@@ -77,18 +59,6 @@ enum Process_Status_Kind get_process_status(
     }
 #endif
     return p_process->the_kind_of_status__this_process_has;
-}
-
-static inline
-enum Process_Priority_Kind get_process_priority(
-        Process *p_process) {
-#ifndef NDEBUG
-    if (!p_process) {
-        debug_abort("get_process_priority, p_process is null.");
-        return Process_Priority_Kind__None;
-    }
-#endif
-    return p_process->the_kind_of_priority__this_process_has;
 }
 
 static inline
@@ -102,28 +72,11 @@ bool is_process__active(Process *p_process) {
     switch (get_process_status(p_process)) {
         case Process_Status_Kind__Busy:
         case Process_Status_Kind__Idle:
+        case Process_Status_Kind__Stopping:
             return true;
         default:
             return false;
     }
-}
-
-///
-/// Reset's it's status as well
-/// as it's lifetime counter.
-///
-static inline
-void reset_process(
-        Process *p_process) {
-#ifndef NDEBUG
-    if (!p_process) {
-        debug_abort("reset_process, p_process is null.");
-        return;
-    }
-#endif
-    p_process->the_kind_of_status__this_process_has =
-        Process_Status_Kind__Idle;
-    reset_timer_u32(get_p_timer_u32_from__process(p_process));
 }
 
 static inline
@@ -136,11 +89,24 @@ void stop_process(
     }
 #endif
     p_process->the_kind_of_status__this_process_has =
+        Process_Status_Kind__Stopping;
+}
+
+static inline
+void set_process_as__stopped(
+        Process *p_process) {
+#ifndef NDEBUG
+    if (!p_process) {
+        debug_abort("set_process_as__stopped, p_process is null.");
+        return;
+    }
+#endif
+    p_process->the_kind_of_status__this_process_has =
         Process_Status_Kind__Stopped;
 }
 
 static inline
-bool is_process__complete(
+bool is_process__finished(
         Process *p_process) {
 #ifndef NDEBUG
     if (!p_process) {
@@ -148,8 +114,14 @@ bool is_process__complete(
         return false;
     }
 #endif
-    return p_process && p_process->the_kind_of_status__this_process_has
-        == Process_Status_Kind__Complete;
+    switch (get_process_status(p_process)) {
+        default:
+            return false;
+        case Process_Status_Kind__Complete:
+        case Process_Status_Kind__Fail:
+        case Process_Status_Kind__Stopped:
+            return true;
+    }
 }
 
 static inline
@@ -166,6 +138,30 @@ bool is_process__enqueued(
 }
 
 static inline
+void set_process_as__enqueued(
+        Process *p_process) {
+    p_process->the_kind_of_status__this_process_has =
+        Process_Status_Kind__Enqueued;
+}
+
+static inline
+void set_process_as__dequeued(
+        Process *p_process) {
+    p_process->the_kind_of_status__this_process_has =
+        Process_Status_Kind__Idle;
+} 
+
+static inline
+void enqueue_process(
+        Process *p_process_to__enqueue,
+        Process *p_process_to__enqueue_behind) {
+    p_process_to__enqueue_behind->p_queued_process =
+        p_process_to__enqueue;
+    set_process_as__enqueued(
+            p_process_to__enqueue);
+}
+
+static inline
 bool is_process__available(
         Process *p_process) {
 #ifndef NDEBUG
@@ -176,33 +172,6 @@ bool is_process__available(
 #endif
     return p_process && p_process->the_kind_of_status__this_process_has
         == Process_Status_Kind__None;
-}
-
-static inline
-Quantity__u32 get_time_elapsed_from__process(
-        Process *p_process) {
-#ifndef NDEBUG
-    if (!p_process) {
-        debug_abort("get_time_elapsed_from__process, p_process is null.");
-        return false;
-    }
-#endif
-    return get_time_elapsed_from__timer_u32(
-            get_p_timer_u32_from__process(p_process));
-}
-
-static inline
-bool is_process_of__this_priority(
-        Process *p_process,
-        enum Process_Priority_Kind the_kind_of__priority) {
-#ifndef NDEBUG
-    if (!p_process) {
-        debug_abort("is_process_of__this_priority, p_process is null.");
-        return false;
-    }
-#endif
-    return get_process_priority(p_process)
-        == the_kind_of__priority;
 }
 
 static inline
@@ -222,13 +191,58 @@ void set_process__sub_state(
         Process *p_this_process,
         u8 sub_state__u8) {
     p_this_process->process_sub_state__u8 = sub_state__u8;
-    p_this_process->quantity_of__process_steps = 0;
 }
 
-#define LOOP_PROCESS(p_process) \
-    for (Index__u32 index_of__process__loop = 0; index_of__process__loop \
-            < p_process->quantity_of__steps_per_cycle;\
-            index_of__process__loop++, \
-            loop_timer_u32(get_p_timer_u32_from__process(p_process)))
+static inline
+i32F20 get_process__runtime(Process *p_process) {
+    return p_process->process_runtime__i32F20;
+}
+
+static inline
+i32 get_process_runtime_in__ticks(Process *p_process) {
+    return p_process->process_runtime__i32F20 >> 14;
+}
+
+static inline
+bool is_process__critical(Process *p_process) {
+    return p_process->process_flags__u8
+         & PROCESS_FLAG__IS_CRITICAL
+         ;
+}
+
+static inline
+void set_process_as__critical(Process *p_process) {
+    p_process->process_flags__u8 |=
+        PROCESS_FLAG__IS_CRITICAL
+        ;
+}
+
+static inline
+void set_process_as__NOT_critical(Process *p_process) {
+    p_process->process_flags__u8 &=
+        ~PROCESS_FLAG__IS_CRITICAL
+        ;
+}
+
+static inline
+bool is_process__sub_process(Process *p_process) {
+    return p_process->process_flags__u8
+         & PROCESS_FLAG__IS_SUB_PROCESS
+         ;
+}
+
+static inline
+void set_process_as__sub_process(Process *p_process) {
+    p_process->process_flags__u8 |=
+        PROCESS_FLAG__IS_SUB_PROCESS
+        ;
+}
+
+static inline
+void set_process_as__NOT_sub_process(Process *p_process) {
+    p_process->process_flags__u8 &=
+        ~PROCESS_FLAG__IS_SUB_PROCESS
+        ;
+}
 
 #endif

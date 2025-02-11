@@ -11,7 +11,6 @@
 #include "scene/scene.h"
 #include "scene/scene_manager.h"
 #include "sort/sort_list/sort_list_manager.h"
-#include "world/path_finding/path_list_manager.h"
 #include "world/tile_logic_manager.h"
 #include <game.h>
 #include <entity/entity.h>
@@ -39,8 +38,6 @@ void initialize_game(
             get_p_process_manager_from__game(p_game));
     initialize_sort_list_manager(
             get_p_sort_list_manager_from__game(p_game));
-    initialize_path_list_manager(
-            get_p_path_list_manager_from__game(p_game));
     initialize_inventory_manager(
             get_p_inventory_manager_from__game(p_game));
     initialize_item_manager(
@@ -72,20 +69,29 @@ void initialize_game(
     p_game->m_game_action_handler = m_game_action_handler;
 }
 
-bool await_game_tick(Game *p_game) {
+i32F20 get_elapsed_time__i32F20_of__game(
+        Game *p_game) {
     p_game->time_elapsed__i32F20 =
         PLATFORM_get_time_elapsed(
                 &p_game->time__seconds__u32, 
                 &p_game->time__nanoseconds__u32);
     p_game->tick_accumilator__i32F20 +=
         p_game->time_elapsed__i32F20;
+    return p_game->time_elapsed__i32F20;
+}
+
+Quantity__u32 poll__game_tick_timer(Game *p_game) {
+    (void)get_elapsed_time__i32F20_of__game(p_game);
     if (p_game->tick_accumilator__i32F20
-            < BIT(14)) {
-        return true;
+            >= BIT(14)) {
+        return p_game->tick_accumilator__i32F20 >> 14;
     }
+    return 0;
+}
+
+void reset__game_tick_timer(Game *p_game) {
     p_game->tick_accumilator__i32F20 -=
-        BIT(14);
-    return false;
+        p_game->tick_accumilator__i32F20 >> 14;
 }
 
 bool print_log__global(Game *p_game, char *cstr) {
@@ -183,6 +189,7 @@ void manage_game__pre_render(Game *p_game) {
 }
 
 void manage_game__post_render(Game *p_game) {
+    reset__game_tick_timer(p_game);
     PLATFORM_poll_input(
             p_game,
             get_p_input_from__game(p_game));

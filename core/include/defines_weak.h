@@ -297,10 +297,18 @@ typedef enum Tile_Kind {
 /// You can add new kinds, but it must be of value greater
 /// than zero, and less than the value of Game_Action_Kind__Unknown.
 ///
-enum Game_Action_Kind {
+typedef enum Game_Action_Kind {
     Game_Action_Kind__None = 0,
     Game_Action_Kind__Unknown
-};
+} Game_Action_Kind;
+
+typedef enum Game_Action_State {
+    Game_Action_State__None = 0,
+    Game_Action_State__Unhandled = Game_Action_Kind__None,
+    Game_Action_State__Keep_Alive,
+    Game_Action_State__Resolved,
+    Game_Action_State__Unknown
+} Game_Action_State;
 
 typedef struct Camera_t Camera;
 typedef struct Chunk_Manager_t Chunk_Manager;

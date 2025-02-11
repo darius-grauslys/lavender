@@ -18,7 +18,7 @@ void SDL_initialize_gfx_window(
         PLATFORM_Graphics_Window *p_PLATFORM_gfx_window,
         Camera *p_camera,
         Vector__3i32F4 position_of__graphics_window__3i32F4) {
-    initialize_p_game_action(
+    initialize_game_action(
             &p_PLATFORM_gfx_window
             ->associated_game_action);
 

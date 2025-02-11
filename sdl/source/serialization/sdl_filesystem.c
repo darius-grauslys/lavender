@@ -239,20 +239,14 @@ void PLATFORM_initialize_file_system_context(
                 MAX_LENGTH_OF__IO_PATH);
 
     Process *p_serialization_process =
-        allocate_process_forcefully_in__process_manager(
+        run_process(
                 get_p_process_manager_from__game(p_game),
-                p_game);
+                m_SDL_process__serialization,
+                PROCESS_FLAG__IS_CRITICAL);
     if (!p_serialization_process) {
         debug_abort("SDL::PLATFORM_initialize_file_system_context, failed to allocate p_serialization_process.");
         return;
     }
-    register_process_as__critical_in__process_manager(
-            get_p_process_manager_from__game(p_game), 
-            p_game, 
-            p_serialization_process);
-    p_serialization_process
-        ->m_process_run__handler =
-        m_SDL_process__serialization;
 }
 
 void PLATFORM_append_base_directory_to__path(

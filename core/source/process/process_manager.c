@@ -3,9 +3,45 @@
 #include "defines_weak.h"
 #include "game.h"
 #include "platform.h"
+#include "serialization/hashing.h"
+#include "serialization/identifiers.h"
+#include "serialization/serialization_header.h"
+#include "serialization/serialized_field.h"
 #include "timer.h"
 #include <process/process_manager.h>
 #include <process/process.h>
+
+static inline
+Process *get_p_process_by__index_from__process_manager(
+        Process_Manager *p_process_manager,
+        Index__u32 index_of__process) {
+#ifndef NDEBUG
+    if (index_of__process >= PROCESS_MAX_QUANTITY_OF) {
+        debug_error("get_p_process_by__index_from__process_manager, index out of bounds: %d/%d",
+                index_of__process,
+                PROCESS_MAX_QUANTITY_OF);
+        return 0;
+    }
+#endif
+    return &p_process_manager->processes[
+        index_of__process];
+}
+
+static inline
+Process **get_p_ptr_process_by__index_from__active_procs_in__process_manager(
+        Process_Manager *p_process_manager,
+        Index__u32 index_of__process) {
+#ifndef NDEBUG
+    if (index_of__process >= PROCESS_MAX_QUANTITY_OF) {
+        debug_error("get_p_ptr_process_by__index_from__active_processes_in__process_manager, index out of bounds: %d/%d",
+                index_of__process,
+                PROCESS_MAX_QUANTITY_OF);
+        return 0;
+    }
+#endif
+    return &p_process_manager->p_ptr_to__next_slot_in__ptr_array_of__processes[
+        index_of__process];
+}
 
 void initialize_process_manager(
         Process_Manager *p_process_manager) {
@@ -22,123 +58,126 @@ void initialize_process_manager(
                 &p_process_manager
                 ->processes[index_of__process]);
     }
-
-    p_process_manager->quantity_of__running_processes = 0;
+    memset(p_process_manager->ptr_array_of__processes,
+            0,
+            sizeof(p_process_manager->ptr_array_of__processes));
+    p_process_manager->next__uuid__u32 = 0;
+    p_process_manager->p_ptr_to__next_slot_in__ptr_array_of__processes = 0;
 }
 
-bool register_process_in__process_manager(
+Process **get_p_ptr_to__process_in__active_processes_in__process_manager(
         Process_Manager *p_process_manager,
-        Process *p_process,
-        enum Process_Priority_Kind the_priority_of_the_process) {
-#ifndef NDEBUG
-    if (!p_process_manager) {
-        debug_abort("register_process_in__process_manager, p_process_manager is null.");
-        return false;
-    }
-    if (!p_process) {
-        debug_abort("register_process_in__process_manager, p_process is null.");
-        return false;
-    }
-#endif
-    Process *p_process__available =
-        allocate_process_in__process_manager(
-                p_process_manager);
+        Process *p_process) {
+    for (Index__u32 index_of__process = 0;
+            index_of__process < PROCESS_MAX_QUANTITY_OF;
+            index_of__process++) {
+        Process **p_ptr_process = 
+            get_p_ptr_process_by__index_from__active_procs_in__process_manager(
+                    p_process_manager, 
+                    index_of__process);
+        if (!p_ptr_process) {
+            return 0;
+        }
 
-    if (!p_process__available)
-        return false;
-    if (p_process__available != p_process) {
-        *p_process__available = *p_process;
+        if ((*p_ptr_process) == p_process) {
+            return p_ptr_process;
+        }
     }
-    p_process_manager->quantity_of__running_processes++;
-    reset_process(p_process__available);
-    p_process__available->the_kind_of_priority__this_process_has =
-        the_priority_of_the_process;
+    return 0;
+}
+
+void remove_process_from__active_processes_in__process_manager(
+        Process_Manager *p_process_manager,
+        Process *p_process) {
+    Process **p_ptr_process =
+        get_p_ptr_to__process_in__active_processes_in__process_manager(
+                p_process_manager, 
+                p_process);
+    if (!p_ptr_process) {
+        debug_error("remove_process_from__active_processes_in__process_manager, failed to find process within process_manager.");
+        return;
+    }
+
+    if ((p_process_manager->p_ptr_to__next_slot_in__ptr_array_of__processes)
+            == p_ptr_process) {
+        p_process_manager->p_ptr_to__next_slot_in__ptr_array_of__processes--;
+#ifndef NDEBUG
+        if (p_process_manager->p_ptr_to__next_slot_in__ptr_array_of__processes
+                - p_process_manager->ptr_array_of__processes
+                >= PROCESS_MAX_QUANTITY_OF) {
+            debug_error("remove_process_from__active_processes_in__process_manager, intrinsic violated. (1/2)");
+        }
+#endif
+        return;
+    }
+    Process **p_ptr_process__next_end =
+        p_process_manager->p_ptr_to__next_slot_in__ptr_array_of__processes - 1;
+#ifndef NDEBUG
+        if (p_ptr_process__next_end
+                - p_process_manager->ptr_array_of__processes
+                >= PROCESS_MAX_QUANTITY_OF) {
+            debug_error("remove_process_from__active_processes_in__process_manager, intrinsic violated. (2/2)");
+        }
+#endif
+    *p_ptr_process = *p_process_manager
+        ->p_ptr_to__next_slot_in__ptr_array_of__processes;
+    *p_process_manager->p_ptr_to__next_slot_in__ptr_array_of__processes = 0;
+    p_process_manager->p_ptr_to__next_slot_in__ptr_array_of__processes =
+        p_ptr_process__next_end;
+}
+
+bool add_process_to__active_processes_in__process_manager(
+        Process_Manager *p_process_manager,
+        Process *p_process) {
+    if (p_process_manager->p_ptr_to__next_slot_in__ptr_array_of__processes >=
+            (p_process_manager->ptr_array_of__processes + PROCESS_MAX_QUANTITY_OF)) {
+        debug_error("add_process_to__active_processes_in__process_manager, too many active processes.");
+        return false;
+    }
+
+    *p_process_manager->p_ptr_to__next_slot_in__ptr_array_of__processes =
+        p_process;
+    p_process_manager->p_ptr_to__next_slot_in__ptr_array_of__processes++;
 
     return true;
 }
 
-void register_process_as__critical_in__process_manager(
+void deallocate_process_from__process_manager(
         Process_Manager *p_process_manager,
-        Game *p_game,
         Process *p_process) {
 #ifndef NDEBUG
-    if (!p_process_manager) {
-        debug_abort("register_process_as__critical_in__process_manager, p_process_manager is null.");
-        return;
-    }
-    if (!p_process) {
-        debug_abort("register_process_as__critical_in__process_manager, p_process is null.");
+    u32 index = p_process
+        - p_process_manager->processes;
+    if (index >= PROCESS_MAX_QUANTITY_OF) {
+        debug_error("deallocate_process_from__process_manager, p_process was not allocated with this process_manager.");
         return;
     }
 #endif
-    Process *p_process__available =
-        allocate_process_forcefully_in__process_manager(
-                p_process_manager,
-                p_game);
 
-    if (!p_process__available)
+    Serialized_Field s_process;
+    initialize_serialized_field_as__unlinked(
+            &s_process, 
+            p_process->_serialization_header.uuid);
+    link_serialized_field_against__contiguous_array(
+            &s_process, 
+            (Serialization_Header *)p_process_manager->processes, 
+            PROCESS_MAX_QUANTITY_OF);
+    if (!is_p_serialized_field__linked(&s_process)) {
+        debug_error("deallocate_process_from__process_manager, failed to find process.");
         return;
-
-    if (p_process__available ==
-            p_process) {
-        goto reset_process;
     }
-
-    *p_process__available =
-        *p_process;
-
-reset_process:
-    if (!is_process__active(p_process__available)) {
-        p_process_manager->quantity_of__running_processes++;
-    } else {
-        remove_process_from__process_manager(
-                p_process_manager, 
-                p_game, 
-                p_process__available);
-    }
-    reset_process(p_process__available);
-    p_process__available
-        ->the_kind_of_priority__this_process_has =
-        Process_Priority_Kind__Critical;
+    remove_process_from__active_processes_in__process_manager(
+            p_process_manager, 
+            p_process);
+    initialize_process_as__empty_process(p_process);
 }
 
-///
-/// Promotes p_process to the next
-/// priority level up to High.
-///
-/// A process cannot be promoted to critical,
-/// instead re-register the process as
-/// Critical. No need to remove the process
-/// prior to re-registration.
-///
-void promote_process_in__process_manager(
-        Process_Manager *p_process_manager,
-        Process *p_process) {
-#ifndef NDEBUG
-    if (!p_process_manager) {
-        debug_abort("promote_process_in__process_manager, p_process_manager is null.");
-        return;
+Identifier__u32 get_next_uuid__u32_from__process_manager(
+        Process_Manager *p_process_manager) {
+    if (is_identifier_u32__invalid(p_process_manager->next__uuid__u32)) {
+        p_process_manager->next__uuid__u32 = 0;
     }
-    if (!p_process) {
-        debug_abort("promote_process_in__process_manager, p_process is null.");
-        return;
-    }
-#endif
-    switch (get_process_priority(p_process)) {
-        default:
-            debug_abort("promote_process_in__process_manager, unknown priority: %d",
-                    get_process_status(p_process));
-            return;
-        case Process_Priority_Kind__None:
-        case Process_Priority_Kind__Low:
-        case Process_Priority_Kind__Medium:
-            p_process->the_kind_of_priority__this_process_has++;
-            return;
-        case Process_Priority_Kind__High:
-        case Process_Priority_Kind__Critical:
-            debug_warning("promote_process_in__process_manager, p_process already at highest priority.");
-            return;
-    }
+    return p_process_manager->next__uuid__u32++;
 }
 
 ///
@@ -147,198 +186,119 @@ void promote_process_in__process_manager(
 ///
 Process *allocate_process_in__process_manager(
         Process_Manager *p_process_manager) {
-#ifndef NDEBUG
-    if (!p_process_manager) {
-        debug_abort("allocate_process_in__process_manager, p_process_manager is null.");
+    Identifier__u32 uuid__u32 =
+        get_next_available__uuid_in__contiguous_array(
+                (Serialization_Header*)p_process_manager->processes, 
+                PROCESS_MAX_QUANTITY_OF, 
+                get_next_uuid__u32_from__process_manager(
+                    p_process_manager));
+    if (is_identifier_u32__invalid(uuid__u32)) {
+        debug_error("allocate_process_in__process_manager, failed to allocate process.");
         return 0;
     }
-#endif
-    Process *p_process__available = 0;
-    for (Index__u32 index_of__process=0;
-            index_of__process < PROCESS_MAX_QUANTITY_OF;
-            index_of__process++) {
-        Process *p_process__current =
-            &p_process_manager
-                ->processes[index_of__process];
-        if (!is_process__available(p_process__current))
-            continue;
-        p_process__available = 
-            p_process__current;
-    }
+    Index__u32 index = poll_for__uuid_collision(
+            (Serialization_Header*)p_process_manager->processes, 
+            PROCESS_MAX_QUANTITY_OF, 
+            uuid__u32);
 
-    return p_process__available;
+    Process *p_process = 
+        get_p_process_by__index_from__process_manager(
+            p_process_manager, 
+            index);
+
+    initialize_serialization_header(
+            &p_process->_serialization_header, 
+            uuid__u32, 
+            sizeof(Process));
+    return p_process;
 }
 
-///
-/// Will remove a process if needed in order
-/// to secure a process pointer. If all processes
-/// are critical the game engine will panick
-/// then this function will return nullptr.
-///
-Process *allocate_process_forcefully_in__process_manager(
+void swap_p_ptr_process_with__last_active_process_in__process_manager(
+        Process_Manager *p_process_manager,
+        Process **p_ptr_process) {
+#ifndef NDEBUG
+    if (!p_ptr_process) {
+        debug_error("swap_p_ptr_process_with__last_active_process_in__process_manager, p_ptr_process == 0.");
+        return;
+    }
+    if (p_ptr_process
+            - p_process_manager->ptr_array_of__processes
+            >= PROCESS_MAX_QUANTITY_OF) {
+        debug_error("swap_p_ptr_process_with__last_active_process_in__process_manager, p_ptr_process is not from this manager.");
+    }
+#endif
+    Process *p_last_process =
+        *p_process_manager->p_ptr_to__next_slot_in__ptr_array_of__processes;
+    p_process_manager->p_ptr_to__next_slot_in__ptr_array_of__processes =
+        p_ptr_process;
+    *p_ptr_process = p_last_process;
+}
+
+Quantity__u32 poll_process_manager(
         Process_Manager *p_process_manager,
         Game *p_game) {
-#ifndef NDEBUG
-    if (!p_process_manager) {
-        debug_abort("allocate_process_forcefully_in__process_manager, p_process_manager is null.");
-        return 0;
-    }
-    if (!p_game) {
-        debug_abort("get_available_p_process_forcefully_in__process_manager, p_game is null.");
-        return 0;
-    }
-#endif
-    Process *p_process__available =
-        &p_process_manager->processes[0];
-    for (Index__u32 index_of__process=1;
-            index_of__process < PROCESS_MAX_QUANTITY_OF;
-            index_of__process++) {
-        Process *p_process__current =
-            &p_process_manager
-                ->processes[index_of__process];
-        enum Process_Priority_Kind priority_of__current =
-            get_process_priority(p_process__current);
-        enum Process_Priority_Kind priority_of__available =
-            get_process_priority(p_process__available);
-
-        if (priority_of__current > priority_of__available) {
-            p_process__available = 
-                p_process__current;
-            continue;
-        }
-
-        if (priority_of__current == priority_of__available) {
-            if (get_time_elapsed_from__process(
-                        p_process__current) <
-                    get_time_elapsed_from__process(
-                        p_process__available)) {
-                continue;
-            }
-        }
-
-        p_process__available =
-            p_process__current;
-    }
-
-    if (is_process_of__this_priority(
-                p_process__available, Process_Priority_Kind__Critical)) {
-        debug_abort("register_process_as__critical_in__process_manager, failed to get available process.");
-        debug_warning("Too many critical processes?");
-    }
-    
-    return p_process__available;
-}
-
-void remove_process_from__process_manager(
-        Process_Manager *p_process_manager,
-        Game *p_game,
-        Process *p_process) {
-#ifndef NDEBUG
-    if (!p_process_manager) {
-        debug_abort("remove_process_from__process_manager, p_process_manager is null.");
-        return;
-    }
-    if (!p_game) {
-        debug_abort("remove_process_from__process_manager, p_game is null.");
-        return;
-    }
-#endif
-#warning TODO: currently, processes are removed WITHOUT warning to the process.
-    p_process->the_kind_of_status__this_process_has =
-        Process_Status_Kind__Removed;
-}
-
-void poll_process_manager(
-        Process_Manager *p_process_manager,
-        Game *p_game) {
-#ifndef NDEBUG
-    if (!p_process_manager) {
-        debug_abort("poll_process_manager, p_process_manager is null.");
-        return;
-    }
-    if (!p_game) {
-        debug_abort("poll_process_manager, p_game is null.");
-        return;
-    }
-#endif
     for (Index__u32 index_of__process = 0;
             index_of__process < PROCESS_MAX_QUANTITY_OF;
             index_of__process++) {
-        Process *p_process =
-            &p_process_manager->processes[index_of__process];
-        u32 time_elapsed__low =
-            get_ticks_elapsed__game(p_game)
-            & MASK(8);
-        u32 time_elapsed__medium =
-            get_ticks_elapsed__game(p_game)
-            & MASK(7);
-        u32 time_elapsed__high =
-            get_ticks_elapsed__game(p_game)
-            & MASK(6);
+        Process **p_ptr_process = get_p_ptr_process_by__index_from__active_procs_in__process_manager(
+                p_process_manager, 
+                index_of__process);
 
-        if (is_process__complete(p_process)) {
-            remove_process_from__process_manager(
-                    p_process_manager, 
-                    p_game, 
-                    p_process);
-            continue;
-        }
+        if (!p_ptr_process || !*p_ptr_process)
+            break;
 
-        switch (get_process_priority(p_process)) {
-            case Process_Priority_Kind__None:
-                break;
-            default:
-                debug_error("poll_process_manager, unknown process priority: %d",
-                        get_process_priority(p_process));
-                reset_process(p_process);
-                p_process->the_kind_of_status__this_process_has =
-                    Process_Status_Kind__Unknown;
-                p_process->the_kind_of_priority__this_process_has =
-                    Process_Priority_Kind__None;
+        Quantity__u32 ticks_elapsed =
+            poll__game_tick_timer(p_game);
+
+        if (!is_process__critical(*p_ptr_process)) {
+            if (ticks_elapsed)
                 continue;
-            case Process_Priority_Kind__Low:
-                if (time_elapsed__low ^ (index_of__process * MASK(4)))
-                    continue;
-                break;
-            case Process_Priority_Kind__Medium:
-                if (time_elapsed__medium ^ (index_of__process * MASK(3)))
-                    continue;
-                break;
-            case Process_Priority_Kind__High:
-                if (time_elapsed__high ^ (index_of__process * MASK(2)))
-                    continue;
-                break;
-            case Process_Priority_Kind__Critical:
-                break;
+
+            ///
+            /// continuously rotate non-critical processes.
+            /// if one process constantly causes poll_process_manager to
+            /// miss game ticks, it will not cause any process freezes for long.
+            ///
+            /// this will eventually push the problematic process the the back.
+            ///
+            swap_p_ptr_process_with__last_active_process_in__process_manager(
+                    p_process_manager, 
+                    p_ptr_process);
         }
-        switch (get_process_status(p_process)) {
-            default:
-            case Process_Status_Kind__Unknown:
-                debug_error("poll_process_manager, unknown process status: %d",
-                        get_process_status(p_process));
-                initialize_process_as__empty_process(p_process);
-            case Process_Status_Kind__None:
-            case Process_Status_Kind__Stopped:
-                break;
-            case Process_Status_Kind__Busy:
-            case Process_Status_Kind__Idle:
-                p_process->the_kind_of_status__this_process_has =
-                    Process_Status_Kind__Busy;
-                p_process->m_process_run__handler(
-                        p_process,
-                        p_game);
-                break;
-            case Process_Status_Kind__Removed:
-                initialize_process_as__empty_process(p_process);
-                break;
-            case Process_Status_Kind__Complete:
-                break;
-            case Process_Status_Kind__Fail:
-                remove_process_from__process_manager(
-                        p_process_manager,
-                        p_game,
-                        p_process);
-                break;
+
+#ifndef NDEBUG
+        if (!(*p_ptr_process)->m_process_run__handler) {
+            debug_error("poll_process_manager, process:%p, lacks m_process_run__handler.");
+            deallocate_process_from__process_manager(
+                    p_process_manager, 
+                    *p_ptr_process);
         }
+#endif
+
+        (*p_ptr_process)->m_process_run__handler(
+                *p_ptr_process,
+                p_game);
     }
+
+    return poll__game_tick_timer(p_game);
+}
+
+Process *run_process(
+        Process_Manager *p_process_manager,
+        m_Process m_process,
+        Process_Flags__u8 process_flags__u8) {
+    Process *p_process =
+        allocate_process_in__process_manager(
+                p_process_manager);
+
+    if (!p_process) 
+        return 0;
+
+    initialize_process(
+            p_process, 
+            p_process->_serialization_header.uuid, 
+            m_process, 
+            0);
+
+    return p_process;
 }

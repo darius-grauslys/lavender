@@ -3,6 +3,7 @@
 
 #include "platform.h"
 #include "platform_defines.h"
+#include "util/bitmap/bitmap.h"
 #include <stdbool.h>
 #include <stdint.h>
 #ifndef NDEBUG
@@ -333,6 +334,16 @@ typedef struct Collision_Manager__Collision_Node_t {
 
     Direction__u8 legal_directions;
 } Collision_Manager__Collision_Node;
+
+#define MAX_QUANTITY_OF__COLLISION_NODE__RECORD_POOLS
+
+typedef struct Collision_Node__Record_Pool_t {
+    
+} Collision_Node__Record_Pool;
+
+typedef struct Collision_Node_t {
+    
+} Collision_Node;
 
 ///
 /// 4 Collision Nodes per layer 3 node.
@@ -1102,10 +1113,10 @@ enum Process_Status_Kind {
     Process_Status_Kind__Stopped,
     Process_Status_Kind__Idle,
     Process_Status_Kind__Busy,
+    Process_Status_Kind__Stopping,
     Process_Status_Kind__Enqueued,
     Process_Status_Kind__Complete,
     Process_Status_Kind__Fail,
-    Process_Status_Kind__Removed,
     Process_Status_Kind__Unknown
 };
 
@@ -1147,29 +1158,34 @@ typedef void (*m_Process)(
 typedef uint8_t Process_Flags__u8;
 
 #define PROCESS_FLAG__IS_CRITICAL BIT(0)
+#define PROCESS_FLAG__IS_SUB_PROCESS BIT(1)
 #define PROCESS_FLAGS__NONE 0
 
 ///
 /// Multithreading abstraction.
 ///
 typedef struct Process_t {
+    Serialization_Header _serialization_header;
     m_Process m_process_run__handler;
-    Process *p_queued_process;
+    union {
+        Process *p_queued_process;
+        Process *p_sub_process;
+    };
     void *p_process_data;
-    Timer__u32 process_timer__u32;
-    Quantity__u32 quantity_of__steps_per_cycle;
-    Quantity__u32 quantity_of__process_steps;
+    i32F20 process_runtime__i32F20;
     enum Process_Status_Kind the_kind_of_status__this_process_has;
     enum Process_Priority_Kind the_kind_of_priority__this_process_has;
     u8 process_sub_state__u8;
     Process_Flags__u8 process_flags__u8;
 } Process;
 
-#define PROCESS_MAX_QUANTITY_OF 16
+#define PROCESS_MAX_QUANTITY_OF 256
 
 typedef struct Process_Manager_t {
     Process processes[PROCESS_MAX_QUANTITY_OF];
-    Quantity__u32 quantity_of__running_processes;
+    Process *ptr_array_of__processes[PROCESS_MAX_QUANTITY_OF];
+    Process **p_ptr_to__next_slot_in__ptr_array_of__processes;
+    Identifier__u32 next__uuid__u32;
 } Process_Manager;
 
 ///
@@ -2002,6 +2018,116 @@ typedef struct Chunk_Manager_t {
         y__center_chunk__signed_index_i32;
 } Chunk_Manager;
 
+typedef u8 Global_Space_Flags__u8;
+
+#define GLOBAL_SPACE_FLAG__IS_ACTIVE BIT(0)
+
+#define GLOBAL_SPACE_FLAGS__NONE 0
+
+typedef struct Global_Space_t {
+    Serialization_Header _serialization_header;
+    Chunk_Vector__3i32 chunk_vector__3i32;
+    Chunk *p_chunk;
+    Collision_Node *p_collision_node;
+    Process *p_managing_process;
+
+    ///
+    /// 0: deallocated
+    /// 1: awaiting usage or deallocation
+    /// 2+: actively being referenced
+    ///
+    Quantity__u16 quantity_of__references;
+
+    Global_Space_Flags__u8 global_space_flags__u8;
+} Global_Space;
+
+typedef struct Local_Space_t {
+    Global_Space *p_global_space;
+
+    struct Local_Space_t *p_local_space__north;
+    struct Local_Space_t *p_local_space__east;
+    struct Local_Space_t *p_local_space__south;
+    struct Local_Space_t *p_local_space__west;
+} Local_Space;
+
+#define WIDTH_OF__LOCAL_SPACE_MANAGER 8
+#define HEIGHT_OF__LOCAL_SPACE_MANAGER 8
+#define AREA_OF__LOCAL_SPACE_MANAGER\
+    (WIDTH_OF__LOCAL_SPACE_MANAGER\
+    * HEIGHT_OF__LOCAL_SPACE_MANAGER)
+
+#define MAX_QUANTITY_OF__GLOBAL_SPACES\
+        (WIDTH_OF__LOCAL_SPACE_MANAGER\
+            * HEIGHT_OF__LOCAL_SPACE_MANAGER)
+
+typedef struct Local_Space_Manager_t {
+    Local_Space local_spaces[
+        MAX_QUANTITY_OF__GLOBAL_SPACES];
+} Local_Space_Manager;
+
+#define MAX_QUANTITY_OF__CLIENTS 4
+
+typedef struct Global_Space_Manager_t {
+    Global_Space global_spaces[
+        AREA_OF__LOCAL_SPACE_MANAGER
+    * MAX_QUANTITY_OF__CLIENTS];
+
+    ///
+    /// NOTE: this process should do the following on completion:
+    /// - invoke set_managed_process_of__global_space(p_..., 0);
+    ///
+    m_Process m_process__construct_global_space;
+
+    ///
+    /// NOTE: this process should do the following on completion:
+    /// - invoke initialize_global_space(p_...);
+    ///
+    m_Process m_process__destruct_global_space;
+} Global_Space_Manager;
+
+typedef uint8_t Game_Action_Flags;
+
+#define GAME_ACTION_FLAGS__BIT_IS_ALLOCATED \
+    BIT(0)
+#define GAME_ACTION_FLAGS__BIT_IS_IN_OR__OUT_BOUND \
+    BIT(1)
+#define GAME_ACTION_FLAGS__BIT_IS_ID_OR_PTR \
+    BIT(2)
+
+/// 
+/// Use this struct and it's associated helpers
+/// when you need to:
+/// - manipulate an entity
+/// - manupilate a UI_Element
+/// - change scene
+///
+/// Adding your own Game_Action? Be sure to include
+/// it into the enum list. --> READ <-- the rules
+/// for updating the enum list!!!
+///
+typedef struct Game_Action_t {
+    Game_Action_Kind the_kind_of_game_action__this_action_is;
+    Game_Action_State state_of__game_action;
+    Game_Action_Flags game_action_flags;
+} Game_Action;
+
+#define MAX_QUANTITY_OF__GAME_ACTIONS 128
+
+typedef struct Game_Action_Manager_t {
+    BITMAP_AND_HEAP(
+            bitmap_and_heap_of__deallocated_game_actions,
+            MAX_QUANTITY_OF__GAME_ACTIONS);
+    Game_Action game_actions[
+        MAX_QUANTITY_OF__GAME_ACTIONS];
+} Game_Action_Manager;
+
+typedef struct Client_t {
+    Serialization_Header _serialization_header;
+    Game_Action_Manager game_action_manager__inbound;
+    Game_Action_Manager game_action_manager__outbound;
+    Local_Space_Manager local_space_manager;
+} Client;
+
 #define WORLD_NAME_MAX_SIZE_OF 32
 typedef char World_Name_String[WORLD_NAME_MAX_SIZE_OF];
 
@@ -2104,26 +2230,5 @@ typedef struct Game_t {
     i32F20 tick_accumilator__i32F20;
     bool is_world__initialized;
 } Game;
-
-typedef uint8_t Game_Action_Flags;
-
-#define GAME_ACTION_FLAGS__BIT_IS_ID_OR_PTR \
-    BIT(0)
-
-/// 
-/// Use this struct and it's associated helpers
-/// when you need to:
-/// - manipulate an entity
-/// - manupilate a UI_Element
-/// - change scene
-///
-/// Adding your own Game_Action? Be sure to include
-/// it into the enum list. --> READ <-- the rules
-/// for updating the enum list!!!
-///
-typedef struct Game_Action_t {
-    enum Game_Action_Kind the_kind_of_game_action__this_action_is;
-    Game_Action_Flags game_action_flags;
-} Game_Action;
 
 #endif
