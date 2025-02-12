@@ -8,6 +8,19 @@ void initialize_local_space(
         Local_Space *p_local_space);
 
 static inline
+void set_neighbors_of__local_space(
+        Local_Space *p_local_space,
+        Local_Space *p_local_space__north,
+        Local_Space *p_local_space__east,
+        Local_Space *p_local_space__south,
+        Local_Space *p_local_space__west) {
+    p_local_space->p_local_space__north = p_local_space__north;
+    p_local_space->p_local_space__east = p_local_space__east;
+    p_local_space->p_local_space__south = p_local_space__south;
+    p_local_space->p_local_space__west = p_local_space__west;
+}
+
+static inline
 Global_Space *get_p_global_space_from__local_space(
         Local_Space *p_local_space) {
     return p_local_space->p_global_space;

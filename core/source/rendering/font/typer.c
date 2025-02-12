@@ -11,8 +11,9 @@ void initialize_typer(
         Quantity__u32 width,
         Quantity__u32 height,
         i32 x__cursor, i32 y__cursor) {
-    initialize_hitbox(
+    initialize_hitbox_as__allocated(
             &p_typer->text_bounding_box, 
+            IDENTIFIER__UNKNOWN__u32,
             width, height, 
             get_vector__3i32F4_using__i32(
                 x, y, 0));
@@ -50,8 +51,9 @@ bool poll_typer_for__cursor_wrapping(
         Font_Letter *p_font_letter) {
 
     Hitbox_AABB font_letter_hitbox;
-    initialize_hitbox(
+    initialize_hitbox_as__allocated(
             &font_letter_hitbox, 
+            IDENTIFIER__UNKNOWN__u32,
             p_font_letter->width_of__font_letter, 
             p_font_letter->height_of__font_letter,
             get_vector__3i32F4_using__i32(0, 0, 0));

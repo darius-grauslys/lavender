@@ -89,7 +89,10 @@ typedef struct Vector__3i32_t {
                       z__i32;
 } Vector__3i32;
 
+// TODO: remove
 typedef struct Vector__3i32_t Chunk_Vector__3i32;
+
+typedef struct Vector__3i32_t Global_Space_Vector__3i32;
 typedef struct Vector__3i32_t Tile_Vector__3i32;
 
 typedef uint32_t Psuedo_Random_Seed__u32;
@@ -277,19 +280,18 @@ typedef struct Audio_Effect_t {
 ///
 
 typedef struct Hitbox_AABB_t {
-    Quantity__u32 width__quantity_u32;
-    Quantity__u32 height__quantity_u32;
-    // We don't have a z-axis height.
-    // Why? Because even thought the world
-    // is 3D, everyone is made out of paper
-    // in this video game.
-    //
-    // Entities can't co-exist in the same tile
-    // but they can stand on top of one in an
-    // above tile.
+    Serialization_Header _serialization_header;
     Vector__3i32F4 position__3i32F4;
     Vector__3i32F4 velocity__3i32F4;
+    Quantity__u32 width__quantity_u32;
+    Quantity__u32 height__quantity_u32;
 } Hitbox_AABB;
+
+#define MAX_QUANTITY_OF__HITBOX_AABB 128
+
+typedef struct Hitbox_AABB_Manager_t {
+    Hitbox_AABB hitboxes[MAX_QUANTITY_OF__HITBOX_AABB];
+} Hitbox_AABB_Manager;
 
 /// When checking the distance between two collisions along each axis
 /// anything equal to or less than this value is ignored when determining
@@ -337,13 +339,20 @@ typedef struct Collision_Manager__Collision_Node_t {
 
 #define MAX_QUANTITY_OF__COLLISION_NODE__RECORD_POOLS
 
-typedef struct Collision_Node__Record_Pool_t {
-    
-} Collision_Node__Record_Pool;
+typedef struct Collision_Node_Entry_t {
+    Serialized_Field s_hitbox;
+    struct Collision_Node_Entry_t *p_previous_entry;
+} Collision_Node_Entry;
 
 typedef struct Collision_Node_t {
-    
+    Serialization_Header _serialization_header;
+    Collision_Node_Entry *p_linked_list__collision_node_entries__tail;
 } Collision_Node;
+
+typedef struct Collision_Node_Pool_t {
+    Collision_Node collision_nodes[QUANTITY_OF__GLOBAL_SPACE];
+    Collision_Node_Entry collision_node_entries[MAX_QUANTITY_OF__HITBOX_AABB];
+} Collision_Node_Pool;
 
 ///
 /// 4 Collision Nodes per layer 3 node.
@@ -1989,6 +1998,10 @@ typedef struct Chunk_t {
     Chunk_Flags chunk_flags;
 } Chunk;
 
+typedef struct Chunk_Pool_t {
+    Chunk chunks[QUANTITY_OF__GLOBAL_SPACE];
+} Chunk_Pool;
+
 typedef struct Chunk_Manager__Chunk_Map_Node_t {
     Chunk *p_chunk__here;
     struct Chunk_Manager__Chunk_Map_Node_t *p_north__chunk_map_node;
@@ -2020,7 +2033,9 @@ typedef struct Chunk_Manager_t {
 
 typedef u8 Global_Space_Flags__u8;
 
-#define GLOBAL_SPACE_FLAG__IS_ACTIVE BIT(0)
+#define GLOBAL_SPACE_FLAG__IS_CONSTRUCTING BIT(0)
+#define GLOBAL_SPACE_FLAG__IS_DECONSTRUCTING BIT(1)
+#define GLOBAL_SPACE_FLAG__IS_DIRTY BIT(2)
 
 #define GLOBAL_SPACE_FLAGS__NONE 0
 
@@ -2042,6 +2057,7 @@ typedef struct Global_Space_t {
 } Global_Space;
 
 typedef struct Local_Space_t {
+    Global_Space_Vector__3i32 global_space__vector__3i32;
     Global_Space *p_global_space;
 
     struct Local_Space_t *p_local_space__north;
@@ -2050,27 +2066,19 @@ typedef struct Local_Space_t {
     struct Local_Space_t *p_local_space__west;
 } Local_Space;
 
-#define WIDTH_OF__LOCAL_SPACE_MANAGER 8
-#define HEIGHT_OF__LOCAL_SPACE_MANAGER 8
-#define AREA_OF__LOCAL_SPACE_MANAGER\
-    (WIDTH_OF__LOCAL_SPACE_MANAGER\
-    * HEIGHT_OF__LOCAL_SPACE_MANAGER)
-
-#define MAX_QUANTITY_OF__GLOBAL_SPACES\
-        (WIDTH_OF__LOCAL_SPACE_MANAGER\
-            * HEIGHT_OF__LOCAL_SPACE_MANAGER)
-
 typedef struct Local_Space_Manager_t {
     Local_Space local_spaces[
-        MAX_QUANTITY_OF__GLOBAL_SPACES];
+        AREA_OF__LOCAL_SPACE_MANAGER];
+    Vector__3i32 center_of__local_space_manager__3i32;
+    Local_Space *p_local_space__north_west;
+    Local_Space *p_local_space__north_east;
+    Local_Space *p_local_space__south_west;
+    Local_Space *p_local_space__south_east;
 } Local_Space_Manager;
-
-#define MAX_QUANTITY_OF__CLIENTS 4
 
 typedef struct Global_Space_Manager_t {
     Global_Space global_spaces[
-        AREA_OF__LOCAL_SPACE_MANAGER
-    * MAX_QUANTITY_OF__CLIENTS];
+        QUANTITY_OF__GLOBAL_SPACE];
 
     ///
     /// NOTE: this process should do the following on completion:

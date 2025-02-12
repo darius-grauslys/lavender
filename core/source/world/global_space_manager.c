@@ -26,10 +26,10 @@ Global_Space *get_p_global_space_by__index_from__global_space_manager(
         Global_Space_Manager *p_global_space_manager,
         Index__u32 index_of__global_space) {
 #ifndef NDEBUG
-    if (index_of__global_space >= MAX_QUANTITY_OF__GLOBAL_SPACES) {
+    if (index_of__global_space >= QUANTITY_OF__GLOBAL_SPACE) {
         debug_error("get_p_global_space_by__index_from__global_space_manager, index out of range: %d/%d",
                 index_of__global_space,
-                MAX_QUANTITY_OF__GLOBAL_SPACES);
+                QUANTITY_OF__GLOBAL_SPACE);
         return 0;
     }
 #endif
@@ -63,7 +63,7 @@ Global_Space *dehash_global_space_from__global_space_manager(
             &s_global_space, 
             (Serialization_Header *)p_global_space_manager
             ->global_spaces, 
-            MAX_QUANTITY_OF__GLOBAL_SPACES);
+            QUANTITY_OF__GLOBAL_SPACE);
     if (!is_p_serialized_field__linked(&s_global_space)) {
         return 0;
     }
@@ -85,10 +85,10 @@ Global_Space *dehash_global_space_from__global_space_manager(
         ->global_spaces
         ;
     for (Index__u32 index_of__global_space = 
-                (start_index+1 % MAX_QUANTITY_OF__GLOBAL_SPACES);
+                (start_index+1 % QUANTITY_OF__GLOBAL_SPACE);
             index_of__global_space != start_index;
             index_of__global_space = 
-                (index_of__global_space+1 % MAX_QUANTITY_OF__GLOBAL_SPACES)) {
+                (index_of__global_space+1 % QUANTITY_OF__GLOBAL_SPACE)) {
         p_global_space = 
             get_p_global_space_by__index_from__global_space_manager(
                     p_global_space_manager, 
@@ -113,7 +113,7 @@ Global_Space *allocate_global_space_in__global_space_manager(
         poll_for__uuid_collision(
                 (Serialization_Header *)p_global_space_manager
                 ->global_spaces, 
-                MAX_QUANTITY_OF__GLOBAL_SPACES, 
+                QUANTITY_OF__GLOBAL_SPACE, 
                 get_uuid_for__global_space(chunk_vector__3i32));
     if (is_index_u32__out_of_bounds(index_of__global_space)) {
         debug_error("allocate_global_space_in__global_space_manager, failed to allocate a global_space.");
@@ -136,7 +136,7 @@ void release_global_space_in__global_space_manager(
 #ifndef NDEBUG
     u32 index = p_global_space
         - p_global_space_manager->global_spaces;
-    if (index >= MAX_QUANTITY_OF__GLOBAL_SPACES) {
+    if (index >= QUANTITY_OF__GLOBAL_SPACE) {
         debug_error("release_global_space_in__global_space_manager, p_global_space was not allocated with this manager.");
         return;
     }
@@ -161,7 +161,7 @@ Global_Space *hold_global_space_within__global_space_manager(
     link_serialized_field_against__contiguous_array(
             &s_global_space, 
             (Serialization_Header *)p_global_space_manager->global_spaces, 
-            MAX_QUANTITY_OF__GLOBAL_SPACES);
+            QUANTITY_OF__GLOBAL_SPACE);
     Global_Space *p_global_space;
     if (is_p_serialized_field__linked(&s_global_space)) {
         p_global_space = (Global_Space*)s_global_space.p_serialized_field__data;

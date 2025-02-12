@@ -40,27 +40,83 @@ bool is_global_space__allocated(
 }
 
 static inline
-bool is_global_space__active(
+bool is_global_space__constructing(
         Global_Space *p_global_space) {
     return (p_global_space->global_space_flags__u8
-        & GLOBAL_SPACE_FLAG__IS_ACTIVE)
+        & GLOBAL_SPACE_FLAG__IS_CONSTRUCTING)
         ;
 }
 
 static inline
-bool set_global_space_as__active(
+bool set_global_space_as__constructing(
         Global_Space *p_global_space) {
     return p_global_space->global_space_flags__u8 |=
-        GLOBAL_SPACE_FLAG__IS_ACTIVE
+        GLOBAL_SPACE_FLAG__IS_CONSTRUCTING
         ;
 }
 
 static inline
-bool set_global_space_as__inactive(
+bool set_global_space_as__NOT_constructing(
         Global_Space *p_global_space) {
     return p_global_space->global_space_flags__u8 &=
-        ~GLOBAL_SPACE_FLAG__IS_ACTIVE
+        ~GLOBAL_SPACE_FLAG__IS_CONSTRUCTING
         ;
+}
+
+static inline
+bool is_global_space__deconstructing(
+        Global_Space *p_global_space) {
+    return (p_global_space->global_space_flags__u8
+        & GLOBAL_SPACE_FLAG__IS_DECONSTRUCTING)
+        ;
+}
+
+static inline
+bool set_global_space_as__deconstructing(
+        Global_Space *p_global_space) {
+    return p_global_space->global_space_flags__u8 |=
+        GLOBAL_SPACE_FLAG__IS_DECONSTRUCTING
+        ;
+}
+
+static inline
+bool set_global_space_as__NOT_deconstructing(
+        Global_Space *p_global_space) {
+    return p_global_space->global_space_flags__u8 &=
+        ~GLOBAL_SPACE_FLAG__IS_DECONSTRUCTING
+        ;
+}
+
+static inline
+bool is_global_space__dirty(
+        Global_Space *p_global_space) {
+    return (p_global_space->global_space_flags__u8
+        & GLOBAL_SPACE_FLAG__IS_DIRTY)
+        ;
+}
+
+static inline
+bool set_global_space_as__dirty(
+        Global_Space *p_global_space) {
+    return p_global_space->global_space_flags__u8 |=
+        GLOBAL_SPACE_FLAG__IS_DIRTY
+        ;
+}
+
+static inline
+bool set_global_space_as__NOT_dirty(
+        Global_Space *p_global_space) {
+    return p_global_space->global_space_flags__u8 &=
+        ~GLOBAL_SPACE_FLAG__IS_DIRTY
+        ;
+}
+
+static inline
+bool is_global_space__active(
+        Global_Space *p_global_space) {
+    return p_global_space
+        && !is_global_space__constructing(p_global_space)
+        && !is_global_space__deconstructing(p_global_space);
 }
 
 #endif

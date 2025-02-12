@@ -33,8 +33,9 @@ void initialize_ui_element(
     p_ui_element->the_kind_of_ui_element__this_is =
         kind_of_ui_element;
     p_ui_element->ui_flags = ui_flags;
-    initialize_hitbox(
+    initialize_hitbox_as__allocated(
             &p_ui_element->ui_bounding_box__aabb, 
+            IDENTIFIER__UNKNOWN__u32,
             width__u16, 
             height__u16, 
             vector_3i32_to__vector_3i32F4(position__3i32));

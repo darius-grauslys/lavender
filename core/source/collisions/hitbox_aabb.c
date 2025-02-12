@@ -1,15 +1,31 @@
 #include "defines.h"
 #include "defines_weak.h"
 #include "numerics.h"
+#include "serialization/serialization_header.h"
 #include "vectors.h"
 #include <collisions/hitbox_aabb.h>
 #include <debug/debug.h>
 
 void initialize_hitbox(
+        Hitbox_AABB *hitbox) {
+    memset(hitbox,
+            0,
+            sizeof(Hitbox_AABB));
+    initialize_serialization_header_for__deallocated_struct(
+            &hitbox->_serialization_header,
+            sizeof(Hitbox_AABB));
+}
+
+void initialize_hitbox_as__allocated(
         Hitbox_AABB *hitbox,
+        Identifier__u32 uuid__u32,
         Quantity__u32 width, 
         Quantity__u32 height,
         Vector__3i32F4 position__3i32F4) {
+    initialize_serialization_header(
+            &hitbox->_serialization_header,
+            uuid__u32,
+            sizeof(Hitbox_AABB));
     hitbox->width__quantity_u32 = width;
     hitbox->height__quantity_u32 = height;
     hitbox->velocity__3i32F4.x__i32F4 = 0;

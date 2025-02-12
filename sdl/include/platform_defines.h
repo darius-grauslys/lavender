@@ -71,6 +71,19 @@
 #define CHUNK_WIDTH__IN_BYTES (\
         TILE_WIDTH__IN_BYTES *\
         CHUNK_WIDTH__IN_TILES)
+
+#define WIDTH_OF__LOCAL_SPACE_MANAGER 8
+#define HEIGHT_OF__LOCAL_SPACE_MANAGER 8
+#define AREA_OF__LOCAL_SPACE_MANAGER\
+    (WIDTH_OF__LOCAL_SPACE_MANAGER\
+    * HEIGHT_OF__LOCAL_SPACE_MANAGER)
+
+#define MAX_QUANTITY_OF__CLIENTS 4
+
+#define QUANTITY_OF__GLOBAL_SPACE\
+    (AREA_OF__LOCAL_SPACE_MANAGER\
+     * MAX_QUANTITY_OF__CLIENTS)
+
 #endif
 
 /*****************************************************

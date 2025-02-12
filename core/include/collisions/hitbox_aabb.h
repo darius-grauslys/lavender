@@ -115,8 +115,11 @@ void clamp_p_vector_3i32_to__hitbox(
         Hitbox_AABB *p_hitbox, 
         Vector__3i32 *p_position__3i32);
 
-void initialize_hitbox(
+void initialize_hitbox(Hitbox_AABB *hitbox);
+
+void initialize_hitbox_as__allocated(
         Hitbox_AABB *hitbox,
+        Identifier__u32 uuid__u32,
         Quantity__u32 width, 
         Quantity__u32 height,
         Vector__3i32F4 position__3i32F4);
