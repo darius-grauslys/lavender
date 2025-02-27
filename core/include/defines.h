@@ -2,6 +2,7 @@
 #define DEFINES_H
 
 #include "platform.h"
+#include "platform_defaults.h"
 #include "platform_defines.h"
 #include "util/bitmap/bitmap.h"
 #include <stdbool.h>
@@ -247,6 +248,7 @@ typedef struct Serialized_Field_t {
 #define SERIALZIATION_REQUEST_FLAG__USE_SERIALIZER_OR_BUFFER BIT(2)
 #define SERIALIZATION_REQUEST_FLAG__READ_OR_WRITE BIT(3)
 #define SERIALIZATION_REQUEST_FLAG__KEEP_ALIVE BIT(4)
+#define SERIALIZATION_REQUEST_FLAG__IS_TCP_OR_IO BIT(5)
 
 typedef uint8_t Serialization_Request_Flags;
 
@@ -1110,6 +1112,34 @@ typedef struct Input_t {
 ///
 /// SECTION_multiplayer
 ///
+
+typedef struct IPv4_Address_t {
+    u8 ip_bytes[4];
+} IPv4_Address;
+
+typedef struct TCP_Packet_t {
+    u8 tcp_packet_bytes[MAX_SIZE_OF__TCP_PACKET];
+} TCP_Packet;
+
+typedef struct TCP_Socket_t {
+    Serialization_Header _serialization_header;
+    TCP_Packet queue_of__tcp_packet[MAX_QUANTITY_OF__TCP_PACKETS_PER__SOCKET];
+    Quantity__u16 packet_size__entries[MAX_QUANTITY_OF__TCP_PACKETS_PER__SOCKET];
+    IPv4_Address tcp_socket__address;
+    Index__u32 index_of__enqueue_begin;
+    Index__u32 index_of__enqueue_end;
+} TCP_Socket;
+
+typedef void (*m_Poll_TCP_Socket_Manager)(
+        TCP_Socket_Manager *p_tcp_socket_manager,
+        Game *p_game);
+
+typedef struct TCP_Socket_Manager_t {
+    TCP_Socket tcp_sockets[MAX_QUANTITY_OF__TCP_SOCKETS];
+    TCP_Socket *ptr_array_of__tcp_sockets[
+        MAX_QUANTITY_OF__TCP_SOCKETS];
+    m_Poll_TCP_Socket_Manager m_poll_tcp_socket_manager;
+} TCP_Socket_Manager;
 
 ///
 /// SECTION_process
@@ -2097,23 +2127,28 @@ typedef uint8_t Game_Action_Flags;
 
 #define GAME_ACTION_FLAGS__BIT_IS_ALLOCATED \
     BIT(0)
-#define GAME_ACTION_FLAGS__BIT_IS_IN_OR__OUT_BOUND \
+#define GAME_ACTION_FLAGS__BIT_IS_OUT_OR__IN_BOUND \
     BIT(1)
-#define GAME_ACTION_FLAGS__BIT_IS_ID_OR_PTR \
+#define GAME_ACTION_FLAGS__BIT_IS_FIRE_AND_FORGET \
     BIT(2)
+#define GAME_ACTION_FLAGS__BIT_IS_WITH_PROCESS \
+    BIT(3)
+#define GAME_ACTION_FLAGS__BIT_IS_PROCESSED_ON_INVOCATION_OR_RESPONSE \
+    BIT(4)
+#define GAME_ACTION_FLAGS__BIT_IS_RESPONSE \
+    BIT(5)
+#define GAME_ACTION_FLAGS__BIT_IS_ID_OR_PTR \
+    BIT(6)
 
-/// 
-/// Use this struct and it's associated helpers
-/// when you need to:
-/// - manipulate an entity
-/// - manupilate a UI_Element
-/// - change scene
+
 ///
-/// Adding your own Game_Action? Be sure to include
-/// it into the enum list. --> READ <-- the rules
-/// for updating the enum list!!!
+/// Game actions are invoked using the m_Process signature.
+/// If your game action is NOT processed, then m_process will
+/// be null in your invocation.
 ///
 typedef struct Game_Action_t {
+    Serialization_Header _serialiation_header;
+    Identifier__u32 uuid_of__client__u32;
     Game_Action_Kind the_kind_of_game_action__this_action_is;
     Game_Action_State state_of__game_action;
     Game_Action_Flags game_action_flags;
@@ -2129,11 +2164,28 @@ typedef struct Game_Action_Manager_t {
         MAX_QUANTITY_OF__GAME_ACTIONS];
 } Game_Action_Manager;
 
+typedef void (*f_Game_Action_Sanitizer)(
+        Game *p_game,
+        Game_Action *p_game_action,
+        u8 *p_data);
+
+typedef struct Game_Action_Logic_Entry_t {
+    m_Process m_process_of__game_action;
+    f_Game_Action_Sanitizer f_game_action_sanitizer;
+    Process_Flags__u8 process_flags__u8;
+} Game_Action_Logic_Entry;
+
+typedef struct Game_Action_Logic_Table_t {
+    Game_Action_Logic_Entry game_action_logic_entries[
+        Game_Action_Kind__Unknown];
+} Game_Action_Logic_Table;
+
 typedef struct Client_t {
     Serialization_Header _serialization_header;
     Game_Action_Manager game_action_manager__inbound;
     Game_Action_Manager game_action_manager__outbound;
     Local_Space_Manager local_space_manager;
+    Serialized_Field s_entity_of__client;
 } Client;
 
 #define WORLD_NAME_MAX_SIZE_OF 32
@@ -2229,11 +2281,21 @@ typedef struct Game_t {
     PLATFORM_Audio_Context *p_PLATFORM_audio_context;
     PLATFORM_File_System_Context *p_PLATFORM_file_system_context;
 
-    m_Game_Action_Handler m_game_action_handler;
+    Game_Action_Logic_Table game_action_logic_table;
+
+    // TODO: obselete
+    // m_Game_Action_Handler m_game_action_handler;
 
     Timer__u32 tick__timer_u32;
     Timer__u32 time__seconds__u32;
     Timer__u32 time__nanoseconds__u32;
+
+    Quantity__u32 max_quantity_of__clients;
+    Quantity__u32 quantity_of__clients;
+    Client *pM_clients;
+    Client **pM_ptr_array_of__clients;
+    TCP_Socket_Manager *pM_tcp_socket_manager;
+
     i32F20 time_elapsed__i32F20;
     i32F20 tick_accumilator__i32F20;
     bool is_world__initialized;

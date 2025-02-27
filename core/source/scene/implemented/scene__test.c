@@ -13,7 +13,6 @@
 #include "vectors.h"
 #include "world/camera.h"
 #include "world/chunk.h"
-#include "world/chunk_manager.h"
 #include "world/chunk_vectors.h"
 #include "world/world.h"
 
@@ -192,11 +191,11 @@ void m_enter_scene__test(
         p_PLATFORM_texture_of__ground_cover
     };
     
-    move_chunk_manager_to__chunk_position(
-            p_game, 
-            get_p_chunk_manager_from__game(p_game), 
-            vector_3i32_to__chunk_vector_3i32(
-                get_vector__3i32(0, 0, 0)));
+    // move_chunk_manager_to__chunk_position(
+    //         p_game, 
+    //         get_p_chunk_manager_from__game(p_game), 
+    //         vector_3i32_to__chunk_vector_3i32(
+    //             get_vector__3i32(0, 0, 0)));
 
     while (
             is_p_scene_the__active_scene_in__scene_manager(

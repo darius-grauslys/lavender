@@ -1,8 +1,11 @@
+#include "client.h"
+#include "defines.h"
 #include "defines_weak.h"
 #include "inventory/inventory_manager.h"
 #include "inventory/item_manager.h"
 #include "log/log.h"
 #include "platform.h"
+#include "platform_defaults.h"
 #include "platform_defines.h"
 #include "process/process_manager.h"
 #include "rendering/aliased_texture_manager.h"
@@ -10,19 +13,19 @@
 #include "scene/implemented/scene__test.h"
 #include "scene/scene.h"
 #include "scene/scene_manager.h"
+#include "serialization/hashing.h"
 #include "sort/sort_list/sort_list_manager.h"
+#include "vectors.h"
 #include "world/tile_logic_manager.h"
 #include <game.h>
 #include <entity/entity.h>
 #include <entity/entity_manager.h>
 #include <debug/debug.h>
 #include <input/input.h>
-#include <world/chunk_manager.h>
 #include <world/world.h>
 #include <timer.h>
 
 #include <collisions/hitbox_aabb.h>
-#include <collisions/collision_manager.h>
 
 #include <world/chunk.h>
 #include <world/tile.h>
@@ -67,6 +70,108 @@ void initialize_game(
 
     p_game->is_world__initialized = false;
     p_game->m_game_action_handler = m_game_action_handler;
+}
+
+void allocate_client_pool_for__game(
+        Game *p_game,
+        Quantity__u32 quantity_of__clients) {
+    if (quantity_of__clients > MAX_QUANTITY_OF__TCP_SOCKETS) {
+        debug_error("allocate_client_pool_for__game, quantity_of__clients > MAX_QUANTITY_OF__TCP_SOCKETS");
+        quantity_of__clients = MAX_QUANTITY_OF__TCP_SOCKETS;
+    }
+    p_game->pM_clients = malloc(sizeof(Client) * quantity_of__clients);
+    p_game->pM_ptr_array_of__clients = malloc(sizeof(Client*) 
+            * quantity_of__clients);
+    p_game->max_quantity_of__clients = quantity_of__clients;
+    p_game->quantity_of__clients = 0;
+}
+
+void release_clients_from__game(
+        Game *p_game) {
+    debug_error("release_clients_from__game, impl.");
+}
+
+void begin_multiplayer_for__game(
+        Game *p_game) {
+    if (sizeof(Game_Action) > sizeof(TCP_Packet)) {
+        debug_abort("begin_multiplayer_for__game, sizeof(Game_Action) > sizeof(TCP_Packet)");
+        return;
+    }
+    p_game->pM_tcp_socket_manager = malloc(sizeof(TCP_Socket_Manager));
+}
+
+void stop_multiplayer_for__game(
+        Game *p_game) {
+    if (p_game->pM_tcp_socket_manager) {
+        free(p_game->pM_tcp_socket_manager);
+    }
+}
+
+Client *allocate_client_from__game(
+        Game *p_game,
+        Identifier__u32 uuid__u32) {
+    Client *p_client = 
+        (Client*)dehash_identitier_u32_in__contigious_array(
+                (Serialization_Header*)&p_game->pM_clients, 
+                p_game->max_quantity_of__clients, 
+                uuid__u32);
+    if (!p_client) {
+        debug_error("allocate_client_from__game, failed to allocate p_client.");
+        return 0;
+    }
+
+    initialize_client(
+            p_client, 
+            uuid__u32, 
+            VECTOR__3i32__0_0_0);
+
+    p_game->quantity_of__clients++;
+
+    p_game->pM_ptr_array_of__clients[
+        p_game->quantity_of__clients] = p_client;
+
+    return p_client;
+}
+
+Client *get_p_client_by__uuid_from__game(
+        Game *p_game,
+        Identifier__u32 uuid__u32) {
+    if (!p_game->pM_clients) {
+        debug_warning("Did you forget to allocate the client pool?");
+        debug_error("get_p_client_by__uuid_from__game, pM_clients == 0.");
+        return 0;
+    }
+    return (Client*)dehash_identitier_u32_in__contigious_array(
+            (Serialization_Header *)p_game->pM_clients, 
+            p_game->max_quantity_of__clients, 
+            uuid__u32);
+}
+
+void release_client_from__game(
+        Game *p_game,
+        Client *p_client) {
+    debug_abort("release_client_from__game, impl.");
+}
+
+///
+/// Sends this game action to all clients that
+/// have the given area loaded.
+///
+void broadcast_game_action(
+        Game *p_game,
+        Game_Action *p_game_action,
+        Global_Space_Vector__3i32 global_space__vector__3i32) {
+    debug_abort("broadcast_game_action, impl.");
+}
+
+void poll_multiplayer(Game *p_game) {
+    if (!p_game->pM_tcp_socket_manager) {
+        return;
+    }
+
+    p_game->pM_tcp_socket_manager->m_poll_tcp_socket_manager(
+            p_game->pM_tcp_socket_manager,
+            p_game);
 }
 
 i32F20 get_elapsed_time__i32F20_of__game(

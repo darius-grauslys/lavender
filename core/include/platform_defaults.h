@@ -7,6 +7,29 @@
 #define PATH_SEPERATOR "/"
 #endif
 
+#ifndef PLATFORM__TCP
+#define PLATFORM__TCP
+#define IS_SERVER
+    #ifndef IS_SERVER
+        #define MAX_QUANTITY_OF__TCP_SOCKETS 1
+    #else
+        #define MAX_QUANTITY_OF__TCP_SOCKETS 256
+    #endif
+#define MAX_SIZE_OF__TCP_PACKET BIT(9)
+#define MAX_QUANTITY_OF__TCP_PACKETS_PER__SOCKET 256
+
+///
+/// Destination has run out of space. Need more space
+/// to finish sending packet.
+///
+#define TCP_ERROR__DESTINATION_OVERFLOW (-1)
+///
+/// Destination cannot handle this packet at this time.
+/// Packet is dropped.
+///
+#define TCP_ERROR__TOO_MANY_PACKETS (-2)
+#endif
+
 #ifndef PLATFORM__CAMERA
 #define PLATFORM__CAMERA
 #define CAMERA_FULCRUM__WIDTH 256

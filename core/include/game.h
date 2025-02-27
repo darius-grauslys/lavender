@@ -40,6 +40,10 @@ void manage_game(Game *p_game);
 void manage_game__pre_render(Game *p_game);
 void manage_game__post_render(Game *p_game);
 
+Client *get_p_client_by__uuid_from__game(
+        Game *p_game,
+        Identifier__u32 uuid__u32);
+
 /// TODO: obsolete, and inaccurate
 static inline
 Quantity__u32 get_ticks_elapsed__game(Game *p_game) {
@@ -100,11 +104,6 @@ Aliased_Texture_Manager *get_p_aliased_texture_manager_from__game(Game *p_game) 
 }
 
 static inline
-Camera *get_p_camera_from__game(Game *p_game) {
-    return get_p_camera_from__world(&p_game->world);
-}
-
-static inline
 Process_Manager *get_p_process_manager_from__game(Game *p_game) {
     return &p_game->process_manager;
 }
@@ -141,20 +140,10 @@ Entity_Manager *get_p_entity_manager_from__game(Game *p_game) {
     return get_p_entity_manager_from__world(&p_game->world);
 }
 
-static inline 
-Chunk_Manager *get_p_chunk_manager_from__game(Game *p_game) {
-    return get_p_chunk_manager_from__world(&p_game->world);
-}
-
 static inline
 World_Parameters *get_p_world_parameters_from__game(Game *p_game) {
     return get_p_world_parameters_from__world(
             get_p_world_from__game(p_game));
-}
-
-static inline 
-Collision_Manager *get_p_collision_manager_from__game(Game *p_game) {
-    return get_p_collision_manager_from__world(&p_game->world);    
 }
 
 static inline
@@ -177,6 +166,16 @@ Gfx_Context *get_p_gfx_context_from__game(Game *p_game) {
 static inline
 PLATFORM_Gfx_Context *get_p_PLATFORM_gfx_context_from__game(Game *p_game) {
     return p_game->gfx_context.p_PLATFORM_gfx_context;
+}
+
+static inline
+Game_Action_Logic_Table *get_p_game_action_logic_table_from__game(Game *p_game) {
+    return &p_game->game_action_logic_table;
+}
+
+static inline
+TCP_Socket_Manager *get_p_tcp_socket_manager_from__game(Game *p_game) {
+    return p_game->pM_tcp_socket_manager;
 }
 
 static inline

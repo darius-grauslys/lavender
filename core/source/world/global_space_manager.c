@@ -177,19 +177,24 @@ Global_Space *hold_global_space_within__global_space_manager(
         debug_error("hold_global_space_within__global_space_manager, failed to allocate p_global_space.");
         return 0;
     }
-    initialize_global_space(
-            p_global_space);
+
+    initialize_global_space(p_global_space);
     hold_global_space(p_global_space);
+
     Process *p_process = 
         run_process(
                 p_process_manager, 
                 p_global_space_manager
                 ->m_process__construct_global_space, 
                 PROCESS_FLAG__IS_CRITICAL);
+
     if (!p_process) {
         debug_error("hold_global_space_within__global_space_manager, failed to allocate process.");
         return 0;
     }
+
+    set_global_space_as__constructing(p_global_space);
+
     return p_global_space;
 }
 
@@ -200,7 +205,6 @@ void drop_global_space_within__global_space_manager(
     if (!drop_global_space(p_global_space)) {
         return;
     }
-
     Process *p_process =
         run_process(
             p_process_manager,
@@ -212,4 +216,7 @@ void drop_global_space_within__global_space_manager(
         debug_error("drop_global_space_within__global_space_manager, failed to allocate process.");
         return;
     }
+
+    set_global_space_as__deconstructing(p_global_space);
+
 }

@@ -209,67 +209,69 @@ void GL_compose_world(
         Quantity__u32 quantity_of__gfx_windows,
         f_Tile_Render_Kernel f_tile_render_kernel) {
 
-    Chunk_Manager *p_chunk_manager =
-        get_p_chunk_manager_from__world(p_world);
+    debug_error("GL_compose_world, impl");
 
-    Chunk_Manager__Chunk_Map_Node *p_current__chunk_map_node =
-        p_chunk_manager->p_most_north_western__chunk_map_node;
-    Chunk_Manager__Chunk_Map_Node *p_current_sub__chunk_map_node;
+    // Chunk_Manager *p_chunk_manager =
+    //     get_p_chunk_manager_from__world(p_world);
 
-    float clear_color[4];
-    glGetFloatv(GL_COLOR_CLEAR_VALUE, clear_color);
+    // Chunk_Manager__Chunk_Map_Node *p_current__chunk_map_node =
+    //     p_chunk_manager->p_most_north_western__chunk_map_node;
+    // Chunk_Manager__Chunk_Map_Node *p_current_sub__chunk_map_node;
 
-    glClearColor(1.0f, 0.0f, 1.0f, 0.0f);
-    for (Index__u32 index_of__gfx_window = 0;
-            index_of__gfx_window
-            < quantity_of__gfx_windows;
-            index_of__gfx_window++) {
-        Graphics_Window *p_gfx_window =
-            p_ptr_array_of__gfx_windows[
-                index_of__gfx_window];
-        GL_Framebuffer *p_GL_framebuffer =
-            (GL_Framebuffer*)p_gfx_window
-            ->p_PLATFORM_gfx_window
-            ->p_SDL_graphics_window__data;
-        GL_use_framebuffer_as__target(
-                p_GL_framebuffer);
-        GL_bind_texture_to__framebuffer(
-                p_GL_framebuffer, 
-                p_gfx_window
-                ->p_PLATFORM_gfx_window
-                ->p_SDL_graphics_window__texture);
-        glClear(GL_COLOR_BUFFER_BIT);
-    }
-    glClearColor(
-            clear_color[0],
-            clear_color[1],
-            clear_color[2],
-            clear_color[3]);
+    // float clear_color[4];
+    // glGetFloatv(GL_COLOR_CLEAR_VALUE, clear_color);
 
-    for (uint8_t y=0; 
-            y 
-            < GFX_CONTEXT__RENDERING_HEIGHT__IN_CHUNKS;
-            y++) {
-        p_current_sub__chunk_map_node =
-            p_current__chunk_map_node;
-        for (uint8_t x=0; 
-                x 
-                < GFX_CONTEXT__RENDERING_WIDTH__IN_CHUNKS;
-                x++) {
-            GL_compose_chunk(
-                    p_gfx_context, 
-                    p_ptr_array_of__gfx_windows, 
-                    p_current_sub__chunk_map_node, 
-                    p_ptr_array_of__PLATFORM_textures, 
-                    quantity_of__gfx_windows, 
-                    f_tile_render_kernel);
+    // glClearColor(1.0f, 0.0f, 1.0f, 0.0f);
+    // for (Index__u32 index_of__gfx_window = 0;
+    //         index_of__gfx_window
+    //         < quantity_of__gfx_windows;
+    //         index_of__gfx_window++) {
+    //     Graphics_Window *p_gfx_window =
+    //         p_ptr_array_of__gfx_windows[
+    //             index_of__gfx_window];
+    //     GL_Framebuffer *p_GL_framebuffer =
+    //         (GL_Framebuffer*)p_gfx_window
+    //         ->p_PLATFORM_gfx_window
+    //         ->p_SDL_graphics_window__data;
+    //     GL_use_framebuffer_as__target(
+    //             p_GL_framebuffer);
+    //     GL_bind_texture_to__framebuffer(
+    //             p_GL_framebuffer, 
+    //             p_gfx_window
+    //             ->p_PLATFORM_gfx_window
+    //             ->p_SDL_graphics_window__texture);
+    //     glClear(GL_COLOR_BUFFER_BIT);
+    // }
+    // glClearColor(
+    //         clear_color[0],
+    //         clear_color[1],
+    //         clear_color[2],
+    //         clear_color[3]);
 
-            p_current_sub__chunk_map_node =
-                p_current_sub__chunk_map_node->p_east__chunk_map_node;
-            // break;
-        }
-        p_current__chunk_map_node =
-            p_current__chunk_map_node->p_south__chunk_map_node;
-        // break;
-    }
+    // for (uint8_t y=0; 
+    //         y 
+    //         < GFX_CONTEXT__RENDERING_HEIGHT__IN_CHUNKS;
+    //         y++) {
+    //     p_current_sub__chunk_map_node =
+    //         p_current__chunk_map_node;
+    //     for (uint8_t x=0; 
+    //             x 
+    //             < GFX_CONTEXT__RENDERING_WIDTH__IN_CHUNKS;
+    //             x++) {
+    //         GL_compose_chunk(
+    //                 p_gfx_context, 
+    //                 p_ptr_array_of__gfx_windows, 
+    //                 p_current_sub__chunk_map_node, 
+    //                 p_ptr_array_of__PLATFORM_textures, 
+    //                 quantity_of__gfx_windows, 
+    //                 f_tile_render_kernel);
+
+    //         p_current_sub__chunk_map_node =
+    //             p_current_sub__chunk_map_node->p_east__chunk_map_node;
+    //         // break;
+    //     }
+    //     p_current__chunk_map_node =
+    //         p_current__chunk_map_node->p_south__chunk_map_node;
+    //     // break;
+    // }
 }

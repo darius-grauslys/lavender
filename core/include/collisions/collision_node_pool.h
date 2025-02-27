@@ -15,4 +15,7 @@ void release_collision_node_from__collision_node_pool(
         Collision_Node_Pool *p_collision_node_pool,
         Collision_Node *p_collision_node);
 
+Collision_Node_Entry *get_next_available__collision_node_entry(
+        Collision_Node_Pool *p_collision_node_pool);
+
 #endif

@@ -16,7 +16,9 @@
 /// happens to be congruent (same number after mod) with
 /// another UUID also mod'd by length_of__p_serialization_headers.
 ///
-/// Returns INDEX__UNKNOWN__u32 if the UUID is not found.
+/// Returns a valid index within the array regardless if the struct
+/// is considered allocated or not. Returns IDENTIFIER__UNKNOWN__u32 only
+/// if the array is completely full.
 ///
 Index__u32 poll_for__uuid_collision(
         Serialization_Header *p_serialization_headers,

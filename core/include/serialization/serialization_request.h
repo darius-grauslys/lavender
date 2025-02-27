@@ -69,6 +69,20 @@ void set_serialization_request_as__fire_and_forget(
 }
 
 static inline
+void set_serialization_request_as__tcp(
+        Serialization_Request *p_serialization_request) {
+    p_serialization_request->serialization_request_flags |=
+        SERIALIZATION_REQUEST_FLAG__IS_TCP_OR_IO;
+}
+
+static inline
+void set_serialization_request_as__io(
+        Serialization_Request *p_serialization_request) {
+    p_serialization_request->serialization_request_flags &=
+        ~SERIALIZATION_REQUEST_FLAG__IS_TCP_OR_IO;
+}
+
+static inline
 bool is_serialization_request__allocated(
         Serialization_Request *p_serialization_request) {
     return p_serialization_request->serialization_request_flags
@@ -108,6 +122,13 @@ bool is_serialization_request__fire_and_forget(
         Serialization_Request *p_serialization_request) {
     return !is_serialization_request__keep_alive(
             p_serialization_request);
+}
+
+static inline
+bool is_serialization_request__tcp_or_io(
+        Serialization_Request *p_serialization_request) {
+    return p_serialization_request->serialization_request_flags
+        & SERIALIZATION_REQUEST_FLAG__IS_TCP_OR_IO;
 }
 
 #endif

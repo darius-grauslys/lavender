@@ -7,7 +7,6 @@
 #include "world/world.h"
 #include <world/tile.h>
 #include <defines.h>
-#include <world/chunk_manager.h>
 #include <vectors.h>
 
 void initialize_tile(Tile *tile, 
@@ -41,83 +40,84 @@ Tile *get_p_tile_from__chunk_node_for__tile_render(
         Chunk_Manager__Chunk_Map_Node *p_chunk_node,
         Local_Tile_Vector__3u8 local_tile_vector__3u8,
         Tile_Render_Result *p_render_result) {
-    Index__u8 x__local = local_tile_vector__3u8.x__u8;
-    Index__u8 y__local = local_tile_vector__3u8.y__u8;
-    Tile *p_tile =
-        get_p_tile_from__chunk_node(
-                p_chunk_node,
-                local_tile_vector__3u8);
-
-    Tile *p_north, *p_east, *p_south, *p_west;
-
-    //TODO: this is a pretty glaring problem
-    //with how the chunk_nodes are connected
-    p_north =
-        (y__local == 0)
-        ? get_p_tile_from__chunk_node_using__u8(
-                p_chunk_node->p_north__chunk_map_node,
-                x__local, 
-                CHUNK_WIDTH__IN_TILES - 1)
-        : get_p_tile_from__chunk_node_using__u8(
-                p_chunk_node,
-                x__local, 
-                y__local - 1)
-        ;
-    p_south =
-        (y__local == CHUNK_WIDTH__IN_TILES - 1)
-        ? get_p_tile_from__chunk_node_using__u8(
-                p_chunk_node->p_south__chunk_map_node,
-                x__local, 
-                0)
-        : get_p_tile_from__chunk_node_using__u8(
-                p_chunk_node,
-                x__local, 
-                y__local + 1)
-        ;
-    p_west =
-        (x__local == 0)
-        ? get_p_tile_from__chunk_node_using__u8(
-                p_chunk_node->p_west__chunk_map_node,
-                CHUNK_WIDTH__IN_TILES - 1, y__local)
-        : get_p_tile_from__chunk_node_using__u8(
-                p_chunk_node,
-                x__local - 1, 
-                y__local)
-        ;
-    p_east =
-        (x__local == CHUNK_WIDTH__IN_TILES - 1)
-        ? get_p_tile_from__chunk_node_using__u8(
-                p_chunk_node->p_east__chunk_map_node,
-                0, 
-                y__local)
-        : get_p_tile_from__chunk_node_using__u8(
-                p_chunk_node,
-                x__local + 1, 
-                y__local)
-        ;
-
-    Tile_Wall_Adjacency_Code__u16 wall_adjacency = 0;
-#warning [***] preserver wall adjacency code
-    // if (is_tile_cover__a_wall(p_north->the_kind_of_tile_cover__this_tile_has)) {
-    //     wall_adjacency +=
-    //         TILE_RENDER__WALL_ADJACENCY__NORTH;
-    // }
-    // if (is_tile_cover__a_wall(p_east->the_kind_of_tile_cover__this_tile_has)) {
-    //     wall_adjacency +=
-    //         TILE_RENDER__WALL_ADJACENCY__EAST;
-    // }
-    // if (is_tile_cover__a_wall(p_south->the_kind_of_tile_cover__this_tile_has)) {
-    //     wall_adjacency +=
-    //         TILE_RENDER__WALL_ADJACENCY__SOUTH;
-    // }
-    // if (is_tile_cover__a_wall(p_west->the_kind_of_tile_cover__this_tile_has)) {
-    //     wall_adjacency +=
-    //         TILE_RENDER__WALL_ADJACENCY__WEST;
-    // }
-
-    p_render_result->wall_adjacency = wall_adjacency;
-
-    return p_tile;
+//     Index__u8 x__local = local_tile_vector__3u8.x__u8;
+//     Index__u8 y__local = local_tile_vector__3u8.y__u8;
+//     Tile *p_tile =
+//         get_p_tile_from__chunk_node(
+//                 p_chunk_node,
+//                 local_tile_vector__3u8);
+// 
+//     Tile *p_north, *p_east, *p_south, *p_west;
+// 
+//     //TODO: this is a pretty glaring problem
+//     //with how the chunk_nodes are connected
+//     p_north =
+//         (y__local == 0)
+//         ? get_p_tile_from__chunk_node_using__u8(
+//                 p_chunk_node->p_north__chunk_map_node,
+//                 x__local, 
+//                 CHUNK_WIDTH__IN_TILES - 1)
+//         : get_p_tile_from__chunk_node_using__u8(
+//                 p_chunk_node,
+//                 x__local, 
+//                 y__local - 1)
+//         ;
+//     p_south =
+//         (y__local == CHUNK_WIDTH__IN_TILES - 1)
+//         ? get_p_tile_from__chunk_node_using__u8(
+//                 p_chunk_node->p_south__chunk_map_node,
+//                 x__local, 
+//                 0)
+//         : get_p_tile_from__chunk_node_using__u8(
+//                 p_chunk_node,
+//                 x__local, 
+//                 y__local + 1)
+//         ;
+//     p_west =
+//         (x__local == 0)
+//         ? get_p_tile_from__chunk_node_using__u8(
+//                 p_chunk_node->p_west__chunk_map_node,
+//                 CHUNK_WIDTH__IN_TILES - 1, y__local)
+//         : get_p_tile_from__chunk_node_using__u8(
+//                 p_chunk_node,
+//                 x__local - 1, 
+//                 y__local)
+//         ;
+//     p_east =
+//         (x__local == CHUNK_WIDTH__IN_TILES - 1)
+//         ? get_p_tile_from__chunk_node_using__u8(
+//                 p_chunk_node->p_east__chunk_map_node,
+//                 0, 
+//                 y__local)
+//         : get_p_tile_from__chunk_node_using__u8(
+//                 p_chunk_node,
+//                 x__local + 1, 
+//                 y__local)
+//         ;
+// 
+//     Tile_Wall_Adjacency_Code__u16 wall_adjacency = 0;
+// #warning [***] preserver wall adjacency code
+//     // if (is_tile_cover__a_wall(p_north->the_kind_of_tile_cover__this_tile_has)) {
+//     //     wall_adjacency +=
+//     //         TILE_RENDER__WALL_ADJACENCY__NORTH;
+//     // }
+//     // if (is_tile_cover__a_wall(p_east->the_kind_of_tile_cover__this_tile_has)) {
+//     //     wall_adjacency +=
+//     //         TILE_RENDER__WALL_ADJACENCY__EAST;
+//     // }
+//     // if (is_tile_cover__a_wall(p_south->the_kind_of_tile_cover__this_tile_has)) {
+//     //     wall_adjacency +=
+//     //         TILE_RENDER__WALL_ADJACENCY__SOUTH;
+//     // }
+//     // if (is_tile_cover__a_wall(p_west->the_kind_of_tile_cover__this_tile_has)) {
+//     //     wall_adjacency +=
+//     //         TILE_RENDER__WALL_ADJACENCY__WEST;
+//     // }
+// 
+//     p_render_result->wall_adjacency = wall_adjacency;
+// 
+//     return p_tile;
+    return 0;
 }
 
 static inline 
@@ -155,32 +155,33 @@ bool poll_tile_for__touch(
         Game *p_game,
         Entity *p_entity,
         Tile_Vector__3i32 tile_vector__3i32) {
-    Tile *p_tile = 
-        get_p_tile_from__chunk_manager_with__tile_vector_3i32(
-                get_p_chunk_manager_from__game(p_game),
-                tile_vector__3i32);
+    debug_abort("poll_tile_for__touch, impl");
+    // Tile *p_tile = 
+    //     get_p_tile_from__chunk_manager_with__tile_vector_3i32(
+    //             get_p_chunk_manager_from__game(p_game),
+    //             tile_vector__3i32);
 
-    Tile_Logic_Manager *p_tile_logic_manager =
-        get_p_tile_logic_manager_from__world(
-                get_p_world_from__game(p_game));
+    // Tile_Logic_Manager *p_tile_logic_manager =
+    //     get_p_tile_logic_manager_from__world(
+    //             get_p_world_from__game(p_game));
 
-    Tile_Logic_Record *p_tile_logic_record =
-        get_p_tile_logic_record_for__ground_kind_from__tile_logic_manager(
-                p_tile_logic_manager, 
-                get_tile_kind_from__tile(p_tile));
+    // Tile_Logic_Record *p_tile_logic_record =
+    //     get_p_tile_logic_record_for__ground_kind_from__tile_logic_manager(
+    //             p_tile_logic_manager, 
+    //             get_tile_kind_from__tile(p_tile));
 
-    if (p_tile_logic_record
-            && is_tile_logic_record_possessing__touch(
-                p_tile_logic_record)) {
-        invoke_tile_logic_record__touch(
-                p_tile_logic_record,
-                p_game,
-                p_tile,
-                tile_vector__3i32,
-                p_entity);
-                
-        return true;
-    }
+    // if (p_tile_logic_record
+    //         && is_tile_logic_record_possessing__touch(
+    //             p_tile_logic_record)) {
+    //     invoke_tile_logic_record__touch(
+    //             p_tile_logic_record,
+    //             p_game,
+    //             p_tile,
+    //             tile_vector__3i32,
+    //             p_entity);
+    //             
+    //     return true;
+    // }
 
     return false;
 }
@@ -251,91 +252,95 @@ bool attempt_tile_placement(
         Game *p_game,
         Tile_Kind the_kind_of__tile,
         Tile_Vector__3i32 tile_vector__3i32) {
-    Tile *p_tile = 
-        get_p_tile_from__chunk_manager_with__tile_vector_3i32(
-                get_p_chunk_manager_from__game(p_game),
-                tile_vector__3i32);
+    debug_abort("attempt_tile_placement, impl");
+    return false;
+    // Tile *p_tile = 
+    //     get_p_tile_from__chunk_manager_with__tile_vector_3i32(
+    //             get_p_chunk_manager_from__game(p_game),
+    //             tile_vector__3i32);
 
-    if (!p_tile)
-        return false;
+    // if (!p_tile)
+    //     return false;
 
-    bool is_placing__ground_or_cover =
-        the_kind_of__tile != Tile_Kind__None;
+    // bool is_placing__ground_or_cover =
+    //     the_kind_of__tile != Tile_Kind__None;
 
-    Tile_Logic_Record *p_tile_logic_record = 0;
-    if (is_placing__ground_or_cover) {
-        p_tile_logic_record =
-            get_p_tile_logic_record_for__ground_kind_from__tile_logic_manager(
-                    get_p_tile_logic_manager_from__world(
-                        get_p_world_from__game(p_game)), 
-                    the_kind_of__tile);
-    } else {
-    }
+    // Tile_Logic_Record *p_tile_logic_record = 0;
+    // if (is_placing__ground_or_cover) {
+    //     p_tile_logic_record =
+    //         get_p_tile_logic_record_for__ground_kind_from__tile_logic_manager(
+    //                 get_p_tile_logic_manager_from__world(
+    //                     get_p_world_from__game(p_game)), 
+    //                 the_kind_of__tile);
+    // } else {
+    // }
 
-    if (!p_tile_logic_record)
-        return false;
+    // if (!p_tile_logic_record)
+    //     return false;
 
-    bool result_of__placement = false;
-    if (is_tile_logic_record_possessing__place(
-                p_tile_logic_record)) {
-        result_of__placement = 
-            invoke_tile_logic_record__place(
-                p_tile_logic_record, 
-                p_game, 
-                p_tile, 
-                the_kind_of__tile, 
-                tile_vector__3i32);        
-    } else {
-    }
+    // bool result_of__placement = false;
+    // if (is_tile_logic_record_possessing__place(
+    //             p_tile_logic_record)) {
+    //     result_of__placement = 
+    //         invoke_tile_logic_record__place(
+    //             p_tile_logic_record, 
+    //             p_game, 
+    //             p_tile, 
+    //             the_kind_of__tile, 
+    //             tile_vector__3i32);        
+    // } else {
+    // }
 
-    if (result_of__placement) {
-        determine_tile_flags(
-                get_p_tile_logic_manager_from__world(
-                    get_p_world_from__game(p_game)), 
-                p_tile);
-    }
+    // if (result_of__placement) {
+    //     determine_tile_flags(
+    //             get_p_tile_logic_manager_from__world(
+    //                 get_p_world_from__game(p_game)), 
+    //             p_tile);
+    // }
 
-    return result_of__placement;
+    // return result_of__placement;
 }
 
 bool remove_tile__ground(
         Game *p_game,
         Tile_Vector__3i32 tile_vector__3i32) {
-    Tile *p_tile = 
-        get_p_tile_from__chunk_manager_with__tile_vector_3i32(
-                get_p_chunk_manager_from__game(p_game),
-                tile_vector__3i32);
+    debug_abort("remove_tile__ground, impl");
+    return false;
+    // Tile *p_tile = 
+    //     get_p_tile_from__chunk_manager_with__tile_vector_3i32(
+    //             get_p_chunk_manager_from__game(p_game),
+    //             tile_vector__3i32);
 
-    Tile_Logic_Record *p_logic_record =
-        get_p_tile_logic_record_for__ground_kind_from__tile_logic_manager(
-                get_p_tile_logic_manager_from__world(
-                    get_p_world_from__game(p_game)), 
-                get_tile_kind_from__tile(p_tile));
+    // Tile_Logic_Record *p_logic_record =
+    //     get_p_tile_logic_record_for__ground_kind_from__tile_logic_manager(
+    //             get_p_tile_logic_manager_from__world(
+    //                 get_p_world_from__game(p_game)), 
+    //             get_tile_kind_from__tile(p_tile));
 
-    if (!p_logic_record
-            || !is_tile_logic_record_possessing__destroy(
-                p_logic_record)) {
-        set_tile_kind_of__tile(
-                p_tile, 
-                Tile_Kind__None);
-    } else {
-        if (!invoke_tile_logic_record__destroy(
-                p_logic_record, 
-                p_game, 
-                p_tile, 
-                get_tile_kind_from__tile(p_tile), 
-                tile_vector__3i32)) {
-            return false;
-        }
-    }
+    // if (!p_logic_record
+    //         || !is_tile_logic_record_possessing__destroy(
+    //             p_logic_record)) {
+    //     set_tile_kind_of__tile(
+    //             p_tile, 
+    //             Tile_Kind__None);
+    // } else {
+    //     if (!invoke_tile_logic_record__destroy(
+    //             p_logic_record, 
+    //             p_game, 
+    //             p_tile, 
+    //             get_tile_kind_from__tile(p_tile), 
+    //             tile_vector__3i32)) {
+    //         return false;
+    //     }
+    // }
 
-    determine_tile_flags(
-            get_p_tile_logic_manager_from__world(
-                get_p_world_from__game(p_game)), 
-            p_tile);
+    // determine_tile_flags(
+    //         get_p_tile_logic_manager_from__world(
+    //             get_p_world_from__game(p_game)), 
+    //         p_tile);
 
-    update_chunk_at__tile_vector__3i32(
-            p_game, 
-            tile_vector__3i32);
-    return true;
+    // update_chunk_at__tile_vector__3i32(
+    //         p_game, 
+    //         tile_vector__3i32);
+    // return true;
 }

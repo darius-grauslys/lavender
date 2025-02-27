@@ -142,6 +142,9 @@ typedef enum Item_Kind {
 /// SECTION_multiplayer
 ///
 
+typedef struct TCP_Socket_t TCP_Socket;
+typedef struct TCP_Socket_Manager_t TCP_Socket_Manager;
+
 /// 
 /// SECTION_rendering
 ///

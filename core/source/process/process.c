@@ -22,6 +22,7 @@ void initialize_process(
         Process_Status_Kind__None;
     p_process->p_process_data =
         p_process_data;
+    p_process->p_process_data__response = 0;
     p_process->process_sub_state__u8 = 0;
     p_process->process_flags__u8 = PROCESS_FLAGS__NONE;
 }

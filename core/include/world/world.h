@@ -1,9 +1,7 @@
 #ifndef WORLD_H
 #define WORLD_H
 
-#include "collisions/collision_manager.h"
 #include "defines_weak.h"
-#include "world/chunk_manager.h"
 #include <defines.h>
 
 void initialize_world(
@@ -72,19 +70,9 @@ Entity_Manager *get_p_entity_manager_from__world(World *p_world) {
     return &p_world->entity_manager;
 }
 
-static inline 
-Chunk_Manager *get_p_chunk_manager_from__world(World *p_world) {
-    return &p_world->chunk_manager;
-}
-
 static inline
 Tile_Logic_Manager *get_p_tile_logic_manager_from__world(World *p_world) {
     return &p_world->tile_logic_manager;
-}
-
-static inline
-Collision_Manager *get_p_collision_manager_from__world(World *p_world) {
-    return &p_world->collision_manager;
 }
 
 static World_Parameters inline
