@@ -7,6 +7,8 @@
 void initialize_world(
         Game *p_game,
         World *p_world,
+        m_Process m_process__construct_global_space,
+        m_Process m_process__destruct_global_space,
         f_Chunk_Generator f_chunk_generator);
 
 void manage_world(
@@ -75,13 +77,37 @@ Tile_Logic_Manager *get_p_tile_logic_manager_from__world(World *p_world) {
     return &p_world->tile_logic_manager;
 }
 
-static World_Parameters inline
-*get_p_world_parameters_from__world(World *p_world) {
+static inline
+World_Parameters *get_p_world_parameters_from__world(World *p_world) {
     return &p_world->world_parameters;
 }
 
-static Entity inline
-*get_p_local_player_from__world(World *p_world) {
+static inline
+Global_Space_Manager *get_p_global_space_manager_from__world(
+        World *p_world) { 
+    return &p_world->global_space_manager;
+}
+
+static inline
+Hitbox_AABB_Manager *get_p_hitbox_aabb_manager_from__world(
+        World *p_world) {
+    return &p_world->hitbox_aabb_manager;
+}
+
+static inline
+Collision_Node_Pool *get_p_collision_node_pool_from__world(
+        World *p_world) {
+    return &p_world->collision_node_pool;
+}
+
+static inline
+Chunk_Pool *get_p_chunk_pool_from__world(
+        World *p_world) {
+    return &p_world->chunk_pool;
+}
+
+static inline
+Entity *get_p_local_player_from__world(World *p_world) {
     return p_world->entity_manager.p_local_player;
 }
 

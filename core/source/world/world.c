@@ -1,4 +1,8 @@
+#include "client.h"
+#include "collisions/collision_node.h"
+#include "collisions/collision_node_pool.h"
 #include "collisions/hitbox_aabb.h"
+#include "collisions/hitbox_aabb_manager.h"
 #include "defines.h"
 #include "defines_weak.h"
 #include "entity/handlers/entity_handlers.h"
@@ -7,7 +11,10 @@
 #include "rendering/graphics_window.h"
 #include "serialization/serialization_request.h"
 #include "world/camera.h"
+#include "world/chunk_pool.h"
 #include "world/chunk_vectors.h"
+#include "world/global_space_manager.h"
+#include "world/local_space_manager.h"
 #include "world/serialization/world_directory.h"
 #include "world/tile_logic_manager.h"
 #include <world/world.h>
@@ -30,6 +37,8 @@ void m_process__deserialize_world(
 void initialize_world(
         Game *p_game,
         World *p_world,
+        m_Process m_process__construct_global_space,
+        m_Process m_process__destruct_global_space,
         f_Chunk_Generator f_chunk_generator) {
 
     initialize_serialization_header(
@@ -48,11 +57,23 @@ void initialize_world(
     initialize_world_parameters(
             &p_world->world_parameters, 
             f_chunk_generator);
+    initialize_hitbox_aabb_manager(
+            get_p_hitbox_aabb_manager_from__world(p_world));
     initialize_entity_manager(&p_world->entity_manager);
     initialize_tile_logic_manager(
             get_p_tile_logic_manager_from__world(p_world));
     register_core_tile_logic_handlers(
             get_p_tile_logic_manager_from__world(p_world));
+
+    initialize_collision_node_pool(
+            get_p_collision_node_pool_from__world(p_world));
+    initialize_chunk_pool(
+            get_p_chunk_pool_from__world(p_world));
+
+    initialize_global_space_manager(
+            get_p_global_space_manager_from__world(p_world), 
+            m_process__construct_global_space, 
+            m_process__destruct_global_space);
 }
 
 void manage_world(
@@ -60,15 +81,36 @@ void manage_world(
         Graphics_Window *p_gfx_window) {
     manage_world__entities(p_game);
 
-    if (poll_world_for__scrolling(
+    World *p_world = 
+        get_p_world_from__game(p_game);
+
+    for (Index__u32 index_of__client = 0;
+            index_of__client
+            < get_quantity_of__clients_connect_to__game(p_game);
+            index_of__client++) {
+        Client *p_client = 
+            get_p_client_by__index_from__game(
+                    p_game, 
+                    index_of__client);
+
+        if (!is_p_serialized_field__linked(
+                    &p_client->s_entity_of__client)) {
+            continue;
+        }
+
+        Hitbox_AABB *p_hitbox_aabb = 
+            get_p_hitbox_aabb_by__entity_from__hitbox_aabb_manager(
+                    get_p_hitbox_aabb_manager_from__world(
+                        p_world), 
+                    p_client->s_entity_of__client.p_serialized_field__entity);
+
+        poll_local_space_for__scrolling(
+                get_p_local_space_manager_from__client(p_client), 
                 p_game, 
-                &p_game->world,
-                p_gfx_window)) {
-#warning put local_space centering code here.
-        // set_collision_manager__center_chunk(
-        //         &p_game->world.collision_manager,
-        //         p_game->world.chunk_manager.x__center_chunk__signed_index_i32,
-        //         p_game->world.chunk_manager.y__center_chunk__signed_index_i32);
+                get_p_global_space_manager_from__world(
+                    get_p_world_from__game(p_game)), 
+                vector_3i32F4_to__chunk_vector_3i32(
+                    p_hitbox_aabb->position__3i32F4));
     }
 }
 
@@ -156,18 +198,27 @@ void load_world(Game *p_game) {
 Entity *get_p_entity_from__world_using__3i32F4(
         World *p_world,
         Vector__3i32F4 position__3i32F4) {
-    debug_abort("get_p_entity_from__world_using__3i32F4, impl");
-    // Serialized_Field *ps_field =
-    //     get_s_record_from__collision_manager_with__3i32F4(
-    //         get_p_collision_manager_from__world(p_world), 
-    //         position__3i32F4);
+    Global_Space *p_global_space =
+        get_p_global_space_from__global_space_manager(
+                get_p_global_space_manager_from__world(p_world), 
+                vector_3i32F4_to__chunk_vector_3i32(position__3i32F4));
 
-    // if (is_p_serialized_field__linked(
-    //             ps_field)) {
-    //     return ps_field->p_serialized_field__entity;
-    // }
+    Collision_Node *p_collision_node =
+        get_p_collision_node_by__uuid_64_from__collision_node_pool(
+                get_p_collision_node_pool_from__world(p_world), 
+                p_global_space->_serialization_header.uuid);
 
-    return 0;
+    Hitbox_AABB *p_hitbox_aabb =
+        get_p_hitbox_aabb_at__vector_3i32F4_from__collision_node(
+                p_collision_node, 
+                position__3i32F4);
+
+    if (!p_hitbox_aabb)
+        return 0;
+
+    return get_p_entity_by__uuid_from__entity_manager(
+                get_p_entity_manager_from__world(p_world), 
+                GET_UUID_P(p_hitbox_aabb));
 }
 
 void m_process__serialize_world(

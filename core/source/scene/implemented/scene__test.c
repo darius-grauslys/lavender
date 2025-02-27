@@ -1,19 +1,28 @@
 #include "scene/implemented/scene__test.h"
+#include "client.h"
+#include "collisions/collision_node_pool.h"
 #include "defines.h"
 #include "defines_weak.h"
 #include "game.h"
 #include "input/input.h"
 #include "platform.h"
 #include "platform_defines.h"
+#include "process/process.h"
 #include "rendering/aliased_texture_manager.h"
 #include "rendering/graphics_window.h"
 #include "rendering/graphics_window_manager.h"
 #include "scene/scene_manager.h"
 #include "rendering/gfx_context.h"
+#include "serialization/serialization_header.h"
 #include "vectors.h"
 #include "world/camera.h"
 #include "world/chunk.h"
+#include "world/chunk_pool.h"
 #include "world/chunk_vectors.h"
+#include "world/global_space.h"
+#include "world/global_space_manager.h"
+#include "world/local_space.h"
+#include "world/local_space_manager.h"
 #include "world/world.h"
 
 void m_load_scene__test(
@@ -35,6 +44,11 @@ void register_scene__test(Scene_Manager *p_scene_manager) {
 void m_load_scene__test(
         Scene *p_this_scene,
         Game *p_game) {
+    allocate_client_pool_for__game(p_game, 1);
+    (void)allocate_client_from__game(
+            p_game, 
+            0);
+
     load_p_PLATFORM_texture_from__path_with__alias(
             get_p_PLATFORM_gfx_context_from__game(p_game), 
             0, 
@@ -59,7 +73,7 @@ void m_load_scene__test(
 
 void f_chunk_generator(
         Game *p_game,
-        Chunk_Manager__Chunk_Map_Node *p_chunk_map_node) {
+        Global_Space *p_global_space) {
     i32 random = 
         get_pseudo_random_i32__intrusively(
                 get_p_repeatable_psuedo_random_from__world(
@@ -71,14 +85,16 @@ void f_chunk_generator(
         : Tile_Kind__Two
         ;
 
+    Chunk *p_chunk =
+        get_p_chunk_from__global_space(p_global_space);
+
     for (Index__u32 index_of__tile = 0;
             index_of__tile <
-            sizeof(p_chunk_map_node
-            ->p_chunk__here
-            ->tiles) / sizeof(Tile);
+            sizeof(
+                p_chunk
+                ->tiles) / sizeof(Tile);
             index_of__tile++) {
-        p_chunk_map_node
-            ->p_chunk__here
+        p_chunk
             ->tiles[
                 index_of__tile].the_kind_of_tile__this_tile_is =
                     the_kind_of__tile;
@@ -86,16 +102,32 @@ void f_chunk_generator(
 }
 
 void f_tile_render_kernel(
-        Chunk_Manager__Chunk_Map_Node *p_chunk_map_node,
+        Local_Space *p_local_space,
         Tile_Render_Kernel_Result *p_tile_kernel_render_results,
         Quantity__u32 quantity_of__tile_kernel_render_results,
         u8 x__local,
         u8 y__local,
         u8 z__local) {
+    Chunk *p_chunk =
+        get_p_chunk_from__local_space(
+                p_local_space);
+
+    if (!p_chunk) {
+        for (Index__u32 index_of__tile_render_kernel_result = 0;
+                index_of__tile_render_kernel_result 
+                < quantity_of__tile_kernel_render_results;
+                index_of__tile_render_kernel_result++) {
+            Tile_Render_Kernel_Result *p_result =
+                &p_tile_kernel_render_results[
+                    index_of__tile_render_kernel_result];
+            p_result->index_of__texture = 0;
+        }
+        return;
+    }
+
     Tile *p_tile =
         get_p_tile_from__chunk_using__u8(
-                p_chunk_map_node
-                ->p_chunk__here, 
+                p_chunk,
                 x__local, 
                 y__local, 
                 z__local);
@@ -124,11 +156,115 @@ void f_tile_render_kernel(
     }
 }
 
+void m_process__construct_global_node(
+        Process *p_this_process,
+        Game *p_game) {
+    Global_Space *p_global_space =
+        (Global_Space*)p_this_process->p_process_data;
+
+    World *p_world = get_p_world_from__game(p_game);
+    Process_Manager *p_process_manager =
+        get_p_process_manager_from__game(p_game);
+    Global_Space_Manager *p_global_space_manager =
+        get_p_global_space_manager_from__world(p_world);
+    Chunk_Pool *p_chunk_pool =
+        get_p_chunk_pool_from__world(p_world);
+    Collision_Node_Pool *p_collision_node_pool =
+        get_p_collision_node_pool_from__world(p_world);
+
+    Chunk *p_chunk =
+        allocate_chunk_from__chunk_pool(
+                p_chunk_pool, 
+                GET_UUID_P(p_global_space));
+
+    if (!p_chunk) {
+        fail_process(p_this_process);
+        drop_global_space_within__global_space_manager(
+                p_global_space_manager,
+                p_process_manager,
+                p_global_space);
+        return;
+    }
+
+    Collision_Node *p_collision_node =
+        allocate_collision_node_from__collision_node_pool(
+                p_collision_node_pool,
+                GET_UUID_P(p_global_space));
+
+    if (!p_collision_node) {
+        release_chunk_from__chunk_pool(
+                p_chunk_pool, 
+                p_chunk);
+        fail_process(p_this_process);
+        drop_global_space_within__global_space_manager(
+                p_global_space_manager, 
+                p_process_manager,
+                p_global_space);
+        return;
+    }
+
+    p_global_space->p_chunk = p_chunk;
+    p_global_space->p_collision_node = p_collision_node;
+    f_Chunk_Generator f_chunk_generator =
+        get_p_world_parameters_from__world(p_world)
+        ->f_chunk_generator;
+    f_chunk_generator(
+            p_game,
+            p_global_space);
+    complete_process(p_this_process);
+}
+
+void m_process__deconstruct_global_node(
+        Process *p_this_process,
+        Game *p_game) {
+    Global_Space *p_global_space =
+        (Global_Space*)p_this_process->p_process_data;
+
+    World *p_world = get_p_world_from__game(p_game);
+    Process_Manager *p_process_manager =
+        get_p_process_manager_from__game(p_game);
+    Global_Space_Manager *p_global_space_manager =
+        get_p_global_space_manager_from__world(p_world);
+    Chunk_Pool *p_chunk_pool =
+        get_p_chunk_pool_from__world(p_world);
+    Collision_Node_Pool *p_collision_node_pool =
+        get_p_collision_node_pool_from__world(p_world);
+    
+    Chunk *p_chunk =
+        get_p_chunk_from__global_space(p_global_space);
+
+    if (p_chunk) {
+        release_chunk_from__chunk_pool(
+                p_chunk_pool, 
+                p_chunk);
+    }
+
+    Collision_Node *p_collision_node =
+        get_p_collision_node_from__global_space(p_global_space);
+
+    if (p_collision_node) {
+        release_collision_node_from__collision_node_pool(
+                p_collision_node_pool, 
+                p_collision_node);
+    }
+
+    release_global_space_in__global_space_manager(
+            p_global_space_manager, 
+            p_global_space);
+
+    complete_process(p_this_process);
+}
+
 void m_enter_scene__test(
         Scene *p_this_scene,
         Game *p_game) {
     Scene_Manager *p_scene_manager =
         get_p_scene_manager_from__game(p_game);
+
+    Client *p_client =
+        get_p_client_by__uuid_from__game(
+                p_game, 
+                0);
 
     Graphics_Window *p_gfx_window__world =
         allocate_graphics_window_with__graphics_window_manager(
@@ -150,6 +286,8 @@ void m_enter_scene__test(
     initialize_world(
             p_game,
             get_p_world_from__game(p_game),
+            m_process__construct_global_node,
+            m_process__deconstruct_global_node,
             f_chunk_generator);
 
     Camera camera;
@@ -190,13 +328,14 @@ void m_enter_scene__test(
         p_PLATFORM_texture_of__ground,
         p_PLATFORM_texture_of__ground_cover
     };
-    
-    // move_chunk_manager_to__chunk_position(
-    //         p_game, 
-    //         get_p_chunk_manager_from__game(p_game), 
-    //         vector_3i32_to__chunk_vector_3i32(
-    //             get_vector__3i32(0, 0, 0)));
 
+    set_center_of__local_space_manager(
+            get_p_global_space_manager_from__world(
+                get_p_world_from__game(p_game)), 
+            get_p_process_manager_from__game(p_game), 
+            get_p_local_space_manager_from__client(p_client), 
+            VECTOR__3i32__0_0_0);
+    
     while (
             is_p_scene_the__active_scene_in__scene_manager(
                 p_scene_manager, 
@@ -235,7 +374,7 @@ void m_enter_scene__test(
         PLATFORM_compose_world(
                 get_p_gfx_context_from__game(p_game), 
                 p_ptr_array_of__world_windows, 
-                get_p_world_from__game(p_game), 
+                get_p_local_space_manager_from__client(p_client),
                 p_ptr_array_of__PLATFORM_textures, 
                 2, 
                 f_tile_render_kernel);

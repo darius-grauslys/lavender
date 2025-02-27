@@ -1,4 +1,5 @@
 #include "rendering/opengl/gl_render_world.h"
+#include "client.h"
 #include "defines.h"
 #include "defines_weak.h"
 #include "platform_defines.h"
@@ -17,7 +18,7 @@
 void GL_compose_chunk(
         Gfx_Context *p_gfx_context,
         Graphics_Window **p_ptr_array_of__gfx_windows,
-        Chunk_Manager__Chunk_Map_Node *p_chunk_map_node,
+        Local_Space *p_local_space,
         PLATFORM_Texture **p_ptr_array_of__PLATFORM_textures,
         Quantity__u32 quantity_of__gfx_windows,
         f_Tile_Render_Kernel f_tile_render_kernel) {
@@ -40,10 +41,6 @@ void GL_compose_chunk(
         GL_get_p_viewport_stack_from__PLATFORM_gfx_context(
                 p_PLATFORM_gfx_context);
 
-    Chunk *p_chunk = 
-        p_chunk_map_node
-        ->p_chunk__here;
-
     Tile_Render_Kernel_Result tile_render_kernel_results[
         quantity_of__gfx_windows];
 
@@ -60,7 +57,7 @@ void GL_compose_chunk(
     // TODO: magic numbers
     Vector__3i32F4 chunk_pos_in__world__3i32f4 =
         vector_3i32_to__vector_3i32F4(
-                p_chunk_map_node->position_of__chunk_3i32);
+                p_local_space->global_space__vector__3i32);
 
     chunk_pos_in__world__3i32f4.x__i32F4 *= 1<<6;
     chunk_pos_in__world__3i32f4.y__i32F4 *= 1<<6;
@@ -77,7 +74,7 @@ void GL_compose_chunk(
                 index_of__x_tile++) {
 
             f_tile_render_kernel(
-                    p_chunk_map_node,
+                    p_local_space,
                     tile_render_kernel_results,
                     quantity_of__gfx_windows,
                     index_of__x_tile,
@@ -204,74 +201,71 @@ void GL_compose_chunk(
 void GL_compose_world(
         Gfx_Context *p_gfx_context,
         Graphics_Window **p_ptr_array_of__gfx_windows,
-        World *p_world,
+        Local_Space_Manager *p_local_space_manager,
         PLATFORM_Texture **p_ptr_array_of__PLATFORM_textures,
         Quantity__u32 quantity_of__gfx_windows,
         f_Tile_Render_Kernel f_tile_render_kernel) {
 
-    debug_error("GL_compose_world, impl");
+    // debug_error("GL_compose_world, impl");
 
-    // Chunk_Manager *p_chunk_manager =
-    //     get_p_chunk_manager_from__world(p_world);
+    Local_Space *p_local_space__current =
+        p_local_space_manager->p_local_space__north_west;
+    Local_Space *p_local_space__current_sub;
 
-    // Chunk_Manager__Chunk_Map_Node *p_current__chunk_map_node =
-    //     p_chunk_manager->p_most_north_western__chunk_map_node;
-    // Chunk_Manager__Chunk_Map_Node *p_current_sub__chunk_map_node;
+    float clear_color[4];
+    glGetFloatv(GL_COLOR_CLEAR_VALUE, clear_color);
 
-    // float clear_color[4];
-    // glGetFloatv(GL_COLOR_CLEAR_VALUE, clear_color);
+    glClearColor(1.0f, 0.0f, 1.0f, 0.0f);
+    for (Index__u32 index_of__gfx_window = 0;
+            index_of__gfx_window
+            < quantity_of__gfx_windows;
+            index_of__gfx_window++) {
+        Graphics_Window *p_gfx_window =
+            p_ptr_array_of__gfx_windows[
+                index_of__gfx_window];
+        GL_Framebuffer *p_GL_framebuffer =
+            (GL_Framebuffer*)p_gfx_window
+            ->p_PLATFORM_gfx_window
+            ->p_SDL_graphics_window__data;
+        GL_use_framebuffer_as__target(
+                p_GL_framebuffer);
+        GL_bind_texture_to__framebuffer(
+                p_GL_framebuffer, 
+                p_gfx_window
+                ->p_PLATFORM_gfx_window
+                ->p_SDL_graphics_window__texture);
+        glClear(GL_COLOR_BUFFER_BIT);
+    }
+    glClearColor(
+            clear_color[0],
+            clear_color[1],
+            clear_color[2],
+            clear_color[3]);
 
-    // glClearColor(1.0f, 0.0f, 1.0f, 0.0f);
-    // for (Index__u32 index_of__gfx_window = 0;
-    //         index_of__gfx_window
-    //         < quantity_of__gfx_windows;
-    //         index_of__gfx_window++) {
-    //     Graphics_Window *p_gfx_window =
-    //         p_ptr_array_of__gfx_windows[
-    //             index_of__gfx_window];
-    //     GL_Framebuffer *p_GL_framebuffer =
-    //         (GL_Framebuffer*)p_gfx_window
-    //         ->p_PLATFORM_gfx_window
-    //         ->p_SDL_graphics_window__data;
-    //     GL_use_framebuffer_as__target(
-    //             p_GL_framebuffer);
-    //     GL_bind_texture_to__framebuffer(
-    //             p_GL_framebuffer, 
-    //             p_gfx_window
-    //             ->p_PLATFORM_gfx_window
-    //             ->p_SDL_graphics_window__texture);
-    //     glClear(GL_COLOR_BUFFER_BIT);
-    // }
-    // glClearColor(
-    //         clear_color[0],
-    //         clear_color[1],
-    //         clear_color[2],
-    //         clear_color[3]);
+    for (uint8_t y=0; 
+            y 
+            < GFX_CONTEXT__RENDERING_HEIGHT__IN_CHUNKS;
+            y++) {
+        p_local_space__current_sub =
+            p_local_space__current;
+        for (uint8_t x=0; 
+                x 
+                < GFX_CONTEXT__RENDERING_WIDTH__IN_CHUNKS;
+                x++) {
+            GL_compose_chunk(
+                    p_gfx_context, 
+                    p_ptr_array_of__gfx_windows, 
+                    p_local_space__current_sub, 
+                    p_ptr_array_of__PLATFORM_textures, 
+                    quantity_of__gfx_windows, 
+                    f_tile_render_kernel);
 
-    // for (uint8_t y=0; 
-    //         y 
-    //         < GFX_CONTEXT__RENDERING_HEIGHT__IN_CHUNKS;
-    //         y++) {
-    //     p_current_sub__chunk_map_node =
-    //         p_current__chunk_map_node;
-    //     for (uint8_t x=0; 
-    //             x 
-    //             < GFX_CONTEXT__RENDERING_WIDTH__IN_CHUNKS;
-    //             x++) {
-    //         GL_compose_chunk(
-    //                 p_gfx_context, 
-    //                 p_ptr_array_of__gfx_windows, 
-    //                 p_current_sub__chunk_map_node, 
-    //                 p_ptr_array_of__PLATFORM_textures, 
-    //                 quantity_of__gfx_windows, 
-    //                 f_tile_render_kernel);
-
-    //         p_current_sub__chunk_map_node =
-    //             p_current_sub__chunk_map_node->p_east__chunk_map_node;
-    //         // break;
-    //     }
-    //     p_current__chunk_map_node =
-    //         p_current__chunk_map_node->p_south__chunk_map_node;
-    //     // break;
-    // }
+            p_local_space__current_sub =
+                p_local_space__current_sub->p_local_space__east;
+            // break;
+        }
+        p_local_space__current =
+            p_local_space__current->p_local_space__south;
+        // break;
+    }
 }

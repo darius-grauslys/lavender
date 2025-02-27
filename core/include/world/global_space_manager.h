@@ -17,6 +17,10 @@ void release_global_space_in__global_space_manager(
         Global_Space_Manager *p_global_space_manager,
         Global_Space *p_global_space);
 
+Global_Space *get_p_global_space_from__global_space_manager(
+        Global_Space_Manager *p_global_space_manager,
+        Chunk_Vector__3i32 local_space_vector__3i32);
+
 Global_Space *hold_global_space_within__global_space_manager(
         Global_Space_Manager *p_global_space_manager,
         Process_Manager *p_process_manager,

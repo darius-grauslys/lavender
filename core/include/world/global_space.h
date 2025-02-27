@@ -2,16 +2,15 @@
 #define GLOBAL_SPACE_H
 
 #include "defines.h"
+#include "defines_weak.h"
+#include "serialization/serialization_header.h"
 
 void initialize_global_space(
         Global_Space *p_global_space);
 
-static inline
 void initialize_global_space_as__allocated(
-        Global_Space *p_global_space) {
-    initialize_global_space(p_global_space);
-    p_global_space->quantity_of__references = 1;
-}
+        Global_Space *p_global_space,
+        Identifier__u64 uuid_64);
 
 static inline
 void hold_global_space(
@@ -36,7 +35,10 @@ bool drop_global_space(
 static inline
 bool is_global_space__allocated(
         Global_Space *p_global_space) {
-    return p_global_space->quantity_of__references;
+    return p_global_space
+        && !is_serialized_struct__deallocated__uuid_64(
+                &p_global_space->_serialization_header)
+        && p_global_space->quantity_of__references;
 }
 
 static inline
@@ -117,6 +119,18 @@ bool is_global_space__active(
     return p_global_space
         && !is_global_space__constructing(p_global_space)
         && !is_global_space__deconstructing(p_global_space);
+}
+
+static inline
+Chunk *get_p_chunk_from__global_space(
+        Global_Space *p_global_space) {
+    return p_global_space->p_chunk;
+}
+
+static inline
+Collision_Node *get_p_collision_node_from__global_space(
+        Global_Space *p_global_space) {
+    return p_global_space->p_collision_node;
 }
 
 #endif

@@ -40,6 +40,41 @@ Index__u32 poll_for__uuid_collision(
     return INDEX__UNKNOWN__u32;
 }
 
+Index__u32 poll_for__uuid_collision__uuid_64(
+        Serialization_Header__UUID_64 *p_serialization_headers,
+        Quantity__u32 length_of__p_serialization_headers,
+        Identifier__u64 identifier__u64) {
+
+    Identifier__u64 identifier__mod_size = 
+        identifier__u64 
+        % length_of__p_serialization_headers;
+    Quantity__u32 size_of__struct =
+        p_serialization_headers->size_of__struct;
+
+    u8 *p_bytes = (u8*)p_serialization_headers;
+
+    Identifier__u64 current_identifier = 
+        identifier__mod_size;
+    do {
+        Serialization_Header__UUID_64 *p_serialization_header =
+            (Serialization_Header__UUID_64*)(
+                    p_bytes
+                    + current_identifier
+                    * size_of__struct
+                    );
+        if (is_serialized_struct__deallocated__uuid_64(
+                    p_serialization_header)
+                || is_identifier_u64_matching__serialization_header(
+                    identifier__u64,
+                    p_serialization_header)) {
+            return current_identifier;
+        }
+    } while ((current_identifier = (current_identifier + 1) 
+                % length_of__p_serialization_headers)
+            != identifier__mod_size);
+    return INDEX__UNKNOWN__u32;
+}
+
 Identifier__u32 get_next_available__uuid_in__contiguous_array(
         Serialization_Header *p_serialization_headers,
         Quantity__u32 length_of__p_serialization_headers,
@@ -54,3 +89,16 @@ Identifier__u32 get_next_available__uuid_in__contiguous_array(
     return uuid;
 }
 
+Identifier__u64 get_next_available__uuid_in__contiguous_array__uuid_64(
+        Serialization_Header__UUID_64 *p_serialization_headers,
+        Quantity__u32 length_of__p_serialization_headers,
+        Identifier__u64 uuid__u64) {
+    uuid__u64 -= (uuid__u64 % length_of__p_serialization_headers);
+    Index__u32 index__u32 =
+        poll_for__uuid_collision__uuid_64(
+                p_serialization_headers, 
+                length_of__p_serialization_headers, 
+                uuid__u64);
+    uuid__u64 += index__u32;
+    return uuid__u64;
+}

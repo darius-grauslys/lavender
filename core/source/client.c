@@ -112,8 +112,6 @@ void receive_game_action_for__client(
                     p_game_action__responded_to->_serialiation_header.uuid); 
             if (!p_process)
                 goto release_response;
-            p_process->p_process_data__response =
-                p_game_action;
             // keep p_game_action alive.
             return;
         }
@@ -127,8 +125,6 @@ void receive_game_action_for__client(
             debug_error("receive_game_action, failed to allocate p_process.");
             goto cleanup;
         }
-        p_process->p_process_data__response =
-            p_game_action;
         // keep p_game_action alive.
         return;
     } else {

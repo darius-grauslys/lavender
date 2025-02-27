@@ -8,7 +8,8 @@ void initialize_process(
         Process *p_process,
         Identifier__u32 uuid__u32,
         m_Process m_process_run__handler,
-        void *p_process_data) {
+        void *p_process_data,
+        Process_Flags__u8 process_flags__u8) {
     initialize_serialization_header(
             &p_process->_serialization_header, 
             uuid__u32, 
@@ -22,7 +23,6 @@ void initialize_process(
         Process_Status_Kind__None;
     p_process->p_process_data =
         p_process_data;
-    p_process->p_process_data__response = 0;
     p_process->process_sub_state__u8 = 0;
-    p_process->process_flags__u8 = PROCESS_FLAGS__NONE;
+    p_process->process_flags__u8 = process_flags__u8;
 }

@@ -8,7 +8,7 @@
 void initialize_process_manager(
         Process_Manager *p_process_manager);
 
-void deallocate_process_from__process_manager(
+void release_process_from__process_manager(
         Process_Manager *p_process_manager,
         Process *p_process);
 
@@ -17,7 +17,8 @@ void deallocate_process_from__process_manager(
 /// Return nullptr if no process is available.
 ///
 Process *allocate_process_in__process_manager(
-        Process_Manager *p_process_manager);
+        Process_Manager *p_process_manager,
+        Identifier__u32 uuid);
 
 ///
 /// Don't invoke.
@@ -30,6 +31,12 @@ Quantity__u32 poll_process_manager(
 ///
 /// returns null on failure.
 ///
+Process *run_process_with__uuid(
+        Process_Manager *p_process_manager,
+        m_Process m_process,
+        Identifier__u32 uuid,
+        Process_Flags__u8 process_flags__u8);
+
 Process *run_process(
         Process_Manager *p_process_manager,
         m_Process m_process,

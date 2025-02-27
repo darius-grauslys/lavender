@@ -16,6 +16,13 @@ Psuedo_Random__i32 get_pseudo_random_i32__intrusively(
     return p_repeatable_psuedo_random->seed__current_random;
 }
 
+Psuedo_Random__i32 get_pseudo_random_i32__non_intrusively(
+        Repeatable_Psuedo_Random *p_repeatable_psuedo_random) {
+    Psuedo_Random__i32 random = rand();
+    srand(p_repeatable_psuedo_random->seed__current_random);
+    return random;
+}
+
 Psuedo_Random__i32 get_pseudo_random_i32_with__xy__intrusively(
         Repeatable_Psuedo_Random *p_repeatable_psuedo_random,
         Signed_Index__i32 x, 

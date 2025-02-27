@@ -15,9 +15,7 @@
 #include <defines.h>
 #include <world/world.h>
 
-void initialize_game(
-        Game *p_game,
-        m_Game_Action_Handler m_game_action_handler);
+void initialize_game(Game *p_game);
 int run_game(Game *p_game);
 
 i32F20 get_elapsed_time__i32F20_of__game(
@@ -39,6 +37,14 @@ void manage_game(Game *p_game);
 
 void manage_game__pre_render(Game *p_game);
 void manage_game__post_render(Game *p_game);
+
+void allocate_client_pool_for__game(
+        Game *p_game,
+        Quantity__u32 quantity_of__clients);
+
+Client *allocate_client_from__game(
+        Game *p_game,
+        Identifier__u32 uuid__u32);
 
 Client *get_p_client_by__uuid_from__game(
         Game *p_game,
@@ -186,6 +192,33 @@ Input *get_p_input_from__game(Game *p_game) {
 static inline
 Entity *get_p_local_player_from__game(Game *p_game) {
     return get_p_local_player_from__world(&p_game->world);
+}
+
+static inline
+Quantity__u32 get_quantity_of__clients_connect_to__game(
+        Game *p_game) {
+    return p_game->quantity_of__clients;
+}
+
+static inline
+Client *get_p_client_by__index_from__game(
+        Game *p_game,
+        Index__u32 index_of__client) {
+#ifndef NDEBUG
+    if (!p_game->pM_ptr_array_of__clients) {
+        debug_warning("Did you for get to allocate the client pool?");
+        debug_abort("get_p_client_by__index_from__game, pM_ptr_array_of__clients == 0.");
+        return 0;
+    }
+    if (index_of__client
+            >= get_quantity_of__clients_connect_to__game(p_game)) {
+        debug_error("get_p_client_by__index_from__game, index out of bounds: %d/%d",
+                index_of__client,
+                get_quantity_of__clients_connect_to__game(p_game));
+        return 0; 
+    }
+#endif
+    return p_game->pM_ptr_array_of__clients[index_of__client];
 }
 
 #endif

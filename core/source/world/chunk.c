@@ -77,7 +77,8 @@ serialize_chunk__inventories:
 
     if (!p_sub_process) {
         p_sub_process = allocate_process_in__process_manager(
-                get_p_process_manager_from__game(p_game));
+                get_p_process_manager_from__game(p_game),
+                0);
         if (!p_sub_process) {
             // try again later.
             // TODO: increment an error level

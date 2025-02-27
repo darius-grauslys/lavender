@@ -29,20 +29,23 @@ void initialize_chunk_pool(
 Chunk *allocate_chunk_from__chunk_pool(
         Chunk_Pool *p_chunk_pool,
         Identifier__u32 uuid__u32) {
-    Index__u32 index_of__chunk =
-        poll_for__uuid_collision(
-                (Serialization_Header *)p_chunk_pool->chunks, 
+    Chunk *p_chunk =
+        (Chunk*)dehash_identitier_u64_in__contigious_array(
+                (Serialization_Header__UUID_64*)p_chunk_pool->chunks, 
                 QUANTITY_OF__GLOBAL_SPACE, 
                 uuid__u32);
     
-    if (is_index_u32__out_of_bounds(index_of__chunk)) {
+    if (!p_chunk) {
         debug_error("allocate_chunk_from__chunk_pool, failed to allocate chunk.");
         return 0;
     }
+    if (!is_serialized_struct__deallocated(
+                &p_chunk->_serialization_header)) {
+        debug_error("allocate_chunk_from__chunk_pool, uuid already in use.");
+        return 0;
+    }
 
-    return get_p_chunk_by__index_from__chunk_pool(
-            p_chunk_pool, 
-            index_of__chunk);
+    return p_chunk;
 }
 
 void release_chunk_from__chunk_pool(

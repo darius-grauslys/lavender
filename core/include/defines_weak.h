@@ -50,6 +50,7 @@ typedef int32_t Signed_Index__i32;
 typedef int16_t Signed_Index__i16;
 typedef int8_t  Signed_Index__i8;
 
+typedef uint64_t Identifier__u64;
 typedef uint32_t Identifier__u32;
 typedef uint16_t Identifier__u16;
 typedef uint8_t Identifier__u8;
@@ -280,6 +281,10 @@ enum UI_Element_Kind {
 
 typedef struct World_t World;
 
+typedef struct Global_Space_t Global_Space;
+typedef struct Local_Space_t Local_Space;
+typedef struct Local_Space_Manager_t Local_Space_Manager;
+
 // TODO: change this to reflect new tileset
 typedef enum Tile_Kind {
     Tile_Kind__None = 0,
@@ -325,7 +330,7 @@ typedef struct Tile_Render_Kernel_Result_t Tile_Render_Kernel_Result;
 /// Examines area local, possibly changing the tile to be rendered.
 ///
 typedef void (*f_Tile_Render_Kernel)(
-        Chunk_Manager__Chunk_Map_Node *p_chunk_map_node,
+        Local_Space *p_local_space,
         Tile_Render_Kernel_Result *p_tile_kernel_render_results,
         Quantity__u32 quantity_of__tile_kernel_render_results,
         u8 x__local,

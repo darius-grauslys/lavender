@@ -19,6 +19,20 @@ Identifier__u32 get_random__uuid_u32(
 }
 
 static inline
+Identifier__u64 get_random__uuid_u64(
+        Repeatable_Psuedo_Random *p_randomizer) {
+    // Would be pretty problematic if we didn't
+    // XOR this wouldn't it? LOL
+    //
+    // Pretty unlikely to collide, but...
+    return (get_pseudo_random_i32__non_intrusively(
+                p_randomizer) 
+            | ((uint64_t)get_pseudo_random_i32__non_intrusively(
+                p_randomizer) << 32))
+        ^ IDENTIFIER__UNKNOWN__u64;
+}
+
+static inline
 Identifier__u32 merge_identifiers_u32(
         Identifier__u32 identifier__left_half,
         Quantity__u8 bits__left,

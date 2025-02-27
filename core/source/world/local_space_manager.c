@@ -1,6 +1,7 @@
 #include "world/local_space_manager.h"
 #include "defines.h"
 #include "defines_weak.h"
+#include "game.h"
 #include "platform_defines.h"
 #include "vectors.h"
 #include "world/chunk.h"
@@ -125,7 +126,7 @@ void initialize_local_space_manager(
                 p_local_space_manager, 
                 0, 
                 HEIGHT_OF__LOCAL_SPACE_MANAGER-1);
-    p_local_space_manager->p_local_space__north_west =
+    p_local_space_manager->p_local_space__north_east =
         get_p_local_space_by__local_xy_from__local_space_manager(
                 p_local_space_manager, 
                 WIDTH_OF__LOCAL_SPACE_MANAGER-1, 
@@ -455,8 +456,7 @@ Tile *get_p_tile_by__3i32F4_from__local_space_manager(
                 p_local_space_manager,
                 vector__3i32F4);
 
-    if (!p_local_space || !is_global_space__active(
-                p_local_space->p_global_space)) 
+    if (!is_local_space__allocated(p_local_space))
         return 0;
 
     Local_Tile_Vector__3u8 local_tile_vector__3u8 =
@@ -467,4 +467,41 @@ Tile *get_p_tile_by__3i32F4_from__local_space_manager(
             ->p_global_space
             ->p_chunk, 
             local_tile_vector__3u8);
+}
+
+void poll_local_space_for__scrolling(
+        Local_Space_Manager *p_local_space_manager,
+        Game *p_game,
+        Global_Space_Manager *p_global_space_manager,
+        Global_Space_Vector__3i32 global_space_vector__center__3i32) {
+    if (is_vectors_3i32__equal(
+                global_space_vector__center__3i32, 
+                p_local_space_manager
+                ->center_of__local_space_manager__3i32)) {
+        return;
+    }
+
+    do {
+        i32 d_x__i32 = global_space_vector__center__3i32.x__i32
+            - p_local_space_manager->center_of__local_space_manager__3i32.x__i32;
+        i32 d_y__i32 = global_space_vector__center__3i32.y__i32
+            - p_local_space_manager->center_of__local_space_manager__3i32.y__i32;
+        Direction__u8 direction = DIRECTION__NONE;
+        if (d_x__i32 < 0)
+            direction |= DIRECTION__WEST;
+        else if (d_x__i32 > 0)
+            direction |= DIRECTION__EAST;
+        if (d_y__i32 < 0)
+            direction |= DIRECTION__SOUTH;
+        else if (d_y__i32 > 0)
+            direction |= DIRECTION__NORTH;
+        move_local_space_manager(
+                p_global_space_manager, 
+                get_p_process_manager_from__game(p_game), 
+                p_local_space_manager, 
+                direction);
+    } while (!is_vectors_3i32__equal(
+                global_space_vector__center__3i32, 
+                p_local_space_manager
+                ->center_of__local_space_manager__3i32));
 }

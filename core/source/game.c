@@ -14,6 +14,7 @@
 #include "scene/scene.h"
 #include "scene/scene_manager.h"
 #include "serialization/hashing.h"
+#include "serialization/serialization_header.h"
 #include "sort/sort_list/sort_list_manager.h"
 #include "vectors.h"
 #include "world/tile_logic_manager.h"
@@ -33,8 +34,7 @@
 #include <ui/ui_manager.h>
 
 void initialize_game(
-        Game *p_game,
-        m_Game_Action_Handler m_game_action_handler) {
+        Game *p_game) {
     initialize_scene_manager(&p_game->scene_manager);
     register_scene__test(&p_game->scene_manager);
     initialize_process_manager(
@@ -60,6 +60,10 @@ void initialize_game(
     initialize_log(get_p_log__local_from__game(p_game));
     initialize_log(get_p_log__system_from__game(p_game));
 
+    p_game->pM_clients = 0;
+    p_game->pM_ptr_array_of__clients = 0;
+    p_game->pM_tcp_socket_manager = 0;
+
     initialize_timer_u32(
             &p_game->time__seconds__u32, 
             (u32)-1);
@@ -69,7 +73,6 @@ void initialize_game(
     p_game->tick_accumilator__i32F20 = 0;
 
     p_game->is_world__initialized = false;
-    p_game->m_game_action_handler = m_game_action_handler;
 }
 
 void allocate_client_pool_for__game(
@@ -80,9 +83,19 @@ void allocate_client_pool_for__game(
         quantity_of__clients = MAX_QUANTITY_OF__TCP_SOCKETS;
     }
     p_game->pM_clients = malloc(sizeof(Client) * quantity_of__clients);
+
+    p_game->max_quantity_of__clients = quantity_of__clients;
+    initialize_serialization_header__contiguous_array(
+            (Serialization_Header*)p_game->pM_clients, 
+            p_game->max_quantity_of__clients, 
+            sizeof(Client));
+
     p_game->pM_ptr_array_of__clients = malloc(sizeof(Client*) 
             * quantity_of__clients);
-    p_game->max_quantity_of__clients = quantity_of__clients;
+    memset(
+            p_game->pM_ptr_array_of__clients,
+            0,
+            p_game->max_quantity_of__clients);
     p_game->quantity_of__clients = 0;
 }
 
@@ -112,7 +125,7 @@ Client *allocate_client_from__game(
         Identifier__u32 uuid__u32) {
     Client *p_client = 
         (Client*)dehash_identitier_u32_in__contigious_array(
-                (Serialization_Header*)&p_game->pM_clients, 
+                (Serialization_Header*)p_game->pM_clients, 
                 p_game->max_quantity_of__clients, 
                 uuid__u32);
     if (!p_client) {
@@ -125,10 +138,10 @@ Client *allocate_client_from__game(
             uuid__u32, 
             VECTOR__3i32__0_0_0);
 
-    p_game->quantity_of__clients++;
-
     p_game->pM_ptr_array_of__clients[
         p_game->quantity_of__clients] = p_client;
+
+    p_game->quantity_of__clients++;
 
     return p_client;
 }

@@ -163,6 +163,7 @@ typedef int8_t  Signed_Quantity__i8;
 typedef int16_t Signed_Quantity__i16;
 typedef int32_t Signed_Quantity__i32;
 
+#define IDENTIFIER__UNKNOWN__u64 (uint64_t)(-1)
 #define IDENTIFIER__UNKNOWN__u32 (uint32_t)(-1)
 #define IDENTIFIER__UNKNOWN__u16 (uint16_t)(-1)
 #define IDENTIFIER__UNKNOWN__u8 (uint8_t)(-1)
@@ -200,9 +201,14 @@ typedef struct Chunk_Identifier__u32_t {
 /// in a serialized struct.
 ///
 typedef struct Serialization_Header_t {
-    Identifier__u32     uuid;
     Quantity__u32       size_of__struct;
+    Identifier__u32     uuid;
 } Serialization_Header;
+
+typedef struct Serialization_Header__UUID_64_t {
+    Quantity__u32       size_of__struct;
+    Identifier__u64     uuid;
+} Serialization_Header__UUID_64;
 
 typedef struct Serialization_Pool_t {
     Quantity__u32 quantity_of__pool_elements;
@@ -347,7 +353,7 @@ typedef struct Collision_Node_Entry_t {
 } Collision_Node_Entry;
 
 typedef struct Collision_Node_t {
-    Serialization_Header _serialization_header;
+    Serialization_Header__UUID_64 _serialization_header;
     Collision_Node_Entry *p_linked_list__collision_node_entries__tail;
 } Collision_Node;
 
@@ -1223,7 +1229,8 @@ typedef struct Process_t {
 typedef struct Process_Manager_t {
     Process processes[PROCESS_MAX_QUANTITY_OF];
     Process *ptr_array_of__processes[PROCESS_MAX_QUANTITY_OF];
-    Process **p_ptr_to__next_slot_in__ptr_array_of__processes;
+    Process **p_ptr_to__last_process_in__ptr_array_of__processes;
+    Repeatable_Psuedo_Random repeatable_psuedo_random_for__process_uuid;
     Identifier__u32 next__uuid__u32;
 } Process_Manager;
 
@@ -1987,7 +1994,7 @@ typedef struct Chunk_t Chunk;
 
 typedef void (*f_Chunk_Generator)(
         Game *p_game,
-        Chunk_Manager__Chunk_Map_Node *p_chunk_map_node);
+        Global_Space *p_global_space);
 
 typedef struct World_Parameters_t {
     f_Chunk_Generator f_chunk_generator;
@@ -2070,7 +2077,7 @@ typedef u8 Global_Space_Flags__u8;
 #define GLOBAL_SPACE_FLAGS__NONE 0
 
 typedef struct Global_Space_t {
-    Serialization_Header _serialization_header;
+    Serialization_Header__UUID_64 _serialization_header;
     Chunk_Vector__3i32 chunk_vector__3i32;
     Chunk *p_chunk;
     Collision_Node *p_collision_node;
@@ -2194,8 +2201,15 @@ typedef char World_Name_String[WORLD_NAME_MAX_SIZE_OF];
 typedef struct World_t {
     Serialization_Header _serialization_header;
     Entity_Manager entity_manager;
+
     Chunk_Manager chunk_manager;
     Collision_Manager collision_manager;
+
+    Global_Space_Manager global_space_manager;
+    Collision_Node_Pool collision_node_pool;
+    Chunk_Pool chunk_pool;
+    Hitbox_AABB_Manager hitbox_aabb_manager;
+
     Structure_Manager structure_manager;
     Tile_Logic_Manager tile_logic_manager;
     World_Parameters world_parameters;

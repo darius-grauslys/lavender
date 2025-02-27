@@ -9,14 +9,16 @@ void initialize_process(
         Process *p_process,
         Identifier__u32 uuid__u32,
         m_Process m_process_run__handler,
-        void *p_process_data);
+        void *p_process_data,
+        Process_Flags__u8 process_flags__u8);
 
 static inline
 void initialize_process_as__empty_process(
         Process *p_process) {
     initialize_process(
             p_process, 
-            IDENTIFIER__UNKNOWN__u32, 0, 0);
+            IDENTIFIER__UNKNOWN__u32, 0, 0, 
+            PROCESS_FLAGS__NONE);
 }
 
 static inline

@@ -35,6 +35,9 @@ void m_poll_tcp_socket_manager_as__server(
                 - p_tcp_socket_manager->ptr_array_of__tcp_sockets
                 < MAX_QUANTITY_OF__TCP_SOCKETS)
             && *p_ptr_tcp_socket__client) {
+        TCP_Socket *p_tcp_socket__client =
+            *p_ptr_tcp_socket__client;
+            
         union {
             Game_Action game_action;
             TCP_Packet tcp_packet;
@@ -43,10 +46,16 @@ void m_poll_tcp_socket_manager_as__server(
         Client *p_client =
             get_p_client_by__uuid_from__game(
                     p_game, 
-                    (*p_ptr_tcp_socket__client)
+                    p_tcp_socket__client
                     ->_serialization_header.uuid);
+
+        if (!receive_bytes_over__tcp_socket(
+                    p_tcp_socket__client)) {
+            continue;
+        }
+
         while (get_latest__delivery_from__tcp_socket(
-                *p_ptr_tcp_socket__client, 
+                p_tcp_socket__client, 
                 &deliver.tcp_packet)) {
             set_game_action_as__deallocated(
                     &deliver.game_action);

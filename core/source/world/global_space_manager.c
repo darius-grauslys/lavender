@@ -3,21 +3,23 @@
 #include "defines_weak.h"
 #include "game.h"
 #include "numerics.h"
+#include "platform_defines.h"
 #include "process/process.h"
 #include "process/process_manager.h"
 #include "serialization/hashing.h"
 #include "serialization/identifiers.h"
+#include "serialization/serialization_header.h"
 #include "serialization/serialized_field.h"
 #include "vectors.h"
 #include "world/global_space.h"
 
 static inline
-Identifier__u32 get_uuid_for__global_space(
+Identifier__u64 get_uuid_for__global_space(
         Chunk_Vector__3i32 chunk_vector__3i32) {
     return
-            ((MASK(11) & chunk_vector__3i32.x__i32) << 22)
-            | ((MASK(11) & chunk_vector__3i32.y__i32) << 11)
-            | (MASK(10) & chunk_vector__3i32.z__i32)
+            (uint64_t)(MASK(24) & chunk_vector__3i32.x__i32)
+            | ((uint64_t)(MASK(24) & chunk_vector__3i32.y__i32) << 24)
+            | ((uint64_t)(MASK(16) & chunk_vector__3i32.z__i32) << 48)
             ;
 }
 
@@ -41,10 +43,11 @@ void initialize_global_space_manager(
         Global_Space_Manager *p_global_space_manager,
         m_Process m_process__construct_global_space,
         m_Process m_process__destruct_global_space) {
-    memset(
-            p_global_space_manager,
-            0,
-            sizeof(Global_Space_Manager));
+    initialize_serialization_header__contiguous_array__uuid_64(
+            (Serialization_Header__UUID_64*)
+                p_global_space_manager->global_spaces, 
+            QUANTITY_OF__GLOBAL_SPACE, 
+            sizeof(Global_Space));
     p_global_space_manager->m_process__construct_global_space =
         m_process__construct_global_space;
     p_global_space_manager->m_process__destruct_global_space =
@@ -54,21 +57,10 @@ void initialize_global_space_manager(
 Global_Space *dehash_global_space_from__global_space_manager(
         Global_Space_Manager *p_global_space_manager,
         Chunk_Vector__3i32 chunk_vector__3i32) {
-    Serialized_Field s_global_space;
-    initialize_serialized_field_as__unlinked(
-            &s_global_space, 
-            get_uuid_for__global_space(chunk_vector__3i32));
-
-    link_serialized_field_against__contiguous_array(
-            &s_global_space, 
-            (Serialization_Header *)p_global_space_manager
-            ->global_spaces, 
-            QUANTITY_OF__GLOBAL_SPACE);
-    if (!is_p_serialized_field__linked(&s_global_space)) {
-        return 0;
-    }
     Global_Space *p_global_space =
-        (Global_Space*)s_global_space.p_serialized_field__data;
+        get_p_global_space_from__global_space_manager(
+                p_global_space_manager, 
+                chunk_vector__3i32);
     if (!is_global_space__allocated(p_global_space)) {
         return 0;
     }
@@ -109,24 +101,22 @@ Global_Space *dehash_global_space_from__global_space_manager(
 Global_Space *allocate_global_space_in__global_space_manager(
         Global_Space_Manager *p_global_space_manager,
         Chunk_Vector__3i32 chunk_vector__3i32) {
-    Index__u32 index_of__global_space =
-        poll_for__uuid_collision(
-                (Serialization_Header *)p_global_space_manager
-                ->global_spaces, 
+    Identifier__u64 uuid_64 =
+        get_uuid_for__global_space(chunk_vector__3i32);
+    Global_Space *p_global_space =
+        (Global_Space*)dehash_identitier_u64_in__contigious_array(
+                (Serialization_Header__UUID_64*)
+                    &p_global_space_manager->global_spaces, 
                 QUANTITY_OF__GLOBAL_SPACE, 
-                get_uuid_for__global_space(chunk_vector__3i32));
-    if (is_index_u32__out_of_bounds(index_of__global_space)) {
+                uuid_64);
+    if (!p_global_space || is_global_space__allocated(p_global_space)) {
         debug_error("allocate_global_space_in__global_space_manager, failed to allocate a global_space.");
         return 0;
     }
 
-    Global_Space *p_global_space =
-        get_p_global_space_by__index_from__global_space_manager(
-                p_global_space_manager, 
-                index_of__global_space);
-
     initialize_global_space_as__allocated(
-            p_global_space);
+            p_global_space,
+            uuid_64);
     return p_global_space;
 }
 
@@ -153,18 +143,37 @@ void release_global_space_in__global_space_manager(
     initialize_global_space(p_global_space);
 }
 
+Global_Space *get_p_global_space_from__global_space_manager(
+        Global_Space_Manager *p_global_space_manager,
+        Chunk_Vector__3i32 local_space_vector__3i32) {
+    Global_Space *p_global_space = 
+        (Global_Space*)dehash_identitier_u64_in__contigious_array(
+            (Serialization_Header__UUID_64*)
+                &p_global_space_manager->global_spaces, 
+            QUANTITY_OF__GLOBAL_SPACE, 
+            get_uuid_for__global_space(local_space_vector__3i32));
+    if (!is_global_space__allocated(p_global_space))
+        return 0;
+
+    return p_global_space;
+}
+
 Global_Space *hold_global_space_within__global_space_manager(
         Global_Space_Manager *p_global_space_manager,
         Process_Manager *p_process_manager,
         Chunk_Vector__3i32 local_space_vector__3i32) {
-    Serialized_Field s_global_space;
-    link_serialized_field_against__contiguous_array(
-            &s_global_space, 
-            (Serialization_Header *)p_global_space_manager->global_spaces, 
-            QUANTITY_OF__GLOBAL_SPACE);
-    Global_Space *p_global_space;
-    if (is_p_serialized_field__linked(&s_global_space)) {
-        p_global_space = (Global_Space*)s_global_space.p_serialized_field__data;
+#ifndef NDEBUG
+    if (!p_global_space_manager->m_process__construct_global_space) {
+        debug_abort("hold_global_space_within__global_space_manager, m_process__construct_global_space == 0.");
+        return 0;
+    }
+#endif
+
+    Global_Space *p_global_space =
+        get_p_global_space_from__global_space_manager(
+                p_global_space_manager, 
+                local_space_vector__3i32);
+    if (p_global_space) {
         hold_global_space(p_global_space);
         return p_global_space;
     }
@@ -178,7 +187,6 @@ Global_Space *hold_global_space_within__global_space_manager(
         return 0;
     }
 
-    initialize_global_space(p_global_space);
     hold_global_space(p_global_space);
 
     Process *p_process = 
@@ -194,6 +202,7 @@ Global_Space *hold_global_space_within__global_space_manager(
     }
 
     set_global_space_as__constructing(p_global_space);
+    p_process->p_process_data = p_global_space;
 
     return p_global_space;
 }
@@ -202,6 +211,12 @@ void drop_global_space_within__global_space_manager(
         Global_Space_Manager *p_global_space_manager,
         Process_Manager *p_process_manager,
         Global_Space *p_global_space) {
+#ifndef NDEBUG
+    if (!p_global_space_manager->m_process__destruct_global_space) {
+        debug_abort("hold_global_space_within__global_space_manager, m_process__destruct_global_space == 0.");
+        return;
+    }
+#endif
     if (!drop_global_space(p_global_space)) {
         return;
     }
@@ -217,6 +232,6 @@ void drop_global_space_within__global_space_manager(
         return;
     }
 
+    p_process->p_process_data = p_global_space;
     set_global_space_as__deconstructing(p_global_space);
-
 }

@@ -30,12 +30,12 @@ void initialize_collision_node_pool(
 
 Collision_Node *allocate_collision_node_from__collision_node_pool(
         Collision_Node_Pool *p_collision_node_pool,
-        Identifier__u32 uuid__u32) {
+        Identifier__u64 uuid__u64) {
     Index__u32 index_of__collision_node =
-        poll_for__uuid_collision(
-                (Serialization_Header *)p_collision_node_pool->collision_nodes, 
+        poll_for__uuid_collision__uuid_64(
+                (Serialization_Header__UUID_64*)p_collision_node_pool->collision_nodes, 
                 QUANTITY_OF__GLOBAL_SPACE, 
-                uuid__u32);
+                uuid__u64);
 
     if (is_index_u32__out_of_bounds(index_of__collision_node)) {
         debug_error("allocate_collision_node_from__collision_node_pool, failed to allocate collision_node.");

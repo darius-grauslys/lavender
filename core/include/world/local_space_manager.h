@@ -28,4 +28,10 @@ Tile *get_p_tile_by__3i32F4_from__local_space_manager(
         Local_Space_Manager *p_local_space_manager,
         Vector__3i32F4 vector__3i32F4);
 
+void poll_local_space_for__scrolling(
+        Local_Space_Manager *p_local_space_manager,
+        Game *p_game,
+        Global_Space_Manager *p_global_space_manager,
+        Global_Space_Vector__3i32 global_space_vector__center__3i32);
+
 #endif
