@@ -11,6 +11,8 @@
 /// SECTION_default
 ///
 
+#define _STRING(x) #x
+#define STRING(x) _STRING(x)
 #define BIT(n) (1 << (n))
 #define NEXT_BIT(symbol) (symbol << 1)
 #define MASK(n) ((u32)BIT(n) - 1)
@@ -142,6 +144,18 @@ typedef enum Item_Kind {
 /// 
 /// SECTION_multiplayer
 ///
+
+typedef struct IPv4_Address_t IPv4_Address;
+typedef struct PLATFORM_TCP_Context_t PLATFORM_TCP_Context;
+typedef struct PLATFORM_TCP_Socket_t PLATFORM_TCP_Socket;
+
+typedef enum TCP_Socket_State {
+    TCP_Socket_State__None = 0,
+    TCP_Socket_State__Disconnected,
+    TCP_Socket_State__Connecting,
+    TCP_Socket_State__Connected,
+    TCP_Socket_State__Unknown
+} TCP_Socket_State;
 
 typedef struct TCP_Socket_t TCP_Socket;
 typedef struct TCP_Socket_Manager_t TCP_Socket_Manager;
@@ -307,16 +321,12 @@ typedef enum Tile_Kind {
 ///
 typedef enum Game_Action_Kind {
     Game_Action_Kind__None = 0,
+    Game_Action_Kind__TCP_Connect,
+    Game_Action_Kind__TCP_Connect__Reject,
+    Game_Action_Kind__TCP_Connect__Accept,
+    Game_Action_Kind__TCP_Disconnect,
     Game_Action_Kind__Unknown
 } Game_Action_Kind;
-
-typedef enum Game_Action_State {
-    Game_Action_State__None = 0,
-    Game_Action_State__Unhandled = Game_Action_Kind__None,
-    Game_Action_State__Keep_Alive,
-    Game_Action_State__Resolved,
-    Game_Action_State__Unknown
-} Game_Action_State;
 
 typedef struct Camera_t Camera;
 typedef struct Chunk_Manager_t Chunk_Manager;

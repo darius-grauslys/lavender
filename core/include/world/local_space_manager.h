@@ -34,4 +34,8 @@ void poll_local_space_for__scrolling(
         Global_Space_Manager *p_global_space_manager,
         Global_Space_Vector__3i32 global_space_vector__center__3i32);
 
+bool is_vector_3i32F4_within__local_space_manager(
+        Local_Space_Manager *p_local_space_manager,
+        Vector__3i32F4 vector_3i32F4);
+
 #endif

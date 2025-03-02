@@ -17,6 +17,7 @@ void initialize_client(
 void dispatch_game_action_for__client(
         Client *p_client,
         Game *p_game,
+        TCP_Socket_Manager *p_tcp_socket_manager,
         Game_Action *p_game_action);
 
 ///

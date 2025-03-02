@@ -9,6 +9,7 @@
 #include "defines_weak.h"
 #include "log/log.h"
 #include "log/message.h"
+#include "multiplayer/tcp_socket_manager.h"
 #include "platform.h"
 #include "random.h"
 #include "timer.h"
@@ -37,6 +38,13 @@ void manage_game(Game *p_game);
 
 void manage_game__pre_render(Game *p_game);
 void manage_game__post_render(Game *p_game);
+
+void begin_multiplayer_for__game(
+        Game *p_game,
+        m_Poll_TCP_Socket_Manager m_poll_tcp_socket_manager);
+void stop_multiplayer_for__game(
+        Game *p_game);
+void poll_multiplayer(Game *p_game);
 
 void allocate_client_pool_for__game(
         Game *p_game,
@@ -175,13 +183,23 @@ PLATFORM_Gfx_Context *get_p_PLATFORM_gfx_context_from__game(Game *p_game) {
 }
 
 static inline
-Game_Action_Logic_Table *get_p_game_action_logic_table_from__game(Game *p_game) {
-    return &p_game->game_action_logic_table;
+TCP_Socket_Manager *get_p_tcp_socket_manager_from__game(Game *p_game) {
+    return p_game->pM_tcp_socket_manager;
 }
 
 static inline
-TCP_Socket_Manager *get_p_tcp_socket_manager_from__game(Game *p_game) {
-    return p_game->pM_tcp_socket_manager;
+PLATFORM_TCP_Context *get_p_PLATFORM_tcp_context_from__game(Game *p_game) {
+    return 
+        (p_game->pM_tcp_socket_manager)
+        ? get_p_PLATFORM_tcp_context_from__tcp_socket_manager(
+                get_p_tcp_socket_manager_from__game(p_game))
+        : 0
+        ;
+}
+
+static inline
+Game_Action_Logic_Table *get_p_game_action_logic_table_from__game(Game *p_game) {
+    return &p_game->game_action_logic_table;
 }
 
 static inline
@@ -219,6 +237,38 @@ Client *get_p_client_by__index_from__game(
     }
 #endif
     return p_game->pM_ptr_array_of__clients[index_of__client];
+}
+
+static inline
+bool is_game__multiplayer(Game *p_game) {
+    return p_game->pM_tcp_socket_manager;
+}
+
+static inline
+void dispatch_game_action(
+        Game *p_game,
+        Game_Action *p_game_action) {
+    p_game->m_game_action_handler__dispatch(
+            p_game,
+            p_game_action);
+}
+
+static inline
+void receive_game_action(
+        Game *p_game,
+        Game_Action *p_game_action) {
+    p_game->m_game_action_handler__receive(
+            p_game,
+            p_game_action);
+}
+
+static inline
+void resolve_game_action(
+        Game *p_game,
+        Game_Action *p_game_action) {
+    p_game->m_game_action_handler__resolve(
+            p_game,
+            p_game_action);
 }
 
 #endif

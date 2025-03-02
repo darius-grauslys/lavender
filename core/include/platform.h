@@ -404,19 +404,49 @@ bool PLATFORM_clear_log__system(Game *p_game);
 /// SECTION_multiplayer
 ///
 
-void PLATFORM_open_socket(
-        TCP_Socket *p_tcp_socket);
+PLATFORM_TCP_Context *PLATFORM_tcp_begin(
+        Game *p_game);
 
-void PLATFORM_tcp_poll_accept(
-        TCP_Socket_Manager *p_tcp_socket_manager,
-        TCP_Socket *p_tcp_socket__server,
-        TCP_Socket *p_tcp_socket__auth);
+void PLATFORM_tcp_end(
+        Game *p_game);
+
+///
+/// Returns null if failed to connect.
+///
+PLATFORM_TCP_Socket *PLATFORM_tcp_connect(
+        PLATFORM_TCP_Context *p_PLATFORM_tcp_context,
+        IPv4_Address *p_ipv4_address);
+
+///
+/// Use to make a PLATFORM_TCP_Socket for accepting
+/// server connections.
+/// Returns null if failed.
+///
+PLATFORM_TCP_Socket *PLATFORM_tcp_server(
+        PLATFORM_TCP_Context *p_PLATFORM_tcp_context,
+        Index__u16 port);
+
+///
+/// Returns true if the socket was closed.
+///
+bool PLATFORM_tcp_close_socket(
+        PLATFORM_TCP_Context *p_PLATFORM_tcp_context,
+        PLATFORM_TCP_Socket *p_PLATFORM_tcp_socket);
+
+///
+/// Checks for new connections, and returns a
+/// PLATFORM_TCP_Socket if one is found.
+///
+PLATFORM_TCP_Socket *PLATFORM_tcp_poll_accept(
+        PLATFORM_TCP_Context *p_PLATFORM_tcp_context,
+        PLATFORM_TCP_Socket *p_PLATFORM_tcp_socket__server,
+        IPv4_Address *p_ipv4);
 
 ///
 /// Returns number of bytes sent, -1 if error.
 ///
 i32 PLATFORM_tcp_send(
-        TCP_Socket *p_tcp_socket,
+        PLATFORM_TCP_Socket *p_PLATFORM_tcp_socket,
         u8 *p_bytes,
         Quantity__u32 length_of__bytes);
 
@@ -426,10 +456,9 @@ i32 PLATFORM_tcp_send(
 /// handling a new delivery.
 ///
 i32 PLATFORM_tcp_recieve(
-        TCP_Socket *p_tcp_socket,
+        PLATFORM_TCP_Socket *p_PLATFORM_tcp_socket,
         u8 *p_bytes,
-        Quantity__u32 length_of_bytes_in__destination,
-        Quantity__u32 quantity_of__total_bytes_in__destination);
+        Quantity__u32 length_of_bytes_in__destination);
 
 /// 
 /// SECTION_defines

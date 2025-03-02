@@ -180,39 +180,6 @@ bool PLATFORM_clear_log__system(Game *p_game) {}
 /// SECTION_multiplayer
 ///
 
-void PLATFORM_open_socket(
-        TCP_Socket *p_tcp_socket) {
-}
-
-void PLATFORM_tcp_poll_accept(
-        TCP_Socket_Manager *p_tcp_socket_manager,
-        TCP_Socket *p_tcp_socket__server,
-        TCP_Socket *p_tcp_socket__auth) {
-}
-
-///
-/// Returns number of bytes sent, -1 if error.
-///
-i32 PLATFORM_tcp_send(
-        TCP_Socket *p_tcp_socket,
-        u8 *p_bytes,
-        Quantity__u32 length_of__bytes) {
-    return length_of__bytes;
-}
-
-///
-/// Returns number of bytes received.
-/// Returns a TCP_ERROR__XXX otherwise.
-/// handling a new delivery.
-///
-i32 PLATFORM_tcp_recieve(
-        TCP_Socket *p_tcp_socket,
-        u8 *p_bytes,
-        Quantity__u32 length_of_bytes_in__destination,
-        Quantity__u32 quantity_of__total_bytes_in__destination) {
-    return quantity_of__total_bytes_in__destination;
-}
-
 /// 
 /// SECTION_defines
 ///

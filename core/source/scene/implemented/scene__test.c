@@ -5,7 +5,11 @@
 #include "defines_weak.h"
 #include "game.h"
 #include "input/input.h"
+#include "multiplayer/server__default.h"
+#include "multiplayer/client__default.h"
+#include "multiplayer/tcp_socket_manager.h"
 #include "platform.h"
+#include "platform_defaults.h"
 #include "platform_defines.h"
 #include "process/process.h"
 #include "rendering/aliased_texture_manager.h"
@@ -44,11 +48,33 @@ void register_scene__test(Scene_Manager *p_scene_manager) {
 void m_load_scene__test(
         Scene *p_this_scene,
         Game *p_game) {
+#ifdef IS_SERVER
+    allocate_client_pool_for__game(p_game, MAX_QUANTITY_OF__TCP_SOCKETS-2);
+    begin_multiplayer_for__game(
+            p_game,
+            m_poll_tcp_socket_manager_as__server__default);
+    open_server_socket_on__tcp_socket_manager__ipv4(
+            get_p_tcp_socket_manager_from__game(p_game), 
+            0, 
+            55566);
+#else
     allocate_client_pool_for__game(p_game, 1);
-    (void)allocate_client_from__game(
+    begin_multiplayer_for__game(
+            p_game,
+            m_poll_tcp_socket_manager_as__client__default);
+    Client *p_client = allocate_client_from__game(
             p_game, 
             0);
-
+    IPv4_Address addr;
+    addr.ip_bytes[0] = 127;
+    addr.ip_bytes[1] = 0;
+    addr.ip_bytes[2] = 0;
+    addr.ip_bytes[3] = 1;
+    addr.port = 55566;
+    open_socket_on__tcp_socket_manager__ipv4(
+            get_p_tcp_socket_manager_from__game(p_game), 
+            addr, 
+            p_client->_serialization_header.uuid);
     load_p_PLATFORM_texture_from__path_with__alias(
             get_p_PLATFORM_gfx_context_from__game(p_game), 
             0, 
@@ -69,6 +95,7 @@ void m_load_scene__test(
                 TEXTURE_FLAG__RENDER_METHOD__0,
                 TEXTURE_FLAG__FORMAT__2),
             "../../../AncientsGame/core/assets/world/tilesheet_cover.png");
+#endif
 }
 
 void f_chunk_generator(
@@ -266,6 +293,7 @@ void m_enter_scene__test(
                 p_game, 
                 0);
 
+#ifndef IS_SERVER
     Graphics_Window *p_gfx_window__world =
         allocate_graphics_window_with__graphics_window_manager(
                 get_p_gfx_context_from__game(p_game), 
@@ -282,6 +310,9 @@ void m_enter_scene__test(
 
     set_graphics_window_as__rendering_world(
             p_gfx_window__world);
+#else
+    Graphics_Window *p_gfx_window__world = 0;
+#endif
 
     initialize_world(
             p_game,
@@ -303,6 +334,7 @@ void m_enter_scene__test(
             i32_to__i32F20(100)
             );
 
+#ifndef IS_SERVER
     set_p_camera_of__graphics_window(
             p_gfx_window__world, 
             &camera);
@@ -328,6 +360,7 @@ void m_enter_scene__test(
         p_PLATFORM_texture_of__ground,
         p_PLATFORM_texture_of__ground_cover
     };
+#endif
 
     set_center_of__local_space_manager(
             get_p_global_space_manager_from__world(
@@ -346,6 +379,9 @@ void m_enter_scene__test(
                 p_game,
                 p_gfx_window__world);
 
+        poll_multiplayer(p_game);
+
+#ifndef IS_SERVER
         if (is_input__forward_held(get_p_input_from__game(p_game))) {
             p_gfx_window__world
                 ->p_camera
@@ -378,6 +414,7 @@ void m_enter_scene__test(
                 p_ptr_array_of__PLATFORM_textures, 
                 2, 
                 f_tile_render_kernel);
+#endif
 
         render_graphic_windows_in__graphics_window_manager(
                 p_game);

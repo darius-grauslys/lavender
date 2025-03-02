@@ -1121,19 +1121,26 @@ typedef struct Input_t {
 
 typedef struct IPv4_Address_t {
     u8 ip_bytes[4];
+    u16 port;
 } IPv4_Address;
 
 typedef struct TCP_Packet_t {
     u8 tcp_packet_bytes[MAX_SIZE_OF__TCP_PACKET];
 } TCP_Packet;
 
+typedef uint8_t TCP_Socket_Flags__u8;
+
+#define TCP_SOCKET_FLAGS__NONE 0
+
 typedef struct TCP_Socket_t {
     Serialization_Header _serialization_header;
     TCP_Packet queue_of__tcp_packet[MAX_QUANTITY_OF__TCP_PACKETS_PER__SOCKET];
     Quantity__u16 packet_size__entries[MAX_QUANTITY_OF__TCP_PACKETS_PER__SOCKET];
     IPv4_Address tcp_socket__address;
+    PLATFORM_TCP_Socket *p_PLATFORM_tcp_socket;
     Index__u32 index_of__enqueue_begin;
     Index__u32 index_of__enqueue_end;
+    TCP_Socket_State tcp_socket__state_of;
 } TCP_Socket;
 
 typedef void (*m_Poll_TCP_Socket_Manager)(
@@ -1144,7 +1151,10 @@ typedef struct TCP_Socket_Manager_t {
     TCP_Socket tcp_sockets[MAX_QUANTITY_OF__TCP_SOCKETS];
     TCP_Socket *ptr_array_of__tcp_sockets[
         MAX_QUANTITY_OF__TCP_SOCKETS];
+    PLATFORM_TCP_Context *p_PLATFORM_tcp_context;
     m_Poll_TCP_Socket_Manager m_poll_tcp_socket_manager;
+    PLATFORM_TCP_Socket *p_PLATFORM_tcp_socket__pending_connection;
+    Quantity__u32 quantity_of__connections;
 } TCP_Socket_Manager;
 
 ///
@@ -2136,15 +2146,18 @@ typedef uint8_t Game_Action_Flags;
     BIT(0)
 #define GAME_ACTION_FLAGS__BIT_IS_OUT_OR__IN_BOUND \
     BIT(1)
-#define GAME_ACTION_FLAGS__BIT_IS_FIRE_AND_FORGET \
-    BIT(2)
 #define GAME_ACTION_FLAGS__BIT_IS_WITH_PROCESS \
-    BIT(3)
+    BIT(2)
 #define GAME_ACTION_FLAGS__BIT_IS_PROCESSED_ON_INVOCATION_OR_RESPONSE \
-    BIT(4)
+    BIT(3)
 #define GAME_ACTION_FLAGS__BIT_IS_RESPONSE \
+    BIT(4)
+///
+/// If Local, it will not be sent over tcp
+///
+#define GAME_ACTION_FLAGS__BIT_IS_LOCAL \
     BIT(5)
-#define GAME_ACTION_FLAGS__BIT_IS_ID_OR_PTR \
+#define GAME_ACTION_FLAGS__BIT_IS_BROADCASTED \
     BIT(6)
 
 
@@ -2156,30 +2169,51 @@ typedef uint8_t Game_Action_Flags;
 typedef struct Game_Action_t {
     Serialization_Header _serialiation_header;
     Identifier__u32 uuid_of__client__u32;
+    Identifier__u32 uuid_of__game_action__responding_to;
     Game_Action_Kind the_kind_of_game_action__this_action_is;
-    Game_Action_State state_of__game_action;
     Game_Action_Flags game_action_flags;
+    ///
+    /// Set to out of bounds for a global broadcast
+    ///
+    Vector__3i32F4 vector_3i32F4__broadcast_point;
+
+    ///
+    /// Extend Game_Action here:
+    ///
+    union {
+        /// ------------
+        ///     TCP
+        /// ------------
+
+        struct {
+            union {
+                struct {
+                    Identifier__u64 ga_kind__tcp_connect__uuid;
+                }; // Connect
+            };
+        }; // TCP
+
+        /// ------------
+        /// </  TCP    >
+        /// ------------
+    };
 } Game_Action;
 
 #define MAX_QUANTITY_OF__GAME_ACTIONS 128
 
 typedef struct Game_Action_Manager_t {
-    BITMAP_AND_HEAP(
-            bitmap_and_heap_of__deallocated_game_actions,
-            MAX_QUANTITY_OF__GAME_ACTIONS);
     Game_Action game_actions[
         MAX_QUANTITY_OF__GAME_ACTIONS];
+    Repeatable_Psuedo_Random repeatable_pseudo_random;
 } Game_Action_Manager;
-
-typedef void (*f_Game_Action_Sanitizer)(
-        Game *p_game,
-        Game_Action *p_game_action,
-        u8 *p_data);
 
 typedef struct Game_Action_Logic_Entry_t {
     m_Process m_process_of__game_action;
-    f_Game_Action_Sanitizer f_game_action_sanitizer;
     Process_Flags__u8 process_flags__u8;
+    Game_Action_Flags game_action_flags__inbound;
+    Game_Action_Flags game_action_flags__inbound_mask;
+    Game_Action_Flags game_action_flags__outbound;
+    Game_Action_Flags game_action_flags__outbound_mask;
 } Game_Action_Logic_Entry;
 
 typedef struct Game_Action_Logic_Table_t {
@@ -2277,6 +2311,10 @@ typedef void (*m_Game_Action_Handler)(
         Game *p_this_game,
         Game_Action *p_game_action);
 
+typedef void (*m_Game_Action_Handler)(
+        Game *p_game,
+        Game_Action *p_game_action);
+
 typedef struct Game_t {
     Input input;
     Scene_Manager scene_manager;
@@ -2309,6 +2347,10 @@ typedef struct Game_t {
     Client *pM_clients;
     Client **pM_ptr_array_of__clients;
     TCP_Socket_Manager *pM_tcp_socket_manager;
+
+    m_Game_Action_Handler m_game_action_handler__dispatch;
+    m_Game_Action_Handler m_game_action_handler__receive;
+    m_Game_Action_Handler m_game_action_handler__resolve;
 
     i32F20 time_elapsed__i32F20;
     i32F20 tick_accumilator__i32F20;

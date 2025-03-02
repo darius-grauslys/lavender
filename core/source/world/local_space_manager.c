@@ -505,3 +505,34 @@ void poll_local_space_for__scrolling(
                 p_local_space_manager
                 ->center_of__local_space_manager__3i32));
 }
+
+bool is_vector_3i32F4_within__local_space_manager(
+        Local_Space_Manager *p_local_space_manager,
+        Vector__3i32F4 vector_3i32F4) {
+    Global_Space_Vector__3i32 global_space__3i32 =
+        vector_3i32F4_to__chunk_vector_3i32(vector_3i32F4);
+
+    bool is_bounded__x = 
+        global_space__3i32.x__i32
+        <= p_local_space_manager
+            ->p_local_space__north_east
+            ->global_space__vector__3i32.x__i32;
+    is_bounded__x &=
+        global_space__3i32.x__i32
+        >= p_local_space_manager
+            ->p_local_space__south_west
+            ->global_space__vector__3i32.x__i32;
+        
+    bool is_bounded__y = 
+        global_space__3i32.y__i32
+        <= p_local_space_manager
+            ->p_local_space__north_east
+            ->global_space__vector__3i32.y__i32;
+    is_bounded__y &=
+        global_space__3i32.y__i32
+        >= p_local_space_manager
+            ->p_local_space__south_west
+            ->global_space__vector__3i32.y__i32;
+
+    return is_bounded__x && is_bounded__y;
+}

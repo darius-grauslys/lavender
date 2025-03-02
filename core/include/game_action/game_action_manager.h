@@ -14,4 +14,8 @@ void release_game_action_from__game_action_manager(
         Game_Action_Manager *p_game_action_manager,
         Game_Action *p_game_action);
 
+Game_Action *get_p_game_action_by__uuid_from__game_action_manager(
+        Game_Action_Manager *p_game_action_manager,
+        Identifier__u32 uuid);
+
 #endif

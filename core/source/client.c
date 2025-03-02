@@ -3,6 +3,7 @@
 #include "defines_weak.h"
 #include "game.h"
 #include "game_action/game_action.h"
+#include "game_action/game_action_logic_entry.h"
 #include "game_action/game_action_logic_table.h"
 #include "game_action/game_action_manager.h"
 #include "multiplayer/tcp_socket.h"
@@ -77,63 +78,86 @@ void receive_game_action_for__client(
         get_p_process_manager_from__game(p_game);
     Game_Action_Logic_Table *p_game_action_logic_table =
         get_p_game_action_logic_table_from__game(p_game);
-    // received game actions are --NEVER-- processed.
-    if (!is_game_action__responding_to_another__game_action(
+
+    Game_Action_Logic_Entry *p_game_action_logic_entry =
+        get_p_game_action_logic_entry_by__game_action_kind(
+                p_game_action_logic_table, 
+                get_kind_of__game_action(p_game_action));
+    if (!p_game_action_logic_entry) {
+        debug_error("receive_game_action_for__client, unsupported game action.");
+        goto cleanup;
+    }
+
+    p_game_action->uuid_of__client__u32 =
+        GET_UUID_P(p_client);
+
+    santize_game_action__inbound(
+            p_game_action_logic_entry, 
+            p_game_action);
+
+    Game_Action_Manager *p_game_action_manager__outbound =
+        get_p_game_action_manager__outbound_from__client(p_client);
+
+    // responding game actions are --NEVER-- allocated a process.
+    if (is_game_action__responding_to_another__game_action(
                 p_game_action)) {
+        Process process;
+        initialize_process_as__empty_process(
+                &process);
+
+        Game_Action *p_game_action__responded_to =
+            get_p_game_action_by__uuid_from__game_action_manager(
+                    p_game_action_manager__outbound, 
+                    p_game_action->uuid_of__game_action__responding_to);
+
+        if (!p_game_action__responded_to) {
+            goto cleanup;
+        }
+
+        // TODO: make process of responded game action, if it's flag is set to do so.
+        //      however, is it needed? Can't we just make the process on invocation and wait?
+
+        process.p_process_data = p_game_action__responded_to;
+
         m_Process m_process_of__game_action =
             get_m_process_for__this_game_action_kind(
                     p_game_action_logic_table, 
                     p_game_action->the_kind_of_game_action__this_action_is);
 
         if (m_process_of__game_action)
-            m_process_of__game_action(0, p_game);
+            m_process_of__game_action(&process, p_game);
         return;
     }
 
-    Game_Action_Manager *p_game_action_manager__outbound =
-        get_p_game_action_manager__outbound_from__client(p_client);
-
-    Game_Action *p_game_action__responded_to =
-        (Game_Action*)dehash_identitier_u32_in__contigious_array(
-                (Serialization_Header*)
-                p_game_action_manager__outbound->game_actions, 
-                MAX_QUANTITY_OF__GAME_ACTIONS, 
-                p_game_action->_serialiation_header.uuid);
-
-    if (!p_game_action__responded_to) {
-        goto cleanup;
-    }
-
     if (is_game_action__with_process(p_game_action)) {
-        if (is_game_action__processed_on__invocation_or__respose(
-                    p_game_action__responded_to)) {
-            Process *p_process = get_p_process_by__uuid(
-                    p_process_manager, 
-                    p_game_action__responded_to->_serialiation_header.uuid); 
-            if (!p_process)
-                goto release_response;
-            // keep p_game_action alive.
-            return;
-        }
+        Game_Action *p_game_action__allocated = 0;
+        if (!is_game_action__allocated(p_game_action)) {
+            p_game_action__allocated =
+                allocate_game_action_from__game_action_manager(
+                        get_p_game_action_manager__inbound_from__client(p_client));
+            if (!p_game_action__allocated) {
+                debug_error("receive_game_action_for__client, failed to copy p_game_action.");
+                return;
+            }
 
+            *p_game_action__allocated =
+                *p_game_action;
+        }
         Process *p_process = dispatch_game_action_process(
                 p_game_action_logic_table, 
                 p_process_manager, 
-                p_game_action__responded_to);
+                p_game_action__allocated);
 
         if (!p_process) {
-            debug_error("receive_game_action, failed to allocate p_process.");
+            debug_error("receive_game_action_for__client, failed to allocate p_process.");
+            release_game_action_from__game_action_manager(
+                    get_p_game_action_manager__inbound_from__client(p_client), 
+                    p_game_action__allocated);
             goto cleanup;
         }
         // keep p_game_action alive.
         return;
-    } else {
-release_response:
-        release_game_action_from__game_action_manager(
-                get_p_game_action_manager__outbound_from__client(p_client), 
-                p_game_action__responded_to);
     }
-
 cleanup:
     if (is_game_action__allocated(p_game_action)) {
         release_game_action_from__game_action_manager(
@@ -145,36 +169,67 @@ cleanup:
 void dispatch_game_action_for__client(
         Client *p_client,
         Game *p_game,
+        TCP_Socket_Manager *p_tcp_socket_manager,
         Game_Action *p_game_action) {
 
     Process_Manager *p_process_manager =
         get_p_process_manager_from__game(p_game);
     Game_Action_Logic_Table *p_game_action_logic_table =
         get_p_game_action_logic_table_from__game(p_game);
-    TCP_Socket_Manager *p_tcp_socket_manager =
-        get_p_tcp_socket_manager_from__game(p_game);
 
     if (!p_game_action) {
-        debug_error("dispatch_game_action, p_game_action is null.");
+        debug_error("dispatch_game_action_for__client, p_game_action is null.");
         return;
     }
 
+    Game_Action_Logic_Entry *p_game_action_logic_entry =
+        get_p_game_action_logic_entry_by__game_action_kind(
+                p_game_action_logic_table, 
+                get_kind_of__game_action(p_game_action));
+    if (!p_game_action_logic_entry) {
+        debug_error("dispatch_game_action_for__client, unsupported game action.");
+        goto cleanup;
+    }
+
+    santize_game_action__inbound(
+            p_game_action_logic_entry, 
+            p_game_action);
+
     if (is_game_action__with_process(p_game_action)) {
+        Game_Action *p_game_action__allocated = 0;
+        if (!is_game_action__allocated(p_game_action)) {
+            p_game_action__allocated =
+                allocate_game_action_from__game_action_manager(
+                        get_p_game_action_manager__outbound_from__client(p_client));
+            if (!p_game_action__allocated) {
+                debug_error("dispatch_game_action_for__client, failed to copy p_game_action.");
+                goto cleanup;
+            }
+
+            *p_game_action__allocated =
+                *p_game_action;
+        }
         if (is_game_action__processed_on__invocation_or__respose(p_game_action)) {
             Process *p_process =
                 dispatch_game_action_process(
                         p_game_action_logic_table, 
                         p_process_manager, 
-                        p_game_action);
+                        p_game_action__allocated);
 
             if (!p_process) {
-                debug_error("dispatch_game_action, failed to allocate process.");
-                release_game_action_from__client(p_client, p_game_action);
-                return;
+                debug_error("dispatch_game_action_for__client, failed to allocate process.");
+                release_game_action_from__game_action_manager(
+                        get_p_game_action_manager__outbound_from__client(p_client), 
+                        p_game_action__allocated);
+                goto cleanup;
             }
         }
     } else if (!p_tcp_socket_manager) {
         // we are in offline mode, dispatch the process immediately.
+        Process process;
+        initialize_process_as__empty_process(&process);
+        process.p_process_data = p_game_action;
+
         m_Process m_process_of__game_action =
             get_m_process_for__this_game_action_kind(
                     p_game_action_logic_table, 
@@ -183,20 +238,22 @@ void dispatch_game_action_for__client(
 
         if (m_process_of__game_action)
             m_process_of__game_action(
-                    0, p_game);
+                    &process, p_game);
+        return;
     } 
 
-    if (!p_tcp_socket_manager) {
+    if (!p_tcp_socket_manager
+            || is_game_action__local(p_game_action)) {
         return;
     }
 
     TCP_Socket *p_tcp_socket =
-        get_p_tcp_socket_for__this_client(
+        get_p_tcp_socket_for__this_uuid(
                 p_tcp_socket_manager, 
-                p_client);
+                p_client->_serialization_header.uuid);
 
     if (!p_tcp_socket) {
-        debug_abort("dispatch_game_action, p_tcp_socket == 0.");
+        debug_abort("dispatch_game_action_for__client, p_tcp_socket == 0.");
         return;
     }
 
@@ -204,6 +261,13 @@ void dispatch_game_action_for__client(
             p_tcp_socket, 
             (u8*)p_game_action, 
             sizeof(Game_Action));
+    return;
+cleanup:
+    if (is_game_action__allocated(p_game_action)) {
+        release_game_action_from__game_action_manager(
+                get_p_game_action_manager__outbound_from__client(p_client), 
+                p_game_action);
+    }
 }
 
 Game_Action *allocate_game_action_from__client(

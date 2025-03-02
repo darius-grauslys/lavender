@@ -9,7 +9,7 @@
 
 #ifndef PLATFORM__TCP
 #define PLATFORM__TCP
-#define IS_SERVER
+//#define IS_SERVER
     #ifndef IS_SERVER
         #define MAX_QUANTITY_OF__TCP_SOCKETS 1
     #else
@@ -24,10 +24,10 @@
 ///
 #define TCP_ERROR__DESTINATION_OVERFLOW (-1)
 ///
-/// Destination cannot handle this packet at this time.
-/// Packet is dropped.
+/// The socket queue is full, read the contents before
+/// acquiring more.
 ///
-#define TCP_ERROR__TOO_MANY_PACKETS (-2)
+#define TCP_ERROR__QUEUE_FULL (-2)
 #endif
 
 #ifndef PLATFORM__CAMERA
@@ -85,6 +85,29 @@
 #define CHUNK_MANAGER__QUANTITY_OF_IO_QUEUED_CHUNKS \
     CHUNK_MANAGER__QUANTITY_OF_CHUNKS \
     * 2
+// We use a singular wrapping background.
+// #define LOCAL_SPACE_RENDER_WIDTH__IN_CHUNKS 0
+// #define LOCAL_SPACE_LOGICAL_WIDTH__IN_CHUNKS 5
+
+//16bpx, 8 pixels per row (of 8 rows)
+#define TILE_WIDTH__IN_BYTES (2 * 8)
+#define TILE_WIDTH__IN_PIXELS 8
+
+#define CHUNK_WIDTH__IN_BYTES (\
+        TILE_WIDTH__IN_BYTES *\
+        CHUNK_WIDTH__IN_TILES)
+
+#define WIDTH_OF__LOCAL_SPACE_MANAGER 8
+#define HEIGHT_OF__LOCAL_SPACE_MANAGER 8
+#define AREA_OF__LOCAL_SPACE_MANAGER\
+    (WIDTH_OF__LOCAL_SPACE_MANAGER\
+    * HEIGHT_OF__LOCAL_SPACE_MANAGER)
+
+#define MAX_QUANTITY_OF__CLIENTS 4
+
+#define QUANTITY_OF__GLOBAL_SPACE\
+    (AREA_OF__LOCAL_SPACE_MANAGER\
+     * MAX_QUANTITY_OF__CLIENTS)
 #endif
 
 #ifndef PLATFORM__ENTITIES

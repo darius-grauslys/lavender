@@ -3,14 +3,6 @@
 #include "defines_weak.h"
 #include "process/process_manager.h"
 
-static inline
-Game_Action_Logic_Entry *get_p_game_action_logic_entry_by__game_action_kind(
-        Game_Action_Logic_Table *p_game_action_logic_table,
-        Game_Action_Kind the_kind_of__game_action) {
-    return &p_game_action_logic_table->game_action_logic_entries[
-        the_kind_of__game_action];
-}
-
 void initialize_game_action_logic_table(
         Game_Action_Logic_Table *p_game_action_logic_table) {
     memset(p_game_action_logic_table,
@@ -34,9 +26,10 @@ Process *dispatch_game_action_process(
                 p_game_action_logic_table, 
                 the_kind_of__game_action);
 
-    Process *p_process = run_process(
+    Process *p_process = run_process_with__uuid(
             p_process_manager, 
             p_game_action_logic_entry->m_process_of__game_action, 
+            p_game_action->_serialiation_header.uuid,
             p_game_action_logic_entry->process_flags__u8);
 
     if (!p_process) {

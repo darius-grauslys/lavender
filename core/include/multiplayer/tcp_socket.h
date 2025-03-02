@@ -33,4 +33,32 @@ bool get_latest__delivery_from__tcp_socket(
         TCP_Socket *p_tcp_socket,
         TCP_Packet *p_tcp_packet__returned);
 
+void bind_tcp_socket(
+        TCP_Socket *p_tcp_socket,
+        PLATFORM_TCP_Socket *p_PLATFORM_tcp_socket);
+
+void unbind_tcp_socket(
+        PLATFORM_TCP_Context *p_PLATFORM_tcp_context,
+        TCP_Socket *p_tcp_socket);
+
+static inline
+PLATFORM_TCP_Socket *get_p_PLATFORM_tcp_socket_from__tcp_socket(
+        TCP_Socket *p_tcp_socket) {
+    return p_tcp_socket->p_PLATFORM_tcp_socket;
+}
+
+static inline
+TCP_Socket_State get_state_of__tcp_socket(
+        TCP_Socket *p_tcp_socket) {
+    return p_tcp_socket->tcp_socket__state_of;
+}
+
+static inline
+void set_state_of__tcp_socket(
+        TCP_Socket *p_tcp_socket,
+        TCP_Socket_State state_of__tcp_socket) {
+    p_tcp_socket->tcp_socket__state_of =
+        state_of__tcp_socket;
+}
+
 #endif

@@ -9,6 +9,18 @@ void initialize_game_action(
         Game_Action *p_game_action);
 
 static inline
+Identifier__u32 get_response_uuid_from__game_action(
+        Game_Action *p_game_action) {
+    return p_game_action->uuid_of__game_action__responding_to;
+}
+
+static inline
+Identifier__u32 get_client_uuid_from__game_action(
+        Game_Action *p_game_action) {
+    return p_game_action->uuid_of__client__u32;
+}
+
+static inline
 Game_Action_Kind get_kind_of__game_action(
         Game_Action *p_game_action) {
     return p_game_action->the_kind_of_game_action__this_action_is;
@@ -57,14 +69,6 @@ void set_game_action_as__outbound(Game_Action *p_game_action) {
 }
 
 static inline
-bool is_game_action__fire_and__forget(
-        Game_Action *p_game_action) {
-    return p_game_action->game_action_flags
-        & GAME_ACTION_FLAGS__BIT_IS_FIRE_AND_FORGET
-        ;
-}
-
-static inline
 bool is_game_action__with_process(
         Game_Action *p_game_action) {
     return p_game_action->game_action_flags
@@ -89,16 +93,47 @@ bool is_game_action__responding_to_another__game_action(
 }
 
 static inline
-Game_Action_State get_state_of__game_action(Game_Action *p_game_action) {
-    return p_game_action->state_of__game_action;
+bool is_game_action__local(
+        Game_Action *p_game_action) {
+    return p_game_action->game_action_flags
+        & GAME_ACTION_FLAGS__BIT_IS_LOCAL
+        ;
 }
 
 static inline
-void set_state_of__game_action(
-        Game_Action *p_game_action,
-        Game_Action_State state_of__game_action) {
-    p_game_action->state_of__game_action =
-        state_of__game_action;
+void set_game_action_as__local(Game_Action *p_game_action) {
+    p_game_action->game_action_flags |=
+        GAME_ACTION_FLAGS__BIT_IS_LOCAL
+        ;
+}
+
+static inline
+void set_game_action_as__NOT_local(Game_Action *p_game_action) {
+    p_game_action->game_action_flags &=
+        ~GAME_ACTION_FLAGS__BIT_IS_LOCAL
+        ;
+}
+
+static inline
+bool is_game_action__broadcasted(
+        Game_Action *p_game_action) {
+    return p_game_action->game_action_flags
+        & GAME_ACTION_FLAGS__BIT_IS_BROADCASTED
+        ;
+}
+
+static inline
+void set_game_action_as__broadcasted(Game_Action *p_game_action) {
+    p_game_action->game_action_flags |=
+        GAME_ACTION_FLAGS__BIT_IS_BROADCASTED
+        ;
+}
+
+static inline
+void set_game_action_as__NOT_broadcasted(Game_Action *p_game_action) {
+    p_game_action->game_action_flags &=
+        ~GAME_ACTION_FLAGS__BIT_IS_BROADCASTED
+        ;
 }
 
 #endif

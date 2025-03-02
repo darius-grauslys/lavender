@@ -2,7 +2,6 @@
 #define IDENTIFIERS_H
 
 #include "defines_weak.h"
-#include "game.h"
 #include "random.h"
 #include <defines.h>
 
