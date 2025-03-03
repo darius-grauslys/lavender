@@ -288,7 +288,7 @@ PLATFORM_TCP_Socket *PLATFORM_tcp_poll_accept(
                 p_PLATFORM_tcp_context);
 
     if (!p_PLATFORM_tcp_socket__pending_connection) {
-        shutdown(socket_handle__new_connection, 2);
+        close(socket_handle__new_connection);
         debug_error("SDL::PLATFORM_tcp_poll_accept, cannot accept new connections.");
         return 0;
     }
@@ -310,6 +310,24 @@ PLATFORM_TCP_Socket *PLATFORM_tcp_poll_accept(
     SDL_initialize_PLATFORM_tcp_socket(
             p_PLATFORM_tcp_socket__pending_connection,
             socket_handle__new_connection);
+
+    int flags =
+        fcntl(p_PLATFORM_tcp_socket__pending_connection->socket_handle,
+                F_GETFL,
+                0);
+    if (flags == -1 
+            || fcntl(p_PLATFORM_tcp_socket__pending_connection->socket_handle,
+                F_SETFL,
+                flags | O_NONBLOCK) == -1) {
+        debug_error("SDL::PLATFORM_tcp_connect, failed to set non-blocking mode.");
+        if (close(p_PLATFORM_tcp_socket__pending_connection->socket_handle)) {
+            debug_error("SDL::PLATFORM_tcp_connect, failed to close socket.");
+            return 0;
+        }
+        SDL_initialize_PLATFORM_tcp_socket_as__inactive(
+                p_PLATFORM_tcp_socket__pending_connection);
+        return 0;
+    }
 
     return p_PLATFORM_tcp_socket__pending_connection;
 }

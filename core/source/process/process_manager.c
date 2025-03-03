@@ -245,6 +245,8 @@ Quantity__u32 poll_process_manager(
         Quantity__u32 ticks_elapsed =
             poll__game_tick_timer(p_game);
 
+        Process *p_process = *p_ptr_process;
+
         if (!is_process__critical(*p_ptr_process)) {
             if (ticks_elapsed)
                 continue;
@@ -261,12 +263,12 @@ Quantity__u32 poll_process_manager(
                     p_ptr_process);
         }
 
-        if (!(*p_ptr_process)->m_process_run__handler) {
+        if (!p_process->m_process_run__handler) {
             continue;
         }
 
-        (*p_ptr_process)->m_process_run__handler(
-                *p_ptr_process,
+        p_process->m_process_run__handler(
+                p_process,
                 p_game);
     }
 

@@ -283,7 +283,8 @@ Quantity__u32 poll__game_tick_timer(Game *p_game) {
 
 void reset__game_tick_timer(Game *p_game) {
     p_game->tick_accumilator__i32F20 -=
-        p_game->tick_accumilator__i32F20 >> 14;
+        p_game->tick_accumilator__i32F20
+        & ~MASK(14);
 }
 
 bool print_log__global(Game *p_game, char *cstr) {
