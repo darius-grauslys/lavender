@@ -418,6 +418,14 @@ PLATFORM_TCP_Socket *PLATFORM_tcp_connect(
         IPv4_Address *p_ipv4_address);
 
 ///
+/// To be called every loop following PLATFORM_tcp_connect
+/// using the returned socket. Returns TCP_Socket_State
+/// to describe the connect request status.
+///
+TCP_Socket_State PLATFORM_tcp_poll_connect(
+        PLATFORM_TCP_Socket *p_PLATFORM_tcp_socket);
+
+///
 /// Use to make a PLATFORM_TCP_Socket for accepting
 /// server connections.
 /// Returns null if failed.

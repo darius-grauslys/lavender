@@ -113,6 +113,23 @@ void initialize_tcp_socket_as__deallocated(
             sizeof(TCP_Socket));
 }
 
+TCP_Socket_State poll_tcp_socket_for__connection(
+        TCP_Socket *p_tcp_socket) {
+    if (!p_tcp_socket
+            || !p_tcp_socket->p_PLATFORM_tcp_socket)
+        return TCP_Socket_State__None;
+    switch (get_state_of__tcp_socket(p_tcp_socket)) {
+        default:
+            return p_tcp_socket->tcp_socket__state_of;
+        case TCP_Socket_State__None:
+        case TCP_Socket_State__Connecting:
+            break;
+    }
+    return (p_tcp_socket->tcp_socket__state_of =
+        PLATFORM_tcp_poll_connect(
+                p_tcp_socket->p_PLATFORM_tcp_socket));
+}
+
 void send_bytes_over__tcp_socket(
         TCP_Socket *p_tcp_socket,
         u8 *p_bytes,
@@ -158,7 +175,7 @@ i32 receive_bytes_over__tcp_socket(
                 break;
         }
         quantity_received__total += quantity_received;
-    } while (!quantity_received);
+    } while (quantity_received);
 
     return quantity_received__total;
 }

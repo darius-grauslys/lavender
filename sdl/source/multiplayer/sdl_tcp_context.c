@@ -121,16 +121,17 @@ PLATFORM_TCP_Socket *PLATFORM_tcp_connect(
         return 0;
     }
 
-    struct sockaddr_in addr_in;
-    addr_in.sin_family = AF_INET;
-    addr_in.sin_addr.s_addr =
+    struct sockaddr_in *p_addr_in =
+        &p_PLATFORM_tcp_socket->addr_in;
+    p_addr_in->sin_family = AF_INET;
+    p_addr_in->sin_addr.s_addr =
         htonl(
                 (p_ipv4_address->ip_bytes[0] << 24)
                 | (p_ipv4_address->ip_bytes[1] << 16)
                 | (p_ipv4_address->ip_bytes[2] << 8)
                 | (p_ipv4_address->ip_bytes[3])
                 );
-    addr_in.sin_port = 
+    p_addr_in->sin_port = 
         htons(p_ipv4_address->port);
 
     int flags = 
@@ -151,13 +152,6 @@ PLATFORM_TCP_Socket *PLATFORM_tcp_connect(
         return 0;
     }
 
-    if (connect(p_PLATFORM_tcp_socket->socket_handle,
-                (struct sockaddr*)&addr_in,
-                sizeof(addr_in))) {
-        debug_error("SDL::PLATFORM_tcp_connect, failed to connect.");
-        return 0;
-    }
-
     debug_info("SDL::PLATFORM_tcp_connect: %d.%d.%d.%d:%hu",
             p_ipv4_address->ip_bytes[0],
             p_ipv4_address->ip_bytes[1],
@@ -167,6 +161,25 @@ PLATFORM_TCP_Socket *PLATFORM_tcp_connect(
             );
 
     return p_PLATFORM_tcp_socket;
+}
+
+TCP_Socket_State PLATFORM_tcp_poll_connect(
+        PLATFORM_TCP_Socket *p_PLATFORM_tcp_socket) {
+    if (connect(p_PLATFORM_tcp_socket->socket_handle,
+                (struct sockaddr*)&p_PLATFORM_tcp_socket->addr_in,
+                sizeof(struct sockaddr_in))) {
+        switch (errno) {
+            case EWOULDBLOCK:
+            case EINPROGRESS:
+                return TCP_Socket_State__Connecting;
+            default:
+                debug_error("SDL::PLATFORM_tcp_connect, failed to connect.");
+                return TCP_Socket_State__Disconnected;
+        }
+    }
+
+    debug_info("SDL::PLATFORM_tcp_poll_connect, connection succeeded.");
+    return TCP_Socket_State__Connected;
 }
 
 ///
@@ -280,6 +293,20 @@ PLATFORM_TCP_Socket *PLATFORM_tcp_poll_accept(
         return 0;
     }
 
+    if (p_ipv4) {
+        u32 ipv4_addr__u32 = ntohl(addr_in.sin_addr.s_addr);
+        p_ipv4->port = ntohs(addr_in.sin_port);
+
+        p_ipv4->ip_bytes[0] =
+            (ipv4_addr__u32 >> 24) & MASK(8);
+        p_ipv4->ip_bytes[1] =
+            (ipv4_addr__u32 >> 16) & MASK(8);
+        p_ipv4->ip_bytes[2] =
+            (ipv4_addr__u32 >> 8) & MASK(8);
+        p_ipv4->ip_bytes[3] =
+            (ipv4_addr__u32) & MASK(8);
+    }
+
     SDL_initialize_PLATFORM_tcp_socket(
             p_PLATFORM_tcp_socket__pending_connection,
             socket_handle__new_connection);
@@ -310,13 +337,13 @@ i32 PLATFORM_tcp_recieve(
         PLATFORM_TCP_Socket *p_PLATFORM_tcp_socket,
         u8 *p_bytes,
         Quantity__u32 length_of_bytes_in__destination) {
+    errno = 0;
     i32 recieved =
         recv(
                 p_PLATFORM_tcp_socket->socket_handle, 
                 p_bytes, 
                 length_of_bytes_in__destination, 
                 0);
-    errno = 0;
     if (recieved == -1) {
         if (errno == EWOULDBLOCK) {
             return 0;

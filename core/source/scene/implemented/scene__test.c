@@ -4,6 +4,7 @@
 #include "defines.h"
 #include "defines_weak.h"
 #include "game.h"
+#include "game_action/implemented/tcp/game_action__tcp_begin_connect.h"
 #include "input/input.h"
 #include "multiplayer/server__default.h"
 #include "multiplayer/client__default.h"
@@ -53,6 +54,9 @@ void m_load_scene__test(
     begin_multiplayer_for__game(
             p_game,
             m_poll_tcp_socket_manager_as__server__default);
+    Client *p_client = allocate_client_from__game(
+            p_game, 
+            0);
     open_server_socket_on__tcp_socket_manager__ipv4(
             get_p_tcp_socket_manager_from__game(p_game), 
             0, 
@@ -71,10 +75,9 @@ void m_load_scene__test(
     addr.ip_bytes[2] = 0;
     addr.ip_bytes[3] = 1;
     addr.port = 55566;
-    open_socket_on__tcp_socket_manager__ipv4(
-            get_p_tcp_socket_manager_from__game(p_game), 
-            addr, 
-            p_client->_serialization_header.uuid);
+    dispatch_game_action__connect__begin(
+            p_game, 
+            addr);
     load_p_PLATFORM_texture_from__path_with__alias(
             get_p_PLATFORM_gfx_context_from__game(p_game), 
             0, 

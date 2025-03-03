@@ -120,7 +120,7 @@ void receive_game_action_for__client(
         process.p_process_data = p_game_action__responded_to;
 
         m_Process m_process_of__game_action =
-            get_m_process_for__this_game_action_kind(
+            get_m_process__inbound_for__this_game_action_kind(
                     p_game_action_logic_table, 
                     p_game_action->the_kind_of_game_action__this_action_is);
 
@@ -143,7 +143,7 @@ void receive_game_action_for__client(
             *p_game_action__allocated =
                 *p_game_action;
         }
-        Process *p_process = dispatch_game_action_process(
+        Process *p_process = dispatch_game_action_process__inbound(
                 p_game_action_logic_table, 
                 p_process_manager, 
                 p_game_action__allocated);
@@ -157,6 +157,23 @@ void receive_game_action_for__client(
         }
         // keep p_game_action alive.
         return;
+    }
+
+    if (get_m_process__inbound_of__game_action_logic_entry(
+                p_game_action_logic_entry)) {
+        Process process;
+        initialize_process_as__empty_process(&process);
+        process.p_process_data = p_game_action;
+
+        m_Process m_process_of__game_action =
+            get_m_process__inbound_for__this_game_action_kind(
+                    p_game_action_logic_table, 
+                    p_game_action
+                        ->the_kind_of_game_action__this_action_is);
+
+        if (m_process_of__game_action)
+            m_process_of__game_action(
+                    &process, p_game);
     }
 cleanup:
     if (is_game_action__allocated(p_game_action)) {
@@ -191,7 +208,7 @@ void dispatch_game_action_for__client(
         goto cleanup;
     }
 
-    santize_game_action__inbound(
+    santize_game_action__outbound(
             p_game_action_logic_entry, 
             p_game_action);
 
@@ -211,7 +228,7 @@ void dispatch_game_action_for__client(
         }
         if (is_game_action__processed_on__invocation_or__respose(p_game_action)) {
             Process *p_process =
-                dispatch_game_action_process(
+                dispatch_game_action_process__outbound(
                         p_game_action_logic_table, 
                         p_process_manager, 
                         p_game_action__allocated);
@@ -224,14 +241,15 @@ void dispatch_game_action_for__client(
                 goto cleanup;
             }
         }
-    } else if (!p_tcp_socket_manager) {
-        // we are in offline mode, dispatch the process immediately.
+    } else if (
+            get_m_process__outbound_of__game_action_logic_entry(
+                p_game_action_logic_entry)) {
         Process process;
         initialize_process_as__empty_process(&process);
         process.p_process_data = p_game_action;
 
         m_Process m_process_of__game_action =
-            get_m_process_for__this_game_action_kind(
+            get_m_process__outbound_for__this_game_action_kind(
                     p_game_action_logic_table, 
                     p_game_action
                         ->the_kind_of_game_action__this_action_is);
@@ -239,7 +257,6 @@ void dispatch_game_action_for__client(
         if (m_process_of__game_action)
             m_process_of__game_action(
                     &process, p_game);
-        return;
     } 
 
     if (!p_tcp_socket_manager

@@ -2,6 +2,8 @@
 #include "defines.h"
 #include "defines_weak.h"
 #include "game_action/game_action.h"
+#include "game_action/game_action_logic_table.h"
+#include "game_action/implemented/game_action__registrar.h"
 #include "inventory/inventory_manager.h"
 #include "inventory/item_manager.h"
 #include "log/log.h"
@@ -13,6 +15,7 @@
 #include "rendering/aliased_texture_manager.h"
 #include "rendering/sprite_gfx_allocator_manager.h"
 #include "scene/implemented/scene__test.h"
+#include "scene/implemented/scene_registrar.h"
 #include "scene/scene.h"
 #include "scene/scene_manager.h"
 #include "serialization/hashing.h"
@@ -59,8 +62,8 @@ void m_game_action_handler__resolve__multiplayer(
 
 void initialize_game(
         Game *p_game) {
-    initialize_scene_manager(&p_game->scene_manager);
-    register_scene__test(&p_game->scene_manager);
+    initialize_scene_manager(get_p_scene_manager_from__game(p_game));
+    register_scenes(get_p_scene_manager_from__game(p_game));
     initialize_process_manager(
             get_p_process_manager_from__game(p_game));
     initialize_sort_list_manager(
@@ -104,6 +107,11 @@ void initialize_game(
         m_game_action_handler__receive__singleplayer;
     p_game->m_game_action_handler__resolve =
         m_game_action_handler__resolve__singleplayer;
+
+    initialize_game_action_logic_table(
+            get_p_game_action_logic_table_from__game(p_game));
+    register_game_actions__offline(
+            get_p_game_action_logic_table_from__game(p_game));
 }
 
 void allocate_client_pool_for__game(
@@ -164,6 +172,14 @@ void begin_multiplayer_for__game(
         m_game_action_handler__receive__multiplayer;
     p_game->m_game_action_handler__resolve =
         m_game_action_handler__resolve__multiplayer;
+
+    if (p_game->max_quantity_of__clients == 1) {
+        register_game_actions__client(
+                get_p_game_action_logic_table_from__game(p_game));
+    } else {
+        register_game_actions__server(
+                get_p_game_action_logic_table_from__game(p_game));
+    }
 }
 
 void stop_multiplayer_for__game(
@@ -208,10 +224,14 @@ Client *get_p_client_by__uuid_from__game(
         debug_error("get_p_client_by__uuid_from__game, pM_clients == 0.");
         return 0;
     }
-    return (Client*)dehash_identitier_u32_in__contigious_array(
+    Client *p_client = 
+        (Client*)dehash_identitier_u32_in__contigious_array(
             (Serialization_Header *)p_game->pM_clients, 
             p_game->max_quantity_of__clients, 
             uuid__u32);
+    if (IS_DEALLOCATED_P(p_client))
+        return 0;
+    return p_client;
 }
 
 void release_client_from__game(

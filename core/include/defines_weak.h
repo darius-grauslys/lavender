@@ -154,6 +154,8 @@ typedef enum TCP_Socket_State {
     TCP_Socket_State__Disconnected,
     TCP_Socket_State__Connecting,
     TCP_Socket_State__Connected,
+    TCP_Socket_State__Authenticating,
+    TCP_Socket_State__Authenticated,
     TCP_Socket_State__Unknown
 } TCP_Socket_State;
 
@@ -321,6 +323,7 @@ typedef enum Tile_Kind {
 ///
 typedef enum Game_Action_Kind {
     Game_Action_Kind__None = 0,
+    Game_Action_Kind__TCP_Connect__Begin,
     Game_Action_Kind__TCP_Connect,
     Game_Action_Kind__TCP_Connect__Reject,
     Game_Action_Kind__TCP_Connect__Accept,

@@ -43,6 +43,13 @@ PLATFORM_TCP_Socket *poll_tcp_socket_manager_for__pending_connections(
 void reject_pending_connection(
         TCP_Socket_Manager *p_tcp_socket_manager);
 
+///
+/// Returns false if acceptance failed.
+///
+TCP_Socket *accept_pending_connection(
+        TCP_Socket_Manager *p_tcp_socket_manager,
+        Identifier__u32 uuid__u32);
+
 static inline
 TCP_Socket *get_p_tcp_socket_for__this_uuid(
         TCP_Socket_Manager *p_tcp_socket_manager,

@@ -9,6 +9,14 @@ void initialize_game_action(
         Game_Action *p_game_action);
 
 static inline
+void set_the_kind_of__game_action(
+        Game_Action *p_game_action,
+        Game_Action_Kind the_kind_of__game_action) {
+    p_game_action->the_kind_of_game_action__this_action_is =
+        the_kind_of__game_action;
+}
+
+static inline
 Identifier__u32 get_response_uuid_from__game_action(
         Game_Action *p_game_action) {
     return p_game_action->uuid_of__game_action__responding_to;

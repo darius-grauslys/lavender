@@ -5,141 +5,48 @@
 #include "defines_weak.h"
 #include "game.h"
 #include "game_action/game_action.h"
+#include "game_action/implemented/tcp/game_action__tcp_connect.h"
 #include "multiplayer/tcp_socket.h"
 #include "multiplayer/tcp_socket_manager.h"
 #include "platform.h"
 #include "platform_defaults.h"
 
-void accept_connection__server__default(
+void handle_pending_connection(
         Game *p_game,
-        PLATFORM_TCP_Socket *p_PLATFORM_tcp_socket,
-        IPv4_Address *p_ipv4,
-        Identifier__u32 uuid) {
-    TCP_Socket_Manager *p_tcp_socket_manager =
-        get_p_tcp_socket_manager_from__game(p_game);
-
-    TCP_Socket *p_tcp_socket =
-        accept_socket_on__tcp_socket_manager__ipv4(
-                p_tcp_socket_manager, 
-                p_PLATFORM_tcp_socket,
-                *p_ipv4,
-                uuid);
-
-    Game_Action ga_accept;
-    initialize_game_action(&ga_accept);
-    ga_accept.the_kind_of_game_action__this_action_is =
-        Game_Action_Kind__TCP_Connect__Accept;
-
-    debug_info("connection accepted: %d.%d.%d.%d:%hu",
-            p_ipv4->ip_bytes[0],
-            p_ipv4->ip_bytes[1],
-            p_ipv4->ip_bytes[2],
-            p_ipv4->ip_bytes[3],
-            p_ipv4->port
-            );
-
-    send_bytes_over__tcp_socket(
-            p_tcp_socket, 
-            (u8*)&ga_accept, 
-            sizeof(ga_accept));
-}
-
-void reject_connection__server__default(
-        Game *p_game,
-        PLATFORM_TCP_Socket *p_PLATFORM_tcp_socket,
-        IPv4_Address *p_ipv4) {
-    TCP_Socket_Manager *p_tcp_socket_manager =
-        get_p_tcp_socket_manager_from__game(p_game);
-
-    Game_Action ga_reject;
-    initialize_game_action(&ga_reject);
-    ga_reject.the_kind_of_game_action__this_action_is =
-        Game_Action_Kind__TCP_Connect__Reject;
-
-    PLATFORM_tcp_send(
-            p_PLATFORM_tcp_socket, 
-            (u8*)&ga_reject, 
-            sizeof(ga_reject));
-
-    debug_info("connection rejected: %d.%d.%d.%d:%hu",
-            p_ipv4->ip_bytes[0],
-            p_ipv4->ip_bytes[1],
-            p_ipv4->ip_bytes[2],
-            p_ipv4->ip_bytes[3],
-            p_ipv4->port
-            );
-
-    reject_pending_connection(p_tcp_socket_manager);
-}
-
-void handle_connection__server__default(
-        Game *p_game,
-        PLATFORM_TCP_Socket *p_PLATFORM_tcp_socket,
-        IPv4_Address *p_ipv4) {
-    PLATFORM_TCP_Context *p_PLATFORM_tcp_context =
-        get_p_PLATFORM_tcp_context_from__game(p_game);
-    TCP_Socket_Manager *p_tcp_socket_manager =
-        get_p_tcp_socket_manager_from__game(p_game);
-
-    union {
-        Game_Action game_action;
-        TCP_Packet tcp_packet;
-    } delivery;
-
-    i32 quantity_received =
-        PLATFORM_tcp_recieve(
+        PLATFORM_TCP_Socket *p_PLATFORM_tcp_socket) {
+    TCP_DELIVERY(Game_Action, ga_connect) delivery;
+    i32 quantity_received = 0;
+    if (p_PLATFORM_tcp_socket) {
+        quantity_received = 
+            PLATFORM_tcp_recieve(
                 p_PLATFORM_tcp_socket, 
-                delivery.tcp_packet.tcp_packet_bytes, 
-                MAX_SIZE_OF__TCP_PACKET);
-
-    switch (quantity_received) {
-        case TCP_ERROR__DESTINATION_OVERFLOW:
-            reject_connection__server__default(
-                    p_game, 
-                    p_PLATFORM_tcp_socket, 
-                    p_ipv4);
-            return;
-        default:
-            break;
+                (u8*)&delivery, 
+                sizeof(delivery));
     }
 
-    switch (get_kind_of__game_action(&delivery.game_action)) {
-        case Game_Action_Kind__TCP_Connect:
-            break;
-        default:
-            reject_connection__server__default(
-                    p_game, 
-                    p_PLATFORM_tcp_socket, 
-                    p_ipv4);
-            return;
-    }
-
-    // check if player is already connected.
-    // TODO: use uuid_64
-    TCP_Socket *p_tcp_socket =
-        get_p_tcp_socket_for__this_uuid(
-                p_tcp_socket_manager, 
-                delivery.game_action.ga_kind__tcp_connect__uuid);
-
-    if (p_tcp_socket) {
-        reject_connection__server__default(
-                p_game, 
-                p_PLATFORM_tcp_socket, 
-                p_ipv4);
+    if (!quantity_received) {
         return;
     }
 
-    accept_connection__server__default(
-            p_game, 
-            p_PLATFORM_tcp_socket, 
-            p_ipv4, 
-            delivery.game_action.ga_kind__tcp_connect__uuid);
+    switch (get_kind_of__game_action(&delivery.ga_connect)) {
+        default:
+            // TODO: timeout
+            break;
+        case Game_Action_Kind__TCP_Connect:
+            receive_game_action__connect(
+                    p_game, 
+                    delivery
+                    .ga_connect
+                    .ga_kind__tcp_connect__session_token);
+            break;
+    }
 }
 
 void m_poll_tcp_socket_manager_as__server__default(
         TCP_Socket_Manager *p_tcp_socket_manager,
         Game *p_game) {
-#ifdef IS_SERVER
+// #ifdef IS_SERVER
+#if 1
     TCP_Socket *p_tcp_socket__server = 
         p_tcp_socket_manager->ptr_array_of__tcp_sockets[0];
     TCP_Socket *p_tcp_socket__auth = 
@@ -161,10 +68,9 @@ void m_poll_tcp_socket_manager_as__server__default(
                 &ipv4);
 
     if (p_PLATFORM_tcp_socket) {
-        handle_connection__server__default(
+        handle_pending_connection(
                 p_game, 
-                p_PLATFORM_tcp_socket,
-                &ipv4);
+                p_PLATFORM_tcp_socket);
     }
 
     TCP_Socket **p_ptr_tcp_socket__client =
@@ -196,9 +102,11 @@ void m_poll_tcp_socket_manager_as__server__default(
         while (get_latest__delivery_from__tcp_socket(
                 p_tcp_socket__client, 
                 &deliver.tcp_packet)) {
+            deliver.game_action.uuid_of__client__u32 =
+                GET_UUID_P(p_tcp_socket__client);
             receive_game_action(
                     p_game,
-                    &delivery.game_action);
+                    &deliver.game_action);
         }
     }
 

@@ -23,6 +23,13 @@ PLATFORM_TCP_Socket *get_p_PLATFORM_tcp_socket__pending_connection(
         ->p_PLATFORM_tcp_socket__pending_connection;
 }
 
+static inline
+IPv4_Address *get_p_ipv4__pending_connection(
+        TCP_Socket_Manager *p_tcp_socket_manager) {
+    return &p_tcp_socket_manager
+        ->ipv4__pending_connection;
+}
+
 void initialize_tcp_socket_manager(
         TCP_Socket_Manager *p_tcp_socket_manager,
         m_Poll_TCP_Socket_Manager m_poll_tcp_socket_manager) {
@@ -135,7 +142,7 @@ TCP_Socket *open_server_socket_on__tcp_socket_manager__ipv4(
                 port);
 
     if (!p_PLATFORM_tcp_socket) {
-        debug_error("open_socket_on__tcp_socket_manager__ipv4, failed to open socket.");
+        debug_error("open_server_socket_on__tcp_socket_manager__ipv4, failed to open socket.");
         return 0;
     }
 
@@ -227,16 +234,27 @@ PLATFORM_TCP_Socket *poll_tcp_socket_manager_for__pending_connections(
         get_p_PLATFORM_tcp_socket__pending_connection(
                 p_tcp_socket_manager);
 
-    if (p_PLATFORM_tcp_socket__pending_connection)
+    if (p_PLATFORM_tcp_socket__pending_connection) {
+        if (p_ipv4) {
+            *p_ipv4 =
+                *get_p_ipv4__pending_connection(p_tcp_socket_manager);
+        }
         return p_PLATFORM_tcp_socket__pending_connection;
+    }
 
-    return p_tcp_socket_manager->p_PLATFORM_tcp_socket__pending_connection =
+    p_tcp_socket_manager->p_PLATFORM_tcp_socket__pending_connection =
         PLATFORM_tcp_poll_accept(
                 get_p_PLATFORM_tcp_context_from__tcp_socket_manager(
                     p_tcp_socket_manager), 
                 get_p_PLATFORM_tcp_socket_from__tcp_socket(
                     p_tcp_socket__server),
-                p_ipv4);
+                get_p_ipv4__pending_connection(p_tcp_socket_manager));
+    if (p_ipv4) {
+        *p_ipv4 =
+            *get_p_ipv4__pending_connection(p_tcp_socket_manager);
+    }
+    return get_p_PLATFORM_tcp_socket__pending_connection(
+            p_tcp_socket_manager);
 }
 
 void reject_pending_connection(
@@ -247,4 +265,23 @@ void reject_pending_connection(
             get_p_PLATFORM_tcp_socket__pending_connection(
                 p_tcp_socket_manager));
     p_tcp_socket_manager->p_PLATFORM_tcp_socket__pending_connection = 0;
+}
+
+TCP_Socket *accept_pending_connection(
+        TCP_Socket_Manager *p_tcp_socket_manager,
+        Identifier__u32 uuid__u32) {
+    TCP_Socket *p_tcp_socket =
+        accept_socket_on__tcp_socket_manager__ipv4(
+                p_tcp_socket_manager, 
+                get_p_PLATFORM_tcp_socket__pending_connection(
+                    p_tcp_socket_manager), 
+                *get_p_ipv4__pending_connection(
+                    p_tcp_socket_manager), 
+                uuid__u32);
+    if (!p_tcp_socket) {
+        debug_error("accept_pending_connection, p_tcp_socket == 0.");
+        return 0;
+    }
+    p_tcp_socket_manager->p_PLATFORM_tcp_socket__pending_connection = 0;
+    return p_tcp_socket;
 }

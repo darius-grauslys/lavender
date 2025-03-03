@@ -104,17 +104,17 @@ void remove_process_from__active_processes_in__process_manager(
         return;
     }
 
-    if ((p_process_manager->p_ptr_to__last_process_in__ptr_array_of__processes)
+    if ((p_process_manager->p_ptr_to__last_process_in__ptr_array_of__processes - 1)
             == p_ptr_process) {
-        p_process_manager->p_ptr_to__last_process_in__ptr_array_of__processes = 0;
-        p_process_manager->p_ptr_to__last_process_in__ptr_array_of__processes--;
 #ifndef NDEBUG
-        if (p_process_manager->p_ptr_to__last_process_in__ptr_array_of__processes
+        if ((p_process_manager->p_ptr_to__last_process_in__ptr_array_of__processes - 1)
                 - p_process_manager->ptr_array_of__processes
                 >= PROCESS_MAX_QUANTITY_OF) {
             debug_error("remove_process_from__active_processes_in__process_manager, intrinsic violated.");
+            return;
         }
 #endif
+        *(--p_process_manager->p_ptr_to__last_process_in__ptr_array_of__processes) = 0;
         return;
     }
     *p_ptr_process = *(--p_process_manager
@@ -185,8 +185,9 @@ Process *allocate_process_in__process_manager(
         return 0;
     }
 
-    *(p_process_manager->p_ptr_to__last_process_in__ptr_array_of__processes++) =
-        p_process;
+    add_process_to__active_processes_in__process_manager(
+            p_process_manager, 
+            p_process);
 
     initialize_process(
             p_process, 
@@ -211,11 +212,13 @@ void swap_p_ptr_process_with__last_active_process_in__process_manager(
         debug_error("swap_p_ptr_process_with__last_active_process_in__process_manager, p_ptr_process is not from this manager.");
     }
 #endif
-    Process *p_last_process =
-        *p_process_manager->p_ptr_to__last_process_in__ptr_array_of__processes;
-    p_process_manager->p_ptr_to__last_process_in__ptr_array_of__processes =
-        p_ptr_process;
-    *p_ptr_process = p_last_process;
+    Process **p_last_process =
+        (p_process_manager
+                ->p_ptr_to__last_process_in__ptr_array_of__processes-1);
+    *p_last_process = *p_ptr_process;
+    *p_ptr_process =
+        *(p_process_manager
+                ->p_ptr_to__last_process_in__ptr_array_of__processes-1);
 }
 
 Quantity__u32 poll_process_manager(
@@ -224,7 +227,8 @@ Quantity__u32 poll_process_manager(
     for (Index__u32 index_of__process = 0;
             index_of__process < PROCESS_MAX_QUANTITY_OF;
             index_of__process++) {
-        Process **p_ptr_process = get_p_ptr_process_by__index_from__active_procs_in__process_manager(
+        Process **p_ptr_process = 
+            get_p_ptr_process_by__index_from__active_procs_in__process_manager(
                 p_process_manager, 
                 index_of__process);
 
@@ -257,14 +261,9 @@ Quantity__u32 poll_process_manager(
                     p_ptr_process);
         }
 
-#ifndef NDEBUG
         if (!(*p_ptr_process)->m_process_run__handler) {
-            debug_error("poll_process_manager, process:%p, lacks m_process_run__handler.");
-            release_process_from__process_manager(
-                    p_process_manager, 
-                    *p_ptr_process);
+            continue;
         }
-#endif
 
         (*p_ptr_process)->m_process_run__handler(
                 *p_ptr_process,

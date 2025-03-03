@@ -1131,6 +1131,12 @@ typedef struct TCP_Packet_t {
 typedef uint8_t TCP_Socket_Flags__u8;
 
 #define TCP_SOCKET_FLAGS__NONE 0
+///
+/// When true, the socket will be skipped on poll_multiplayer(...)
+/// It must be manually driven by some other means until the flag
+/// is unset.
+///
+#define TCP_SOCKET_FLAG__IS_MANUALLY_DRIVEN BIT(0)
 
 typedef struct TCP_Socket_t {
     Serialization_Header _serialization_header;
@@ -1141,6 +1147,7 @@ typedef struct TCP_Socket_t {
     Index__u32 index_of__enqueue_begin;
     Index__u32 index_of__enqueue_end;
     TCP_Socket_State tcp_socket__state_of;
+    TCP_Socket_Flags__u8 tcp_socket_flags__u8;
 } TCP_Socket;
 
 typedef void (*m_Poll_TCP_Socket_Manager)(
@@ -1154,6 +1161,7 @@ typedef struct TCP_Socket_Manager_t {
     PLATFORM_TCP_Context *p_PLATFORM_tcp_context;
     m_Poll_TCP_Socket_Manager m_poll_tcp_socket_manager;
     PLATFORM_TCP_Socket *p_PLATFORM_tcp_socket__pending_connection;
+    IPv4_Address ipv4__pending_connection;
     Quantity__u32 quantity_of__connections;
 } TCP_Socket_Manager;
 
@@ -2160,6 +2168,19 @@ typedef uint8_t Game_Action_Flags;
 #define GAME_ACTION_FLAGS__BIT_IS_BROADCASTED \
     BIT(6)
 
+#define GAME_ACTION_FLAGS__NONE 0
+
+#define GAME_ACTION_FLAG_MASK__INBOUND_SANITIZE \
+    (GAME_ACTION_FLAGS__BIT_IS_ALLOCATED \
+     | GAME_ACTION_FLAGS__BIT_IS_OUT_OR__IN_BOUND)
+#define GAME_ACTION_FLAG_MASK__OUTBOUND_SANITIZE \
+    (GAME_ACTION_FLAGS__BIT_IS_ALLOCATED \
+     | GAME_ACTION_FLAGS__BIT_IS_OUT_OR__IN_BOUND)
+
+#define GAME_ACTION_FLAGS__INBOUND_SANITIZE \
+    (GAME_ACTION_FLAGS__NONE)
+#define GAME_ACTION_FLAGS__OUTBOUND_SANITIZE \
+    (GAME_ACTION_FLAGS__BIT_IS_OUT_OR__IN_BOUND)
 
 ///
 /// Game actions are invoked using the m_Process signature.
@@ -2188,7 +2209,10 @@ typedef struct Game_Action_t {
         struct {
             union {
                 struct {
-                    Identifier__u64 ga_kind__tcp_connect__uuid;
+                    IPv4_Address ga_kind__tcp_connect__begin__ipv4_address;
+                }; // Connect__Begin
+                struct {
+                    Identifier__u64 ga_kind__tcp_connect__session_token;
                 }; // Connect
             };
         }; // TCP
@@ -2208,12 +2232,14 @@ typedef struct Game_Action_Manager_t {
 } Game_Action_Manager;
 
 typedef struct Game_Action_Logic_Entry_t {
-    m_Process m_process_of__game_action;
-    Process_Flags__u8 process_flags__u8;
+    m_Process m_process_of__game_action__inbound;
+    m_Process m_process_of__game_action__outbound;
     Game_Action_Flags game_action_flags__inbound;
     Game_Action_Flags game_action_flags__inbound_mask;
     Game_Action_Flags game_action_flags__outbound;
     Game_Action_Flags game_action_flags__outbound_mask;
+    Process_Flags__u8 process_flags_of__game_action__outbound;
+    Process_Flags__u8 process_flags_of__game_action__inbound;
 } Game_Action_Logic_Entry;
 
 typedef struct Game_Action_Logic_Table_t {

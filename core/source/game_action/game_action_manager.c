@@ -19,9 +19,10 @@ Game_Action *get_p_game_action_by__index_from__game_action_manager(
 
 void initialize_game_action_manager(
         Game_Action_Manager *p_game_action_manager) {
-    memset(p_game_action_manager,
-            0,
-            sizeof(Game_Action_Manager));
+    initialize_serialization_header__contiguous_array(
+            (Serialization_Header*)p_game_action_manager->game_actions, 
+            MAX_QUANTITY_OF__GAME_ACTIONS, 
+            sizeof(Game_Action));
     initialize_repeatable_psuedo_random(
             &p_game_action_manager->repeatable_pseudo_random, 
             (u32)(uint64_t)p_game_action_manager);

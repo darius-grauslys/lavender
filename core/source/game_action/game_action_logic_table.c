@@ -1,6 +1,7 @@
 #include "game_action/game_action_logic_table.h"
 #include "defines.h"
 #include "defines_weak.h"
+#include "game_action/game_action_logic_entry.h"
 #include "process/process_manager.h"
 
 void initialize_game_action_logic_table(
@@ -11,26 +12,20 @@ void initialize_game_action_logic_table(
 }
 
 Process *dispatch_game_action_process(
-        Game_Action_Logic_Table *p_game_action_logic_table,
         Process_Manager *p_process_manager,
-        Game_Action *p_game_action) {
-    Game_Action_Kind the_kind_of__game_action = 
-        p_game_action->the_kind_of_game_action__this_action_is;
-    if ((u32)the_kind_of__game_action > Game_Action_Kind__Unknown) {
-        debug_error("dispatch_game_action_process, invalid game action kind.");
+        Game_Action *p_game_action,
+        m_Process m_process__game_action,
+        Process_Flags__u8 process_flags__u8) {
+    if (!m_process__game_action) {
+        debug_error("dispatch_game_action_process, m_process__game_action == 0.");
         return 0;
     }
 
-    Game_Action_Logic_Entry *p_game_action_logic_entry =
-        get_p_game_action_logic_entry_by__game_action_kind(
-                p_game_action_logic_table, 
-                the_kind_of__game_action);
-
     Process *p_process = run_process_with__uuid(
             p_process_manager, 
-            p_game_action_logic_entry->m_process_of__game_action, 
+            m_process__game_action, 
             p_game_action->_serialiation_header.uuid,
-            p_game_action_logic_entry->process_flags__u8);
+            process_flags__u8);
 
     if (!p_process) {
         debug_error("dispatch_game_action_process, failed to allocate p_process.");
@@ -42,7 +37,49 @@ Process *dispatch_game_action_process(
     return p_process;
 }
 
-m_Process get_m_process_for__this_game_action_kind(
+Process *dispatch_game_action_process__outbound(
+        Game_Action_Logic_Table *p_game_action_logic_table,
+        Process_Manager *p_process_manager,
+        Game_Action *p_game_action) {
+    Game_Action_Logic_Entry *p_game_action_logic_entry =
+        get_p_game_action_logic_entry_by__game_action_kind(
+                p_game_action_logic_table, 
+                get_kind_of__game_action(p_game_action));
+    if (!p_game_action_logic_entry) {
+        debug_error("dispatch_game_action_process__outbound, invalid game_action_kind.");
+        return 0;
+    }
+    return dispatch_game_action_process(
+            p_process_manager, 
+            p_game_action, 
+            get_m_process__outbound_of__game_action_logic_entry(
+                p_game_action_logic_entry),
+            get_process_flags__outbound_of__game_action_logic_entry(
+                p_game_action_logic_entry));
+}
+
+Process *dispatch_game_action_process__inbound(
+        Game_Action_Logic_Table *p_game_action_logic_table,
+        Process_Manager *p_process_manager,
+        Game_Action *p_game_action) {
+    Game_Action_Logic_Entry *p_game_action_logic_entry =
+        get_p_game_action_logic_entry_by__game_action_kind(
+                p_game_action_logic_table, 
+                get_kind_of__game_action(p_game_action));
+    if (!p_game_action_logic_entry) {
+        debug_error("dispatch_game_action_process__inbound, invalid game_action_kind.");
+        return 0;
+    }
+    return dispatch_game_action_process(
+            p_process_manager, 
+            p_game_action, 
+            get_m_process__inbound_of__game_action_logic_entry(
+                p_game_action_logic_entry),
+            get_process_flags__inbound_of__game_action_logic_entry(
+                p_game_action_logic_entry));
+}
+
+m_Process get_m_process__outbound_for__this_game_action_kind(
         Game_Action_Logic_Table *p_game_action_logic_table,
         Game_Action_Kind the_kind_of__game_action) {
     Game_Action_Logic_Entry *p_game_action_logic_entry =
@@ -50,5 +87,28 @@ m_Process get_m_process_for__this_game_action_kind(
                 p_game_action_logic_table, 
                 the_kind_of__game_action);
 
-    return p_game_action_logic_entry->m_process_of__game_action;
+    if (!p_game_action_logic_entry) {
+        debug_error("get_m_process__outbound_for__this_game_action_kind, invalid game_action_kind.");
+        return 0;
+    }
+
+    return get_m_process__outbound_of__game_action_logic_entry(
+            p_game_action_logic_entry);
+}
+
+m_Process get_m_process__inbound_for__this_game_action_kind(
+        Game_Action_Logic_Table *p_game_action_logic_table,
+        Game_Action_Kind the_kind_of__game_action) {
+    Game_Action_Logic_Entry *p_game_action_logic_entry =
+        get_p_game_action_logic_entry_by__game_action_kind(
+                p_game_action_logic_table, 
+                the_kind_of__game_action);
+
+    if (!p_game_action_logic_entry) {
+        debug_error("get_m_process__inbound_for__this_game_action_kind, invalid game_action_kind.");
+        return 0;
+    }
+
+    return get_m_process__inbound_of__game_action_logic_entry(
+            p_game_action_logic_entry);
 }
