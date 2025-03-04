@@ -37,8 +37,6 @@ void m_process__deserialize_world(
 void initialize_world(
         Game *p_game,
         World *p_world,
-        m_Process m_process__construct_global_space,
-        m_Process m_process__destruct_global_space,
         f_Chunk_Generator f_chunk_generator) {
 
     initialize_serialization_header(
@@ -71,9 +69,7 @@ void initialize_world(
             get_p_chunk_pool_from__world(p_world));
 
     initialize_global_space_manager(
-            get_p_global_space_manager_from__world(p_world), 
-            m_process__construct_global_space, 
-            m_process__destruct_global_space);
+            get_p_global_space_manager_from__world(p_world));
 }
 
 void manage_world(

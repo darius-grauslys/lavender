@@ -344,4 +344,14 @@ void clamp__p_i32(
     }
 }
 
+static inline
+u32 min__u32(
+        u32 first__u32,
+        u32 second__u32) {
+    return (first__u32 < second__u32)
+        ? first__u32
+        : second__u32
+        ;
+}
+
 #endif

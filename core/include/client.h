@@ -14,7 +14,7 @@ void initialize_client(
 ///
 /// Logically handle an outbound allocated game_action.
 ///
-void dispatch_game_action_for__client(
+bool dispatch_game_action_for__client(
         Client *p_client,
         Game *p_game,
         TCP_Socket_Manager *p_tcp_socket_manager,
@@ -23,12 +23,12 @@ void dispatch_game_action_for__client(
 ///
 /// Logcially handle an inbound allocated game_action.
 ///
-void receive_game_action_for__client(
+bool receive_game_action_for__client(
         Client *p_client,
         Game *p_game,
         Game_Action *p_game_action);
 
-void release_game_action_from__client(
+bool release_game_action_from__client(
         Client *p_client,
         Game_Action *p_game_action);
 

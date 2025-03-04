@@ -54,7 +54,7 @@ Game_Action *allocate_game_action_from__game_action_manager(
     return p_game_action;
 }
 
-void release_game_action_from__game_action_manager(
+bool release_game_action_from__game_action_manager(
         Game_Action_Manager *p_game_action_manager,
         Game_Action *p_game_action) {
 #ifndef NDEBUG
@@ -64,11 +64,12 @@ void release_game_action_from__game_action_manager(
         ;
     if (index >= MAX_QUANTITY_OF__GAME_ACTIONS) {
         debug_error("release_game_action_from__game_action_manager, p_game_action was not allocated with this manager.");
-        return;
+        return false;
     }
 #endif
 
     initialize_game_action(p_game_action);
+    return true;
 }
 
 Game_Action *get_p_game_action_by__uuid_from__game_action_manager(

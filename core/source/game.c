@@ -39,24 +39,24 @@
 
 #include <ui/ui_manager.h>
 
-void m_game_action_handler__dispatch__singleplayer(
+bool m_game_action_handler__dispatch__singleplayer(
         Game *p_game,
         Game_Action *p_game_action);
-void m_game_action_handler__dispatch__multiplayer(
-        Game *p_game,
-        Game_Action *p_game_action);
-
-void m_game_action_handler__receive__singleplayer(
-        Game *p_game,
-        Game_Action *p_game_action);
-void m_game_action_handler__receive__multiplayer(
+bool m_game_action_handler__dispatch__multiplayer(
         Game *p_game,
         Game_Action *p_game_action);
 
-void m_game_action_handler__resolve__singleplayer(
+bool m_game_action_handler__receive__singleplayer(
         Game *p_game,
         Game_Action *p_game_action);
-void m_game_action_handler__resolve__multiplayer(
+bool m_game_action_handler__receive__multiplayer(
+        Game *p_game,
+        Game_Action *p_game_action);
+
+bool m_game_action_handler__resolve__singleplayer(
+        Game *p_game,
+        Game_Action *p_game_action);
+bool m_game_action_handler__resolve__multiplayer(
         Game *p_game,
         Game_Action *p_game_action);
 
@@ -397,28 +397,27 @@ void manage_game__post_render(Game *p_game) {
     loop_timer_u32(&p_game->tick__timer_u32);
 }
 
-void m_game_action_handler__dispatch__singleplayer(
+bool m_game_action_handler__dispatch__singleplayer(
         Game *p_game,
         Game_Action *p_game_action) {
     Client *p_client =
         get_p_client_by__index_from__game(
                 p_game, 
                 0);
-    dispatch_game_action_for__client(
+    return dispatch_game_action_for__client(
             p_client, 
             p_game, 
             0,
             p_game_action);
 }
 
-void m_game_action_handler__dispatch__multiplayer(
+bool m_game_action_handler__dispatch__multiplayer(
         Game *p_game,
         Game_Action *p_game_action) {
     if (is_game_action__local(p_game_action)) {
-        m_game_action_handler__dispatch__singleplayer(
+        return m_game_action_handler__dispatch__singleplayer(
                 p_game, 
                 p_game_action);
-        return;
     }
 
     if (is_game_action__broadcasted(p_game_action)) {
@@ -441,13 +440,14 @@ void m_game_action_handler__dispatch__multiplayer(
                 continue;
             }
 
-            dispatch_game_action_for__client(
+            (void)dispatch_game_action_for__client(
                     p_client, 
                     p_game, 
                     get_p_tcp_socket_manager_from__game(p_game), 
                     p_game_action);
         }
-        return;
+        // TODO: handle errors?
+        return true;
     }
 
     Client *p_client =
@@ -455,40 +455,40 @@ void m_game_action_handler__dispatch__multiplayer(
                 p_game, 
                 get_client_uuid_from__game_action(p_game_action));
     if (!p_client) {
+        debug_error("m_game_action_handler__dispatch__multiplayer, failed to locate associated client.");
         resolve_game_action(
                 p_game, 
                 p_game_action);
-        return;
+        return false;
     }
 
-    dispatch_game_action_for__client(
+    return dispatch_game_action_for__client(
             p_client, 
             p_game, 
             get_p_tcp_socket_manager_from__game(p_game), 
             p_game_action);
 }
 
-void m_game_action_handler__receive__singleplayer(
+bool m_game_action_handler__receive__singleplayer(
         Game *p_game,
         Game_Action *p_game_action) {
     Client *p_client =
         get_p_client_by__index_from__game(
                 p_game, 
                 0);
-    receive_game_action_for__client(
+    return receive_game_action_for__client(
             p_client, 
             p_game, 
             p_game_action);
 }
 
-void m_game_action_handler__receive__multiplayer(
+bool m_game_action_handler__receive__multiplayer(
         Game *p_game,
         Game_Action *p_game_action) {
     if (is_game_action__local(p_game_action)) {
-        m_game_action_handler__receive__singleplayer(
+        return m_game_action_handler__receive__singleplayer(
                 p_game, 
                 p_game_action);
-        return;
     }
 
     if (is_game_action__broadcasted(p_game_action)) {
@@ -516,7 +516,8 @@ void m_game_action_handler__receive__multiplayer(
                     p_game, 
                     p_game_action);
         }
-        return;
+        // TODO: handle errors?
+        return true;
     }
 
     Client *p_client =
@@ -524,44 +525,49 @@ void m_game_action_handler__receive__multiplayer(
                 p_game, 
                 get_client_uuid_from__game_action(p_game_action));
     if (!p_client) {
+        debug_error("m_game_action_handler__receive__multiplayer, failed to locate associated client.");
         resolve_game_action(
                 p_game, 
                 p_game_action);
-        return;
+        return false;
     }
 
     receive_game_action_for__client(
             p_client, 
             p_game, 
             p_game_action);
+    return true;
 }
 
-void m_game_action_handler__resolve__singleplayer(
+bool m_game_action_handler__resolve__singleplayer(
         Game *p_game,
         Game_Action *p_game_action) {
     if (!is_game_action__allocated(p_game_action))
-        return;
+        return true;
 
     Client *p_client =
         get_p_client_by__index_from__game(
                 p_game, 
                 0);
+    if (!p_client) {
+        debug_error("m_game_action_handler__resolve__singleplayer, p_client == 0.");
+        return false;
+    }
 
-    release_game_action_from__client(
+    return release_game_action_from__client(
             p_client, 
             p_game_action);
 }
 
-void m_game_action_handler__resolve__multiplayer(
+bool m_game_action_handler__resolve__multiplayer(
         Game *p_game,
         Game_Action *p_game_action) {
     if (!is_game_action__allocated(p_game_action))
-        return;
+        return true;
     if (is_game_action__local(p_game_action)) {
-        m_game_action_handler__resolve__singleplayer(
+        return m_game_action_handler__resolve__singleplayer(
                 p_game, 
                 p_game_action);
-        return;
     }
 
     Client *p_client =
@@ -569,9 +575,9 @@ void m_game_action_handler__resolve__multiplayer(
                 p_game, 
                 get_client_uuid_from__game_action(p_game_action));
     if (!p_client) {
-        resolve_game_action(
-                p_game, 
-                p_game_action);
-        return;
+        return false;
     }
+    return release_game_action_from__client(
+            p_client,
+            p_game_action);
 }

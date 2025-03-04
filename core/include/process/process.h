@@ -22,6 +22,22 @@ void initialize_process_as__empty_process(
 }
 
 static inline
+void initialize_process_as__serialized_process(
+        Process *p_process,
+        Identifier__u32 uuid__u32,
+        m_Process m_process_run__handler,
+        Serialization_Request *p_serialization_request,
+        Process_Flags__u8 process_flags__u8) {
+    initialize_process(
+            p_process, 
+            uuid__u32, 
+            m_process_run__handler, 
+            p_serialization_request, 
+            process_flags__u8
+            | PROCESS_FLAG__IS_CRITICAL);
+}
+
+static inline
 void complete_process(
         Process *p_process) {
 #ifndef NDEBUG
@@ -245,6 +261,20 @@ void set_process_as__NOT_sub_process(Process *p_process) {
     p_process->process_flags__u8 &=
         ~PROCESS_FLAG__IS_SUB_PROCESS
         ;
+}
+
+static inline
+Process_Kind get_the_kind_of__process(
+        Process *p_process) {
+    return p_process->the_kind_of__process_this__process_is;
+}
+
+static inline
+void set_the_kind_of__process(
+        Process *p_process,
+        Process_Kind the_kind_of__process) {
+    return p_process->the_kind_of__process_this__process_is =
+        the_kind_of__process;
 }
 
 #endif

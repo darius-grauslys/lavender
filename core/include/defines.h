@@ -259,9 +259,17 @@ typedef struct Serialized_Field_t {
 typedef uint8_t Serialization_Request_Flags;
 
 typedef struct Serialization_Request_t {
-    void *p_file_handler;
     void *p_data;
     Serialization_Header *p_serialization_header;
+    union {
+        void *p_file_handler;
+        struct {
+            u8 *p_tcp_packet_destination;
+            u8 *pM_packet_bitmap;
+            Quantity__u16 quantity_of__bytes_in__destination;
+            Quantity__u16 quantity_of__tcp_packets__anticipated;
+        };
+    };
     Serialization_Request_Flags serialization_request_flags;
 } Serialization_Request;
 
@@ -1171,49 +1179,6 @@ typedef struct TCP_Socket_Manager_t {
 
 typedef struct Process_t Process;
 
-enum Process_Status_Kind {
-    Process_Status_Kind__None = 0,
-    Process_Status_Kind__Stopped,
-    Process_Status_Kind__Idle,
-    Process_Status_Kind__Busy,
-    Process_Status_Kind__Stopping,
-    Process_Status_Kind__Enqueued,
-    Process_Status_Kind__Complete,
-    Process_Status_Kind__Fail,
-    Process_Status_Kind__Unknown
-};
-
-///
-/// This enum helps the process_manager sort processes
-/// as well as determine which ticks the processes run on.
-///
-/// On single threaded platforms:
-/// Low will run on every (8 * pid) ticks.
-/// Medium will run on every (2 * pid) ticks,
-/// High will run on every 8 ticks,
-/// Critical will run on every tick.
-///
-/// Additionally, if a Critical process is
-/// created, but there is no available space for
-/// it, the lowest priority process will be
-/// removed ungracefully. This only happens for
-/// Critical processes, while other process types
-/// will not be registered. 
-///
-/// The removed process
-/// will have it's m_process_removed__handler
-/// invoked. For processes of the same priority
-/// the longest lived process is selected for
-/// removal.
-///
-enum Process_Priority_Kind {
-    Process_Priority_Kind__None = 0,
-    Process_Priority_Kind__Low,
-    Process_Priority_Kind__Medium,
-    Process_Priority_Kind__High,
-    Process_Priority_Kind__Critical // TODO: remove
-};
-
 typedef void (*m_Process)(
         Process *p_this_process,
         Game *p_game);
@@ -1236,8 +1201,8 @@ typedef struct Process_t {
     };
     void *p_process_data;
     i32F20 process_runtime__i32F20;
-    enum Process_Status_Kind the_kind_of_status__this_process_has;
-    enum Process_Priority_Kind the_kind_of_priority__this_process_has;
+    Process_Status_Kind the_kind_of_status__this_process_has;
+    Process_Kind the_kind_of__process_this__process_is;
     u8 process_sub_state__u8;
     Process_Flags__u8 process_flags__u8;
 } Process;
@@ -2182,21 +2147,54 @@ typedef uint8_t Game_Action_Flags;
 #define GAME_ACTION_FLAGS__OUTBOUND_SANITIZE \
     (GAME_ACTION_FLAGS__BIT_IS_OUT_OR__IN_BOUND)
 
+typedef struct _Game_Action_Header_t {
+    Serialization_Header _serialiation_header;
+    union {
+        struct {
+            Identifier__u32 uuid_of__client__u32;
+            ///
+            /// Primarily used only for TCP_Delivery, but
+            /// open to use if ONLY for custom game_actions.
+            ///
+            Identifier__u32 uuid_of__game_action__responding_to;
+        };
+        ///
+        /// Set to out of bounds for a global broadcast
+        ///
+        Vector__3i32F4 vector_3i32F4__broadcast_point;
+    };
+    Game_Action_Kind the_kind_of_game_action__this_action_is;
+    Game_Action_Flags game_action_flags;
+} _Game_Action_Header;
+
 ///
 /// Game actions are invoked using the m_Process signature.
 /// If your game action is NOT processed, then m_process will
 /// be null in your invocation.
 ///
 typedef struct Game_Action_t {
-    Serialization_Header _serialiation_header;
-    Identifier__u32 uuid_of__client__u32;
-    Identifier__u32 uuid_of__game_action__responding_to;
-    Game_Action_Kind the_kind_of_game_action__this_action_is;
-    Game_Action_Flags game_action_flags;
-    ///
-    /// Set to out of bounds for a global broadcast
-    ///
-    Vector__3i32F4 vector_3i32F4__broadcast_point;
+    union {
+        struct {
+            Serialization_Header _serialiation_header;
+            union {
+                struct {
+                    Identifier__u32 uuid_of__client__u32;
+                    ///
+                    /// Primarily used only for TCP_Delivery, but
+                    /// open to use if ONLY for custom game_actions.
+                    ///
+                    Identifier__u32 uuid_of__game_action__responding_to;
+                };
+                ///
+                /// Set to out of bounds for a global broadcast
+                ///
+                Vector__3i32F4 vector_3i32F4__broadcast_point;
+            };
+            Game_Action_Kind the_kind_of_game_action__this_action_is;
+            Game_Action_Flags game_action_flags;
+        };
+        _Game_Action_Header _game_action_header;
+    };
 
     ///
     /// Extend Game_Action here:
@@ -2206,20 +2204,60 @@ typedef struct Game_Action_t {
         ///     TCP
         /// ------------
 
-        struct {
-            union {
-                struct {
-                    IPv4_Address ga_kind__tcp_connect__begin__ipv4_address;
-                }; // Connect__Begin
-                struct {
-                    Identifier__u64 ga_kind__tcp_connect__session_token;
-                }; // Connect
-            };
+        union {
+            struct {
+                IPv4_Address ga_kind__tcp_connect__begin__ipv4_address;
+            }; // Connect__Begin
+            struct {
+                Identifier__u64 ga_kind__tcp_connect__session_token;
+            }; // Connect
+            struct {
+#define GA_KIND__TCP_DELIVERY__PAYLOAD_SIZE_IN__BYTES\
+                sizeof(TCP_Packet)\
+                - sizeof(_Game_Action_Header)\
+                - sizeof(uint64_t)
+#define TCP_PAYLOAD_BITMAP__QUANTITY_OF_BITS(type)\
+                ((sizeof(type)\
+                        + GA_KIND__TCP_DELIVERY__PAYLOAD_SIZE_IN__BYTES)\
+                        / GA_KIND__TCP_DELIVERY__PAYLOAD_SIZE_IN__BYTES)
+#define TCP_PAYLOAD_BITMAP(type, name)\
+                u8 name[TCP_PAYLOAD_BITMAP__QUANTITY_OF_BITS(type) >> 3]
+#define TCP_PAYLOAD_BIT(index) (index & MASK(3))
+#define TCP_PAYLOAD_BYTE(index) (index >> 3)
+                u8 ga_kind__tcp_delivery__payload[
+                    GA_KIND__TCP_DELIVERY__PAYLOAD_SIZE_IN__BYTES];
+                Quantity__u16 ga_kind__tcp_delivery__packet_index;
+            }; // Delivery
         }; // TCP
 
         /// ------------
         /// </  TCP    >
         /// ------------
+
+        /// ---------------------
+        ///     Global_Space
+        /// ---------------------
+
+        union {
+            struct {
+                Global_Space_Vector__3i32 
+                    ga_kind__global_space__request__gsv_3i32;
+                TCP_PAYLOAD_BITMAP(Chunk, 
+                        ga_kind__global_space__request__chunk_payload_bitmap);
+            }; // Global_Space__Request
+            struct {
+                Global_Space_Vector__3i32 
+                    ga_kind__global_space__resolve__gsv__3i32;
+            }; // Global_Space__Resolve
+            struct {
+                Global_Space_Vector__3i32 
+                    ga_kind__global_space__store__gsv__3i32;
+            }; // Global_Space__Store
+        }; // Global_Space
+
+        /// ---------------------
+        /// </   Global_Space   >
+        /// ---------------------
     };
 } Game_Action;
 
@@ -2333,12 +2371,8 @@ typedef struct Gfx_Context_t {
 } Gfx_Context;
 
 typedef struct Game_Action_t Game_Action;
-typedef void (*m_Game_Action_Handler)(
+typedef bool (*m_Game_Action_Handler)(
         Game *p_this_game,
-        Game_Action *p_game_action);
-
-typedef void (*m_Game_Action_Handler)(
-        Game *p_game,
         Game_Action *p_game_action);
 
 typedef struct Game_t {

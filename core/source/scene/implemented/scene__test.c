@@ -186,105 +186,6 @@ void f_tile_render_kernel(
     }
 }
 
-void m_process__construct_global_node(
-        Process *p_this_process,
-        Game *p_game) {
-    Global_Space *p_global_space =
-        (Global_Space*)p_this_process->p_process_data;
-
-    World *p_world = get_p_world_from__game(p_game);
-    Process_Manager *p_process_manager =
-        get_p_process_manager_from__game(p_game);
-    Global_Space_Manager *p_global_space_manager =
-        get_p_global_space_manager_from__world(p_world);
-    Chunk_Pool *p_chunk_pool =
-        get_p_chunk_pool_from__world(p_world);
-    Collision_Node_Pool *p_collision_node_pool =
-        get_p_collision_node_pool_from__world(p_world);
-
-    Chunk *p_chunk =
-        allocate_chunk_from__chunk_pool(
-                p_chunk_pool, 
-                GET_UUID_P(p_global_space));
-
-    if (!p_chunk) {
-        fail_process(p_this_process);
-        drop_global_space_within__global_space_manager(
-                p_global_space_manager,
-                p_process_manager,
-                p_global_space);
-        return;
-    }
-
-    Collision_Node *p_collision_node =
-        allocate_collision_node_from__collision_node_pool(
-                p_collision_node_pool,
-                GET_UUID_P(p_global_space));
-
-    if (!p_collision_node) {
-        release_chunk_from__chunk_pool(
-                p_chunk_pool, 
-                p_chunk);
-        fail_process(p_this_process);
-        drop_global_space_within__global_space_manager(
-                p_global_space_manager, 
-                p_process_manager,
-                p_global_space);
-        return;
-    }
-
-    p_global_space->p_chunk = p_chunk;
-    p_global_space->p_collision_node = p_collision_node;
-    f_Chunk_Generator f_chunk_generator =
-        get_p_world_parameters_from__world(p_world)
-        ->f_chunk_generator;
-    f_chunk_generator(
-            p_game,
-            p_global_space);
-    complete_process(p_this_process);
-}
-
-void m_process__deconstruct_global_node(
-        Process *p_this_process,
-        Game *p_game) {
-    Global_Space *p_global_space =
-        (Global_Space*)p_this_process->p_process_data;
-
-    World *p_world = get_p_world_from__game(p_game);
-    Process_Manager *p_process_manager =
-        get_p_process_manager_from__game(p_game);
-    Global_Space_Manager *p_global_space_manager =
-        get_p_global_space_manager_from__world(p_world);
-    Chunk_Pool *p_chunk_pool =
-        get_p_chunk_pool_from__world(p_world);
-    Collision_Node_Pool *p_collision_node_pool =
-        get_p_collision_node_pool_from__world(p_world);
-    
-    Chunk *p_chunk =
-        get_p_chunk_from__global_space(p_global_space);
-
-    if (p_chunk) {
-        release_chunk_from__chunk_pool(
-                p_chunk_pool, 
-                p_chunk);
-    }
-
-    Collision_Node *p_collision_node =
-        get_p_collision_node_from__global_space(p_global_space);
-
-    if (p_collision_node) {
-        release_collision_node_from__collision_node_pool(
-                p_collision_node_pool, 
-                p_collision_node);
-    }
-
-    release_global_space_in__global_space_manager(
-            p_global_space_manager, 
-            p_global_space);
-
-    complete_process(p_this_process);
-}
-
 void m_enter_scene__test(
         Scene *p_this_scene,
         Game *p_game) {
@@ -320,8 +221,6 @@ void m_enter_scene__test(
     initialize_world(
             p_game,
             get_p_world_from__game(p_game),
-            m_process__construct_global_node,
-            m_process__deconstruct_global_node,
             f_chunk_generator);
 
     Camera camera;

@@ -15,6 +15,21 @@
     #else
         #define MAX_QUANTITY_OF__TCP_SOCKETS 256
     #endif
+///
+/// MAX_SIZE_OF__TCP_PACKET >>MUST<< be a power of 2!
+/// So you should always express it as BIT(n) and likely
+/// n >= 5 for most applications.
+///
+/// If it is not a power of 2 (BIT(n)) then
+/// game_action__tcp_delivery will fail to operate.
+/// Things such as global_space delivery, inventory, EVERYTHING
+/// will fail to properly send over TCP, and will NEVER do
+/// so reliably. It relies on MASK(n) logic, dervied from
+/// the size, so BIT(n)-1 == MASK(n). non BIT(n) values will
+/// result in bad bit masks.
+///
+/// USE BIT(n)
+///
 #define MAX_SIZE_OF__TCP_PACKET BIT(9)
 #define MAX_QUANTITY_OF__TCP_PACKETS_PER__SOCKET 256
 

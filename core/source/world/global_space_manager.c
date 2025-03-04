@@ -2,6 +2,9 @@
 #include "defines.h"
 #include "defines_weak.h"
 #include "game.h"
+#include "game_action/implemented/global_space/game_action__global_space__request.h"
+#include "game_action/implemented/global_space/game_action__global_space__resolve.h"
+#include "game_action/implemented/global_space/game_action__global_space__store.h"
 #include "numerics.h"
 #include "platform_defines.h"
 #include "process/process.h"
@@ -40,18 +43,12 @@ Global_Space *get_p_global_space_by__index_from__global_space_manager(
 }
 
 void initialize_global_space_manager(
-        Global_Space_Manager *p_global_space_manager,
-        m_Process m_process__construct_global_space,
-        m_Process m_process__destruct_global_space) {
+        Global_Space_Manager *p_global_space_manager) {
     initialize_serialization_header__contiguous_array__uuid_64(
             (Serialization_Header__UUID_64*)
                 p_global_space_manager->global_spaces, 
             QUANTITY_OF__GLOBAL_SPACE, 
             sizeof(Global_Space));
-    p_global_space_manager->m_process__construct_global_space =
-        m_process__construct_global_space;
-    p_global_space_manager->m_process__destruct_global_space =
-        m_process__destruct_global_space;
 }
 
 Global_Space *dehash_global_space_from__global_space_manager(
@@ -159,9 +156,10 @@ Global_Space *get_p_global_space_from__global_space_manager(
 }
 
 Global_Space *hold_global_space_within__global_space_manager(
-        Global_Space_Manager *p_global_space_manager,
-        Process_Manager *p_process_manager,
+        Game *p_game,
         Chunk_Vector__3i32 local_space_vector__3i32) {
+    Global_Space_Manager *p_global_space_manager =
+        get_p_global_space_manager_from__game(p_game);
 #ifndef NDEBUG
     if (!p_global_space_manager->m_process__construct_global_space) {
         debug_abort("hold_global_space_within__global_space_manager, m_process__construct_global_space == 0.");
@@ -189,49 +187,54 @@ Global_Space *hold_global_space_within__global_space_manager(
 
     hold_global_space(p_global_space);
 
-    Process *p_process = 
-        run_process(
-                p_process_manager, 
-                p_global_space_manager
-                ->m_process__construct_global_space, 
-                PROCESS_FLAG__IS_CRITICAL);
+    bool is_dispatch__successful = 
+        dispatch_game_action__global_space__resolve(
+                p_game, 
+                local_space_vector__3i32);
 
-    if (!p_process) {
-        debug_error("hold_global_space_within__global_space_manager, failed to allocate process.");
+    if (!is_dispatch__successful) {
+        debug_error("hold_global_space_within__global_space_manager, failed to dispatch process.");
         return 0;
     }
 
     set_global_space_as__constructing(p_global_space);
-    p_process->p_process_data = p_global_space;
 
     return p_global_space;
 }
 
 void drop_global_space_within__global_space_manager(
-        Global_Space_Manager *p_global_space_manager,
-        Process_Manager *p_process_manager,
-        Global_Space *p_global_space) {
+        Game *p_game,
+        Chunk_Vector__3i32 local_space_vector__3i32) {
+    Global_Space_Manager *p_global_space_manager =
+        get_p_global_space_manager_from__game(p_game);
 #ifndef NDEBUG
     if (!p_global_space_manager->m_process__destruct_global_space) {
-        debug_abort("hold_global_space_within__global_space_manager, m_process__destruct_global_space == 0.");
+        debug_abort("drop_global_space_within__global_space_manager, m_process__destruct_global_space == 0.");
         return;
     }
 #endif
+    Global_Space *p_global_space =
+        get_p_global_space_from__global_space_manager(
+                p_global_space_manager, 
+                local_space_vector__3i32);
+    if (p_global_space) {
+        debug_error("drop_global_space_within__global_space_manager, p_global_space == 0.");
+        return;
+    }
+
     if (!drop_global_space(p_global_space)) {
         return;
     }
-    Process *p_process =
-        run_process(
-            p_process_manager,
-            p_global_space_manager
-            ->m_process__destruct_global_space, 
-            PROCESS_FLAG__IS_CRITICAL);
 
-    if (!p_process) {
-        debug_error("drop_global_space_within__global_space_manager, failed to allocate process.");
+    bool is_dispatch__successful =
+        dispatch_game_action__global_space__store(
+                p_game, 
+                local_space_vector__3i32);
+
+    if (!is_dispatch__successful) {
+        debug_error("drop_global_space_within__global_space_manager, failed to dispatch process.");
         return;
     }
 
-    p_process->p_process_data = p_global_space;
     set_global_space_as__deconstructing(p_global_space);
 }

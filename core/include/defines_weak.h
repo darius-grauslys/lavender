@@ -125,6 +125,26 @@ typedef struct Input_t Input;
 /// SECTION_process
 ///
 
+typedef enum Process_Status_Kind {
+    Process_Status_Kind__None = 0,
+    Process_Status_Kind__Stopped,
+    Process_Status_Kind__Idle,
+    Process_Status_Kind__Busy,
+    Process_Status_Kind__Stopping,
+    Process_Status_Kind__Enqueued,
+    Process_Status_Kind__Complete,
+    Process_Status_Kind__Fail,
+    Process_Status_Kind__Unknown
+} Process_Status_Kind;
+
+typedef enum Process_Kind {
+    Process_Kind__None,
+    Process_Kind__Generic,
+    Process_Kind__Serialized,
+    Process_Kind__Game_Action,
+    Process_Kind__Unknown
+} Process_Kind;
+
 typedef struct Process_t Process;
 typedef struct Process_Manager_t Process_Manager;
 
@@ -319,7 +339,8 @@ typedef enum Tile_Kind {
 ///
 /// Extending:
 /// You can add new kinds, but it must be of value greater
-/// than zero, and less than the value of Game_Action_Kind__Unknown.
+/// than or equal to Game_Action_Kind__Custom, and less than 
+/// the value of Game_Action_Kind__Unknown.
 ///
 typedef enum Game_Action_Kind {
     Game_Action_Kind__None = 0,
@@ -328,6 +349,23 @@ typedef enum Game_Action_Kind {
     Game_Action_Kind__TCP_Connect__Reject,
     Game_Action_Kind__TCP_Connect__Accept,
     Game_Action_Kind__TCP_Disconnect,
+    Game_Action_Kind__TCP_Delivery,
+    Game_Action_Kind__Global_Space__Request,
+    Game_Action_Kind__Global_Space__Resolve,
+    Game_Action_Kind__Global_Space__Store,
+    Game_Action_Kind__Inventory__Request,
+    Game_Action_Kind__Inventory__Resolve,
+    Game_Action_Kind__Entity__Spawn,
+    Game_Action_Kind__Entity__Set_Flag,
+    Game_Action_Kind__Entity__Action,
+    Game_Action_Kind__Hitbox__Set_Position,
+    Game_Action_Kind__Hitbox__Apply_Velocity,
+    Game_Action_Kind__Custom,
+
+    ///
+    /// Custom Game Actions YOU define for YOUR GAME go here.
+    ///
+
     Game_Action_Kind__Unknown
 } Game_Action_Kind;
 

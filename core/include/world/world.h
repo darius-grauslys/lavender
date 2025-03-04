@@ -7,8 +7,6 @@
 void initialize_world(
         Game *p_game,
         World *p_world,
-        m_Process m_process__construct_global_space,
-        m_Process m_process__destruct_global_space,
         f_Chunk_Generator f_chunk_generator);
 
 void manage_world(

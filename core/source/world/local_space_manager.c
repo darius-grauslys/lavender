@@ -10,6 +10,7 @@
 #include "world/global_space_manager.h"
 #include "world/local_space.h"
 #include "world/tile_vectors.h"
+#include "world/world.h"
 
 static inline
 Local_Space *get_p_local_space_by__index_from__local_space_manager(
@@ -134,9 +135,8 @@ void initialize_local_space_manager(
 }
 
 void drop_all__local_spaces_in__local_space_manager(
-        Global_Space_Manager *p_global_space_manager,
-        Process_Manager *p_process_manager,
-        Local_Space_Manager *p_local_space_manager) {
+        Local_Space_Manager *p_local_space_manager,
+        Game *p_game) {
     for (Index__u32 index_of__local_space = 0;
             index_of__local_space < AREA_OF__LOCAL_SPACE_MANAGER;
             index_of__local_space++) {
@@ -148,16 +148,14 @@ void drop_all__local_spaces_in__local_space_manager(
             continue;
         }
         drop_global_space_within__global_space_manager(
-                p_global_space_manager, 
-                p_process_manager, 
-                get_p_global_space_from__local_space(p_local_space));
+                p_game,
+                p_local_space->global_space__vector__3i32);
     }
 }
 
 void hold_all__unheld_local_spaces_in__local_space_manager(
-        Global_Space_Manager *p_global_space_manager,
-        Process_Manager *p_process_manager,
-        Local_Space_Manager *p_local_space_manager) {
+        Local_Space_Manager *p_local_space_manager,
+        Game *p_game) {
     for (Index__u32 index_of__local_space = 0;
             index_of__local_space < AREA_OF__LOCAL_SPACE_MANAGER;
             index_of__local_space++) {
@@ -170,28 +168,24 @@ void hold_all__unheld_local_spaces_in__local_space_manager(
         }
         p_local_space->p_global_space =
             hold_global_space_within__global_space_manager(
-                    p_global_space_manager, 
-                    p_process_manager,
+                    p_game,
                     p_local_space->global_space__vector__3i32);
     }
 }
 
 void set_center_of__local_space_manager(
-        Global_Space_Manager *p_global_space_manager,
-        Process_Manager *p_process_manager,
         Local_Space_Manager *p_local_space_manager,
+        Game *p_game,
         Global_Space_Vector__3i32 center_of__local_space_manager__3i32) {
     drop_all__local_spaces_in__local_space_manager(
-            p_global_space_manager, 
-            p_process_manager, 
-            p_local_space_manager);
+            p_local_space_manager,
+            p_game);
     initialize_local_space_manager(
             p_local_space_manager,
             center_of__local_space_manager__3i32);
     hold_all__unheld_local_spaces_in__local_space_manager(
-            p_global_space_manager,
-            p_process_manager,
-            p_local_space_manager);
+            p_local_space_manager,
+            p_game);
 }
 
 static inline
@@ -247,8 +241,7 @@ bool poll_local_space__traversal(
 }
 
 void update_local_spaces_between__these_two_local_spaces(
-        Global_Space_Manager *p_global_space_manager,
-        Process_Manager *p_process_manager,
+        Game *p_game,
         Local_Space *p_local_space__current,
         Local_Space *p_local_space__end,
         Direction__u8 direction_to__update) {
@@ -264,9 +257,8 @@ void update_local_spaces_between__these_two_local_spaces(
     do {
         if (get_p_global_space_from__local_space(p_local_space__current)) {
             drop_global_space_within__global_space_manager(
-                    p_global_space_manager, 
-                    p_process_manager, 
-                    get_p_global_space_from__local_space(p_local_space__current)
+                    p_game, 
+                    p_local_space__current->global_space__vector__3i32
                     );
             p_local_space__current->p_global_space = 0;
         }
@@ -305,8 +297,7 @@ void update_local_spaces_between__these_two_local_spaces(
 
         p_local_space__current->p_global_space =
             hold_global_space_within__global_space_manager(
-                    p_global_space_manager, 
-                    p_process_manager, 
+                    p_game,
                     p_local_space__current->global_space__vector__3i32);
     } while (poll_local_space__traversal(
                 &p_local_space__current, 
@@ -315,9 +306,8 @@ void update_local_spaces_between__these_two_local_spaces(
 }
 
 void move_local_space_manager(
-        Global_Space_Manager *p_global_space_manager,
-        Process_Manager *p_process_manager,
         Local_Space_Manager *p_local_space_manager,
+        Game *p_game,
         Direction__u8 direction__u8) {
     if (direction__u8 & DIRECTION__NORTH) {
         move_p_ptr_local_space__north(
@@ -330,8 +320,7 @@ void move_local_space_manager(
                 &p_local_space_manager->p_local_space__south_west);
 
         update_local_spaces_between__these_two_local_spaces(
-                p_global_space_manager, 
-                p_process_manager, 
+                p_game,
                 p_local_space_manager->p_local_space__north_west, 
                 p_local_space_manager->p_local_space__north_east, 
                 DIRECTION__EAST);
@@ -347,8 +336,7 @@ void move_local_space_manager(
                 &p_local_space_manager->p_local_space__south_west);
 
         update_local_spaces_between__these_two_local_spaces(
-                p_global_space_manager, 
-                p_process_manager, 
+                p_game,
                 p_local_space_manager->p_local_space__south_west, 
                 p_local_space_manager->p_local_space__south_east, 
                 DIRECTION__EAST);
@@ -364,8 +352,7 @@ void move_local_space_manager(
                 &p_local_space_manager->p_local_space__south_west);
 
         update_local_spaces_between__these_two_local_spaces(
-                p_global_space_manager, 
-                p_process_manager, 
+                p_game,
                 p_local_space_manager->p_local_space__north_east, 
                 p_local_space_manager->p_local_space__south_east, 
                 DIRECTION__SOUTH);
@@ -381,8 +368,7 @@ void move_local_space_manager(
                 &p_local_space_manager->p_local_space__south_west);
 
         update_local_spaces_between__these_two_local_spaces(
-                p_global_space_manager, 
-                p_process_manager, 
+                p_game,
                 p_local_space_manager->p_local_space__north_west, 
                 p_local_space_manager->p_local_space__south_west, 
                 DIRECTION__SOUTH);
@@ -496,9 +482,8 @@ void poll_local_space_for__scrolling(
         else if (d_y__i32 > 0)
             direction |= DIRECTION__NORTH;
         move_local_space_manager(
-                p_global_space_manager, 
-                get_p_process_manager_from__game(p_game), 
                 p_local_space_manager, 
+                p_game,
                 direction);
     } while (!is_vectors_3i32__equal(
                 global_space_vector__center__3i32, 

@@ -107,6 +107,12 @@ World *get_p_world_from__game(Game *p_game) {
 }
 
 static inline 
+Global_Space_Manager *get_p_global_space_manager_from__game(Game *p_game) {
+    return get_p_global_space_manager_from__world(
+            get_p_world_from__game(p_game));
+}
+
+static inline 
 Sprite_Gfx_Allocation_Manager *get_p_sprite_gfx_allocation_manager_from__game(
         Game *p_game) {
     return &p_game->gfx_context.sprite_gfx_allocation_manager;
@@ -245,28 +251,28 @@ bool is_game__multiplayer(Game *p_game) {
 }
 
 static inline
-void dispatch_game_action(
+bool dispatch_game_action(
         Game *p_game,
         Game_Action *p_game_action) {
-    p_game->m_game_action_handler__dispatch(
+    return p_game->m_game_action_handler__dispatch(
             p_game,
             p_game_action);
 }
 
 static inline
-void receive_game_action(
+bool receive_game_action(
         Game *p_game,
         Game_Action *p_game_action) {
-    p_game->m_game_action_handler__receive(
+    return p_game->m_game_action_handler__receive(
             p_game,
             p_game_action);
 }
 
 static inline
-void resolve_game_action(
+bool resolve_game_action(
         Game *p_game,
         Game_Action *p_game_action) {
-    p_game->m_game_action_handler__resolve(
+    return p_game->m_game_action_handler__resolve(
             p_game,
             p_game_action);
 }

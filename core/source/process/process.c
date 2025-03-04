@@ -17,8 +17,8 @@ void initialize_process(
     p_process->m_process_run__handler =
         m_process_run__handler;
     p_process->process_runtime__i32F20 = 0;
-    p_process->the_kind_of_priority__this_process_has =
-        Process_Priority_Kind__None;
+    p_process->the_kind_of__process_this__process_is =
+        Process_Kind__None;
     p_process->the_kind_of_status__this_process_has =
         Process_Status_Kind__None;
     p_process->p_process_data =
