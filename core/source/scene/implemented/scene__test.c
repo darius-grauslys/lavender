@@ -8,11 +8,13 @@
 #include "input/input.h"
 #include "multiplayer/server__default.h"
 #include "multiplayer/client__default.h"
+#include "multiplayer/tcp_socket.h"
 #include "multiplayer/tcp_socket_manager.h"
 #include "platform.h"
 #include "platform_defaults.h"
 #include "platform_defines.h"
 #include "process/process.h"
+#include "process/process_manager.h"
 #include "rendering/aliased_texture_manager.h"
 #include "rendering/graphics_window.h"
 #include "rendering/graphics_window_manager.h"
@@ -78,6 +80,20 @@ void m_load_scene__test(
     dispatch_game_action__connect__begin(
             p_game, 
             addr);
+    TCP_Socket *p_tcp_socket;
+    do {
+        poll_process_manager(
+                get_p_process_manager_from__game(p_game), 
+                p_game);
+        p_tcp_socket =
+            get_p_tcp_socket_for__this_uuid(
+                    get_p_tcp_socket_manager_from__game(p_game), 
+                    GET_UUID_P(p_client));
+        if (!p_tcp_socket)
+            continue;
+    } while(!p_tcp_socket
+            || poll_tcp_socket_for__connection(p_tcp_socket)
+                != TCP_Socket_State__Authenticated);
     load_p_PLATFORM_texture_from__path_with__alias(
             get_p_PLATFORM_gfx_context_from__game(p_game), 
             0, 
@@ -265,10 +281,8 @@ void m_enter_scene__test(
 #endif
 
     set_center_of__local_space_manager(
-            get_p_global_space_manager_from__world(
-                get_p_world_from__game(p_game)), 
-            get_p_process_manager_from__game(p_game), 
             get_p_local_space_manager_from__client(p_client), 
+            p_game,
             VECTOR__3i32__0_0_0);
     
     while (

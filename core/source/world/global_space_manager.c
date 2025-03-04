@@ -3,7 +3,6 @@
 #include "defines_weak.h"
 #include "game.h"
 #include "game_action/implemented/global_space/game_action__global_space__request.h"
-#include "game_action/implemented/global_space/game_action__global_space__resolve.h"
 #include "game_action/implemented/global_space/game_action__global_space__store.h"
 #include "numerics.h"
 #include "platform_defines.h"
@@ -160,12 +159,6 @@ Global_Space *hold_global_space_within__global_space_manager(
         Chunk_Vector__3i32 local_space_vector__3i32) {
     Global_Space_Manager *p_global_space_manager =
         get_p_global_space_manager_from__game(p_game);
-#ifndef NDEBUG
-    if (!p_global_space_manager->m_process__construct_global_space) {
-        debug_abort("hold_global_space_within__global_space_manager, m_process__construct_global_space == 0.");
-        return 0;
-    }
-#endif
 
     Global_Space *p_global_space =
         get_p_global_space_from__global_space_manager(
@@ -188,7 +181,7 @@ Global_Space *hold_global_space_within__global_space_manager(
     hold_global_space(p_global_space);
 
     bool is_dispatch__successful = 
-        dispatch_game_action__global_space__resolve(
+        dispatch_game_action__global_space__request(
                 p_game, 
                 local_space_vector__3i32);
 
@@ -207,12 +200,7 @@ void drop_global_space_within__global_space_manager(
         Chunk_Vector__3i32 local_space_vector__3i32) {
     Global_Space_Manager *p_global_space_manager =
         get_p_global_space_manager_from__game(p_game);
-#ifndef NDEBUG
-    if (!p_global_space_manager->m_process__destruct_global_space) {
-        debug_abort("drop_global_space_within__global_space_manager, m_process__destruct_global_space == 0.");
-        return;
-    }
-#endif
+
     Global_Space *p_global_space =
         get_p_global_space_from__global_space_manager(
                 p_global_space_manager, 

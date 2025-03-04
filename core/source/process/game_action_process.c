@@ -11,7 +11,7 @@ bool set_game_action_process_as__tcp_payload_receiver(
         Game *p_game,
         Process *p_process,
         u8 *p_payload_destination,
-        Quantity__u16 quantity_of__bytes_in__payload) {
+        Quantity__u16 quantity_of__bytes_in__payload_destination) {
     Serialization_Request *p_serialization_request =
         PLATFORM_allocate_serialization_request(
                 get_p_PLATFORM_file_system_context_from__game(p_game));
@@ -21,12 +21,24 @@ bool set_game_action_process_as__tcp_payload_receiver(
         return false;
     }
 
+    initialize_serialization_request(
+            p_serialization_request, 
+            p_payload_destination, 
+            quantity_of__bytes_in__payload_destination, 
+            SERIALIZATION_REQUEST_FLAG__IS_TCP_OR_IO);
+
     void *p_process_data =
         p_process->p_process_data;
     p_serialization_request->p_data =
         p_process_data;
     p_process->p_process_data =
         p_serialization_request;
+
+    set_serialization_request_as__tcp(
+            p_serialization_request);
+    set_the_kind_of__process(
+            p_process, 
+            Process_Kind__Serialized);
 
     return true;
 }
@@ -41,7 +53,7 @@ void complete_game_action_process_for__tcp(
                 p_game, 
                 (Game_Action *)p_serialization_request->p_data);
     }
-    PLATFORM_release_serialization_request(
+    release_serialization_request(
             get_p_PLATFORM_file_system_context_from__game(p_game), 
             p_serialization_request);
     complete_process(p_process);
@@ -57,7 +69,7 @@ void fail_game_action_process_for__tcp(
                 p_game, 
                 (Game_Action *)p_serialization_request->p_data);
     }
-    PLATFORM_release_serialization_request(
+    release_serialization_request(
             get_p_PLATFORM_file_system_context_from__game(p_game), 
             p_serialization_request);
     fail_process(p_process);
@@ -107,7 +119,8 @@ PLATFORM_Read_File_Error poll_game_action_process__tcp_receive(
 ///
 PLATFORM_Write_File_Error poll_game_action_process__tcp_delivery(
         Game *p_game,
-        Game_Action *p_game_action,
+        Identifier__u32 uuid_of__client_to__send_to,
+        Identifier__u32 uuid_of__game_action__responding_to,
         u8 *p_payload__source,
         Quantity__u32 quantity_of__bytes_in__payload__source,
         u8 *p_payload__bitmap,
@@ -149,8 +162,8 @@ PLATFORM_Write_File_Error poll_game_action_process__tcp_delivery(
 
     dispatch_game_action__tcp_delivery(
             p_game, 
-            p_game_action->uuid_of__client__u32, 
-            p_game_action->uuid_of__game_action__responding_to, 
+            uuid_of__client_to__send_to, 
+            uuid_of__game_action__responding_to, 
             p_payload__source
             + (GA_KIND__TCP_DELIVERY__PAYLOAD_SIZE_IN__BYTES
                 * index_of__bitmap_bit), 

@@ -48,8 +48,6 @@ void complete_process(
 #endif
     p_process->the_kind_of_status__this_process_has =
         Process_Status_Kind__Complete;
-    p_process->the_kind_of_priority__this_process_has =
-        Process_Priority_Kind__None;
 }
 
 static inline
@@ -63,8 +61,6 @@ void fail_process(
 #endif
     p_process->the_kind_of_status__this_process_has =
         Process_Status_Kind__Fail;
-    p_process->the_kind_of_priority__this_process_has =
-        Process_Priority_Kind__None;
 }
 
 static inline
@@ -273,7 +269,7 @@ static inline
 void set_the_kind_of__process(
         Process *p_process,
         Process_Kind the_kind_of__process) {
-    return p_process->the_kind_of__process_this__process_is =
+    p_process->the_kind_of__process_this__process_is =
         the_kind_of__process;
 }
 

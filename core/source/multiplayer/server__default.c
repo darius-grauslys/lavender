@@ -74,7 +74,7 @@ void m_poll_tcp_socket_manager_as__server__default(
     }
 
     TCP_Socket **p_ptr_tcp_socket__client =
-        &p_tcp_socket_manager->ptr_array_of__tcp_sockets[1];
+        p_tcp_socket_manager->ptr_array_of__tcp_sockets;
 
     while ((++p_ptr_tcp_socket__client
                 - p_tcp_socket_manager->ptr_array_of__tcp_sockets

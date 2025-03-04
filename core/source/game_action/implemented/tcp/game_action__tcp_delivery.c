@@ -83,7 +83,9 @@ void register_game_action__tcp_delivery(
     initialize_game_action_logic_entry_as__message_response(
             get_p_game_action_logic_entry_by__game_action_kind(
                 p_game_action_logic_table, 
-                Game_Action_Kind__TCP_Delivery));
+                Game_Action_Kind__TCP_Delivery),
+            m_process__game_action__tcp_delivery__inbound,
+            PROCESS_FLAG__IS_CRITICAL);
 }
 
 void initialize_game_action_for__tcp_delivery(

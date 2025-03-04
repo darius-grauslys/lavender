@@ -2,6 +2,7 @@
 #include "game_action/game_action_logic_entry.h"
 #include "game_action/game_action_logic_table.h"
 #include "game_action/implemented/global_space/game_action__global_space__request.h"
+#include "game_action/implemented/global_space/game_action__global_space__resolve.h"
 #include "process/game_action_process.h"
 
 void m_process__game_action__global_space__request__outbound_offline(
@@ -9,7 +10,7 @@ void m_process__game_action__global_space__request__outbound_offline(
         Game *p_game) {
     Game_Action *p_game_action =
         (Game_Action*)p_this_process->p_process_data;
-    dispatch_game_action__global_space__request(
+    dispatch_game_action__global_space__resolve(
             p_game, 
             p_game_action->ga_kind__global_space__request__gsv_3i32);
     complete_game_action_process(

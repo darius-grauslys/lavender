@@ -37,6 +37,7 @@ void m_poll_tcp_socket_manager_as__client__default(
             get_latest__delivery_from__tcp_socket(
                     p_tcp_socket_to__server, 
                     &delivery.tcp_packet);
+            delivery.game_action.uuid_of__client__u32 = 0;
 
             receive_game_action(
                     p_game,

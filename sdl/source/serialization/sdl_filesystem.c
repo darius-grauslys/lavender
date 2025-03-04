@@ -331,7 +331,7 @@ void PLATFORM_close_file(
         fclose(p_file);
     }
 
-    PLATFORM_release_serialization_request(
+    release_serialization_request(
             p_PLATFORM_file_system_context,
             p_serialization_request);
 }
@@ -468,7 +468,7 @@ void m_SDL_process__serialization(
             continue;
         }
         if (!is_serialization_request__active(p_serialization_request)) {
-            PLATFORM_release_serialization_request(
+            release_serialization_request(
                     p_PLATFORM_file_system_context, 
                     p_serialization_request);
         }

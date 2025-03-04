@@ -16,6 +16,13 @@ bool initialize_serialization_request(
         Quantity__u16 size_of__tcp_payload,
         Serialization_Request_Flags serialization_request_flags);
 
+void initialize_serialization_request_as__uninitalized(
+        Serialization_Request *p_serialization_request);
+
+void release_serialization_request(
+        PLATFORM_File_System_Context *p_PLATFORM_file_system_context,
+        Serialization_Request *p_serialization_request);
+
 static inline
 void set_serialization_request_as__allocated(
         Serialization_Request *p_serialization_request) {

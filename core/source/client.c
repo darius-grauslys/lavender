@@ -118,7 +118,7 @@ bool receive_game_action_for__client(
         // TODO: make process of responded game action, if it's flag is set to do so.
         //      however, is it needed? Can't we just make the process on invocation and wait?
 
-        process.p_process_data = p_game_action__responded_to;
+        process.p_process_data = p_game_action;
 
         m_Process m_process_of__game_action =
             get_m_process__inbound_for__this_game_action_kind(
@@ -135,8 +135,9 @@ bool receive_game_action_for__client(
         Game_Action *p_game_action__allocated = 0;
         if (!is_game_action__allocated(p_game_action)) {
             p_game_action__allocated =
-                allocate_game_action_from__game_action_manager(
-                        get_p_game_action_manager__inbound_from__client(p_client));
+                allocate_game_action_with__this_uuid_from__game_action_manager(
+                        get_p_game_action_manager__inbound_from__client(p_client),
+                        GET_UUID_P(p_game_action));
             if (!p_game_action__allocated) {
                 debug_error("receive_game_action_for__client, failed to copy p_game_action.");
                 goto cleanup;
@@ -144,6 +145,7 @@ bool receive_game_action_for__client(
 
             *p_game_action__allocated =
                 *p_game_action;
+            p_game_action = p_game_action__allocated;
         }
         Process *p_process = dispatch_game_action_process__inbound(
                 p_game_action_logic_table, 
@@ -229,8 +231,11 @@ bool dispatch_game_action_for__client(
                 goto cleanup;
             }
 
-            *p_game_action__allocated =
-                *p_game_action;
+            memcpy(
+                    ((u8*)p_game_action__allocated) + sizeof(Serialization_Header),
+                    ((u8*)p_game_action) + sizeof(Serialization_Header),
+                    sizeof(Game_Action) - sizeof(Serialization_Header));
+            p_game_action = p_game_action__allocated;
         }
         if (is_game_action__processed_on__invocation_or__respose(p_game_action)) {
             Process *p_process =
@@ -248,7 +253,7 @@ bool dispatch_game_action_for__client(
             }
 
             // keep-alive
-            return true;
+            goto tcp_send;
         }
     } else if (
             get_m_process__outbound_of__game_action_logic_entry(
@@ -270,6 +275,7 @@ bool dispatch_game_action_for__client(
         goto cleanup;
     } 
 
+tcp_send:
     if (!p_tcp_socket_manager
             || is_game_action__local(p_game_action)) {
         result = true;

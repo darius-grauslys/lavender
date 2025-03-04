@@ -2099,18 +2099,6 @@ typedef struct Local_Space_Manager_t {
 typedef struct Global_Space_Manager_t {
     Global_Space global_spaces[
         QUANTITY_OF__GLOBAL_SPACE];
-
-    ///
-    /// NOTE: this process should do the following on completion:
-    /// - invoke set_managed_process_of__global_space(p_..., 0);
-    ///
-    m_Process m_process__construct_global_space;
-
-    ///
-    /// NOTE: this process should do the following on completion:
-    /// - invoke initialize_global_space(p_...);
-    ///
-    m_Process m_process__destruct_global_space;
 } Global_Space_Manager;
 
 typedef uint8_t Game_Action_Flags;
@@ -2136,8 +2124,7 @@ typedef uint8_t Game_Action_Flags;
 #define GAME_ACTION_FLAGS__NONE 0
 
 #define GAME_ACTION_FLAG_MASK__INBOUND_SANITIZE \
-    (GAME_ACTION_FLAGS__BIT_IS_ALLOCATED \
-     | GAME_ACTION_FLAGS__BIT_IS_OUT_OR__IN_BOUND)
+    (GAME_ACTION_FLAGS__BIT_IS_ALLOCATED)
 #define GAME_ACTION_FLAG_MASK__OUTBOUND_SANITIZE \
     (GAME_ACTION_FLAGS__BIT_IS_ALLOCATED \
      | GAME_ACTION_FLAGS__BIT_IS_OUT_OR__IN_BOUND)
@@ -2213,15 +2200,18 @@ typedef struct Game_Action_t {
             }; // Connect
             struct {
 #define GA_KIND__TCP_DELIVERY__PAYLOAD_SIZE_IN__BYTES\
-                sizeof(TCP_Packet)\
+                (sizeof(TCP_Packet)\
                 - sizeof(_Game_Action_Header)\
-                - sizeof(uint64_t)
-#define TCP_PAYLOAD_BITMAP__QUANTITY_OF_BITS(type)\
+                - sizeof(uint64_t))
+#define TCP_PAYLOAD_BITMAP__QUANTITY_OF__PAYLOADS(type)\
                 ((sizeof(type)\
                         + GA_KIND__TCP_DELIVERY__PAYLOAD_SIZE_IN__BYTES)\
                         / GA_KIND__TCP_DELIVERY__PAYLOAD_SIZE_IN__BYTES)
+#define TCP_PAYLOAD_BITMAP__QUANTITY_OF__BYTES(type)\
+                (TCP_PAYLOAD_BITMAP__QUANTITY_OF_PAYLOADS\
+                    * GA_KIND__TCP_DELIVERY__PAYLOAD_SIZE_IN__BYTES)
 #define TCP_PAYLOAD_BITMAP(type, name)\
-                u8 name[TCP_PAYLOAD_BITMAP__QUANTITY_OF_BITS(type) >> 3]
+                u8 name[TCP_PAYLOAD_BITMAP__QUANTITY_OF__PAYLOADS(type)]
 #define TCP_PAYLOAD_BIT(index) (index & MASK(3))
 #define TCP_PAYLOAD_BYTE(index) (index >> 3)
                 u8 ga_kind__tcp_delivery__payload[

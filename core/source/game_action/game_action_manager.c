@@ -28,18 +28,17 @@ void initialize_game_action_manager(
             (u32)(uint64_t)p_game_action_manager);
 }
 
-Game_Action *allocate_game_action_from__game_action_manager(
-        Game_Action_Manager *p_game_action_manager) {
-    Identifier__u32 uuid =
-        get_next_available__random_uuid_in__contiguous_array(
-                (Serialization_Header*)p_game_action_manager
-                ->game_actions, 
-                MAX_QUANTITY_OF__GAME_ACTIONS, 
-                &p_game_action_manager->repeatable_pseudo_random);
-
+Game_Action *allocate_game_action_with__this_uuid_from__game_action_manager(
+        Game_Action_Manager *p_game_action_manager,
+        Identifier__u32 uuid) {
     if (is_identifier_u32__invalid(uuid)) {
-        debug_error("allocate_game_action_from__game_action_manager, failed to allocate game_action.");
-        return 0;
+        debug_warning("allocate_game_action_from__game_action_manager, invalid uuid. New uuid assigned.");
+        uuid =
+            get_next_available__random_uuid_in__contiguous_array(
+                    (Serialization_Header*)p_game_action_manager
+                    ->game_actions, 
+                    MAX_QUANTITY_OF__GAME_ACTIONS, 
+                    &p_game_action_manager->repeatable_pseudo_random);
     }
 
     Game_Action *p_game_action =
@@ -48,7 +47,15 @@ Game_Action *allocate_game_action_from__game_action_manager(
                     ->game_actions, 
                 MAX_QUANTITY_OF__GAME_ACTIONS, 
                 uuid);
+    if (!IS_DEALLOCATED_P(p_game_action)) {
+        debug_error("allocate_game_action_from__game_action_manager, uuid already in use.");
+        return 0;
+    }
     initialize_game_action(p_game_action);
+    initialize_serialization_header(
+            &p_game_action->_serialiation_header, 
+            uuid, 
+            sizeof(Game_Action));
     set_game_action_as__allocated(p_game_action);
 
     return p_game_action;

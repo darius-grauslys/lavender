@@ -18,14 +18,14 @@
     (is_serialized_struct__deallocated(\
             (Serialization_Header*)&serialized_header))
 #define IS_DEALLOCATED_P(serialized_header)\
-    (is_serialized_struct__deallocated(\
+    (!serialized_header || is_serialized_struct__deallocated(\
             (Serialization_Header*)serialized_header))
 
 #define IS_DEALLOCATED__u64(serialized_header)\
     (is_serialized_struct__deallocated__uuid_64(\
             (Serialization_Header__UUID_64*)&serialized_header))
 #define IS_DEALLOCATED_P__u64(serialized_header)\
-    (is_serialized_struct__deallocated__uuid_64(\
+    (!serialized_header || is_serialized_struct__deallocated__uuid_64(\
             (Serialization_Header__UUID_64*)serialized_header))
 
 void initialize_serialization_header(

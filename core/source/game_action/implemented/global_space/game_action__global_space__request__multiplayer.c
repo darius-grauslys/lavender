@@ -1,3 +1,4 @@
+#include "collisions/collision_node_pool.h"
 #include "game_action/implemented/global_space/game_action__global_space__request.h"
 #include "defines.h"
 #include "defines_weak.h"
@@ -5,9 +6,11 @@
 #include "game_action/game_action.h"
 #include "game_action/game_action_logic_entry.h"
 #include "game_action/game_action_logic_table.h"
+#include "game_action/implemented/global_space/game_action__global_space__resolve.h"
 #include "multiplayer/tcp_socket.h"
 #include "multiplayer/tcp_socket_manager.h"
 #include "platform.h"
+#include "world/chunk_pool.h"
 #include "world/world.h"
 #include "world/global_space_manager.h"
 #include "world/global_space.h"
@@ -25,6 +28,17 @@ void m_process__game_action__global_space__request__inbound_server(
     Global_Space_Manager *p_global_space_manager =
         get_p_global_space_manager_from__world(
                 get_p_world_from__game(p_game));
+
+    if (is_game_action__local(p_game_action)
+            && is_game_action__inbound(p_game_action)) {
+        dispatch_game_action__global_space__resolve(
+                p_game, 
+                p_game_action->ga_kind__global_space__request__gsv_3i32);
+        complete_game_action_process(
+                p_game, 
+                p_this_process);
+        return;
+    }
 
     Global_Space *p_global_space =
         get_p_global_space_from__global_space_manager(
@@ -69,12 +83,13 @@ void m_process__game_action__global_space__request__inbound_server(
 
     switch (poll_game_action_process__tcp_delivery(
                 p_game, 
-                p_game_action, 
+                p_game_action->uuid_of__client__u32,
+                p_game_action->_serialiation_header.uuid, 
                 (u8*)p_global_space->p_chunk, 
                 sizeof(Chunk), 
                 p_game_action
                     ->ga_kind__global_space__request__chunk_payload_bitmap, 
-                (u16)TCP_PAYLOAD_BITMAP__QUANTITY_OF_BITS(Chunk))) {
+                (u16)TCP_PAYLOAD_BITMAP__QUANTITY_OF__PAYLOADS(Chunk))) {
         case PLATFORM_Write_File_Error__Max_Size_Reached:
             break;
         case PLATFORM_Write_File_Error__System_Busy:
@@ -176,6 +191,23 @@ void m_process__game_action__global_space__request__outbound_client__init(
         return;
     }
 
+    // TODO: make a function to gen these sub structs
+    // and bind to p_global_space.
+    Chunk *p_chunk =
+        allocate_chunk_from__chunk_pool(
+                get_p_chunk_pool_from__world(
+                    get_p_world_from__game(p_game)), 
+                GET_UUID_P(p_global_space));
+
+    Collision_Node *p_collision_node =
+        allocate_collision_node_from__collision_node_pool(
+                get_p_collision_node_pool_from__world(
+                    get_p_world_from__game(p_game)), 
+                GET_UUID_P(p_global_space));
+
+    p_global_space->p_chunk = p_chunk;
+    p_global_space->p_collision_node = p_collision_node;
+
     bool is_process__mutation_successful =
         set_game_action_process_as__tcp_payload_receiver(
                 p_game, 
@@ -207,18 +239,27 @@ void register_game_action__global_space__request_for__client(
             get_p_game_action_logic_entry_by__game_action_kind(
                 p_game_action_logic_table, 
                 Game_Action_Kind__Global_Space__Request), 
-            m_process__game_action__global_space__request__outbound_client, 
+            m_process__game_action__global_space__request__outbound_client__init, 
             PROCESS_FLAG__IS_CRITICAL);
 }
 
 void register_game_action__global_space__request_for__server(
         Game_Action_Logic_Table *p_game_action_logic_table) {
-    initialize_game_action_logic_entry_as__process__in(
+    initialize_game_action_logic_entry(
             get_p_game_action_logic_entry_by__game_action_kind(
                 p_game_action_logic_table, 
                 Game_Action_Kind__Global_Space__Request), 
+            GAME_ACTION_FLAGS__OUTBOUND_SANITIZE
+            | GAME_ACTION_FLAGS__BIT_IS_LOCAL,
+            GAME_ACTION_FLAG_MASK__OUTBOUND_SANITIZE,
+            GAME_ACTION_FLAGS__INBOUND_SANITIZE
+            | GAME_ACTION_FLAGS__BIT_IS_WITH_PROCESS
+            | GAME_ACTION_FLAGS__BIT_IS_PROCESSED_ON_INVOCATION_OR_RESPONSE,
+            GAME_ACTION_FLAG_MASK__INBOUND_SANITIZE,
             m_process__game_action__global_space__request__inbound_server, 
-            PROCESS_FLAG__IS_CRITICAL);
+            PROCESS_FLAGS__NONE,
+            m_process__game_action__global_space__request__inbound_server, 
+            PROCESS_FLAGS__NONE);
 }
 
 void initialize_game_action_for__global_space__request(

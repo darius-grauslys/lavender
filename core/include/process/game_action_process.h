@@ -26,7 +26,7 @@ bool set_game_action_process_as__tcp_payload_receiver(
         Game *p_game,
         Process *p_process,
         u8 *p_payload_destination,
-        Quantity__u16 quantity_of__bytes_in__payload);
+        Quantity__u16 quantity_of__bytes_in__payload_destination);
 
 void complete_game_action_process_for__tcp(
         Game *p_game,
@@ -57,7 +57,8 @@ PLATFORM_Read_File_Error poll_game_action_process__tcp_receive(
 ///
 PLATFORM_Write_File_Error poll_game_action_process__tcp_delivery(
         Game *p_game,
-        Game_Action *p_game_action,
+        Identifier__u32 uuid_of__client_to__send_to,
+        Identifier__u32 uuid_of__game_action__responding_to,
         u8 *p_payload__source,
         Quantity__u32 quantity_of__bytes_in__payload__source,
         u8 *p_payload__bitmap,

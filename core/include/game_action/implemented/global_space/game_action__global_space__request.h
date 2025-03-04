@@ -18,14 +18,14 @@ void initialize_game_action_for__global_space__request(
         Global_Space_Vector__3i32 global_space_vector__3i32);
 
 static inline
-void dispatch_game_action__global_space__request(
+bool dispatch_game_action__global_space__request(
         Game *p_game,
         Global_Space_Vector__3i32 global_space_vector__3i32) {
     Game_Action ga_request;
     initialize_game_action_for__global_space__request(
             &ga_request,
             global_space_vector__3i32);
-    dispatch_game_action(
+    return dispatch_game_action(
             p_game, 
             &ga_request);
 }

@@ -134,7 +134,9 @@ void initialize_game_action_logic_entry_as__message(
 
 static inline
 void initialize_game_action_logic_entry_as__message_response(
-        Game_Action_Logic_Entry *p_game_action_logic_entry) {
+        Game_Action_Logic_Entry *p_game_action_logic_entry,
+        m_Process m_process__game_action__inbound,
+        Process_Flags__u8 process_flags__inbound) {
     initialize_game_action_logic_entry(
             p_game_action_logic_entry, 
             GAME_ACTION_FLAGS__OUTBOUND_SANITIZE, 
@@ -143,9 +145,9 @@ void initialize_game_action_logic_entry_as__message_response(
             | GAME_ACTION_FLAGS__BIT_IS_RESPONSE, 
             GAME_ACTION_FLAG_MASK__INBOUND_SANITIZE, 
             0, 
-            0,
-            0,
-            0);
+            PROCESS_FLAGS__NONE,
+            m_process__game_action__inbound,
+            process_flags__inbound);
 }
 
 static inline
