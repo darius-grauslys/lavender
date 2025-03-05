@@ -16,10 +16,12 @@
 #include "process/process.h"
 #include "process/process_manager.h"
 
-void initialize_chunk(Chunk *p_chunk) {
-    initialize_serialization_header(
+void initialize_chunk(
+        Chunk *p_chunk,
+        Identifier__u64 uuid__u64) {
+    initialize_serialization_header__uuid_64(
             &p_chunk->_serialization_header, 
-            get_uuid__chunk(p_chunk), 
+            uuid__u64,
             sizeof(Chunk));
 }
 
@@ -72,6 +74,7 @@ void m_process__serialize_chunk(
             Sub_State__Chunk_Serialize__Write_Entities);
     return;
 serialize_chunk__inventories:
+    ;
     Process *p_sub_process =
         p_this_process->p_queued_process;
 
@@ -132,6 +135,7 @@ serialize_chunk__inventories:
             p_this_process, 
             Sub_State__Chunk_Serialize__Write_Entities);
 serialize_chunk__entities:
+    ;
 
     // center hitbox to the center of the chunk.
     // Vector__3i32F4 position_of__hitbox_3i32F4 =

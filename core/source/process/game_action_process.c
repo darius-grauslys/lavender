@@ -21,11 +21,11 @@ bool set_game_action_process_as__tcp_payload_receiver(
         return false;
     }
 
-    initialize_serialization_request(
+    activate_serialization_request(
             p_serialization_request, 
             p_payload_destination, 
             quantity_of__bytes_in__payload_destination, 
-            SERIALIZATION_REQUEST_FLAG__IS_TCP_OR_IO);
+            true);
 
     void *p_process_data =
         p_process->p_process_data;
@@ -52,8 +52,9 @@ void complete_game_action_process_for__tcp(
         resolve_game_action(
                 p_game, 
                 (Game_Action *)p_serialization_request->p_data);
+        p_serialization_request->p_data = 0;
     }
-    release_serialization_request(
+    PLATFORM_release_serialization_request(
             get_p_PLATFORM_file_system_context_from__game(p_game), 
             p_serialization_request);
     complete_process(p_process);
@@ -69,10 +70,35 @@ void fail_game_action_process_for__tcp(
                 p_game, 
                 (Game_Action *)p_serialization_request->p_data);
     }
-    release_serialization_request(
+    deactivate_serialization_request(
             get_p_PLATFORM_file_system_context_from__game(p_game), 
             p_serialization_request);
     fail_process(p_process);
+}
+
+Index__u32 get_tcp_packet__bitmap_data(
+        u8 *p_bitmap,
+        Quantity__u16 quantity_of__tcp_packets__anticipated) {
+    Index__u32 index_of__bitmap_byte = 0;
+    for (; index_of__bitmap_byte <
+            TCP_PAYLOAD_BYTE(
+                quantity_of__tcp_packets__anticipated);
+            index_of__bitmap_byte++) {
+        if (p_bitmap[index_of__bitmap_byte] == (u8)-1) {
+            continue;
+        }
+        break;
+    }
+    Index__u32 index_of__bitmap_bit = 0;
+    for (; index_of__bitmap_bit < 8; index_of__bitmap_bit++) {
+        if (p_bitmap[index_of__bitmap_byte]
+                    & BIT(index_of__bitmap_bit)) {
+            continue;
+        }
+        break;
+    }
+    index_of__bitmap_bit += index_of__bitmap_byte << 3;
+    return index_of__bitmap_bit;
 }
 
 ///
@@ -97,17 +123,18 @@ PLATFORM_Read_File_Error poll_game_action_process__tcp_receive(
 #endif
 
     u8 *p_bitmap = p_serialization_request->pM_packet_bitmap;
-    for (Index__u32 index_of__packet = 0;
-            index_of__packet 
-            < p_serialization_request->quantity_of__tcp_packets__anticipated;
-            index_of__packet++) {
-        if (!(p_bitmap[TCP_PAYLOAD_BYTE(index_of__packet)]
-                    & BIT(TCP_PAYLOAD_BIT(index_of__packet)))) {
-            return PLATFORM_Read_File_Error__System_Busy;
-        }
+    Index__u32 index_of__bitmap_bit =
+        get_tcp_packet__bitmap_data(
+                p_bitmap,
+                p_serialization_request
+                ->quantity_of__tcp_packets__anticipated);
+
+    if (index_of__bitmap_bit
+            >= p_serialization_request->quantity_of__tcp_packets__anticipated) {
+        return PLATFORM_Read_File_Error__End_Of_File;
     }
     
-    return PLATFORM_Read_File_Error__End_Of_File;
+    return PLATFORM_Read_File_Error__System_Busy;
 }
 
 ///
@@ -125,24 +152,12 @@ PLATFORM_Write_File_Error poll_game_action_process__tcp_delivery(
         Quantity__u32 quantity_of__bytes_in__payload__source,
         u8 *p_payload__bitmap,
         Quantity__u16 quantity_of__bits_in__payload__bitmap) {
-    Index__u32 index_of__bitmap_byte = 0;
-    for (; index_of__bitmap_byte 
-            < (quantity_of__bits_in__payload__bitmap >> 3);
-            index_of__bitmap_byte++) {
-        if (p_payload__bitmap[index_of__bitmap_byte] == (u8)-1)
-            continue;
-        break;
-    }
-    Index__u32 index_of__bitmap_bit = 0;
-    for (; index_of__bitmap_bit < 8; index_of__bitmap_bit++) {
-        if (p_payload__bitmap[index_of__bitmap_byte] &
-                BIT(index_of__bitmap_bit)) {
-            continue;
-        }
-        break;
-    }
+    u8 *p_bitmap = p_payload__bitmap;
+    Index__u32 index_of__bitmap_bit =
+        get_tcp_packet__bitmap_data(
+                p_bitmap,
+                quantity_of__bits_in__payload__bitmap);
 
-    index_of__bitmap_bit += index_of__bitmap_byte << 3;
     if (index_of__bitmap_bit
             >= quantity_of__bits_in__payload__bitmap) {
         return PLATFORM_Write_File_Error__Max_Size_Reached;
@@ -169,6 +184,9 @@ PLATFORM_Write_File_Error poll_game_action_process__tcp_delivery(
                 * index_of__bitmap_bit), 
             quantity_of__bytes_to__send, 
             index_of__bitmap_bit);
+
+    p_bitmap[TCP_PAYLOAD_BYTE(index_of__bitmap_bit)] |=
+        BIT(TCP_PAYLOAD_BIT(index_of__bitmap_bit));
 
     return PLATFORM_Write_File_Error__System_Busy;
 }

@@ -22,8 +22,9 @@ Collision_Node *get_p_collision_node_by__index_from__collision_node_pool(
 
 void initialize_collision_node_pool(
         Collision_Node_Pool *p_collision_node_pool) {
-    initialize_serialization_header__contiguous_array(
-            (Serialization_Header*)p_collision_node_pool->collision_nodes, 
+    initialize_serialization_header__contiguous_array__uuid_64(
+            (Serialization_Header__UUID_64*)
+                p_collision_node_pool->collision_nodes, 
             QUANTITY_OF__GLOBAL_SPACE, 
             sizeof(Collision_Node));
 }
@@ -31,20 +32,27 @@ void initialize_collision_node_pool(
 Collision_Node *allocate_collision_node_from__collision_node_pool(
         Collision_Node_Pool *p_collision_node_pool,
         Identifier__u64 uuid__u64) {
-    Index__u32 index_of__collision_node =
-        poll_for__uuid_collision__uuid_64(
-                (Serialization_Header__UUID_64*)p_collision_node_pool->collision_nodes, 
+    Collision_Node *p_collision_node =
+        (Collision_Node*)dehash_identitier_u64_in__contigious_array(
+                (Serialization_Header__UUID_64*)
+                    p_collision_node_pool->collision_nodes, 
                 QUANTITY_OF__GLOBAL_SPACE, 
                 uuid__u64);
 
-    if (is_index_u32__out_of_bounds(index_of__collision_node)) {
+    if (!p_collision_node) {
         debug_error("allocate_collision_node_from__collision_node_pool, failed to allocate collision_node.");
         return 0;
     }
+    if (!IS_DEALLOCATED_P__u64(p_collision_node)) {
+        debug_error("allocate_collision_node_from__collision_node_pool, uuid already in use.");
+        return 0;
+    }
 
-    return get_p_collision_node_by__index_from__collision_node_pool(
-            p_collision_node_pool, 
-            index_of__collision_node);
+    initialize_collision_node(
+            p_collision_node, 
+            uuid__u64);
+
+    return p_collision_node;
 }
 
 void release_collision_node_from__collision_node_pool(
@@ -60,8 +68,9 @@ void release_collision_node_from__collision_node_pool(
     }
 #endif
 
-    initialize_collision_node(
-            p_collision_node);
+    initialize_serialization_header_for__deallocated_struct__uuid_64(
+            &p_collision_node->_serialization_header, 
+            sizeof(Collision_Node));
 }
 
 Collision_Node_Entry *get_next_available__collision_node_entry(

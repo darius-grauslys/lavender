@@ -42,7 +42,8 @@ void m_process__game_action__tcp_delivery__inbound(
     Serialization_Request *p_serialization_request =
         (Serialization_Request*)p_process->p_process_data;
 
-    if (p_serialization_request->quantity_of__tcp_packets__anticipated
+    if (!p_serialization_request
+            || p_serialization_request->quantity_of__tcp_packets__anticipated
             <= p_game_action->ga_kind__tcp_delivery__packet_index) {
         debug_error("m_process__game_action__tcp_delivery__inbound, excessive packet.");
         fail_game_action_process(
@@ -71,7 +72,7 @@ void m_process__game_action__tcp_delivery__inbound(
     p_serialization_request
         ->pM_packet_bitmap[TCP_PAYLOAD_BYTE(
                 p_game_action->ga_kind__tcp_delivery__packet_index)] |=
-        TCP_PAYLOAD_BIT(p_game_action->ga_kind__tcp_delivery__packet_index);
+        BIT(TCP_PAYLOAD_BIT(p_game_action->ga_kind__tcp_delivery__packet_index));
 
     complete_game_action_process(
             p_game, 

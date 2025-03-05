@@ -6,6 +6,7 @@
 #include "game_action/game_action_logic_entry.h"
 #include "game_action/game_action_logic_table.h"
 #include "process/game_action_process.h"
+#include "serialization/serialization_header.h"
 #include "world/chunk_pool.h"
 #include "world/global_space.h"
 #include "world/global_space_manager.h"
@@ -46,7 +47,7 @@ void m_process__game_action__global_space__resolve(
     Chunk *p_chunk =
         allocate_chunk_from__chunk_pool(
                 p_chunk_pool, 
-                GET_UUID_P(p_global_space));
+                GET_UUID_P__u64(p_global_space));
 
     if (!p_chunk) {
         debug_error("m_process__game_action__global_space__resolve, p_chunk == 0.");
@@ -62,7 +63,7 @@ void m_process__game_action__global_space__resolve(
     Collision_Node *p_collision_node =
         allocate_collision_node_from__collision_node_pool(
                 p_collision_node_pool,
-                GET_UUID_P(p_global_space));
+                GET_UUID_P__u64(p_global_space));
 
     if (!p_collision_node) {
         debug_error("m_process__game_action__global_space__resolve, p_collision_node == 0.");

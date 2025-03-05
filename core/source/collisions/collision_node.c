@@ -5,9 +5,11 @@
 #include "serialization/serialization_header.h"
 
 void initialize_collision_node(
-        Collision_Node *p_collision_node) {
-    initialize_serialization_header_for__deallocated_struct__uuid_64(
+        Collision_Node *p_collision_node,
+        Identifier__u64 uuid__u64) {
+    initialize_serialization_header__uuid_64(
             &p_collision_node->_serialization_header, 
+            uuid__u64,
             sizeof(Collision_Node));
     p_collision_node->p_linked_list__collision_node_entries__tail = 0;
 }

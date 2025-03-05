@@ -1,4 +1,5 @@
 #include "world/chunk_pool.h"
+#include "defines.h"
 #include "numerics.h"
 #include "platform_defines.h"
 #include "serialization/hashing.h"
@@ -20,30 +21,33 @@ Chunk *get_p_chunk_by__index_from__chunk_pool(
 
 void initialize_chunk_pool(
         Chunk_Pool *p_chunk_pool) {
-    initialize_serialization_header__contiguous_array(
-            (Serialization_Header *)p_chunk_pool->chunks, 
+    initialize_serialization_header__contiguous_array__uuid_64(
+            (Serialization_Header__UUID_64*)p_chunk_pool->chunks, 
             QUANTITY_OF__GLOBAL_SPACE, 
             sizeof(Chunk));
 }
 
 Chunk *allocate_chunk_from__chunk_pool(
         Chunk_Pool *p_chunk_pool,
-        Identifier__u32 uuid__u32) {
+        Identifier__u64 uuid__u64) {
     Chunk *p_chunk =
         (Chunk*)dehash_identitier_u64_in__contigious_array(
                 (Serialization_Header__UUID_64*)p_chunk_pool->chunks, 
                 QUANTITY_OF__GLOBAL_SPACE, 
-                uuid__u32);
+                uuid__u64);
     
     if (!p_chunk) {
         debug_error("allocate_chunk_from__chunk_pool, failed to allocate chunk.");
         return 0;
     }
-    if (!is_serialized_struct__deallocated(
-                &p_chunk->_serialization_header)) {
+    if (!IS_DEALLOCATED_P__u64(p_chunk)) {
         debug_error("allocate_chunk_from__chunk_pool, uuid already in use.");
         return 0;
     }
+
+    initialize_chunk(
+            p_chunk,
+            uuid__u64);
 
     return p_chunk;
 }
@@ -61,5 +65,7 @@ void release_chunk_from__chunk_pool(
     }
 #endif
 
-    initialize_chunk(p_chunk);
+    initialize_serialization_header_for__deallocated_struct__uuid_64(
+            &p_chunk->_serialization_header, 
+            sizeof(Chunk));
 }

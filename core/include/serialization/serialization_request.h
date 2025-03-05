@@ -4,22 +4,25 @@
 #include "defines_weak.h"
 #include <defines.h>
 
+void initialize_serialization_request(
+        Serialization_Request *p_serialization_request);
+
 ///
 /// Either p_file_handler is non-null,
 /// or the value of size_of__tcp_payload is meant to be set.
 ///
+/// WARNING: be sure to >>DEACTIVATE<< before calling this a
+/// second time on the same request. You will leak memory otherwise!
+///
 /// Returns false if fails to allocate tcp packet bitmap, pM_packet_bitmap
 ///
-bool initialize_serialization_request(
+bool activate_serialization_request(
         Serialization_Request *p_serialization_request,
-        void *p_file_handler_or__tcp_destination,
+        void *p_file_handler,
         Quantity__u16 size_of__tcp_payload,
-        Serialization_Request_Flags serialization_request_flags);
+        bool is_serialization_request__tcp_or__io);
 
-void initialize_serialization_request_as__uninitalized(
-        Serialization_Request *p_serialization_request);
-
-void release_serialization_request(
+void deactivate_serialization_request(
         PLATFORM_File_System_Context *p_PLATFORM_file_system_context,
         Serialization_Request *p_serialization_request);
 

@@ -31,7 +31,10 @@
 /// USE BIT(n)
 ///
 #define MAX_SIZE_OF__TCP_PACKET BIT(9)
-#define MAX_QUANTITY_OF__TCP_PACKETS_PER__SOCKET 256
+///
+/// >>MUST<< be a power of 2!
+///
+#define MAX_QUANTITY_OF__TCP_PACKETS_PER__SOCKET BIT(8)
 
 ///
 /// Destination has run out of space. Need more space

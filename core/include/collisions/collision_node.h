@@ -6,7 +6,8 @@
 #include "serialization/serialization_header.h"
 
 void initialize_collision_node(
-        Collision_Node *p_collision_node);
+        Collision_Node *p_collision_node,
+        Identifier__u64 uuid__u64);
 
 void add_entry_to__collision_node(
         Collision_Node_Pool *p_collision_node_pool,

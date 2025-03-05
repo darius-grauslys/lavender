@@ -10,11 +10,70 @@
 #include "multiplayer/tcp_socket.h"
 #include "multiplayer/tcp_socket_manager.h"
 #include "platform.h"
+#include "serialization/serialization_header.h"
 #include "world/chunk_pool.h"
 #include "world/world.h"
 #include "world/global_space_manager.h"
 #include "world/global_space.h"
 #include "process/game_action_process.h"
+
+void m_process__game_action__global_space__request__outbound_server(
+        Process *p_this_process,
+        Game *p_game) {
+    Game_Action *p_game_action =
+        (Game_Action*)p_this_process->p_process_data;
+
+    Global_Space_Vector__3i32 *p_gsv__3i32 =
+        &p_game_action->ga_kind__global_space__request__gsv_3i32;
+
+    Global_Space_Manager *p_global_space_manager =
+        get_p_global_space_manager_from__world(
+                get_p_world_from__game(p_game));
+
+    Global_Space *p_global_space =
+        get_p_global_space_from__global_space_manager(
+                p_global_space_manager, 
+                *p_gsv__3i32);
+
+    if (!p_global_space) {
+        // TODO: relay failure to client somehow
+        //
+        //       the client is requesting a global_space
+        //       for a region that isn't loaded, which
+        //       means the client has lost track of their
+        //       true position relative to the server's state.
+        debug_error("m_process__game_action__global_space__request__outbound_server, bad request.");
+        fail_game_action_process(
+                p_game, 
+                p_this_process);
+        return;
+    }
+
+    if (is_global_space__deconstructing(
+                p_global_space)) {
+        // TODO: relay failure to client somehow
+        //
+        //       the client is requesting a global_space
+        //       for a region that is BEING unloaded, which
+        //       means either one of two things:
+        //          1) the client has lost track of their
+        //          true position relative to the server's state.
+        //          2) the client's request is outdated
+        //          and no longer needs to be processed.
+        debug_error("m_process__game_action__global_space__request__outbound_server, bad request.");
+        fail_game_action_process(
+                p_game, 
+                p_this_process);
+        return;
+    }
+
+    dispatch_game_action__global_space__resolve(
+            p_game, 
+            p_game_action->ga_kind__global_space__request__gsv_3i32);
+    complete_game_action_process(
+            p_game, 
+            p_this_process);
+}
 
 void m_process__game_action__global_space__request__inbound_server(
         Process *p_this_process,
@@ -28,17 +87,6 @@ void m_process__game_action__global_space__request__inbound_server(
     Global_Space_Manager *p_global_space_manager =
         get_p_global_space_manager_from__world(
                 get_p_world_from__game(p_game));
-
-    if (is_game_action__local(p_game_action)
-            && is_game_action__inbound(p_game_action)) {
-        dispatch_game_action__global_space__resolve(
-                p_game, 
-                p_game_action->ga_kind__global_space__request__gsv_3i32);
-        complete_game_action_process(
-                p_game, 
-                p_this_process);
-        return;
-    }
 
     Global_Space *p_global_space =
         get_p_global_space_from__global_space_manager(
@@ -105,6 +153,23 @@ void m_process__game_action__global_space__request__inbound_server(
     complete_game_action_process(
             p_game, 
             p_this_process);
+}
+
+void m_process__game_action__global_space__request__inbound_server__init(
+        Process *p_this_process,
+        Game *p_game) {
+    Game_Action *p_game_action =
+        (Game_Action*)p_this_process->p_process_data;
+
+    memset(
+            p_game_action
+            ->ga_kind__global_space__request__chunk_payload_bitmap,
+            0,
+            sizeof(p_game_action
+                ->ga_kind__global_space__request__chunk_payload_bitmap));
+
+    p_this_process->m_process_run__handler =
+        m_process__game_action__global_space__request__inbound_server;
 }
 
 ///
@@ -197,13 +262,13 @@ void m_process__game_action__global_space__request__outbound_client__init(
         allocate_chunk_from__chunk_pool(
                 get_p_chunk_pool_from__world(
                     get_p_world_from__game(p_game)), 
-                GET_UUID_P(p_global_space));
+                GET_UUID_P__u64(p_global_space));
 
     Collision_Node *p_collision_node =
         allocate_collision_node_from__collision_node_pool(
                 get_p_collision_node_pool_from__world(
                     get_p_world_from__game(p_game)), 
-                GET_UUID_P(p_global_space));
+                GET_UUID_P__u64(p_global_space));
 
     p_global_space->p_chunk = p_chunk;
     p_global_space->p_collision_node = p_collision_node;
@@ -256,9 +321,9 @@ void register_game_action__global_space__request_for__server(
             | GAME_ACTION_FLAGS__BIT_IS_WITH_PROCESS
             | GAME_ACTION_FLAGS__BIT_IS_PROCESSED_ON_INVOCATION_OR_RESPONSE,
             GAME_ACTION_FLAG_MASK__INBOUND_SANITIZE,
-            m_process__game_action__global_space__request__inbound_server, 
+            m_process__game_action__global_space__request__outbound_server, 
             PROCESS_FLAGS__NONE,
-            m_process__game_action__global_space__request__inbound_server, 
+            m_process__game_action__global_space__request__inbound_server__init, 
             PROCESS_FLAGS__NONE);
 }
 

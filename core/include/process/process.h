@@ -17,7 +17,8 @@ void initialize_process_as__empty_process(
         Process *p_process) {
     initialize_process(
             p_process, 
-            IDENTIFIER__UNKNOWN__u32, 0, 0, 
+            IDENTIFIER__UNKNOWN__u32, 
+            0, 0, 
             PROCESS_FLAGS__NONE);
 }
 
@@ -37,6 +38,10 @@ void initialize_process_as__serialized_process(
             | PROCESS_FLAG__IS_CRITICAL);
 }
 
+///
+/// NOTE: be sure to release your p_process_data
+/// as it will be lost following this call.
+///
 static inline
 void complete_process(
         Process *p_process) {
@@ -48,8 +53,13 @@ void complete_process(
 #endif
     p_process->the_kind_of_status__this_process_has =
         Process_Status_Kind__Complete;
+    p_process->p_process_data = 0;
 }
 
+///
+/// NOTE: be sure to release your p_process_data
+/// as it will be lost following this call.
+///
 static inline
 void fail_process(
         Process *p_process) {
@@ -61,6 +71,7 @@ void fail_process(
 #endif
     p_process->the_kind_of_status__this_process_has =
         Process_Status_Kind__Fail;
+    p_process->p_process_data = 0;
 }
 
 static inline

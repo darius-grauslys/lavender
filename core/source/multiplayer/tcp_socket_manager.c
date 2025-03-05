@@ -166,8 +166,7 @@ TCP_Socket *open_server_socket_on__tcp_socket_manager__ipv4(
             sizeof(TCP_Packet)
             * MAX_QUANTITY_OF__TCP_PACKETS_PER__SOCKET);
     p_tcp_socket->index_of__enqueue_begin = 0;
-    p_tcp_socket->index_of__enqueue_end = 
-        MAX_QUANTITY_OF__TCP_PACKETS_PER__SOCKET - 1;
+    p_tcp_socket->quantity_of__received_packets = 0;
     
     // TODO: to here.
 

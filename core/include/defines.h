@@ -1153,7 +1153,7 @@ typedef struct TCP_Socket_t {
     IPv4_Address tcp_socket__address;
     PLATFORM_TCP_Socket *p_PLATFORM_tcp_socket;
     Index__u32 index_of__enqueue_begin;
-    Index__u32 index_of__enqueue_end;
+    Quantity__u32 quantity_of__received_packets;
     TCP_Socket_State tcp_socket__state_of;
     TCP_Socket_Flags__u8 tcp_socket_flags__u8;
 } TCP_Socket;
@@ -2012,7 +2012,7 @@ typedef struct Chunk_t {
     ///
     /// Do not interact with this.
     ///
-    Serialization_Header    _serialization_header;
+    Serialization_Header__UUID_64    _serialization_header;
 
     Tile tiles[CHUNK__WIDTH * CHUNK__HEIGHT * CHUNK__DEPTH];
     Chunk_Flags chunk_flags;

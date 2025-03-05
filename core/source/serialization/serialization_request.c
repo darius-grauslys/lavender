@@ -3,20 +3,31 @@
 #include "defines_weak.h"
 #include "platform.h"
 
-bool initialize_serialization_request(
+void initialize_serialization_request(
+        Serialization_Request *p_serialization_request) {
+    memset(p_serialization_request,
+            0,
+            sizeof(Serialization_Request));
+    p_serialization_request->serialization_request_flags =
+        SERIALIZATION_REQUEST_FLAGS__NONE;
+}
+
+bool activate_serialization_request(
         Serialization_Request *p_serialization_request,
         void *p_file_handler,
         Quantity__u16 size_of__tcp_payload,
-        Serialization_Request_Flags serialization_request_flags) {
-    p_serialization_request
-        ->serialization_request_flags = serialization_request_flags;
+        bool is_serialization_request__tcp_or__io) {
 
-    if (!is_serialization_request__tcp_or_io(
-                p_serialization_request)) {
+    if (!is_serialization_request__tcp_or__io) {
         p_serialization_request
             ->p_file_handler = p_file_handler;
+        set_serialization_request_as__io(
+                p_serialization_request);
         return true;
     }
+
+    set_serialization_request_as__tcp(
+            p_serialization_request);
 
     Quantity__u16 quantity_of__expected__tcp_packets =
         (size_of__tcp_payload
@@ -53,23 +64,16 @@ bool initialize_serialization_request(
     return true;
 }
 
-void release_serialization_request(
+void deactivate_serialization_request(
         PLATFORM_File_System_Context *p_PLATFORM_file_system_context,
         Serialization_Request *p_serialization_request) {
     if (is_serialization_request__tcp_or_io(
-                p_serialization_request)) {
+                p_serialization_request)
+            && p_serialization_request->pM_packet_bitmap) {
         free(p_serialization_request->pM_packet_bitmap);
+        p_serialization_request->pM_packet_bitmap = 0;
     }
     PLATFORM_release_serialization_request(
             p_PLATFORM_file_system_context, 
             p_serialization_request);
-}
-
-void initialize_serialization_request_as__uninitalized(
-        Serialization_Request *p_serialization_request) {
-    initialize_serialization_request(
-            p_serialization_request, 
-            0,
-            0,
-            SERIALIZATION_REQUEST_FLAGS__NONE);
 }

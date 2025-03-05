@@ -10,7 +10,9 @@
 #include "tile.h"
 #include "vectors.h"
 
-void initialize_chunk(Chunk *p_chunk);
+void initialize_chunk(
+        Chunk *p_chunk,
+        Identifier__u64 uuid__u64);
 
 void m_process__serialize_chunk(
         Process *p_this_process,
