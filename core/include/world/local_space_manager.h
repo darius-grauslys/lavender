@@ -3,6 +3,7 @@
 
 #include "defines.h"
 #include "defines_weak.h"
+#include "vectors.h"
 
 void initialize_local_space_manager(
         Local_Space_Manager *p_local_space_manager,
@@ -35,5 +36,18 @@ void poll_local_space_for__scrolling(
 bool is_vector_3i32F4_within__local_space_manager(
         Local_Space_Manager *p_local_space_manager,
         Vector__3i32F4 vector_3i32F4);
+
+static inline
+void load_local_space_manager_at__global_space_vector__3i32(
+        Local_Space_Manager *p_local_space_manager,
+        Game *p_game,
+        Global_Space_Vector__3i32 global_space_vector__3i32) {
+    p_local_space_manager->center_of__local_space_manager__3i32 =
+        VECTOR__3i32__OUT_OF_BOUNDS;
+    set_center_of__local_space_manager(
+            p_local_space_manager, 
+            p_game, 
+            global_space_vector__3i32);
+}
 
 #endif

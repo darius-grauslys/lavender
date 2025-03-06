@@ -2,7 +2,7 @@
 
 #include <input/input.c>
 
-#warning Please make tests for: /home/shalidor/Projects/AncientsGame/tests/core/source/input/test_suite_input_input.c
+#warning Please make tests for: /home/shalidor/Projects/Lavender/tests/core/source/input/test_suite_input_input.c
 
 // Before writing any tests, please see the README
 // found in ./tests

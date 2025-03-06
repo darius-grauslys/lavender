@@ -177,6 +177,42 @@ void set_center_of__local_space_manager(
         Local_Space_Manager *p_local_space_manager,
         Game *p_game,
         Global_Space_Vector__3i32 center_of__local_space_manager__3i32) {
+    if (is_vectors_3i32__equal(
+                p_local_space_manager
+                ->center_of__local_space_manager__3i32, 
+                center_of__local_space_manager__3i32)) {
+        return;
+    }
+    
+    Global_Space_Vector__3i32 distance_manhattan__3i32 =
+        subtract_vectors__3i32(
+                p_local_space_manager
+                ->center_of__local_space_manager__3i32, 
+                center_of__local_space_manager__3i32);
+
+    // TODO: z
+
+    if ((u32)distance_manhattan__3i32.x__i32 + 1 < 3
+            && (u32)distance_manhattan__3i32.y__i32 + 1 < 3) {
+        Direction__u8 direction = DIRECTION__NONE;
+        if (distance_manhattan__3i32.x__i32 < 0)
+            direction |= DIRECTION__WEST;
+        else if (distance_manhattan__3i32.x__i32 > 0)
+            direction |= DIRECTION__EAST;
+
+        if (distance_manhattan__3i32.y__i32 < 0)
+            direction |= DIRECTION__SOUTH;
+        else if (distance_manhattan__3i32.y__i32 > 0)
+            direction |= DIRECTION__NORTH;
+
+        move_local_space_manager(
+                p_local_space_manager, 
+                p_game, 
+                direction);
+
+        return;
+    }
+
     drop_all__local_spaces_in__local_space_manager(
             p_local_space_manager,
             p_game);
@@ -186,6 +222,10 @@ void set_center_of__local_space_manager(
     hold_all__unheld_local_spaces_in__local_space_manager(
             p_local_space_manager,
             p_game);
+
+    p_local_space_manager
+        ->center_of__local_space_manager__3i32 =
+        center_of__local_space_manager__3i32;
 }
 
 static inline
@@ -310,6 +350,9 @@ void move_local_space_manager(
         Game *p_game,
         Direction__u8 direction__u8) {
     if (direction__u8 & DIRECTION__NORTH) {
+        p_local_space_manager->center_of__local_space_manager__3i32
+            .y__i32++;
+
         move_p_ptr_local_space__north(
                 &p_local_space_manager->p_local_space__north_east);
         move_p_ptr_local_space__north(
@@ -326,6 +369,9 @@ void move_local_space_manager(
                 DIRECTION__EAST);
     }
     else if (direction__u8 & DIRECTION__SOUTH) {
+        p_local_space_manager->center_of__local_space_manager__3i32
+            .y__i32--;
+
         move_p_ptr_local_space__south(
                 &p_local_space_manager->p_local_space__north_east);
         move_p_ptr_local_space__south(
@@ -342,6 +388,9 @@ void move_local_space_manager(
                 DIRECTION__EAST);
     }
     if (direction__u8 & DIRECTION__EAST) {
+        p_local_space_manager->center_of__local_space_manager__3i32
+            .x__i32++;
+
         move_p_ptr_local_space__east(
                 &p_local_space_manager->p_local_space__north_east);
         move_p_ptr_local_space__east(
@@ -358,6 +407,9 @@ void move_local_space_manager(
                 DIRECTION__SOUTH);
     }
     else if (direction__u8 & DIRECTION__WEST) {
+        p_local_space_manager->center_of__local_space_manager__3i32
+            .x__i32--;
+
         move_p_ptr_local_space__west(
                 &p_local_space_manager->p_local_space__north_east);
         move_p_ptr_local_space__west(

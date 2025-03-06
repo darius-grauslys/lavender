@@ -50,6 +50,9 @@ void m_process__game_action__global_space__store(
         release_chunk_from__chunk_pool(
                 p_chunk_pool, 
                 p_chunk);
+        set_chunk_for__global_space(
+                p_global_space, 
+                0);
     }
 
     Collision_Node *p_collision_node =
@@ -59,6 +62,9 @@ void m_process__game_action__global_space__store(
         release_collision_node_from__collision_node_pool(
                 p_collision_node_pool, 
                 p_collision_node);
+        set_collision_node_for__global_space(
+                p_global_space, 
+                0);
     }
 
     release_global_space_in__global_space_manager(

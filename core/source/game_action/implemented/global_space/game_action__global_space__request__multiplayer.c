@@ -67,12 +67,12 @@ void m_process__game_action__global_space__request__outbound_server(
         return;
     }
 
-    dispatch_game_action__global_space__resolve(
-            p_game, 
-            p_game_action->ga_kind__global_space__request__gsv_3i32);
     complete_game_action_process(
             p_game, 
             p_this_process);
+    dispatch_game_action__global_space__resolve(
+            p_game, 
+            p_game_action->ga_kind__global_space__request__gsv_3i32);
 }
 
 void m_process__game_action__global_space__request__inbound_server(

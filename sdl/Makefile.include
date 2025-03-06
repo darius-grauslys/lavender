@@ -1,0 +1,22 @@
+export INCLUDE_PLATFORM := $(BASE_DIR)/sdl/include
+export SOURCE_PLATFORM := $(BASE_DIR)/sdl/source
+
+export INCLUDE_SDL := $(BASE_DIR)/sdl/include
+export SOURCE_SDL := $(BASE_DIR)/sdl/source
+
+ifeq ($(PLATFORM_OMIT),)
+export CFILES_SDL != realpath --relative-to=$(SOURCE_SDL) $$(find $(SOURCE_SDL) -name *.c)
+else
+export CFILES_SDL != realpath --relative-to=$(SOURCE_SDL) $$(find $(SOURCE_SDL) -name *.c ! -name $(PLATFORM_OMIT))
+endif
+export CFILES_PLATFORM = $(CFILES_SDL)
+export OFILES_SDL := $(CFILES_SDL:.c=.o)
+export OFILES_PLATFORM = $(OFILES_SDL)
+
+export SHARED_SPRITE_FILES := $(foreach sprite_dir,$(SPRITE_DIRS),$(sprite_dir)/GFX_$(shell basename $(sprite_dir)).o)
+
+ifeq ($(OS),Windows_NT)
+export PLATFORM_LIBS	+= -lopengl32 -lglew32 -lSDL2 -lcglm -lwinmm
+else
+export PLATFORM_LIBS	+= -lGL -lGLEW -lSDL2 -lcglm
+endif

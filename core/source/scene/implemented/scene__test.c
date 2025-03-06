@@ -65,35 +65,35 @@ void m_load_scene__test(
             55566);
 #else
     allocate_client_pool_for__game(p_game, 1);
-    begin_multiplayer_for__game(
-            p_game,
-            m_poll_tcp_socket_manager_as__client__default);
+    // begin_multiplayer_for__game(
+    //         p_game,
+    //         m_poll_tcp_socket_manager_as__client__default);
     Client *p_client = allocate_client_from__game(
             p_game, 
             0);
-    IPv4_Address addr;
-    addr.ip_bytes[0] = 127;
-    addr.ip_bytes[1] = 0;
-    addr.ip_bytes[2] = 0;
-    addr.ip_bytes[3] = 1;
-    addr.port = 55566;
-    dispatch_game_action__connect__begin(
-            p_game, 
-            addr);
-    TCP_Socket *p_tcp_socket;
-    do {
-        poll_process_manager(
-                get_p_process_manager_from__game(p_game), 
-                p_game);
-        p_tcp_socket =
-            get_p_tcp_socket_for__this_uuid(
-                    get_p_tcp_socket_manager_from__game(p_game), 
-                    GET_UUID_P(p_client));
-        if (!p_tcp_socket)
-            continue;
-    } while(!p_tcp_socket
-            || poll_tcp_socket_for__connection(p_tcp_socket)
-                != TCP_Socket_State__Authenticated);
+    // IPv4_Address addr;
+    // addr.ip_bytes[0] = 127;
+    // addr.ip_bytes[1] = 0;
+    // addr.ip_bytes[2] = 0;
+    // addr.ip_bytes[3] = 1;
+    // addr.port = 55566;
+    // dispatch_game_action__connect__begin(
+    //         p_game, 
+    //         addr);
+    // TCP_Socket *p_tcp_socket;
+    // do {
+    //     poll_process_manager(
+    //             get_p_process_manager_from__game(p_game), 
+    //             p_game);
+    //     p_tcp_socket =
+    //         get_p_tcp_socket_for__this_uuid(
+    //                 get_p_tcp_socket_manager_from__game(p_game), 
+    //                 GET_UUID_P(p_client));
+    //     if (!p_tcp_socket)
+    //         continue;
+    // } while(!p_tcp_socket
+    //         || poll_tcp_socket_for__connection(p_tcp_socket)
+    //             != TCP_Socket_State__Authenticated);
     load_p_PLATFORM_texture_from__path_with__alias(
             get_p_PLATFORM_gfx_context_from__game(p_game), 
             0, 
@@ -280,7 +280,7 @@ void m_enter_scene__test(
     };
 #endif
 
-    set_center_of__local_space_manager(
+    load_local_space_manager_at__global_space_vector__3i32(
             get_p_local_space_manager_from__client(p_client), 
             p_game,
             VECTOR__3i32__0_0_0);
@@ -322,6 +322,15 @@ void m_enter_scene__test(
                 ->position
                 .x__i32F4 -= 0b1000;
         }
+
+        set_center_of__local_space_manager(
+                get_p_local_space_manager_from__client(
+                    p_client), 
+                p_game, 
+                vector_3i32F4_to__chunk_vector_3i32(
+                    p_gfx_window__world
+                    ->p_camera
+                    ->position));
         
         PLATFORM_compose_world(
                 get_p_gfx_context_from__game(p_game), 

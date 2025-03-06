@@ -20,40 +20,56 @@
 export ancientsgame_base_dir=$(realpath "../")
 export ancientsgame_core_dir=$(realpath "../core/source")
 export ancientsgame_nds_dir=$(realpath "../nds/source")
-export ancientsgame_unix_opengl_dir=$(realpath "../unix_opengl/source")
+export ancientsgame_sdl_dir=$(realpath "../sdl/source")
 
 gen_main() {
     find $2 -iname test_suite_main.c -exec sed -i "s/#include <main.c>//" {} \;
     output="$2/main.c"
-    printf "#include <MAIN_TEST_SUITE_ANCIENTS_GAME.h>
+    printf "#include <MAIN_TEST_SUITE__CORE_ANCIENTS_GAME.h>
 
 int main(int argc, char* argv[MUNIT_ARRAY_PARAM(argc + 1)]) {
     MunitSuite test_suite;
 
-    include_test_suite__ANCIENTS_GAME(&test_suite);
+    include_test_suite__CORE_ANCIENTS_GAME(&test_suite);
 
     return munit_suite_main(&test_suite, (void*) \"µnit\", argc, argv);
 }\n" > $output
     cp ./templates/test_util.h "$1/test_util.h"
     cp ./templates/munit.h "$1/munit.h"
     cp ./templates/munit.c "$2/munit.c"
-    if ! test -f "$1/platform_defines.h"; then
-        cp ./templates/platform_defines.h "$1/platform_defines.h"
-    fi
-    if ! test -f "$2/PLATFORM.c"; then
-        cp ./templates/PLATFORM.c "$2/PLATFORM.c"
-    fi
+    # if ! test -f "$1/platform_defines.h"; then
+    #     cp ./templates/platform_defines.h "$1/platform_defines.h"
+    # fi
+    # if ! test -f "$2/PLATFORM.c"; then
+    #     cp ./templates/PLATFORM.c "$2/PLATFORM.c"
+    # fi
 }
 
 update () {
+    mkdir -p ./core/include
+    mkdir -p ./core/source
     core_include=$(realpath "./core/include")
     core_source=$(realpath "./core/source")
     ./update_recursive.sh \
         $ancientsgame_core_dir \
         "" \
         $core_include \
-        $core_source
+        $core_source \
+        "core"
     gen_main $core_include $core_source
 }
 
-update 
+update
+
+if [ "$1" ]; then
+    mkdir -p ./$1/include
+    mkdir -p ./$1/source
+    ./update_recursive.sh \
+        $(eval echo \$ancientsgame_$1_dir) \
+        "" \
+        $1/include \
+        $1/source \
+        $1
+    exit 
+fi
+

@@ -1,0 +1,10 @@
+#include <collisions/MAIN_TEST_SUITE__CORE_COLLISIONS.h>
+
+INCLUDE_SUB_SUITES(CORE_COLLISIONS, 5,
+INCLUDE_SUITE(collision_node),
+INCLUDE_SUITE(hitbox_aabb),
+INCLUDE_SUITE(collision_node_pool),
+INCLUDE_SUITE(hitbox_aabb_manager),NULL);
+
+DEFINE_SUITE_WITH__SUB_SUITES(CORE_COLLISIONS, END_TESTS);
+

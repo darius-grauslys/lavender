@@ -19,6 +19,7 @@ search_base_dir=$1
 search_suffix=$2
 output_base_dir__include=$3
 output_base_dir__source=$4
+tree_name="${5^^}"
 
 if [ "$search_suffix" == "" ]; then
     main_suite_dir__include="${output_base_dir__include}";
@@ -35,12 +36,12 @@ mkdir -p $main_suite_dir__source
 # the name of the test_suite dedicated for
 # the entire directory
 if [ "$search_suffix" == "" ]; then
-    main_suite_name="ANCIENTS_GAME"
-    main_suite_name__full="MAIN_TEST_SUITE_ANCIENTS_GAME"
+    main_suite_name="${tree_name}_ANCIENTS_GAME"
+    main_suite_name__full="MAIN_TEST_SUITE__${tree_name}_ANCIENTS_GAME"
 else
     main_suite_name=$(realpath --relative-to=$search_base_dir $search_base_dir/$search_suffix | sed "s/\//_/g")
-    main_suite_name="${main_suite_name~~}"
-    main_suite_name__full="MAIN_TEST_SUITE_${main_suite_name}"
+    main_suite_name="${tree_name}_${main_suite_name~~}"
+    main_suite_name__full="MAIN_TEST_SUITE__${main_suite_name}"
 fi
 
 # the output file paths for the main test_suite
@@ -110,9 +111,9 @@ for dir in $subdirs; do
     module_count=$((module_count+1))
     dir_basename=$(basename $dir)
     dir_relative_name=$(realpath --relative-to=$search_base_dir $dir | sed "s/\//_/g")
-    printf "#include \"${dir_basename}/MAIN_TEST_SUITE_${dir_relative_name~~}.h\"\n" \
+    printf "#include \"${dir_basename}/MAIN_TEST_SUITE__${tree_name}_${dir_relative_name~~}.h\"\n" \
         >> $main_test_suite__header
-    printf "\nINCLUDE_SUITE(${dir_relative_name~~})," \
+    printf "\nINCLUDE_SUITE(${tree_name}_${dir_relative_name~~})," \
         >> $main_test_suite__source
 done
 printf "\n#include <test_util.h>
@@ -130,12 +131,14 @@ for dir in $subdirs; do
             $search_base_dir \
             \"${search_suffix}${dir_basename}\" \
             \"${output_base_dir__include}\" \
-            \"${output_base_dir__source}\""
+            \"${output_base_dir__source}\" \
+            \"${tree_name}\""
     else
         sh -c "./update_recursive.sh \
             $search_base_dir \
             \"${search_suffix}/${dir_basename}\" \
             \"${output_base_dir__include}\" \
-            \"${output_base_dir__source}\""
+            \"${output_base_dir__source}\" \
+            \"${tree_name}\""
     fi
 done

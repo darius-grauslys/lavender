@@ -1,0 +1,11 @@
+#include <serialization/MAIN_TEST_SUITE__CORE_SERIALIZATION.h>
+
+INCLUDE_SUB_SUITES(CORE_SERIALIZATION, 6,
+INCLUDE_SUITE(game_directory),
+INCLUDE_SUITE(serialization_request),
+INCLUDE_SUITE(serialization_header),
+INCLUDE_SUITE(serialized_field),
+INCLUDE_SUITE(hashing),NULL);
+
+DEFINE_SUITE_WITH__SUB_SUITES(CORE_SERIALIZATION, END_TESTS);
+

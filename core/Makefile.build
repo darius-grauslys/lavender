@@ -6,6 +6,7 @@ $(OFILES_CORE:.c=.o):
 	@$(ADD_COMPILE_COMMAND) add $(CC) "$(CFLAGS) $(LIBS) $(INCLUDE) $(FLAGS) \
 		-o $(BUILD)/$@ -c $(SOURCE_CORE)/$(@:.o=.c)" $(BUILD)/$@
 
+#TODO: move this to nds/Makefile.build
 ifneq ($(BUILD), $(BUILD_NDS))
 
 #---------------------------------------------------------------------------------

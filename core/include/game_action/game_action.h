@@ -36,9 +36,10 @@ Game_Action_Kind get_kind_of__game_action(
 
 static inline
 bool is_game_action__allocated(Game_Action *p_game_action) {
-    return p_game_action->game_action_flags
-        & GAME_ACTION_FLAGS__BIT_IS_ALLOCATED
-        ;
+    return p_game_action 
+        && p_game_action->game_action_flags
+            & GAME_ACTION_FLAGS__BIT_IS_ALLOCATED
+            ;
 }
 
 static inline
@@ -58,21 +59,21 @@ void set_game_action_as__deallocated(Game_Action *p_game_action) {
 static inline
 bool is_game_action__inbound(Game_Action *p_game_action) {
     return p_game_action->game_action_flags
-        & GAME_ACTION_FLAGS__BIT_IS_OUT_OR__IN_BOUND
+        & GAME_ACTION_FLAGS__BIT_IS_IN_OR__OUT_BOUND
         ;
 }
 
 static inline
 void set_game_action_as__inbound(Game_Action *p_game_action) {
     p_game_action->game_action_flags |=
-        GAME_ACTION_FLAGS__BIT_IS_OUT_OR__IN_BOUND
+        GAME_ACTION_FLAGS__BIT_IS_IN_OR__OUT_BOUND
         ;
 }
 
 static inline
 void set_game_action_as__outbound(Game_Action *p_game_action) {
     p_game_action->game_action_flags &=
-        ~GAME_ACTION_FLAGS__BIT_IS_OUT_OR__IN_BOUND
+        ~GAME_ACTION_FLAGS__BIT_IS_IN_OR__OUT_BOUND
         ;
 }
 

@@ -10,12 +10,15 @@ void m_process__game_action__global_space__request__outbound_offline(
         Game *p_game) {
     Game_Action *p_game_action =
         (Game_Action*)p_this_process->p_process_data;
-    dispatch_game_action__global_space__resolve(
-            p_game, 
-            p_game_action->ga_kind__global_space__request__gsv_3i32);
+    Vector__3i32 gsv__3i32 =
+        p_game_action
+        ->ga_kind__global_space__request__gsv_3i32;
     complete_game_action_process(
             p_game,
             p_this_process);
+    dispatch_game_action__global_space__resolve(
+            p_game, 
+            gsv__3i32);
 }
 
 void register_game_action__global_space__request_for__offline(

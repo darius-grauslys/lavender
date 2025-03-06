@@ -1,0 +1,10 @@
+#include "test_suite_game_action_implemented_tcp_game_action__tcp_connect.h"
+#include "test_suite_game_action_implemented_tcp_game_action__tcp_connect__accept.h"
+#include "test_suite_game_action_implemented_tcp_game_action__tcp_delivery.h"
+#include "test_suite_game_action_implemented_tcp_game_action__tcp_begin_connect.h"
+#include "test_suite_game_action_implemented_tcp_game_action__tcp_connect__reject.h"
+
+#include <test_util.h>
+
+DECLARE_SUITE(CORE_GAME_ACTION_IMPLEMENTED_TCP);
+

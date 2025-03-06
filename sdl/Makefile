@@ -9,25 +9,15 @@ export CC := gcc
 export LD := $(CC)
 
 include $(BASE_DIR)/core/Makefile.include
-export SOURCE_SDL := $(CURDIR)/source
-
-export CFILES_SDL != realpath --relative-to=$(SOURCE_SDL) $$(find $(SOURCE_SDL) -name *.c)
-
-export SHARED_SPRITE_FILES := $(foreach sprite_dir,$(SPRITE_DIRS),$(sprite_dir)/GFX_$(shell basename $(sprite_dir)).o)
-
-export OFILES_SDL := $(CFILES_SDL:.c=.o)
+include $(CURDIR)/Makefile.include
 export OFILES := $(SPRITE_FILES:.png=.o) \
 	$(SHARED_SPRITE_FILES) \
 	$(OFILES_CORE) $(OFILES_SDL)
 
 export CFLAGS := -march=$(shell uname -m | sed "s/_/-/")
 
-export INCLUDES := $(INCLUDE_CORE) $(BASE_DIR)/sdl/include
-ifeq ($(OS),Windows_NT)
-export LIBS		:= -lm -lopengl32 -lglew32 -lSDL2 -lcglm -lwinmm
-else
-export LIBS		:= -lm -lGL -lGLEW -lSDL2 -lcglm
-endif
+export INCLUDES := $(INCLUDE_CORE) $(INCLUDE_SDL)
+export LIBS		:= $(PLATFORM_LIBS)
 
 export DEPSDIR := $(BUILD)
 
@@ -61,12 +51,7 @@ ancients_game: $(OFILES) $(SPRITE_FILES)
 	$(SILENT)$(LD) $(LDFLAGS) $(FLAGS_LINKER) $(OFILES) $(LIBPATHS) $(LIBS) -o $@
 	@$(ADD_COMPILE_COMMAND) end
 
-$(OFILES_SDL):
-	$(SILENTCMD)mkdir -p $(BUILD)/$$(dirname $@)
-	$(SILENTCMD)$(CC) $(LIBS) $(INCLUDE) $(FLAGS) -o $(BUILD)/$@ -c $(SOURCE_SDL)/$(@:.o=.c) 
-	@$(ADD_COMPILE_COMMAND) add $(CC) "$(CFLAGS) $(LIBS) $(INCLUDE) $(FLAGS) \
-		-o $(BUILD)/$@ -c $(SOURCE_CORE)/$(@:.o=.c)" $(BUILD)/$@
-
+include $(BASE_DIR)/sdl/Makefile.build
 include $(BASE_DIR)/core/Makefile.build
 
 $(SPRITE_DIRS): 

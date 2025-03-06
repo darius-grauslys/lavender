@@ -2,7 +2,7 @@
 
 #include <world/tile.c>
 
-#warning Please make tests for: /home/shalidor/Projects/AncientsGame/tests/core/source/world/test_suite_world_tile.c
+#warning Please make tests for: /home/shalidor/Projects/Lavender/tests/core/source/world/test_suite_world_tile.c
 
 // Before writing any tests, please see the README
 // found in ./tests

@@ -47,6 +47,10 @@ Game_Action *allocate_game_action_with__this_uuid_from__game_action_manager(
                     ->game_actions, 
                 MAX_QUANTITY_OF__GAME_ACTIONS, 
                 uuid);
+    if (!p_game_action) {
+        debug_error("allocate_game_action_from__game_action_manager, failed to allocate game action.");
+        return 0;
+    }
     if (!IS_DEALLOCATED_P(p_game_action)) {
         debug_error("allocate_game_action_from__game_action_manager, uuid already in use.");
         return 0;
@@ -56,6 +60,31 @@ Game_Action *allocate_game_action_with__this_uuid_from__game_action_manager(
             &p_game_action->_serialiation_header, 
             uuid, 
             sizeof(Game_Action));
+    set_game_action_as__allocated(p_game_action);
+
+    return p_game_action;
+}
+
+Game_Action *allocate_as__copy_of__game_action_with__this_uuid_from__manager(
+        Game_Action_Manager *p_game_action_manager,
+        Game_Action *p_game_action_to__copy,
+        Identifier__u32 uuid) {
+    Game_Action *p_game_action =
+        allocate_game_action_with__this_uuid_from__game_action_manager(
+                p_game_action_manager, 
+                uuid);
+    if (!p_game_action) {
+        debug_error("allocate_as__copy_of__game_action_with__this_uuid_from__manager, p_game_action == 0.");
+        return 0;
+    }
+    initialize_serialization_header(
+            &p_game_action->_serialiation_header, 
+            uuid, 
+            sizeof(Game_Action));
+    memcpy(
+            ((u8*)p_game_action) + sizeof(Serialization_Header),
+            ((u8*)p_game_action_to__copy) + sizeof(Serialization_Header),
+            sizeof(Game_Action) - sizeof(Serialization_Header));
     set_game_action_as__allocated(p_game_action);
 
     return p_game_action;
@@ -75,7 +104,9 @@ bool release_game_action_from__game_action_manager(
     }
 #endif
 
-    initialize_game_action(p_game_action);
+    initialize_serialization_header_for__deallocated_struct(
+            (Serialization_Header*)p_game_action, 
+            sizeof(Game_Action));
     return true;
 }
 

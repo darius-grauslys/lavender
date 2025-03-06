@@ -73,7 +73,6 @@ bool receive_game_action_for__client(
         Game *p_game,
         Game_Action *p_game_action) {
 
-    bool result = false;
     Process_Manager *p_process_manager =
         get_p_process_manager_from__game(p_game);
     Game_Action_Logic_Table *p_game_action_logic_table =
@@ -85,7 +84,7 @@ bool receive_game_action_for__client(
                 get_kind_of__game_action(p_game_action));
     if (!p_game_action_logic_entry) {
         debug_error("receive_game_action_for__client, unsupported game action.");
-        goto cleanup;
+        return false;
     }
 
     p_game_action->uuid_of__client__u32 =
@@ -112,7 +111,7 @@ bool receive_game_action_for__client(
 
         if (!p_game_action__responded_to) {
             debug_error("receive_game_action_for__client, failed to find responding action.");
-            goto cleanup;
+            return false;
         }
 
         // TODO: make process of responded game action, if it's flag is set to do so.
@@ -127,24 +126,22 @@ bool receive_game_action_for__client(
 
         if (m_process_of__game_action)
             m_process_of__game_action(&process, p_game);
-        result = true;
-        goto cleanup;
+        return false;
     }
 
     if (is_game_action__with_process(p_game_action)) {
         Game_Action *p_game_action__allocated = 0;
         if (!is_game_action__allocated(p_game_action)) {
             p_game_action__allocated =
-                allocate_game_action_with__this_uuid_from__game_action_manager(
-                        get_p_game_action_manager__inbound_from__client(p_client),
+                allocate_as__copy_of__game_action_with__this_uuid_from__manager(
+                        get_p_game_action_manager__inbound_from__client(
+                            p_client),
+                        p_game_action,
                         GET_UUID_P(p_game_action));
             if (!p_game_action__allocated) {
                 debug_error("receive_game_action_for__client, failed to copy p_game_action.");
-                goto cleanup;
+                return false;
             }
-
-            *p_game_action__allocated =
-                *p_game_action;
             p_game_action = p_game_action__allocated;
         }
         Process *p_process = dispatch_game_action_process__inbound(
@@ -157,9 +154,8 @@ bool receive_game_action_for__client(
             (void)release_game_action_from__game_action_manager(
                     get_p_game_action_manager__inbound_from__client(p_client), 
                     p_game_action__allocated);
-            goto cleanup;
+            return false;
         }
-        // keep p_game_action alive.
         return true;
     }
 
@@ -178,15 +174,8 @@ bool receive_game_action_for__client(
         if (m_process_of__game_action)
             m_process_of__game_action(
                     &process, p_game);
-        result = true;
     }
-cleanup:
-    if (is_game_action__allocated(p_game_action)) {
-        release_game_action_from__game_action_manager(
-                get_p_game_action_manager__inbound_from__client(p_client), 
-                p_game_action);
-    }
-    return result;
+    return true;
 }
 
 bool dispatch_game_action_for__client(
@@ -195,7 +184,6 @@ bool dispatch_game_action_for__client(
         TCP_Socket_Manager *p_tcp_socket_manager,
         Game_Action *p_game_action) {
 
-    bool result = false;
     Process_Manager *p_process_manager =
         get_p_process_manager_from__game(p_game);
     Game_Action_Logic_Table *p_game_action_logic_table =
@@ -203,7 +191,7 @@ bool dispatch_game_action_for__client(
 
     if (!p_game_action) {
         debug_error("dispatch_game_action_for__client, p_game_action is null.");
-        goto cleanup;
+        return false;
     }
 
     Game_Action_Logic_Entry *p_game_action_logic_entry =
@@ -213,7 +201,7 @@ bool dispatch_game_action_for__client(
 
     if (!p_game_action_logic_entry) {
         debug_error("dispatch_game_action_for__client, unsupported game action.");
-        goto cleanup;
+        return false;
     }
 
     santize_game_action__outbound(
@@ -224,17 +212,14 @@ bool dispatch_game_action_for__client(
         Game_Action *p_game_action__allocated = 0;
         if (!is_game_action__allocated(p_game_action)) {
             p_game_action__allocated =
-                allocate_game_action_from__game_action_manager(
-                        get_p_game_action_manager__outbound_from__client(p_client));
+                allocate_as__copy_of__game_action_from__game_action_manager(
+                        get_p_game_action_manager__outbound_from__client(
+                            p_client),
+                        p_game_action);
             if (!p_game_action__allocated) {
                 debug_error("dispatch_game_action_for__client, failed to copy p_game_action.");
-                goto cleanup;
+                return false;
             }
-
-            memcpy(
-                    ((u8*)p_game_action__allocated) + sizeof(Serialization_Header),
-                    ((u8*)p_game_action) + sizeof(Serialization_Header),
-                    sizeof(Game_Action) - sizeof(Serialization_Header));
             p_game_action = p_game_action__allocated;
         }
         if (is_game_action__processed_on__invocation_or__respose(p_game_action)) {
@@ -249,11 +234,8 @@ bool dispatch_game_action_for__client(
                 release_game_action_from__game_action_manager(
                         get_p_game_action_manager__outbound_from__client(p_client), 
                         p_game_action__allocated);
-                goto cleanup;
+                return false;
             }
-
-            // keep-alive
-            goto tcp_send;
         }
     } else if (
             get_m_process__outbound_of__game_action_logic_entry(
@@ -271,15 +253,11 @@ bool dispatch_game_action_for__client(
         if (m_process_of__game_action)
             m_process_of__game_action(
                     &process, p_game);
-        result = true;
-        goto cleanup;
     } 
 
-tcp_send:
     if (!p_tcp_socket_manager
             || is_game_action__local(p_game_action)) {
-        result = true;
-        goto cleanup;
+        return true;
     }
 
     TCP_Socket *p_tcp_socket =
@@ -289,44 +267,13 @@ tcp_send:
 
     if (!p_tcp_socket) {
         debug_abort("dispatch_game_action_for__client, p_tcp_socket == 0.");
-        goto cleanup;
+        return false;
     }
 
     send_bytes_over__tcp_socket(
             p_tcp_socket, 
             (u8*)p_game_action, 
             sizeof(Game_Action));
-    result = true;
-cleanup:
-    if (is_game_action__allocated(p_game_action)) {
-        release_game_action_from__game_action_manager(
-                get_p_game_action_manager__outbound_from__client(p_client), 
-                p_game_action);
-    }
-    return result;
+    return true;
 }
 
-Game_Action *allocate_game_action_from__client(
-        Client *p_client,
-        Game_Action_Flags game_action_flags) {
-    game_action_flags &=
-        ~GAME_ACTION_FLAGS__BIT_IS_ALLOCATED;
-
-    Game_Action_Manager *p_game_action_manager =
-        (game_action_flags & GAME_ACTION_FLAGS__BIT_IS_OUT_OR__IN_BOUND)
-        ? get_p_game_action_manager__outbound_from__client(p_client)
-        : get_p_game_action_manager__inbound_from__client(p_client)
-        ;
-
-    Game_Action *p_game_action =
-        allocate_game_action_from__game_action_manager(
-                p_game_action_manager);
-
-    if (p_game_action) {
-        p_game_action->game_action_flags = game_action_flags;
-        p_game_action->uuid_of__client__u32 =
-            p_client->_serialization_header.uuid;
-    }
-
-    return p_game_action;
-}

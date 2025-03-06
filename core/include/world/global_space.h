@@ -24,11 +24,10 @@ void hold_global_space(
 static inline
 bool drop_global_space(
         Global_Space *p_global_space) {
-    if (p_global_space->quantity_of__references <= 1) {
+    if (--p_global_space->quantity_of__references <= 1) {
         p_global_space->quantity_of__references = 1;
         return true;
     }
-    p_global_space->quantity_of__references--;
     return false;
 }
 
@@ -128,9 +127,25 @@ Chunk *get_p_chunk_from__global_space(
 }
 
 static inline
+void set_chunk_for__global_space(
+        Global_Space *p_global_space,
+        Chunk *p_chunk) {
+    p_global_space->p_chunk =
+        p_chunk;
+}
+
+static inline
 Collision_Node *get_p_collision_node_from__global_space(
         Global_Space *p_global_space) {
     return p_global_space->p_collision_node;
+}
+
+static inline
+void set_collision_node_for__global_space(
+        Global_Space *p_global_space,
+        Collision_Node *p_collision_node) {
+    p_global_space->p_collision_node =
+        p_collision_node;
 }
 
 #endif
