@@ -1,4 +1,4 @@
-#include "rendering/texture_strings.h"
+#include "rendering/implemented/texture_strings.h"
 
 Texture_Name__c_str name_of__texture__player__c_str = {
     "player"

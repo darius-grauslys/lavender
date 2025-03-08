@@ -292,7 +292,7 @@ bool print_log__global(Game *p_game, char *cstr) {
             get_next_p_message_in__log(
                 get_p_log__global_from__game(p_game)), 
             cstr);
-    PLATFORM_update_log__global(p_game);
+    // PLATFORM_update_log__global(p_game);
     flush_message_into__log(get_p_log__global_from__game(p_game));
     return result;
 }
@@ -302,7 +302,7 @@ bool print_log__local(Game *p_game, char *cstr) {
             get_next_p_message_in__log(
                 get_p_log__local_from__game(p_game)), 
             cstr);
-    PLATFORM_update_log__local(p_game);
+    // PLATFORM_update_log__local(p_game);
     flush_message_into__log(get_p_log__local_from__game(p_game));
     return result;
 }
@@ -312,7 +312,7 @@ bool print_log__system(Game *p_game, char *cstr) {
             get_next_p_message_in__log(
                 get_p_log__system_from__game(p_game)), 
             cstr);
-    PLATFORM_update_log__system(p_game);
+    // PLATFORM_update_log__system(p_game);
     flush_message_into__log(get_p_log__system_from__game(p_game));
     return result;
 }
@@ -349,11 +349,8 @@ int run_game(Game *p_game) {
                     p_game);
         debug_info("entering scene.");
         if (!p_active_scene->m_enter_scene_handler) {
-            debug_error("p_active_scene->m_enter_scene_handler is null.");
-            set_p_active_scene_for__scene_manager(
-                    p_scene_manager, 
-                    SCENE_IDENTIFIER__MAIN_MENU);
-            continue;
+            debug_abort("p_active_scene->m_enter_scene_handler is null.");
+            return -1;
         }
         p_active_scene->m_enter_scene_handler(
                 p_active_scene,

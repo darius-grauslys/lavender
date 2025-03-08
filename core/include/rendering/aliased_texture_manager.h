@@ -34,8 +34,4 @@ void release_all_aliased_textures(
         PLATFORM_Gfx_Context *p_PLATFORM_gfx_context,
         Aliased_Texture_Manager *p_aliased_texture_manager);
 
-void load_aliased_textures(
-        Game *p_game,
-        Aliased_Texture_Manager *p_aliased_texture_manager);
-
 #endif

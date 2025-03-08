@@ -186,9 +186,9 @@ void set_center_of__local_space_manager(
     
     Global_Space_Vector__3i32 distance_manhattan__3i32 =
         subtract_vectors__3i32(
+                center_of__local_space_manager__3i32,
                 p_local_space_manager
-                ->center_of__local_space_manager__3i32, 
-                center_of__local_space_manager__3i32);
+                ->center_of__local_space_manager__3i32);
 
     // TODO: z
 

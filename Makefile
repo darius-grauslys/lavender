@@ -19,11 +19,8 @@ export BASE_DIR := $(CURDIR)
 export SILENT := @
 
 export DIR_NDS := $(CURDIR)/nds
-export DIR_UNIX_OPENGL := $(CURDIR)/unix_opengl
 export DIR_SDL := $(CURDIR)/sdl
 export DIR_CORE := $(CURDIR)/core
-
-export DIR_TEST_CORE := $(CURDIR)/tests/core
 
 export BUILD_NDS := $(CURDIR)/build/nds
 export BUILD_SDL := $(CURDIR)/build/sdl
@@ -38,33 +35,36 @@ else
 endif
 
 default:
-	echo "--- Targets ---"
-	echo "test_[PLATFORM] 	-	make corresponding tests for given platform."
-	echo "sdl				-	SDL2, see sdl/README for supported systems."
-	echo "nds				-	Native 2D engine NDS platform"
-	echo ""
-	echo "--- Useful FLAGS ---"
-	echo "X: anything, NA: omit to disable"
-	echo "-DIS_SERVER 	-	treat build as a server"
-	echo "-DNDEBUG		-	disable debug, performant but most errors will result in a crash now!"
-	echo "-ggdb			-	generate gdb debug symbols - required for gdb"
+	@echo "--- Targets ---"
+	@echo "test 		-	make corresponding tests for given {-DPLATFORM}, omit for just core testing."
+	@echo "sdl			-	SDL2, see sdl/README for supported systems."
+	@echo "nds			-	Native 2D engine NDS platform"
+	@echo ""
+	@echo "--- Useful FLAGS ---"
+	@echo "X: anything, NA: omit to disable."
+	@echo "-DPLATFORM	- 	specify target platform"
+	@echo "-DIS_SERVER 	-	treat build as a server."
+	@echo "-DNDEBUG		-	disable debug, performant but most errors will result in a crash now!"
+	@echo "-ggdb		-	generate gdb debug symbols - required for gdb."
+	@echo "-DNLOG		-	disable logging, keep debug safety checks."
 
 nds:
 	$(SILENT)mkdir -p ./build && make -C $(CURDIR)/nds -f $(CURDIR)/nds/Makefile -e BUILD=$(BUILD_NDS)
 	$(SILENT)stat $(BUILD_NDS)/compile_commands.json && ln -sf $(BUILD_NDS)/compile_commands.json ./compile_commands.json
-
-test_nds:
-	$(SILENT)mkdir -p ./build && make -C $(CURDIR)/nds -f $(CURDIR)/nds/Makefile -e BUILD=$(CURDIR)/build/test_nds
-	$(SILENT)stat $(BUILD_TEST_NDS)/compile_commands.json && ln -sf $(BUILD_TEST_NDS)/compile_commands.json ./compile_commands.json
 
 sdl:
 	$(SILENT)mkdir -p ./build && make -C $(CURDIR)/sdl -f $(CURDIR)/sdl/Makefile -e BUILD=$(BUILD_SDL)
 	$(SILENT)stat $(BUILD_SDL)/compile_commands.json && ln -sf $(BUILD_SDL)/compile_commands.json ./compile_commands.json
 
 test:
+	sh -c "cd ./tests && ./update.sh $(PLATFORM)"
 	$(SILENT)if [ -z "${PLATFORM}" ]; then \
-		mkdir -p ./build && make -C $(DIR_TEST_CORE) -f $(DIR_TEST_CORE)/Makefile -e BUILD=$(BUILD_TEST_CORE); \
-		stat $(BUILD_TEST_CORE)/compile_commands.json && ln -sf $(BUILD_TEST_CORE)/compile_commands.json ./compile_commands.json; \
+		mkdir -p ./build \
+		&& make -C $(CURDIR)/tests \
+		-f $(CURDIR)/tests/Makefile \
+		-e BUILD=$(CURDIR)/build/test_core; \
+		stat $(BUILD_TEST_CORE)/compile_commands.json \
+		&& ln -sf $(CURDIR)/build/test_core/compile_commands.json ./compile_commands.json; \
 	else \
 		mkdir -p ./build && make \
 			-C $(CURDIR)/tests \
@@ -78,7 +78,7 @@ test:
 
 clean:
 	@echo clean...
-	@if [ -e "./build/*" ]; then \
-		rm -r ./build/* ; \
+	@if [ -e "./build" ]; then \
+		rm -r ./build ; \
 	fi
 

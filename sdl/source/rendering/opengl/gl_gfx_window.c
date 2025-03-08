@@ -22,7 +22,7 @@
 #include "rendering/sdl_texture_manager.h"
 #include "rendering/texture.h"
 #include "rendering/sdl_texture.h"
-#include "rendering/texture_strings.h"
+#include "rendering/implemented/texture_strings.h"
 #include "ui/ui_manager.h"
 #include "vectors.h"
 

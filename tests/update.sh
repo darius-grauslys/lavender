@@ -37,12 +37,15 @@ int main(int argc, char* argv[MUNIT_ARRAY_PARAM(argc + 1)]) {
     cp ./templates/test_util.h "$1/test_util.h"
     cp ./templates/munit.h "$1/munit.h"
     cp ./templates/munit.c "$2/munit.c"
-    # if ! test -f "$1/platform_defines.h"; then
-    #     cp ./templates/platform_defines.h "$1/platform_defines.h"
-    # fi
-    # if ! test -f "$2/PLATFORM.c"; then
-    #     cp ./templates/PLATFORM.c "$2/PLATFORM.c"
-    # fi
+    if [ -n "$3" ]; then
+        return
+    fi
+    if ! test -f "$1/platform_defines.h"; then
+        cp ./templates/include/platform_defines.h "$1/platform_defines.h"
+    fi
+    if ! test -f "$2/PLATFORM.c"; then
+        cp ./templates/source/PLATFORM.c "$2/PLATFORM.c"
+    fi
 }
 
 update () {
@@ -56,10 +59,10 @@ update () {
         $core_include \
         $core_source \
         "core"
-    gen_main $core_include $core_source
+    gen_main $core_include $core_source $1
 }
 
-update
+update $1
 
 if [ "$1" ]; then
     mkdir -p ./$1/include

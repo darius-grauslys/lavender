@@ -50,4 +50,10 @@ void load_local_space_manager_at__global_space_vector__3i32(
             global_space_vector__3i32);
 }
 
+static inline
+Chunk_Vector__3i32 get_center_of__local_space_manager(
+        Local_Space_Manager *p_local_space_manager) {
+    return p_local_space_manager->center_of__local_space_manager__3i32;
+}
+
 #endif

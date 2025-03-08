@@ -103,7 +103,7 @@ export INCLUDE := \
 
 export LIBPATHS := $(foreach dir,$(LIBDIRS),-L$(dir)/lib)
 
-.PHONY: $(BUILD) clean
+.PHONY: $(BUILD) clean 
 
 #---------------------------------------------------------------------------------
 $(BUILD):
@@ -113,7 +113,7 @@ $(BUILD):
 		 | grep -w '\-c' \
 		 | jq -nR '[inputs|{directory:"$(BUILD)", command:., file: match(" [^ ]+$$").string[1:]}]' \
 		 > $(BUILD)/compile_commands.json
-	@ln -f -s $(BUILD)/compile_commands.json $(BASE_DIR)/compile_commands.json
+	@$(ADD_COMPILE_COMMAND) end
 
 #---------------------------------------------------------------------------------
 else
@@ -124,6 +124,8 @@ else
 
 $(OUTPUT): $(OFILES)
 	$(SILENT)$(LD) $(LDFLAGS) $(FLAGS_LINKER) $(OFILES) $(LIBPATHS) $(LIBS) -o $@
+	@$(ADD_COMPILE_COMMAND) add $(CC) "$(CFLAGS) $(LIBS) $(INCLUDE) $(FLAGS) \
+		-o $(BUILD)/$@ -c $(SOURCE_CORE)/$(@:.o=.c)" $(BUILD)/$@
 
 #---------------------------------------------------------------------------------
 $(CFILES_TEST_CORE:.c=.o) : $(foreach file,$(CFILES),$(BASE_DIR)/tests/core/source/$(file))

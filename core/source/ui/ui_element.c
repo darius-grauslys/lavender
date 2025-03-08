@@ -261,14 +261,7 @@ void m_ui_render__element__tile_span(
                 &index_x__u32,
                 &index_y__u32);
 
-    generate_ui_span_in__ui_tile_map(
-            PLATFORM_get_tile_map__wrapper_from__gfx_window(
-                p_PLATFORM_gfx_window), 
-            p_const_ui_tile_span, 
-            width_of__ui_tile_span, 
-            height_of__ui_tile_span, 
-            index_x__u32, 
-            index_y__u32);
+    debug_error("m_ui_render__element__tile_span, impl");
 }
 
 void m_ui_element__render_handler_for__sprite__default(

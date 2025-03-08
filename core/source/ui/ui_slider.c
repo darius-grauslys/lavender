@@ -4,10 +4,11 @@
 #include "numerics.h"
 #include "platform.h"
 #include "rendering/aliased_texture_manager.h"
-#include "rendering/texture_strings.h"
+#include "rendering/implemented/texture_strings.h"
 #include "ui/ui_element.h"
 #include "vectors.h"
 #include <ui/ui_slider.h>
+#include "rendering/graphics_window.h"
 
 void initialize_ui_element_as__slider(
         UI_Element *p_ui_slider,
@@ -112,8 +113,8 @@ void m_ui_slider__render_handler__default(
 void m_ui_slider__dragged_handler__gfx_window__default(
         UI_Element *p_this_draggable,
         Game *p_game) {
-    PLATFORM_Graphics_Window *p_PLATFORM_gfx_window =
-        (PLATFORM_Graphics_Window*)
+    Graphics_Window *p_gfx_window =
+        (Graphics_Window*)
         p_this_draggable
         ->p_ui_data;
 
@@ -121,8 +122,8 @@ void m_ui_slider__dragged_handler__gfx_window__default(
         is_ui_element__snapped_x_or_y_axis(p_this_draggable);
 
     Vector__3i32 position_for__bgSetScroll =
-        PLATFORM_get_gfx_window__origin(
-                p_PLATFORM_gfx_window);
+        get_origin_3i32_of__graphics_window(
+                p_gfx_window);
 
     i32 *p_starting_distance =
         (is_snapped_x_or__y_axis)
@@ -150,9 +151,6 @@ void m_ui_slider__dragged_handler__gfx_window__default(
                 p_this_draggable, 
                 spanning_length);
 
-    debug_info("start: %d",
-            *p_starting_distance);
-
     *p_starting_distance -=
         offset;
 
@@ -173,12 +171,9 @@ void m_ui_slider__dragged_handler__gfx_window__default(
             3, 
             28);
 
-    PLATFORM_set_gfx_window__position(
-            p_PLATFORM_gfx_window, 
-            get_vector__3i32(
-                position_for__bgSetScroll.x__i32, 
-                position_for__bgSetScroll.y__i32,
-                0));
+    set_position_3i32_of__graphics_window(
+            p_gfx_window, 
+            position_for__bgSetScroll);
 }
 
 bool f_sprite_gfx_allocator__ui_slider(

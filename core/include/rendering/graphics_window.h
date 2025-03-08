@@ -96,6 +96,14 @@ Vector__3i32 get_position_3i32_of__graphics_window(
 }
 
 static inline
+void set_position_3i32_of__graphics_window(
+        Graphics_Window *p_graphics_window,
+        Vector__3i32 position_of__gfx_window__3i32) {
+    p_graphics_window->position_of__gfx_window =
+        position_of__gfx_window__3i32;
+}
+
+static inline
 Vector__3i32 get_position_maximum_3i32_of__graphics_window(
         Graphics_Window *p_graphics_window) {
     return p_graphics_window->position_of__gfx_window__maximum;
