@@ -196,6 +196,9 @@ Global_Space *hold_global_space_within__global_space_manager(
 
     if (!is_dispatch__successful) {
         debug_error("hold_global_space_within__global_space_manager, failed to dispatch process.");
+        release_global_space_in__global_space_manager(
+                p_global_space_manager, 
+                p_global_space);
         return 0;
     }
 

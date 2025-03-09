@@ -1253,7 +1253,7 @@ typedef struct Process_t {
     Process_Flags__u8 process_flags__u8;
 } Process;
 
-#define PROCESS_MAX_QUANTITY_OF 256
+#define PROCESS_MAX_QUANTITY_OF 512
 
 typedef struct Process_Manager_t {
     Process processes[PROCESS_MAX_QUANTITY_OF];
@@ -2297,7 +2297,7 @@ typedef struct Game_Action_t {
     };
 } Game_Action;
 
-#define MAX_QUANTITY_OF__GAME_ACTIONS 128
+#define MAX_QUANTITY_OF__GAME_ACTIONS 512
 
 typedef struct Game_Action_Manager_t {
     Game_Action game_actions[

@@ -316,3 +316,21 @@ Process *run_process(
             uuid, 
             process_flags__u8);
 }
+
+Quantity__u32 get_quantity_of__processes_in__process_manager(
+        Process_Manager *p_process_manager) {
+    Quantity__u32 quantity_of__processes = 0;
+    for (;quantity_of__processes
+            < PROCESS_MAX_QUANTITY_OF;
+            quantity_of__processes++) {
+        Process **p_ptr_process =
+            get_p_ptr_process_by__index_from__active_procs_in__process_manager(
+                    p_process_manager, 
+                    quantity_of__processes);
+        if (!p_ptr_process || !*p_ptr_process) {
+            return quantity_of__processes;
+        }
+    }
+
+    return PROCESS_MAX_QUANTITY_OF; 
+}

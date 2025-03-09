@@ -42,6 +42,9 @@ Process *run_process(
         m_Process m_process,
         Process_Flags__u8 process_flags__u8);
 
+Quantity__u32 get_quantity_of__processes_in__process_manager(
+        Process_Manager *p_process_manager);
+
 static inline
 Process *get_p_process_by__uuid(
         Process_Manager *p_process_manager,

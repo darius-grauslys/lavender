@@ -2,6 +2,7 @@
 #define TEST_UTIL_H
 
 #include <munit.h>
+#include <stdio.h>
 
 #define TEST_NAME(name) \
     MunitTestFunc_ ## name
@@ -121,6 +122,17 @@ void include_test_suite__ ## name( \
     test_suite->iterations = 1; \
     test_suite->options = MUNIT_SUITE_OPTION_NONE; \
     include_sub_suites_for__ ## name (test_suite); \
+}
+
+static inline
+void test_log(const char *c_str__msg, ...) {
+    va_list args_list;
+    va_start(args_list, c_str__msg);
+    printf("\033[37;1mTEST_LOG:\033[0m ");
+    vprintf(c_str__msg, args_list);
+    va_end(args_list);
+    
+    printf("\n");
 }
 
 #endif
