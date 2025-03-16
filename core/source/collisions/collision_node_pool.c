@@ -33,7 +33,7 @@ Collision_Node *allocate_collision_node_from__collision_node_pool(
         Collision_Node_Pool *p_collision_node_pool,
         Identifier__u64 uuid__u64) {
     Collision_Node *p_collision_node =
-        (Collision_Node*)dehash_identitier_u64_in__contigious_array(
+        (Collision_Node*)get_next_available__allocation_in__contiguous_array__u64(
                 (Serialization_Header__UUID_64*)
                     p_collision_node_pool->collision_nodes, 
                 QUANTITY_OF__GLOBAL_SPACE, 

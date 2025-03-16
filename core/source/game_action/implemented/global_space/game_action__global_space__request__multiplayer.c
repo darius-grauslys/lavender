@@ -20,6 +20,7 @@
 void m_process__game_action__global_space__request__outbound_server(
         Process *p_this_process,
         Game *p_game) {
+    debug_info("m_process__game_action__global_space__request__outbound_server");
     Game_Action *p_game_action =
         (Game_Action*)p_this_process->p_process_data;
 
@@ -78,6 +79,7 @@ void m_process__game_action__global_space__request__outbound_server(
 void m_process__game_action__global_space__request__inbound_server(
         Process *p_this_process,
         Game *p_game) {
+    debug_info("m_process__game_action__global_space__request__inbound_server");
     Game_Action *p_game_action =
         (Game_Action*)p_this_process->p_process_data;
 
@@ -158,6 +160,7 @@ void m_process__game_action__global_space__request__inbound_server(
 void m_process__game_action__global_space__request__inbound_server__init(
         Process *p_this_process,
         Game *p_game) {
+    debug_info("m_process__game_action__global_space__request__inbound_server__init");
     Game_Action *p_game_action =
         (Game_Action*)p_this_process->p_process_data;
 
@@ -179,6 +182,7 @@ void m_process__game_action__global_space__request__inbound_server__init(
 void m_process__game_action__global_space__request__outbound_client(
         Process *p_this_process,
         Game *p_game) {
+    debug_info("m_process__game_action__global_space__request__outbound_client");
     Serialization_Request *p_serialization_request =
         (Serialization_Request*)p_this_process->p_process_data;
 
@@ -228,11 +232,13 @@ void m_process__game_action__global_space__request__outbound_client(
     complete_game_action_process_for__tcp(
             p_game, 
             p_this_process);
+    debug_info("m_process__game_action__global_space__request__outbound_client, finished.");
 }
 
 void m_process__game_action__global_space__request__outbound_client__init(
         Process *p_this_process,
         Game *p_game) {
+    debug_info("m_process__game_action__global_space__request__outbound_client__init");
     Game_Action *p_game_action =
         (Game_Action*)p_this_process->p_process_data;
 

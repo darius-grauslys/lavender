@@ -42,7 +42,7 @@ Game_Action *allocate_game_action_with__this_uuid_from__game_action_manager(
     }
 
     Game_Action *p_game_action =
-        (Game_Action*)dehash_identitier_u32_in__contigious_array(
+        (Game_Action*)get_next_available__allocation_in__contiguous_array(
                 (Serialization_Header*)p_game_action_manager
                     ->game_actions, 
                 MAX_QUANTITY_OF__GAME_ACTIONS, 

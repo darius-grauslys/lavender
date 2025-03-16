@@ -31,7 +31,7 @@ Chunk *allocate_chunk_from__chunk_pool(
         Chunk_Pool *p_chunk_pool,
         Identifier__u64 uuid__u64) {
     Chunk *p_chunk =
-        (Chunk*)dehash_identitier_u64_in__contigious_array(
+        (Chunk*)get_next_available__allocation_in__contiguous_array__u64(
                 (Serialization_Header__UUID_64*)p_chunk_pool->chunks, 
                 QUANTITY_OF__GLOBAL_SPACE, 
                 uuid__u64);

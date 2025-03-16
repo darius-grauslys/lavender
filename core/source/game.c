@@ -194,7 +194,7 @@ Client *allocate_client_from__game(
         Game *p_game,
         Identifier__u32 uuid__u32) {
     Client *p_client = 
-        (Client*)dehash_identitier_u32_in__contigious_array(
+        (Client*)get_next_available__allocation_in__contiguous_array(
                 (Serialization_Header*)p_game->pM_clients, 
                 p_game->max_quantity_of__clients, 
                 uuid__u32);

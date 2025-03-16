@@ -129,14 +129,16 @@ bool is_identifier_u64_matching__serialization_header(
 static inline
 bool is_serialized_struct__deallocated(
         Serialization_Header *p_serialization_header) {
-    return p_serialization_header->uuid
+    return !p_serialization_header 
+        || p_serialization_header->uuid
         == IDENTIFIER__UNKNOWN__u32;
 }
 
 static inline
 bool is_serialized_struct__deallocated__uuid_64(
         Serialization_Header__UUID_64 *p_serialization_header) {
-    return p_serialization_header->uuid
+    return !p_serialization_header 
+        || p_serialization_header->uuid
         == IDENTIFIER__UNKNOWN__u64;
 }
 

@@ -53,7 +53,7 @@ TCP_Socket *allocate_tcp_socket_from__tcp_socket_manager(
         TCP_Socket_Manager *p_tcp_socket_manager,
         Identifier__u32 uuid_of__tcp_socket__u32) {
     TCP_Socket *p_tcp_socket =
-        (TCP_Socket*)dehash_identitier_u32_in__contigious_array(
+        (TCP_Socket*)get_next_available__allocation_in__contiguous_array(
                 (Serialization_Header*)&p_tcp_socket_manager
                     ->tcp_sockets, 
                 MAX_QUANTITY_OF__TCP_SOCKETS, 

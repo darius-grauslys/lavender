@@ -65,35 +65,35 @@ void m_load_scene__test(
             55566);
 #else
     allocate_client_pool_for__game(p_game, 1);
-    // begin_multiplayer_for__game(
-    //         p_game,
-    //         m_poll_tcp_socket_manager_as__client__default);
+    begin_multiplayer_for__game(
+            p_game,
+            m_poll_tcp_socket_manager_as__client__default);
     Client *p_client = allocate_client_from__game(
             p_game, 
             0);
-    // IPv4_Address addr;
-    // addr.ip_bytes[0] = 127;
-    // addr.ip_bytes[1] = 0;
-    // addr.ip_bytes[2] = 0;
-    // addr.ip_bytes[3] = 1;
-    // addr.port = 55566;
-    // dispatch_game_action__connect__begin(
-    //         p_game, 
-    //         addr);
-    // TCP_Socket *p_tcp_socket;
-    // do {
-    //     poll_process_manager(
-    //             get_p_process_manager_from__game(p_game), 
-    //             p_game);
-    //     p_tcp_socket =
-    //         get_p_tcp_socket_for__this_uuid(
-    //                 get_p_tcp_socket_manager_from__game(p_game), 
-    //                 GET_UUID_P(p_client));
-    //     if (!p_tcp_socket)
-    //         continue;
-    // } while(!p_tcp_socket
-    //         || poll_tcp_socket_for__connection(p_tcp_socket)
-    //             != TCP_Socket_State__Authenticated);
+    IPv4_Address addr;
+    addr.ip_bytes[0] = 127;
+    addr.ip_bytes[1] = 0;
+    addr.ip_bytes[2] = 0;
+    addr.ip_bytes[3] = 1;
+    addr.port = 55566;
+    dispatch_game_action__connect__begin(
+            p_game, 
+            addr);
+    TCP_Socket *p_tcp_socket;
+    do {
+        poll_process_manager(
+                get_p_process_manager_from__game(p_game), 
+                p_game);
+        p_tcp_socket =
+            get_p_tcp_socket_for__this_uuid(
+                    get_p_tcp_socket_manager_from__game(p_game), 
+                    GET_UUID_P(p_client));
+        if (!p_tcp_socket)
+            continue;
+    } while(!p_tcp_socket
+            || poll_tcp_socket_for__connection(p_tcp_socket)
+                != TCP_Socket_State__Authenticated);
     load_p_PLATFORM_texture_from__path_with__alias(
             get_p_PLATFORM_gfx_context_from__game(p_game), 
             0, 

@@ -41,7 +41,8 @@ bool link_serialized_field_against__contiguous_array(
         poll_for__uuid_collision(
                 p_serialization_structs, 
                 quantity_of__structs, 
-                p_serialized_field->identifier_for__serialized_field);
+                p_serialized_field->identifier_for__serialized_field,
+                INDEX__UNKNOWN__u32);
 
     if (is_index_u32__out_of_bounds(index_of__resolved_entry_u32))
         return false;

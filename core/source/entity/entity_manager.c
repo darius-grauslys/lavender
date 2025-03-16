@@ -50,7 +50,7 @@ Entity *allocate_entity_in__entity_manager(
                 &entity_manager->randomizer);
 
     Entity *p_entity =
-        (Entity*)dehash_identitier_u32_in__contigious_array(
+        (Entity*)get_next_available__allocation_in__contiguous_array(
                 (Serialization_Header*)entity_manager->entities, 
                 ENTITY_MAXIMUM_QUANTITY_OF, 
                 uuid__u32);

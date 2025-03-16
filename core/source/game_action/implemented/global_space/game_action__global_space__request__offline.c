@@ -1,9 +1,16 @@
+#include "defines.h"
 #include "defines_weak.h"
+#include "game.h"
 #include "game_action/game_action_logic_entry.h"
 #include "game_action/game_action_logic_table.h"
 #include "game_action/implemented/global_space/game_action__global_space__request.h"
 #include "game_action/implemented/global_space/game_action__global_space__resolve.h"
+#include "platform_defines.h"
 #include "process/game_action_process.h"
+#include "process/process.h"
+#include "serialization/serialization_header.h"
+#include "world/global_space.h"
+#include "world/global_space_manager.h"
 
 void m_process__game_action__global_space__request__outbound_offline(
         Process *p_this_process,

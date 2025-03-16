@@ -171,7 +171,7 @@ Process *allocate_process_in__process_manager(
         Process_Manager *p_process_manager,
         Identifier__u32 uuid) {
     Process *p_process =
-        (Process*)dehash_identitier_u32_in__contigious_array(
+        (Process*)get_next_available__allocation_in__contiguous_array(
                 (Serialization_Header*)p_process_manager->processes, 
             PROCESS_MAX_QUANTITY_OF, 
             uuid);

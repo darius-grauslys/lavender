@@ -24,12 +24,14 @@
 Index__u32 poll_for__uuid_collision(
         Serialization_Header *p_serialization_headers,
         Quantity__u32 length_of__p_serialization_headers,
-        Identifier__u32 identifier__u32);
+        Identifier__u32 identifier__u32,
+        Index__u32 index__initial__u32);
 
 Index__u32 poll_for__uuid_collision__uuid_64(
         Serialization_Header__UUID_64 *p_serialization_headers,
         Quantity__u32 length_of__p_serialization_headers,
-        Identifier__u64 identifier__u64);
+        Identifier__u64 identifier__u64,
+        Index__u32 index__initial__u32);
 
 Identifier__u32 get_next_available__uuid_in__contiguous_array(
         Serialization_Header *p_serialization_headers,
@@ -40,6 +42,48 @@ Identifier__u64 get_next_available__uuid_in__contiguous_array__uuid_64(
         Serialization_Header__UUID_64 *p_serialization_headers,
         Quantity__u32 length_of__p_serialization_headers,
         Identifier__u64 uuid__u64);
+
+Serialization_Header *dehash_identitier_u32_in__contigious_array(
+        Serialization_Header *p_serialization_headers,
+        Quantity__u32 length_of__p_serialization_headers,
+        Identifier__u32 identifier__u32);
+
+Serialization_Header__UUID_64 *dehash_identitier_u64_in__contigious_array(
+        Serialization_Header__UUID_64 *p_serialization_headers,
+        Quantity__u32 length_of__p_serialization_headers,
+        Identifier__u64 identifier__u64);
+
+static inline
+Serialization_Header *get_next_available__allocation_in__contiguous_array(
+        Serialization_Header *p_serialization_headers,
+        Quantity__u32 length_of__p_serialization_headers,
+        Identifier__u32 identifier__u32) {
+    return (Serialization_Header*)
+        get_p_serialization_header_from__contigious_array(
+                p_serialization_headers,
+                length_of__p_serialization_headers,
+                poll_for__uuid_collision(
+                    p_serialization_headers, 
+                    length_of__p_serialization_headers, 
+                    identifier__u32, 
+                    INDEX__UNKNOWN__u32));
+}
+
+static inline
+Serialization_Header *get_next_available__allocation_in__contiguous_array__u64(
+        Serialization_Header__UUID_64 *p_serialization_headers,
+        Quantity__u32 length_of__p_serialization_headers,
+        Identifier__u64 identifier__u64) {
+    return (Serialization_Header*)
+        get_p_serialization_header_from__contigious_array__uuid_64(
+                p_serialization_headers,
+                length_of__p_serialization_headers,
+                poll_for__uuid_collision__uuid_64(
+                    p_serialization_headers, 
+                    length_of__p_serialization_headers, 
+                    identifier__u64, 
+                    INDEX__UNKNOWN__u32));
+}
 
 static inline
 Identifier__u32 get_next_available__random_uuid_in__contiguous_array(
@@ -72,11 +116,10 @@ bool has_uuid_in__contiguous_array(
         Serialization_Header *p_serialization_headers,
         Quantity__u32 length_of__p_serialization_headers,
         Identifier__u32 identifier__u32) {
-    return poll_for__uuid_collision(
+    return dehash_identitier_u32_in__contigious_array(
             p_serialization_headers, 
             length_of__p_serialization_headers, 
-            identifier__u32)
-        != INDEX__UNKNOWN__u32;
+            identifier__u32);
 }
 
 static inline
@@ -84,47 +127,10 @@ bool has_uuid_in__contiguous_array__uuid_64(
         Serialization_Header__UUID_64 *p_serialization_headers,
         Quantity__u32 length_of__p_serialization_headers,
         Identifier__u64 identifier__u64) {
-    return poll_for__uuid_collision__uuid_64(
+    return dehash_identitier_u64_in__contigious_array(
             p_serialization_headers, 
             length_of__p_serialization_headers, 
-            identifier__u64)
-        != INDEX__UNKNOWN__u32;
-}
-
-static inline
-Serialization_Header *dehash_identitier_u32_in__contigious_array(
-        Serialization_Header *p_serialization_headers,
-        Quantity__u32 length_of__p_serialization_headers,
-        Identifier__u32 identifier__u32) {
-    Index__u32 index__u32 = 
-        poll_for__uuid_collision(
-                p_serialization_headers, 
-                length_of__p_serialization_headers,
-                identifier__u32);
-    if (is_index_u32__out_of_bounds(index__u32))
-        return 0;
-    return get_p_serialization_header_from__contigious_array(
-            p_serialization_headers, 
-            length_of__p_serialization_headers, 
-            index__u32);
-}
-
-static inline
-Serialization_Header__UUID_64 *dehash_identitier_u64_in__contigious_array(
-        Serialization_Header__UUID_64 *p_serialization_headers,
-        Quantity__u32 length_of__p_serialization_headers,
-        Identifier__u64 identifier__u64) {
-    Index__u32 index__u32 = 
-        poll_for__uuid_collision__uuid_64(
-                p_serialization_headers, 
-                length_of__p_serialization_headers,
-                identifier__u64);
-    if (is_index_u32__out_of_bounds(index__u32))
-        return 0;
-    return get_p_serialization_header_from__contigious_array__uuid_64(
-            p_serialization_headers, 
-            length_of__p_serialization_headers, 
-            index__u32);
+            identifier__u64);
 }
 
 static inline

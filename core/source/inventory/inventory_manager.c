@@ -70,7 +70,8 @@ Inventory *allocate_p_inventory_using__this_uuid_in__inventory_manager(
         poll_for__uuid_collision(
                 p_inventories,
                 quantity_of__inventories,
-                uuid);
+                uuid,
+                INDEX__UNKNOWN__u32);
 
     Inventory *p_inventory =
         (is_inventory_for__entity_or__container)

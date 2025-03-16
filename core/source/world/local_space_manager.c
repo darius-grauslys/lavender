@@ -170,6 +170,9 @@ void hold_all__unheld_local_spaces_in__local_space_manager(
             hold_global_space_within__global_space_manager(
                     p_game,
                     p_local_space->global_space__vector__3i32);
+        if (!p_local_space->p_global_space) {
+            debug_error("hold_all__unheld_local_spaces_in__local_space_manager, p_global_space == 0.");
+        }
     }
 }
 
@@ -284,6 +287,7 @@ void update_local_spaces_between__these_two_local_spaces(
         Game *p_game,
         Local_Space *p_local_space__current,
         Local_Space *p_local_space__end,
+        Chunk_Vector__3i32 chunk_vector__start__3i32,
         Direction__u8 direction_to__update) {
     switch(direction_to__update) {
         default:
@@ -302,43 +306,30 @@ void update_local_spaces_between__these_two_local_spaces(
                     );
             p_local_space__current->p_global_space = 0;
         }
-
-        switch (direction_to__update) {
-            default:
-            case DIRECTION__NORTH:
-                p_local_space__current->global_space__vector__3i32 =
-                    p_local_space__current
-                    ->p_local_space__south
-                    ->global_space__vector__3i32;
-                p_local_space__current->global_space__vector__3i32.y__i32++;
-                break;
-            case DIRECTION__EAST:
-                p_local_space__current->global_space__vector__3i32 =
-                    p_local_space__current
-                    ->p_local_space__west
-                    ->global_space__vector__3i32;
-                p_local_space__current->global_space__vector__3i32.x__i32++;
-                break;
-            case DIRECTION__SOUTH:
-                p_local_space__current->global_space__vector__3i32 =
-                    p_local_space__current
-                    ->p_local_space__north
-                    ->global_space__vector__3i32;
-                p_local_space__current->global_space__vector__3i32.y__i32--;
-                break;
-            case DIRECTION__WEST:
-                p_local_space__current->global_space__vector__3i32 =
-                    p_local_space__current
-                    ->p_local_space__east
-                    ->global_space__vector__3i32;
-                p_local_space__current->global_space__vector__3i32.x__i32--;
-                break;
-        }
-
+        p_local_space__current->global_space__vector__3i32 =
+            chunk_vector__start__3i32;
         p_local_space__current->p_global_space =
             hold_global_space_within__global_space_manager(
                     p_game,
-                    p_local_space__current->global_space__vector__3i32);
+                    chunk_vector__start__3i32);
+        if (!p_local_space__current->p_global_space) {
+            debug_error("update_local_spaces_between__these_two_local_spaces, p_global_space == 0.");
+        }
+        switch (direction_to__update) {
+            default:
+            case DIRECTION__NORTH:
+                chunk_vector__start__3i32.y__i32++;
+                break;
+            case DIRECTION__EAST:
+                chunk_vector__start__3i32.x__i32++;
+                break;
+            case DIRECTION__SOUTH:
+                chunk_vector__start__3i32.y__i32--;
+                break;
+            case DIRECTION__WEST:
+                chunk_vector__start__3i32.x__i32--;
+                break;
+        }
     } while (poll_local_space__traversal(
                 &p_local_space__current, 
                 p_local_space__end,
@@ -349,9 +340,18 @@ void move_local_space_manager(
         Local_Space_Manager *p_local_space_manager,
         Game *p_game,
         Direction__u8 direction__u8) {
+
+    Chunk_Vector__3i32 chunk_vector__start__3i32;
     if (direction__u8 & DIRECTION__NORTH) {
         p_local_space_manager->center_of__local_space_manager__3i32
             .y__i32++;
+
+        chunk_vector__start__3i32 =
+            p_local_space_manager
+            ->p_local_space__north_west
+            ->global_space__vector__3i32
+            ;
+        chunk_vector__start__3i32.y__i32++;
 
         move_p_ptr_local_space__north(
                 &p_local_space_manager->p_local_space__north_east);
@@ -366,12 +366,20 @@ void move_local_space_manager(
                 p_game,
                 p_local_space_manager->p_local_space__north_west, 
                 p_local_space_manager->p_local_space__north_east, 
+                chunk_vector__start__3i32,
                 DIRECTION__EAST);
     }
     else if (direction__u8 & DIRECTION__SOUTH) {
         p_local_space_manager->center_of__local_space_manager__3i32
             .y__i32--;
 
+        chunk_vector__start__3i32 =
+            p_local_space_manager
+            ->p_local_space__south_west
+            ->global_space__vector__3i32
+            ;
+        chunk_vector__start__3i32.y__i32--;
+
         move_p_ptr_local_space__south(
                 &p_local_space_manager->p_local_space__north_east);
         move_p_ptr_local_space__south(
@@ -385,11 +393,19 @@ void move_local_space_manager(
                 p_game,
                 p_local_space_manager->p_local_space__south_west, 
                 p_local_space_manager->p_local_space__south_east, 
+                chunk_vector__start__3i32,
                 DIRECTION__EAST);
     }
     if (direction__u8 & DIRECTION__EAST) {
         p_local_space_manager->center_of__local_space_manager__3i32
             .x__i32++;
+
+        chunk_vector__start__3i32 =
+            p_local_space_manager
+            ->p_local_space__north_east
+            ->global_space__vector__3i32
+            ;
+        chunk_vector__start__3i32.x__i32++;
 
         move_p_ptr_local_space__east(
                 &p_local_space_manager->p_local_space__north_east);
@@ -404,11 +420,19 @@ void move_local_space_manager(
                 p_game,
                 p_local_space_manager->p_local_space__north_east, 
                 p_local_space_manager->p_local_space__south_east, 
+                chunk_vector__start__3i32,
                 DIRECTION__SOUTH);
     }
     else if (direction__u8 & DIRECTION__WEST) {
         p_local_space_manager->center_of__local_space_manager__3i32
             .x__i32--;
+
+        chunk_vector__start__3i32 =
+            p_local_space_manager
+            ->p_local_space__north_west
+            ->global_space__vector__3i32
+            ;
+        chunk_vector__start__3i32.x__i32--;
 
         move_p_ptr_local_space__west(
                 &p_local_space_manager->p_local_space__north_east);
@@ -423,6 +447,7 @@ void move_local_space_manager(
                 p_game,
                 p_local_space_manager->p_local_space__north_west, 
                 p_local_space_manager->p_local_space__south_west, 
+                chunk_vector__start__3i32,
                 DIRECTION__SOUTH);
     }
 }

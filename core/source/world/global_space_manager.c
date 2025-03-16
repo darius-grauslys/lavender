@@ -59,57 +59,13 @@ void initialize_global_space_manager(
             sizeof(Global_Space));
 }
 
-Global_Space *dehash_global_space_from__global_space_manager(
-        Global_Space_Manager *p_global_space_manager,
-        Chunk_Vector__3i32 chunk_vector__3i32) {
-    Global_Space *p_global_space =
-        get_p_global_space_from__global_space_manager(
-                p_global_space_manager, 
-                chunk_vector__3i32);
-    if (!is_global_space__allocated(p_global_space)) {
-        return 0;
-    }
-    if (is_vectors_3i32__equal(
-                chunk_vector__3i32, 
-                p_global_space->chunk_vector__3i32)) {
-        return p_global_space;
-    }
-
-    // hash missed, brute force search.
-    Index__u32 start_index =
-        p_global_space
-        - p_global_space_manager
-        ->global_spaces
-        ;
-    for (Index__u32 index_of__global_space = 
-                (start_index+1 % QUANTITY_OF__GLOBAL_SPACE);
-            index_of__global_space != start_index;
-            index_of__global_space = 
-                (index_of__global_space+1 % QUANTITY_OF__GLOBAL_SPACE)) {
-        p_global_space = 
-            get_p_global_space_by__index_from__global_space_manager(
-                    p_global_space_manager, 
-                    index_of__global_space);
-        if (!is_global_space__allocated(
-                    p_global_space)) {
-            return 0;
-        }
-        if (is_vectors_3i32__equal(
-                    chunk_vector__3i32, 
-                    p_global_space->chunk_vector__3i32)) {
-            return p_global_space;
-        }
-    }
-    return 0;
-}
-
 Global_Space *allocate_global_space_in__global_space_manager(
         Global_Space_Manager *p_global_space_manager,
         Chunk_Vector__3i32 chunk_vector__3i32) {
     Identifier__u64 uuid_64 =
         get_uuid_for__global_space(chunk_vector__3i32);
     Global_Space *p_global_space =
-        (Global_Space*)dehash_identitier_u64_in__contigious_array(
+        (Global_Space*)get_next_available__allocation_in__contiguous_array__u64(
                 (Serialization_Header__UUID_64*)
                     &p_global_space_manager->global_spaces, 
                 QUANTITY_OF__GLOBAL_SPACE, 
@@ -122,6 +78,8 @@ Global_Space *allocate_global_space_in__global_space_manager(
     initialize_global_space_as__allocated(
             p_global_space,
             uuid_64);
+    p_global_space->chunk_vector__3i32 =
+        chunk_vector__3i32;
     return p_global_space;
 }
 

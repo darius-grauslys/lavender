@@ -43,18 +43,21 @@ void set_entity_of__client(
 static inline
 Game_Action_Manager *get_p_game_action_manager__inbound_from__client(
         Client *p_client) {
+    if (!p_client) return 0;
     return &p_client->game_action_manager__inbound;
 }
 
 static inline
 Game_Action_Manager *get_p_game_action_manager__outbound_from__client(
         Client *p_client) {
+    if (!p_client) return 0;
     return &p_client->game_action_manager__outbound;
 }
 
 static inline
 Local_Space_Manager *get_p_local_space_manager_from__client(
         Client *p_client) {
+    if (!p_client) return 0;
     return &p_client->local_space_manager;
 }
 

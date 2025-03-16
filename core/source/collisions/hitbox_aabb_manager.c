@@ -33,7 +33,8 @@ Hitbox_AABB *allocate_hitbox_aabb_from__hitbox_aabb_manager(
         poll_for__uuid_collision(
                 (Serialization_Header *)p_hitbox_aabb_manager->hitboxes, 
                 MAX_QUANTITY_OF__HITBOX_AABB, 
-                uuid__u32);
+                uuid__u32,
+                INDEX__UNKNOWN__u32);
     if (is_index_u32__out_of_bounds(index_of__hitbox)) {
         debug_error("allocate_hitbox_aabb_from__hitbox_aabb_manager, failed to allocate hitbox.");
         return 0;
@@ -79,7 +80,8 @@ Hitbox_AABB *get_p_hitbox_aabb_by__uuid_u32_from__hitbox_aabb_manager(
         poll_for__uuid_collision(
                 (Serialization_Header *)p_hitbox_aabb_manager->hitboxes, 
                 MAX_QUANTITY_OF__HITBOX_AABB, 
-                uuid__u32);
+                uuid__u32,
+                INDEX__UNKNOWN__u32);
 
     if (is_index_u32__out_of_bounds(index_of__hitbox)) {
         debug_error("get_p_hitbox_aabb_by__uuid_u32_from__hitbox_aabb_manager, hitbox not found.");
