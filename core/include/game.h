@@ -19,7 +19,7 @@
 void initialize_game(Game *p_game);
 int run_game(Game *p_game);
 
-i32F20 get_elapsed_time__i32F20_of__game(
+u32F20 get_elapsed_time__u32F20_of__game(
         Game *p_game);
 
 ///

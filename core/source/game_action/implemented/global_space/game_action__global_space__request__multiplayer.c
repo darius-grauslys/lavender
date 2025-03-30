@@ -11,6 +11,7 @@
 #include "multiplayer/tcp_socket_manager.h"
 #include "platform.h"
 #include "serialization/serialization_header.h"
+#include "timer.h"
 #include "world/chunk_pool.h"
 #include "world/world.h"
 #include "world/global_space_manager.h"
@@ -135,8 +136,8 @@ void m_process__game_action__global_space__request__inbound_server(
                 p_game, 
                 p_game_action->uuid_of__client__u32,
                 p_game_action->_serialiation_header.uuid, 
-                (u8*)p_global_space->p_chunk, 
-                sizeof(Chunk), 
+                (u8*)&p_global_space->p_chunk->chunk_data, 
+                sizeof(Chunk_Data), 
                 p_game_action
                     ->ga_kind__global_space__request__chunk_payload_bitmap, 
                 (u16)TCP_PAYLOAD_BITMAP__QUANTITY_OF__PAYLOADS(Chunk))) {
@@ -152,6 +153,7 @@ void m_process__game_action__global_space__request__inbound_server(
             return;
     }
 
+    debug_info("m_process__game_action__global_space__request__inbound_server, finished.");
     complete_game_action_process(
             p_game, 
             p_this_process);
@@ -185,6 +187,8 @@ void m_process__game_action__global_space__request__outbound_client(
     debug_info("m_process__game_action__global_space__request__outbound_client");
     Serialization_Request *p_serialization_request =
         (Serialization_Request*)p_this_process->p_process_data;
+    Game_Action *p_game_action =
+        (Game_Action*)p_serialization_request->p_data;
 
     switch (poll_game_action_process__tcp_receive(
                 p_game, 
@@ -192,7 +196,19 @@ void m_process__game_action__global_space__request__outbound_client(
         case PLATFORM_Read_File_Error__End_Of_File:
             break;
         case PLATFORM_Read_File_Error__System_Busy:
-            // TODO: handle timeout
+            if (!poll_timer_by__this_duration_u16(
+                        &p_game_action
+                        ->ga_kind__global_space__request__timeout, 
+                        get_elapsed_time__u32F20_of__game(p_game) >> 20)) {
+                return;
+            }
+            debug_info("elapsed: %d/%d",
+                    get_elapsed_time__u32F20_of__game(p_game) >> 20,
+                    GA_KIND__GBLOAL_SPACE__REQUEST__TIMEOUT);
+            debug_error("m_process__game_action__global_space__request__outbound_client, reception timeout.");
+            fail_game_action_process_for__tcp(
+                    p_game, 
+                    p_this_process);
             return;
         default:
             debug_error("m_process__game_action__global_space__request__outbound_client, reception failed.");
@@ -201,9 +217,6 @@ void m_process__game_action__global_space__request__outbound_client(
                     p_this_process);
             return;
     }
-
-    Game_Action *p_game_action =
-        (Game_Action*)p_serialization_request->p_data;
 
     Global_Space_Vector__3i32 *p_gsv__3i32 =
         &p_game_action->ga_kind__global_space__request__gsv_3i32;
@@ -283,8 +296,8 @@ void m_process__game_action__global_space__request__outbound_client__init(
         set_game_action_process_as__tcp_payload_receiver(
                 p_game, 
                 p_this_process, 
-                (u8*)p_global_space->p_chunk, 
-                sizeof(Chunk));
+                (u8*)&p_global_space->p_chunk->chunk_data, 
+                sizeof(Chunk_Data));
     if (!is_process__mutation_successful) {
         debug_error("m_process__game_action__global_space__request__outbound_client__init, failed to set process as tcp receiver.");
         fail_game_action_process(
@@ -343,4 +356,7 @@ void initialize_game_action_for__global_space__request(
     p_game_action
         ->ga_kind__global_space__request__gsv_3i32 =
         global_space_vector__3i32;
+    initialize_timer_u16(
+            &p_game_action->ga_kind__global_space__request__timeout, 
+            GA_KIND__GBLOAL_SPACE__REQUEST__TIMEOUT);
 }

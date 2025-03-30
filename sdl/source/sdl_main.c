@@ -11,8 +11,11 @@
 #include <game.h>
 #include <sdl_defines.h>
 #include <rendering/opengl/glad/glad.h>
+#include <time/sdl_time.h>
 
 int PLATFORM_main(Game *p_game) {
+    SDL_initialize_time();
+
     SDL_Init(
             SDL_INIT_TIMER
             | SDL_INIT_VIDEO

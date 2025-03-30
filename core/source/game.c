@@ -97,7 +97,7 @@ void initialize_game(
     initialize_timer_u32(
             &p_game->time__nanoseconds__u32, 
             999999999);
-    p_game->tick_accumilator__i32F20 = 0;
+    p_game->tick_accumilator__u32F20 = 0;
 
     p_game->is_world__initialized = false;
 
@@ -256,34 +256,36 @@ void poll_multiplayer(Game *p_game) {
         return;
     }
 
-    p_game->pM_tcp_socket_manager->m_poll_tcp_socket_manager(
+    p_game
+        ->pM_tcp_socket_manager
+        ->m_poll_tcp_socket_manager(
             p_game->pM_tcp_socket_manager,
             p_game);
 }
 
-i32F20 get_elapsed_time__i32F20_of__game(
+u32F20 get_elapsed_time__u32F20_of__game(
         Game *p_game) {
-    p_game->time_elapsed__i32F20 =
+    p_game->time_elapsed__u32F20 =
         PLATFORM_get_time_elapsed(
                 &p_game->time__seconds__u32, 
                 &p_game->time__nanoseconds__u32);
-    p_game->tick_accumilator__i32F20 +=
-        p_game->time_elapsed__i32F20;
-    return p_game->time_elapsed__i32F20;
+    p_game->tick_accumilator__u32F20 +=
+        p_game->time_elapsed__u32F20;
+    return p_game->time_elapsed__u32F20;
 }
 
 Quantity__u32 poll__game_tick_timer(Game *p_game) {
-    (void)get_elapsed_time__i32F20_of__game(p_game);
-    if (p_game->tick_accumilator__i32F20
+    (void)get_elapsed_time__u32F20_of__game(p_game);
+    if (p_game->tick_accumilator__u32F20
             >= BIT(14)) {
-        return p_game->tick_accumilator__i32F20 >> 14;
+        return p_game->tick_accumilator__u32F20 >> 14;
     }
     return 0;
 }
 
 void reset__game_tick_timer(Game *p_game) {
-    p_game->tick_accumilator__i32F20 -=
-        p_game->tick_accumilator__i32F20
+    p_game->tick_accumilator__u32F20 -=
+        p_game->tick_accumilator__u32F20
         & ~MASK(14);
 }
 

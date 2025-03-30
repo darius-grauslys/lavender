@@ -2,14 +2,20 @@
 #include "numerics.h"
 #include "timer.h"
 #include "sdl_numerics.h"
+#include <SDL2/SDL_timer.h>
 
 #ifdef _WIN32
+
+void SDL_initialize_time(void) {
+    return;
+}
+
 ///
-/// NOTE: Timer value is considered to be i32F20 seconds
+/// NOTE: Timer value is considered to be u32F20 seconds
 ///
 #include <windows.h>
 #include <mmsystem.h>
-i32F20 PLATFORM_get_time_elapsed(
+u32F20 PLATFORM_get_time_elapsed(
         Timer__u32 *p_timer__seconds__u32,
         Timer__u32 *p_timer__nanoseconds__u32) {
     DWORD time__old = get_time_elapsed_from__timer_u32(
@@ -43,16 +49,55 @@ i32F20 PLATFORM_get_time_elapsed(
 }
 #else
 #include <time.h>
+
+uint32_t _SDL_miliseconds_last = 0;
+
+void SDL_initialize_time(void) {
+    _SDL_miliseconds_last =
+        SDL_GetTicks();
+}
+
+u32F20 PLATFORM_get_time_elapsed(
+        Timer__u32 *p_timer__seconds__u32,
+        Timer__u32 *p_timer__nanoseconds__u32) {
+    // TODO: maybe leverage a 32 bit version
+    uint32_t total_miliseconds = SDL_GetTicks();
+
+    (void)progress_timer__u32(
+            p_timer__seconds__u32,
+            total_miliseconds / 1000);
+
+    (void)progress_timer__u32(
+            p_timer__nanoseconds__u32,
+            (total_miliseconds % 1000) * 1000000);
+
+    uint32_t elapsed_miliseconds =
+        total_miliseconds
+        - _SDL_miliseconds_last;
+    _SDL_miliseconds_last = total_miliseconds;
+    return elapsed_miliseconds << 10;
+}
+/*
 ///
-/// NOTE: Timer value is considered to be i32F20 seconds
+/// NOTE: Timer value is considered to be u32F20 seconds
 ///
-i32F20 PLATFORM_get_time_elapsed(
+u32F20 PLATFORM_get_time_elapsed(
         Timer__u32 *p_timer__seconds__u32,
         Timer__u32 *p_timer__nanoseconds__u32) {
     struct timespec timespec__current;
     clock_gettime(
             CLOCK_MONOTONIC, 
             &timespec__current);
+
+    if (timespec__current.tv_nsec < _SDL_timespec__begin.tv_nsec) {
+        timespec__current.tv_sec -= _SDL_timespec__begin.tv_sec - 1;
+        timespec__current.tv_nsec = 
+            _SDL_timespec__begin.tv_nsec
+            - timespec__current.tv_nsec;
+    } else {
+        timespec__current.tv_sec -= _SDL_timespec__begin.tv_sec;
+        timespec__current.tv_nsec -= _SDL_timespec__begin.tv_nsec;
+    }
 
     u32 elapsed__seconds = 
         subtract_u32__no_overflow(
@@ -94,4 +139,5 @@ i32F20 PLATFORM_get_time_elapsed(
                 >> 10)
         ;
 }
+*/
 #endif

@@ -179,3 +179,41 @@ Serialization_Header__UUID_64 *dehash_identitier_u64_in__contigious_array(
             length_of__p_serialization_headers, 
             index__u32);
 }
+
+Serialization_Header *get_next_available__allocation_in__contiguous_array(
+        Serialization_Header *p_serialization_headers,
+        Quantity__u32 length_of__p_serialization_headers,
+        Identifier__u32 identifier__u32) {
+    Index__u32 index_of__allocation = 
+        poll_for__uuid_collision(
+                p_serialization_headers, 
+                length_of__p_serialization_headers, 
+                identifier__u32, 
+                INDEX__UNKNOWN__u32);
+    if (index_of__allocation == INDEX__UNKNOWN__u32)
+        return 0;
+    return (Serialization_Header*)
+        get_p_serialization_header_from__contigious_array(
+                p_serialization_headers,
+                length_of__p_serialization_headers,
+                index_of__allocation);
+}
+
+Serialization_Header *get_next_available__allocation_in__contiguous_array__u64(
+        Serialization_Header__UUID_64 *p_serialization_headers,
+        Quantity__u32 length_of__p_serialization_headers,
+        Identifier__u64 identifier__u64) {
+    Index__u32 index_of__allocation = 
+        poll_for__uuid_collision__uuid_64(
+                p_serialization_headers, 
+                length_of__p_serialization_headers, 
+                identifier__u64, 
+                INDEX__UNKNOWN__u32);
+    if (index_of__allocation == INDEX__UNKNOWN__u32)
+        return 0;
+    return (Serialization_Header*)
+        get_p_serialization_header_from__contigious_array__uuid_64(
+                p_serialization_headers,
+                length_of__p_serialization_headers,
+                index_of__allocation);
+}

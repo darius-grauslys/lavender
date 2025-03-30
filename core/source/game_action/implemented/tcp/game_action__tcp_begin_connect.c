@@ -22,6 +22,7 @@ void m_process__game_action__tcp_connect__begin(
         default:
             break;
         case TCP_Socket_State__Authenticated:
+            debug_info("m_process__game_action__tcp_connect__begin: authenticated!!!"); 
             set_tcp_socket_as__automatically_driven(p_tcp_socket);
             complete_process(p_this_process);
             break;
@@ -99,11 +100,6 @@ void m_process__game_action__tcp_connect__begin__init(
 
     p_this_process->m_process_run__handler =
         m_process__game_action__tcp_connect__begin;
-
-    // We do not need to hold onto this game process any longer.
-    resolve_game_action(
-            p_game, 
-            p_game_action);
 }
 
 void register_game_action__tcp_connect__begin(

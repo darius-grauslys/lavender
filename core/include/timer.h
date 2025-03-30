@@ -3,6 +3,7 @@
 
 #include "defines.h"
 #include "defines_weak.h"
+#include "numerics.h"
 
 static inline
 Timer__u8 get_timer__u8(u8 start) {
@@ -141,7 +142,7 @@ static void inline initialize_timer_u16(
         Timer__u16 *timer__u16,
         Quantity__u16 start__u16) {
     timer__u16->remaining__u16 =
-        timer__u16->start__u16 = start__u16;
+        (timer__u16->start__u16 = start__u16);
 }
 
 static void inline reset_timer_u16(
@@ -164,6 +165,25 @@ static bool inline poll_timer_u16(Timer__u16 *timer__u16) {
 #endif
     return (is_timer_u16__elapsed(timer__u16) 
             || timer__u16->remaining__u16-- == 0);
+}
+
+static bool inline poll_timer_by__this_duration_u16(
+        Timer__u16 *timer__u16,
+        u16 duration) {
+#ifndef NDEBUG
+    if (timer__u16->remaining__u16 > timer__u16->start__u16) {
+        debug_error("poll_timer_by__this_duration_u16, timer__u16->elapsed:%d exceeds limit:%d",
+                timer__u16->remaining__u16,
+                timer__u16->start__u16);
+    }
+#endif
+    if (is_timer_u16__elapsed(timer__u16))
+        return true;
+    timer__u16->remaining__u16 =
+        subtract_u16__no_overflow(
+                timer__u16->remaining__u16, 
+                duration);
+    return timer__u16->remaining__u16 == 0;
 }
 
 static void inline loop_timer_u16(Timer__u16 *timer__u16) {

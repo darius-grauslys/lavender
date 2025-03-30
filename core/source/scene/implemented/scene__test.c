@@ -21,6 +21,7 @@
 #include "scene/scene_manager.h"
 #include "rendering/gfx_context.h"
 #include "serialization/serialization_header.h"
+#include "timer.h"
 #include "vectors.h"
 #include "world/camera.h"
 #include "world/chunk.h"
@@ -81,7 +82,19 @@ void m_load_scene__test(
             p_game, 
             addr);
     TCP_Socket *p_tcp_socket;
+    Timer__u16 timeout;
+    initialize_timer_u16(
+            &timeout, 
+            BIT(16)-1);
     do {
+        //if (poll_timer_by__this_duration_u16(
+        //            &timeout, 
+        //            get_elapsed_time__u32F20_of__game(p_game) >> 20)) {
+        //    debug_abort("m_load_scene__test, failed to connect.");
+        //    break;
+        //}
+        while (!poll__game_tick_timer(p_game));
+        reset__game_tick_timer(p_game);
         poll_process_manager(
                 get_p_process_manager_from__game(p_game), 
                 p_game);
@@ -89,8 +102,6 @@ void m_load_scene__test(
             get_p_tcp_socket_for__this_uuid(
                     get_p_tcp_socket_manager_from__game(p_game), 
                     GET_UUID_P(p_client));
-        if (!p_tcp_socket)
-            continue;
     } while(!p_tcp_socket
             || poll_tcp_socket_for__connection(p_tcp_socket)
                 != TCP_Socket_State__Authenticated);
@@ -289,6 +300,7 @@ void m_enter_scene__test(
             is_p_scene_the__active_scene_in__scene_manager(
                 p_scene_manager, 
                 p_this_scene)) {
+        while (!poll__game_tick_timer(p_game));
         manage_game__pre_render(p_game);
 
         manage_world(

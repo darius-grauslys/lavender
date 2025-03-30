@@ -59,6 +59,8 @@ typedef uint8_t    u8F4;
 
 typedef int32_t     i32F20;
 
+typedef uint32_t     u32F20;
+
 #define I32F4_MAX ((uint32_t)BIT(31)-1)
 #define I32F4_MIN BIT(31)
 
@@ -110,8 +112,8 @@ typedef struct Timer__u32_t {
     uint32_t start__u32;
 } Timer__u32;
 typedef struct Timer__u16_t {
-    uint8_t remaining__u16;
-    uint8_t start__u16;
+    uint16_t remaining__u16;
+    uint16_t start__u16;
 } Timer__u16;
 typedef struct Timer__u8_t {
     uint8_t remaining__u8;
@@ -2020,6 +2022,7 @@ typedef struct Tile_Render_Result_t {
 
 typedef struct World_Parameters_t World_Parameters;
 typedef struct Chunk_t Chunk;
+typedef struct Chunk_Data_t Chunk_Data;
 
 typedef void (*f_Chunk_Generator)(
         Game *p_game,
@@ -2054,14 +2057,20 @@ typedef uint8_t Chunk_Flags;
 #define CHUNK_FLAG__IS_UPDATED BIT(3)
 #define CHUNK_FLAG__IS_VISUALLY_UPDATED BIT(4)
 
+typedef struct Chunk_Data_t {
+    Tile tiles[CHUNK__WIDTH * CHUNK__HEIGHT * CHUNK__DEPTH];
+} Chunk_Data;
+
 typedef struct Chunk_t {
     ///
     /// Do not interact with this.
     ///
     Serialization_Header__UUID_64    _serialization_header;
-
-    Tile tiles[CHUNK__WIDTH * CHUNK__HEIGHT * CHUNK__DEPTH];
     Chunk_Flags chunk_flags;
+    union {
+        Tile tiles[CHUNK__WIDTH * CHUNK__HEIGHT * CHUNK__DEPTH];
+        Chunk_Data chunk_data;
+    };
 } Chunk;
 
 typedef struct Chunk_Pool_t {
@@ -2280,6 +2289,9 @@ typedef struct Game_Action_t {
                     ga_kind__global_space__request__gsv_3i32;
                 TCP_PAYLOAD_BITMAP(Chunk, 
                         ga_kind__global_space__request__chunk_payload_bitmap);
+                // in seconds:
+#define GA_KIND__GBLOAL_SPACE__REQUEST__TIMEOUT 512
+                Timer__u16 ga_kind__global_space__request__timeout;
             }; // Global_Space__Request
             struct {
                 Global_Space_Vector__3i32 
@@ -2448,8 +2460,8 @@ typedef struct Game_t {
     m_Game_Action_Handler m_game_action_handler__receive;
     m_Game_Action_Handler m_game_action_handler__resolve;
 
-    i32F20 time_elapsed__i32F20;
-    i32F20 tick_accumilator__i32F20;
+    u32F20 time_elapsed__u32F20;
+    u32F20 tick_accumilator__u32F20;
     bool is_world__initialized;
 } Game;
 

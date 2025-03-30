@@ -3,4 +3,6 @@
 
 #include "defines.h"
 
+void SDL_initialize_time(void);
+
 #endif
