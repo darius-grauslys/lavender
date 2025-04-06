@@ -106,6 +106,7 @@ void m_poll_tcp_socket_manager_as__server__default(
                 GET_UUID_P(p_tcp_socket__client);
             receive_game_action(
                     p_game,
+                    GET_UUID_P(p_client),
                     &deliver.game_action);
         }
     }

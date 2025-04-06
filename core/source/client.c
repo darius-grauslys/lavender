@@ -208,6 +208,9 @@ bool dispatch_game_action_for__client(
             p_game_action_logic_entry, 
             p_game_action);
 
+    p_game_action->uuid_of__client__u32 =
+        GET_UUID_P(p_client);
+
     if (is_game_action__with_process(p_game_action)) {
         Game_Action *p_game_action__allocated = 0;
         if (!is_game_action__allocated(p_game_action)) {

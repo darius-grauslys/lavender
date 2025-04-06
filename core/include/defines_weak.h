@@ -21,6 +21,7 @@
 typedef int32_t     i32;
 typedef int16_t     i16;
 typedef int8_t      i8;
+typedef uint64_t    u64;
 typedef uint32_t    u32;
 typedef uint16_t    u16;
 typedef uint8_t     u8;
@@ -67,6 +68,8 @@ typedef struct Vector__3i32_t Tile_Vector__3i32;
 typedef struct Timer__u32_t Timer__u32;
 typedef struct Timer__u16_t Timer__u16;
 typedef struct Timer__u8_t Timer__u8;
+
+typedef struct Date_Time_t Date_Time;
 
 ///
 /// SECTION_audio
@@ -344,6 +347,7 @@ typedef enum Tile_Kind {
 ///
 typedef enum Game_Action_Kind {
     Game_Action_Kind__None = 0,
+    Game_Action_Kind__Bad_Request,
     Game_Action_Kind__TCP_Connect__Begin,
     Game_Action_Kind__TCP_Connect,
     Game_Action_Kind__TCP_Connect__Reject,

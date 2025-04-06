@@ -25,6 +25,7 @@ void dispatch_game_action__connect__reject(
             p_client);
     dispatch_game_action(
             p_game,
+            GET_UUID_P(p_client),
             &ga_reject);
 }
 

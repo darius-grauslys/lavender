@@ -16,8 +16,13 @@ void m_process__game_action__tcp_connect__begin(
         Game *p_game) {
     /// p_process_data is now the tcp_socket
 
+    Game_Action *p_game_action =
+        (Game_Action*)p_this_process->p_process_data;
     TCP_Socket *p_tcp_socket =
-        (TCP_Socket*)p_this_process->p_process_data;
+        get_p_tcp_socket_for__this_uuid(
+                get_p_tcp_socket_manager_from__game(p_game), 
+                p_game_action
+                ->ga_kind__tcp_connect__begin__session__uuid__u32);
     switch (get_state_of__tcp_socket(p_tcp_socket)) {
         default:
             break;
@@ -62,7 +67,8 @@ void m_process__game_action__tcp_connect__begin(
             debug_info("m_process__game_action__tcp_connect__begin: connecting...");
             dispatch_game_action__connect(
                     p_game, 
-                    123); // TODO: give session_token
+                    p_game_action
+                    ->ga_kind__tcp_connect__begin__session__uuid__u32); 
             set_state_of__tcp_socket(
                     p_tcp_socket, 
                     TCP_Socket_State__Authenticating);
@@ -81,20 +87,19 @@ void m_process__game_action__tcp_connect__begin(
 void m_process__game_action__tcp_connect__begin__init(
         Process *p_this_process,
         Game *p_game) {
-    Client *p_client =
-        get_p_client_by__index_from__game(
-                p_game, 
-                0);
     Game_Action *p_game_action =
         (Game_Action*)p_this_process->p_process_data;
+    Client *p_client =
+        get_p_client_by__uuid_from__game(
+                p_game, 
+                p_game_action
+                ->ga_kind__tcp_connect__begin__session__uuid__u32);
     TCP_Socket *p_tcp_socket =
         open_socket_on__tcp_socket_manager__ipv4(
                 get_p_tcp_socket_manager_from__game(p_game), 
                 p_game_action
                 ->ga_kind__tcp_connect__begin__ipv4_address, 
                 GET_UUID_P(p_client));
-    p_this_process->p_process_data =
-        p_tcp_socket;
 
     set_tcp_socket_as__manually_driven(p_tcp_socket);
 
@@ -123,11 +128,14 @@ void register_game_action__tcp_connect__begin(
 
 void initialize_game_action_for__tcp_connect__begin(
         Game_Action *p_game_action,
-        IPv4_Address ipv4_address) {
+        IPv4_Address ipv4_address,
+        Identifier__u32 session_token__uuid__u32) {
     initialize_game_action(p_game_action);
     set_the_kind_of__game_action(
             p_game_action, 
             Game_Action_Kind__TCP_Connect__Begin);
     p_game_action->ga_kind__tcp_connect__begin__ipv4_address =
         ipv4_address;
+    p_game_action->ga_kind__tcp_connect__begin__session__uuid__u32 =
+        session_token__uuid__u32;
 }

@@ -19,7 +19,7 @@
 void initialize_game(Game *p_game);
 int run_game(Game *p_game);
 
-u32F20 get_elapsed_time__u32F20_of__game(
+u32F20 poll_elapsed_time__u32F20_of__game(
         Game *p_game);
 
 ///
@@ -48,6 +48,7 @@ void poll_multiplayer(Game *p_game);
 
 void allocate_client_pool_for__game(
         Game *p_game,
+        Identifier__u32 uuid_of__local_client_or__server__u32,
         Quantity__u32 quantity_of__clients);
 
 Client *allocate_client_from__game(
@@ -57,6 +58,14 @@ Client *allocate_client_from__game(
 Client *get_p_client_by__uuid_from__game(
         Game *p_game,
         Identifier__u32 uuid__u32);
+
+static inline
+Client *get_p_local_client_by__from__game(
+        Game *p_game) {
+    if (!p_game->pM_ptr_array_of__clients)
+        return 0;
+    return p_game->pM_ptr_array_of__clients[0];
+}
 
 /// TODO: obsolete, and inaccurate
 static inline
@@ -253,28 +262,62 @@ bool is_game__multiplayer(Game *p_game) {
 static inline
 bool dispatch_game_action(
         Game *p_game,
+        Identifier__u32 uuid_of__client__u32,
         Game_Action *p_game_action) {
     return p_game->m_game_action_handler__dispatch(
             p_game,
+            get_p_client_by__uuid_from__game(
+                p_game, 
+                uuid_of__client__u32),
+            p_game_action);
+}
+
+static inline
+bool dispatch_game_action_to__server(
+        Game *p_game,
+        Game_Action *p_game_action) {
+    return p_game->m_game_action_handler__dispatch(
+            p_game,
+            get_p_local_client_by__from__game(p_game),
             p_game_action);
 }
 
 static inline
 bool receive_game_action(
         Game *p_game,
+        Identifier__u32 uuid_of__client__u32,
         Game_Action *p_game_action) {
     return p_game->m_game_action_handler__receive(
             p_game,
+            get_p_client_by__uuid_from__game(
+                p_game, 
+                uuid_of__client__u32),
             p_game_action);
 }
 
 static inline
 bool resolve_game_action(
         Game *p_game,
+        Identifier__u32 uuid_of__client__u32,
         Game_Action *p_game_action) {
     return p_game->m_game_action_handler__resolve(
             p_game,
+            get_p_client_by__uuid_from__game(
+                p_game, 
+                uuid_of__client__u32),
             p_game_action);
+}
+
+static inline
+u32F20 get_elapsed_time__u32F20_of__game(
+        Game *p_game) {
+    return p_game->time_elapsed__u32F20;
+}
+
+static inline
+u32F20 get_elapsed_ticks__u32F20_of__game(
+        Game *p_game) {
+    return p_game->tick_accumilator__u32F20 >> 15;
 }
 
 #endif

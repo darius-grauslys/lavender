@@ -20,6 +20,7 @@
 #include "rendering/graphics_window_manager.h"
 #include "scene/scene_manager.h"
 #include "rendering/gfx_context.h"
+#include "serialization/identifiers.h"
 #include "serialization/serialization_header.h"
 #include "timer.h"
 #include "vectors.h"
@@ -53,25 +54,29 @@ void m_load_scene__test(
         Scene *p_this_scene,
         Game *p_game) {
 #ifdef IS_SERVER
-    allocate_client_pool_for__game(p_game, MAX_QUANTITY_OF__TCP_SOCKETS-2);
+    allocate_client_pool_for__game(p_game, 0, MAX_QUANTITY_OF__TCP_SOCKETS-2);
     begin_multiplayer_for__game(
             p_game,
             m_poll_tcp_socket_manager_as__server__default);
-    Client *p_client = allocate_client_from__game(
-            p_game, 
-            0);
+    Client *p_client = get_p_local_client_by__from__game(p_game);
+
     open_server_socket_on__tcp_socket_manager__ipv4(
             get_p_tcp_socket_manager_from__game(p_game), 
             0, 
             55566);
 #else
-    allocate_client_pool_for__game(p_game, 1);
+    Date_Time date_time;
+    PLATFORM_get_date_time(&date_time);
+    srand(date_time.date_time__sec_min_hour_day_month
+            + date_time.date_time__years);
+    allocate_client_pool_for__game(
+            p_game, 
+            rand(), // TODO: srand by timespec
+            1);
     begin_multiplayer_for__game(
             p_game,
             m_poll_tcp_socket_manager_as__client__default);
-    Client *p_client = allocate_client_from__game(
-            p_game, 
-            0);
+    Client *p_client = get_p_local_client_by__from__game(p_game);
     IPv4_Address addr;
     addr.ip_bytes[0] = 127;
     addr.ip_bytes[1] = 0;
@@ -80,19 +85,14 @@ void m_load_scene__test(
     addr.port = 55566;
     dispatch_game_action__connect__begin(
             p_game, 
-            addr);
+            addr,
+            GET_UUID_P(p_client));
     TCP_Socket *p_tcp_socket;
     Timer__u16 timeout;
     initialize_timer_u16(
             &timeout, 
             BIT(16)-1);
     do {
-        //if (poll_timer_by__this_duration_u16(
-        //            &timeout, 
-        //            get_elapsed_time__u32F20_of__game(p_game) >> 20)) {
-        //    debug_abort("m_load_scene__test, failed to connect.");
-        //    break;
-        //}
         while (!poll__game_tick_timer(p_game));
         reset__game_tick_timer(p_game);
         poll_process_manager(
@@ -169,7 +169,7 @@ void f_tile_render_kernel(
         get_p_chunk_from__local_space(
                 p_local_space);
 
-    if (!p_chunk) {
+    if (!p_chunk || !is_local_space__active(p_local_space)) {
         for (Index__u32 index_of__tile_render_kernel_result = 0;
                 index_of__tile_render_kernel_result 
                 < quantity_of__tile_kernel_render_results;
@@ -220,7 +220,7 @@ void m_enter_scene__test(
         get_p_scene_manager_from__game(p_game);
 
     Client *p_client =
-        get_p_client_by__uuid_from__game(
+        get_p_client_by__index_from__game(
                 p_game, 
                 0);
 

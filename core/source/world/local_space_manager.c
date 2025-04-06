@@ -263,6 +263,9 @@ bool poll_local_space__traversal(
         Local_Space **p_ptr_local_space,
         Local_Space *p_local_space__end,
         Direction__u8 direction_to__traverse) {
+    if (*p_ptr_local_space == p_local_space__end)
+        return false;
+
     switch (direction_to__traverse) {
         default:
             return false;
@@ -280,7 +283,7 @@ bool poll_local_space__traversal(
             break;
     }
 
-    return *p_ptr_local_space != p_local_space__end;
+    return true;
 }
 
 void update_local_spaces_between__these_two_local_spaces(
@@ -452,12 +455,9 @@ void move_local_space_manager(
     }
 }
 
-Local_Space *get_p_local_space_by__3i32F4_from__local_space_manager(
+Local_Space *get_p_local_space_from__local_space_manager(
         Local_Space_Manager *p_local_space_manager,
-        Vector__3i32F4 vector__3i32F4) {
-    Chunk_Vector__3i32 chunk_vector__3i32 = 
-        vector_3i32F4_to__chunk_vector_3i32(
-                vector__3i32F4);
+        Chunk_Vector__3i32 chunk_vector__3i32) {
 
     if (chunk_vector__3i32.x__i32
             < (p_local_space_manager

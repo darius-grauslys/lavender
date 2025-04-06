@@ -2,6 +2,7 @@
 #define GAME_ACTION__GLOBAL_SPACE__REQUEST_H
 
 #include "defines.h"
+#include "defines_weak.h"
 #include "game.h"
 
 void register_game_action__global_space__request_for__client(
@@ -25,7 +26,7 @@ bool dispatch_game_action__global_space__request(
     initialize_game_action_for__global_space__request(
             &ga_request,
             global_space_vector__3i32);
-    return dispatch_game_action(
+    return dispatch_game_action_to__server(
             p_game, 
             &ga_request);
 }

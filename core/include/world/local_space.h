@@ -23,7 +23,10 @@ void set_neighbors_of__local_space(
 static inline
 Global_Space *get_p_global_space_from__local_space(
         Local_Space *p_local_space) {
-    return p_local_space->p_global_space;
+    return (p_local_space) 
+        ? p_local_space->p_global_space
+        : 0
+        ;
 }
 
 static inline

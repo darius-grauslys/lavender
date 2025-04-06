@@ -1,4 +1,5 @@
 #include "game_action/implemented/tcp/game_action__tcp_connect.h"
+#include "client.h"
 #include "defines.h"
 #include "defines_weak.h"
 #include "game.h"
@@ -12,6 +13,7 @@
 #include "platform.h"
 #include "process/game_action_process.h"
 #include "process/process.h"
+#include "world/local_space_manager.h"
 
 ///
 /// inbound - proccessed by server.
@@ -75,6 +77,11 @@ void m_process__game_action__tcp_connect__inbound(
         goto reject;
     }
 
+    load_local_space_manager_at__global_space_vector__3i32(
+            get_p_local_space_manager_from__client(p_client__new), 
+            p_game,
+            VECTOR__3i32__0_0_0);
+
     debug_info("game_action__tcp_connect: accept");
 
     dispatch_game_action__connect__accept(
@@ -123,7 +130,7 @@ void register_game_action__tcp_connect(
 
 void receive_game_action__connect(
         Game *p_game,
-        Identifier__u64 session_token) {
+        Identifier__u32 session_token) {
     Game_Action ga_connect;
     initialize_game_action(&ga_connect);
     set_the_kind_of__game_action(
@@ -134,6 +141,7 @@ void receive_game_action__connect(
 
     receive_game_action(
             p_game,
+            0, // UUID of server is 0.
             &ga_connect);
 }
 

@@ -35,6 +35,7 @@ void dispatch_game_action__tcp_delivery(
             index_of__payload);
     dispatch_game_action(
             p_game, 
+            uuid_of__client_to__send_to,
             &ga_delivery);
 }
 

@@ -8,6 +8,10 @@
 void initialize_game_action(
         Game_Action *p_game_action);
 
+#define GA_UUID_SOURCE(game_action)\
+    ((Game_Action*)game_action)\
+    ->uuid_of__client__u32
+
 static inline
 void set_the_kind_of__game_action(
         Game_Action *p_game_action,
@@ -142,6 +146,27 @@ static inline
 void set_game_action_as__NOT_broadcasted(Game_Action *p_game_action) {
     p_game_action->game_action_flags &=
         ~GAME_ACTION_FLAGS__BIT_IS_BROADCASTED
+        ;
+}
+
+static inline
+bool is_game_action__bad_request(Game_Action *p_game_action) {
+    return p_game_action->game_action_flags
+        & GAME_ACTION_FLAGS__BIT_IS_BAD_REQUEST
+        ;
+}
+
+static inline
+void set_game_action_as__bad_request(Game_Action *p_game_action) {
+    p_game_action->game_action_flags |=
+        GAME_ACTION_FLAGS__BIT_IS_BAD_REQUEST
+        ;
+}
+
+static inline
+void set_game_action_as__NOT_bad_request(Game_Action *p_game_action) {
+    p_game_action->game_action_flags &=
+        ~GAME_ACTION_FLAGS__BIT_IS_BAD_REQUEST
         ;
 }
 

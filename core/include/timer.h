@@ -54,6 +54,25 @@ static bool inline poll_timer_u32(Timer__u32 *timer__u32) {
             || timer__u32->remaining__u32-- == 0);
 }
 
+static bool inline poll_timer_by__this_duration_u32(
+        Timer__u32 *timer__u32,
+        u32 duration) {
+#ifndef NDEBUG
+    if (timer__u32->remaining__u32 > timer__u32->start__u32) {
+        debug_error("poll_timer_by__this_duration_u32, timer__u32->elapsed:%d exceeds limit:%d",
+                timer__u32->remaining__u32,
+                timer__u32->start__u32);
+    }
+#endif
+    if (is_timer_u32__elapsed(timer__u32))
+        return true;
+    timer__u32->remaining__u32 =
+        subtract_u32__no_overflow(
+                timer__u32->remaining__u32, 
+                duration);
+    return timer__u32->remaining__u32 == 0;
+}
+
 static void inline loop_timer_u32(Timer__u32 *timer__u32) {
     if (timer__u32->remaining__u32 == 0)
         timer__u32->remaining__u32 = 

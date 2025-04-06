@@ -1,4 +1,5 @@
 #include "process/game_action_process.h"
+#include "game_action/game_action.h"
 #include "defines.h"
 #include "defines_weak.h"
 #include "game.h"
@@ -51,6 +52,7 @@ void complete_game_action_process_for__tcp(
     if (p_serialization_request->p_data) {
         resolve_game_action(
                 p_game, 
+                GA_UUID_SOURCE(p_serialization_request->p_data),
                 (Game_Action *)p_serialization_request->p_data);
         p_serialization_request->p_data = 0;
     }
@@ -68,6 +70,7 @@ void fail_game_action_process_for__tcp(
     if (p_serialization_request->p_data) {
         resolve_game_action(
                 p_game, 
+                GA_UUID_SOURCE(p_serialization_request->p_data),
                 (Game_Action *)p_serialization_request->p_data);
     }
     deactivate_serialization_request(
@@ -84,7 +87,7 @@ Index__u32 get_tcp_packet__bitmap_data(
             TCP_PAYLOAD_BYTE(
                 quantity_of__tcp_packets__anticipated);
             index_of__bitmap_byte++) {
-        if (p_bitmap[index_of__bitmap_byte] == (u8)-1) {
+        if (p_bitmap[index_of__bitmap_byte] == 0xff) {
             continue;
         }
         break;

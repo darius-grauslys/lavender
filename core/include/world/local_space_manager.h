@@ -4,6 +4,7 @@
 #include "defines.h"
 #include "defines_weak.h"
 #include "vectors.h"
+#include "world/chunk_vectors.h"
 
 void initialize_local_space_manager(
         Local_Space_Manager *p_local_space_manager,
@@ -19,9 +20,18 @@ void move_local_space_manager(
         Game *p_game,
         Direction__u8 direction__u8);
 
+Local_Space *get_p_local_space_from__local_space_manager(
+        Local_Space_Manager *p_local_space_manager,
+        Chunk_Vector__3i32 chunk_vector__3i32);
+
+static inline
 Local_Space *get_p_local_space_by__3i32F4_from__local_space_manager(
         Local_Space_Manager *p_local_space_manager,
-        Vector__3i32F4 vector__3i32F4);
+        Vector__3i32F4 vector__3i32F4) {
+    return get_p_local_space_from__local_space_manager(
+            p_local_space_manager,
+             vector_3i32F4_to__chunk_vector_3i32(vector__3i32F4));
+}
 
 Tile *get_p_tile_by__3i32F4_from__local_space_manager(
         Local_Space_Manager *p_local_space_manager,

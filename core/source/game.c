@@ -41,23 +41,29 @@
 
 bool m_game_action_handler__dispatch__singleplayer(
         Game *p_game,
+        Client *p_client,
         Game_Action *p_game_action);
 bool m_game_action_handler__dispatch__multiplayer(
         Game *p_game,
+        Client *p_client,
         Game_Action *p_game_action);
 
 bool m_game_action_handler__receive__singleplayer(
         Game *p_game,
+        Client *p_client,
         Game_Action *p_game_action);
 bool m_game_action_handler__receive__multiplayer(
         Game *p_game,
+        Client *p_client,
         Game_Action *p_game_action);
 
 bool m_game_action_handler__resolve__singleplayer(
         Game *p_game,
+        Client *p_client,
         Game_Action *p_game_action);
 bool m_game_action_handler__resolve__multiplayer(
         Game *p_game,
+        Client *p_client,
         Game_Action *p_game_action);
 
 void initialize_game(
@@ -116,6 +122,7 @@ void initialize_game(
 
 void allocate_client_pool_for__game(
         Game *p_game,
+        Identifier__u32 uuid_of__local_client_or__server__u32,
         Quantity__u32 quantity_of__clients) {
     if (quantity_of__clients > MAX_QUANTITY_OF__TCP_SOCKETS) {
         debug_error("allocate_client_pool_for__game, quantity_of__clients > MAX_QUANTITY_OF__TCP_SOCKETS");
@@ -135,7 +142,16 @@ void allocate_client_pool_for__game(
             p_game->pM_ptr_array_of__clients,
             0,
             p_game->max_quantity_of__clients);
-    p_game->quantity_of__clients = 0;
+
+    initialize_client(
+            &p_game->pM_clients[0],
+            uuid_of__local_client_or__server__u32,
+            VECTOR__3i32__0_0_0);
+
+    p_game->pM_ptr_array_of__clients[0] =
+        &p_game->pM_clients[0];
+
+    p_game->quantity_of__clients = 1;
 }
 
 void release_clients_from__game(
@@ -263,30 +279,27 @@ void poll_multiplayer(Game *p_game) {
             p_game);
 }
 
-u32F20 get_elapsed_time__u32F20_of__game(
+u32F20 poll_elapsed_time__u32F20_of__game(
         Game *p_game) {
-    p_game->time_elapsed__u32F20 =
+    p_game->time_elapsed__u32F20 +=
         PLATFORM_get_time_elapsed(
                 &p_game->time__seconds__u32, 
                 &p_game->time__nanoseconds__u32);
-    p_game->tick_accumilator__u32F20 +=
-        p_game->time_elapsed__u32F20;
     return p_game->time_elapsed__u32F20;
 }
 
 Quantity__u32 poll__game_tick_timer(Game *p_game) {
-    (void)get_elapsed_time__u32F20_of__game(p_game);
-    if (p_game->tick_accumilator__u32F20
-            >= BIT(14)) {
-        return p_game->tick_accumilator__u32F20 >> 14;
-    }
-    return 0;
+    (void)poll_elapsed_time__u32F20_of__game(p_game);
+    return (p_game->tick_accumilator__u32F20
+            + p_game->time_elapsed__u32F20) >> 15;
 }
 
 void reset__game_tick_timer(Game *p_game) {
     p_game->tick_accumilator__u32F20 -=
-        p_game->tick_accumilator__u32F20
-        & ~MASK(14);
+        (p_game->tick_accumilator__u32F20
+         + p_game->time_elapsed__u32F20)
+        & ~MASK(15);
+    p_game->time_elapsed__u32F20 = 0;
 }
 
 bool print_log__global(Game *p_game, char *cstr) {
@@ -398,11 +411,8 @@ void manage_game__post_render(Game *p_game) {
 
 bool m_game_action_handler__dispatch__singleplayer(
         Game *p_game,
+        Client *p_client,
         Game_Action *p_game_action) {
-    Client *p_client =
-        get_p_client_by__index_from__game(
-                p_game, 
-                0);
     return dispatch_game_action_for__client(
             p_client, 
             p_game, 
@@ -412,52 +422,16 @@ bool m_game_action_handler__dispatch__singleplayer(
 
 bool m_game_action_handler__dispatch__multiplayer(
         Game *p_game,
+        Client *p_client,
         Game_Action *p_game_action) {
     if (is_game_action__local(p_game_action)) {
         return m_game_action_handler__dispatch__singleplayer(
                 p_game, 
+                p_client,
                 p_game_action);
     }
-
-    if (is_game_action__broadcasted(p_game_action)) {
-        bool is_local =
-            !is_vectors_3i32F4__out_of_bounds(
-                    p_game_action
-                    ->vector_3i32F4__broadcast_point);
-        for (Index__u32 index_of__client = 0;
-                index_of__client
-                < get_quantity_of__clients_connect_to__game(p_game);
-                index_of__client++) {
-            Client *p_client = get_p_client_by__index_from__game(
-                    p_game, 
-                    index_of__client);
-
-            if (is_local
-                     && !is_vector_3i32F4_within__local_space_manager(
-                        get_p_local_space_manager_from__client(p_client), 
-                        p_game_action->vector_3i32F4__broadcast_point)) {
-                continue;
-            }
-
-            (void)dispatch_game_action_for__client(
-                    p_client, 
-                    p_game, 
-                    get_p_tcp_socket_manager_from__game(p_game), 
-                    p_game_action);
-        }
-        // TODO: handle errors?
-        return true;
-    }
-
-    Client *p_client =
-        get_p_client_by__uuid_from__game(
-                p_game, 
-                get_client_uuid_from__game_action(p_game_action));
     if (!p_client) {
         debug_error("m_game_action_handler__dispatch__multiplayer, failed to locate associated client.");
-        resolve_game_action(
-                p_game, 
-                p_game_action);
         return false;
     }
 
@@ -470,11 +444,8 @@ bool m_game_action_handler__dispatch__multiplayer(
 
 bool m_game_action_handler__receive__singleplayer(
         Game *p_game,
+        Client *p_client,
         Game_Action *p_game_action) {
-    Client *p_client =
-        get_p_client_by__index_from__game(
-                p_game, 
-                0);
     return receive_game_action_for__client(
             p_client, 
             p_game, 
@@ -483,10 +454,12 @@ bool m_game_action_handler__receive__singleplayer(
 
 bool m_game_action_handler__receive__multiplayer(
         Game *p_game,
+        Client *p_client,
         Game_Action *p_game_action) {
     if (is_game_action__local(p_game_action)) {
         return m_game_action_handler__receive__singleplayer(
                 p_game, 
+                p_client,
                 p_game_action);
     }
 
@@ -519,15 +492,8 @@ bool m_game_action_handler__receive__multiplayer(
         return true;
     }
 
-    Client *p_client =
-        get_p_client_by__uuid_from__game(
-                p_game, 
-                get_client_uuid_from__game_action(p_game_action));
     if (!p_client) {
         debug_error("m_game_action_handler__receive__multiplayer, failed to locate associated client.");
-        resolve_game_action(
-                p_game, 
-                p_game_action);
         return false;
     }
 
@@ -540,14 +506,11 @@ bool m_game_action_handler__receive__multiplayer(
 
 bool m_game_action_handler__resolve__singleplayer(
         Game *p_game,
+        Client *p_client,
         Game_Action *p_game_action) {
     if (!is_game_action__allocated(p_game_action))
         return true;
 
-    Client *p_client =
-        get_p_client_by__index_from__game(
-                p_game, 
-                0);
     if (!p_client) {
         debug_error("m_game_action_handler__resolve__singleplayer, p_client == 0.");
         return false;
@@ -560,19 +523,17 @@ bool m_game_action_handler__resolve__singleplayer(
 
 bool m_game_action_handler__resolve__multiplayer(
         Game *p_game,
+        Client *p_client,
         Game_Action *p_game_action) {
     if (!is_game_action__allocated(p_game_action))
         return true;
     if (is_game_action__local(p_game_action)) {
         return m_game_action_handler__resolve__singleplayer(
                 p_game, 
+                p_client,
                 p_game_action);
     }
 
-    Client *p_client =
-        get_p_client_by__uuid_from__game(
-                p_game, 
-                get_client_uuid_from__game_action(p_game_action));
     if (!p_client) {
         return false;
     }

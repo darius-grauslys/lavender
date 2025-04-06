@@ -19,7 +19,7 @@ bool dispatch_game_action__global_space__store(
     initialize_game_action_for__global_space__store(
             &ga_store,
             global_space_vector__3i32);
-    return dispatch_game_action(
+    return dispatch_game_action_to__server(
             p_game, 
             &ga_store);
 }

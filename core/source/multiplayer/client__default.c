@@ -41,6 +41,7 @@ void m_poll_tcp_socket_manager_as__client__default(
 
             receive_game_action(
                     p_game,
+                    GET_UUID_P(p_client),
                     &delivery.game_action);
             break;
     }

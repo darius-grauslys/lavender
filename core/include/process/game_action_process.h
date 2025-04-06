@@ -6,6 +6,7 @@
 #include "game.h"
 #include "platform.h"
 #include "process/process.h"
+#include "game_action/game_action.h"
 
 ///
 /// Set this process to receive tcp packets for a certain payload.
@@ -80,6 +81,7 @@ void complete_game_action_process(
         (Game_Action*)p_process->p_process_data;
     resolve_game_action(
             p_game, 
+            GA_UUID_SOURCE(p_process->p_process_data),
             p_game_action);
     complete_process(p_process);
 }
@@ -100,6 +102,7 @@ void fail_game_action_process(
         (Game_Action*)p_process->p_process_data;
     resolve_game_action(
             p_game, 
+            GA_UUID_SOURCE(p_process->p_process_data),
             p_game_action);
     fail_process(p_process);
 }

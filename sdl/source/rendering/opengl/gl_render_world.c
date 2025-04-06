@@ -12,6 +12,8 @@
 #include "rendering/opengl/gl_vertex_object.h"
 #include "rendering/opengl/gl_viewport.h"
 #include "vectors.h"
+#include "world/global_space.h"
+#include "world/local_space.h"
 #include "world/world.h"
 #include "sdl_defines.h"
 
@@ -252,6 +254,11 @@ void GL_compose_world(
                 x 
                 < GFX_CONTEXT__RENDERING_WIDTH__IN_CHUNKS;
                 x++) {
+            // TODO: this causes seg fault
+            // if (!is_local_space__active(
+            //             p_local_space__current)) {
+            //     continue;
+            // }
             GL_compose_chunk(
                     p_gfx_context, 
                     p_ptr_array_of__gfx_windows, 

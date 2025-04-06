@@ -13,7 +13,7 @@ void register_game_action__tcp_connect(
 
 void receive_game_action__connect(
         Game *p_game,
-        Identifier__u64 session_token);
+        Identifier__u32 session_token);
 
 void initialize_game_action_for__tcp_connect(
         Game_Action *p_game_action,
@@ -22,13 +22,14 @@ void initialize_game_action_for__tcp_connect(
 static inline
 void dispatch_game_action__connect(
         Game *p_game,
-        Identifier__u64 session_token) {
+        Identifier__u32 session_token) {
     Game_Action ga_connect;
     initialize_game_action_for__tcp_connect(
             &ga_connect, 
             session_token);
     dispatch_game_action(
             p_game,
+            session_token,
             &ga_connect);
 }
 

@@ -2,6 +2,7 @@
 #define PROCESS_H
 
 #include "defines_weak.h"
+#include "serialization/serialization_header.h"
 #include "timer.h"
 #include <defines.h>
 

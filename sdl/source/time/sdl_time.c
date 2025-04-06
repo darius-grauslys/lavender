@@ -77,6 +77,28 @@ u32F20 PLATFORM_get_time_elapsed(
     _SDL_miliseconds_last = total_miliseconds;
     return elapsed_miliseconds << 10;
 }
+
+void PLATFORM_get_date_time(Date_Time *p_date_time) {
+    time_t time_raw;
+    struct tm * p_time_local;
+
+    time(&time_raw);
+    p_time_local = localtime(&time_raw);
+
+    p_date_time->seconds =
+        p_time_local->tm_sec;
+    p_date_time->minutes =
+        p_time_local->tm_min;
+    p_date_time->hours =
+        p_time_local->tm_hour;
+    p_date_time->days =
+        p_time_local->tm_mday;
+    p_date_time->months =
+        p_time_local->tm_mon;
+    p_date_time->years =
+        p_time_local->tm_year;
+}
+
 /*
 ///
 /// NOTE: Timer value is considered to be u32F20 seconds

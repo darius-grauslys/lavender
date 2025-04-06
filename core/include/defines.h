@@ -120,6 +120,22 @@ typedef struct Timer__u8_t {
     uint8_t start__u8;
 } Timer__u8;
 
+typedef struct Date_Time_t {
+    union {
+        struct {
+            u8  seconds      :6;
+            u8  minutes      :6;
+            u8  hours        :5;
+            u8  days         :5;
+            u8  months       :4;
+            u8               :6;
+            u32 years;
+        };
+        u32 date_time__sec_min_hour_day_month;
+        u32 date_time__years;
+    };
+} Date_Time;
+
 typedef uint8_t Direction__u8;
 typedef uint16_t Degree__u9;
 
@@ -2175,6 +2191,8 @@ typedef uint8_t Game_Action_Flags;
     BIT(5)
 #define GAME_ACTION_FLAGS__BIT_IS_BROADCASTED \
     BIT(6)
+#define GAME_ACTION_FLAGS__BIT_IS_BAD_REQUEST \
+    BIT(7)
 
 #define GAME_ACTION_FLAGS__NONE 0
 
@@ -2243,12 +2261,20 @@ typedef struct Game_Action_t {
     ///
     union {
         /// ------------
+        ///     General
+        /// ------------
+        struct {
+            uint32_t ga_kind__bad_request__request_error_code;
+        };
+
+        /// ------------
         ///     TCP
         /// ------------
 
         union {
             struct {
                 IPv4_Address ga_kind__tcp_connect__begin__ipv4_address;
+                Identifier__u32 ga_kind__tcp_connect__begin__session__uuid__u32;
             }; // Connect__Begin
             struct {
                 Identifier__u64 ga_kind__tcp_connect__session_token;
@@ -2290,8 +2316,8 @@ typedef struct Game_Action_t {
                 TCP_PAYLOAD_BITMAP(Chunk, 
                         ga_kind__global_space__request__chunk_payload_bitmap);
                 // in seconds:
-#define GA_KIND__GBLOAL_SPACE__REQUEST__TIMEOUT 512
-                Timer__u16 ga_kind__global_space__request__timeout;
+#define GA_KIND__GBLOAL_SPACE__REQUEST__TIMEOUT 4
+                Timer__u32 ga_kind__global_space__request__timeout;
             }; // Global_Space__Request
             struct {
                 Global_Space_Vector__3i32 
@@ -2421,6 +2447,7 @@ typedef struct Gfx_Context_t {
 typedef struct Game_Action_t Game_Action;
 typedef bool (*m_Game_Action_Handler)(
         Game *p_this_game,
+        Client *p_client,
         Game_Action *p_game_action);
 
 typedef struct Game_t {

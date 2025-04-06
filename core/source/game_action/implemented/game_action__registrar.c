@@ -1,4 +1,5 @@
 #include "game_action/implemented/game_action__registrar.h"
+#include "game_action/implemented/game_action__bad_request.h"
 #include "game_action/implemented/tcp/game_action__tcp_begin_connect.h"
 #include "game_action/implemented/tcp/game_action__tcp_connect.h"
 #include "game_action/implemented/tcp/game_action__tcp_connect__accept.h"
@@ -22,6 +23,9 @@ void register_game_actions__offline(
 
 void register_game_actions__client(
         Game_Action_Logic_Table *p_game_action_logic_table) {
+    register_game_action__bad_request(
+            p_game_action_logic_table);
+
     register_game_action__tcp_connect(
             p_game_action_logic_table);
     register_game_action__tcp_connect__begin(
@@ -42,6 +46,9 @@ void register_game_actions__client(
 
 void register_game_actions__server(
         Game_Action_Logic_Table *p_game_action_logic_table) {
+    register_game_action__bad_request(
+            p_game_action_logic_table);
+
     register_game_action__tcp_connect(
             p_game_action_logic_table);
     register_game_action__tcp_connect__begin(

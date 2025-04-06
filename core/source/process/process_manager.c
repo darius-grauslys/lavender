@@ -212,13 +212,12 @@ void swap_p_ptr_process_with__last_active_process_in__process_manager(
         debug_error("swap_p_ptr_process_with__last_active_process_in__process_manager, p_ptr_process is not from this manager.");
     }
 #endif
-    Process **p_last_process =
+    Process **p_ptr_to__last_process =
         (p_process_manager
                 ->p_ptr_to__last_process_in__ptr_array_of__processes-1);
-    *p_last_process = *p_ptr_process;
-    *p_ptr_process =
-        *(p_process_manager
-                ->p_ptr_to__last_process_in__ptr_array_of__processes-1);
+    Process *p_last_process = *p_ptr_to__last_process;
+    *p_ptr_to__last_process = *p_ptr_process;
+    *p_ptr_process = p_last_process;
 }
 
 Quantity__u32 poll_process_manager(
@@ -248,8 +247,10 @@ Quantity__u32 poll_process_manager(
         Process *p_process = *p_ptr_process;
 
         if (!is_process__critical(*p_ptr_process)) {
-            if (ticks_elapsed)
+            if (ticks_elapsed) {
+                debug_info("pm: tick elapse, %d", ticks_elapsed);
                 continue;
+            }
 
             ///
             /// continuously rotate non-critical processes.
@@ -272,7 +273,7 @@ Quantity__u32 poll_process_manager(
                 p_game);
     }
 
-    return poll__game_tick_timer(p_game);
+    return get_elapsed_ticks__u32F20_of__game(p_game);
 }
 
 Process *run_process_with__uuid(
