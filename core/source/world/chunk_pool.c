@@ -68,4 +68,5 @@ void release_chunk_from__chunk_pool(
     initialize_serialization_header_for__deallocated_struct__uuid_64(
             &p_chunk->_serialization_header, 
             sizeof(Chunk));
+    p_chunk->chunk_flags = CHUNK_FLAGS__NONE;
 }

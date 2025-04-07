@@ -47,7 +47,7 @@ void m_process__game_action__global_space__request__outbound_server(
                 p_game, 
                 p_game_action, 
                 0);
-        debug_error("m_process__game_action__global_space__request__outbound_server, bad request.");
+        debug_error("m_process__game_action__global_space__request__outbound_server, failed to find global_space.");
         fail_game_action_process(
                 p_game, 
                 p_this_process);
@@ -60,7 +60,7 @@ void m_process__game_action__global_space__request__outbound_server(
                 p_game, 
                 p_game_action, 
                 1);
-        debug_error("m_process__game_action__global_space__request__outbound_server, bad request.");
+        debug_error("m_process__game_action__global_space__request__outbound_server, global space is deconstructing.");
         fail_game_action_process(
                 p_game, 
                 p_this_process);
@@ -108,7 +108,7 @@ void m_process__game_action__global_space__request__inbound_server(
                 p_game, 
                 p_game_action, 
                 0);
-        debug_error("m_process__game_action__global_space__request__inbound_server, bad request.");
+        debug_error("m_process__game_action__global_space__request__inbound_server, failed to find global_space.");
         fail_game_action_process(
                 p_game, 
                 p_this_process);
@@ -121,7 +121,7 @@ void m_process__game_action__global_space__request__inbound_server(
                 p_game, 
                 p_game_action, 
                 1);
-        debug_error("m_process__game_action__global_space__request__inbound_server, bad request.");
+        debug_error("m_process__game_action__global_space__request__inbound_server, global space is deconstructing.");
         fail_game_action_process(
                 p_game, 
                 p_this_process);
@@ -195,10 +195,6 @@ void m_process__game_action__global_space__request__outbound_client(
         Global_Space_Vector__3i32 *p_gsv__3i32 =
             &p_game_action->ga_kind__global_space__request__gsv_3i32;
 
-        Global_Space_Manager *p_global_space_manager =
-            get_p_global_space_manager_from__world(
-                    get_p_world_from__game(p_game));
-
         drop_global_space_within__global_space_manager(
                 p_game, 
                 *p_gsv__3i32);
@@ -257,7 +253,9 @@ void m_process__game_action__global_space__request__outbound_client(
     set_global_space_as__NOT_constructing(
             p_global_space);
 
-    drop_global_space(p_global_space);
+    drop_global_space_within__global_space_manager(
+            p_game,
+            *p_gsv__3i32);
     complete_game_action_process_for__tcp(
             p_game, 
             p_this_process);
@@ -352,7 +350,9 @@ void m_process__game_action__global_space__request__outbound_client__init(
     set_global_space_as__constructing(
             p_global_space);
 
-    hold_global_space(p_global_space);
+    hold_global_space_within__global_space_manager(
+            p_game,
+            *p_gsv__3i32);
 
     p_this_process->m_process_run__handler =
         m_process__game_action__global_space__request__outbound_client;

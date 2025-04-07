@@ -57,7 +57,10 @@ void m_process__game_action__tcp_delivery__inbound(
         * p_game_action->ga_kind__tcp_delivery__packet_index;
     
     Quantity__u32 quantity_of__bytes_to__copy =
-        min__u32(
+        (p_serialization_request->quantity_of__bytes_in__destination
+         < GA_KIND__TCP_DELIVERY__PAYLOAD_SIZE_IN__BYTES)
+        ? p_serialization_request->quantity_of__bytes_in__destination
+        : min__u32(
                 GA_KIND__TCP_DELIVERY__PAYLOAD_SIZE_IN__BYTES,
                 p_serialization_request
                     ->quantity_of__bytes_in__destination
@@ -65,7 +68,8 @@ void m_process__game_action__tcp_delivery__inbound(
                     * (p_game_action->ga_kind__tcp_delivery__packet_index+1)));
 
     memcpy(
-            p_serialization_request->p_tcp_packet_destination,
+            p_serialization_request->p_tcp_packet_destination
+            + index_of__memcpy,
             p_game_action->ga_kind__tcp_delivery__payload,
             quantity_of__bytes_to__copy);
 
