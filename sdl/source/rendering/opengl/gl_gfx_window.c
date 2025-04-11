@@ -22,7 +22,6 @@
 #include "rendering/sdl_texture_manager.h"
 #include "rendering/texture.h"
 #include "rendering/sdl_texture.h"
-#include "rendering/implemented/texture_strings.h"
 #include "ui/ui_manager.h"
 #include "vectors.h"
 
@@ -108,10 +107,13 @@ void GL_compose_gfx_window(
         GL_get_p_framebuffer_manager_from__PLATFORM_gfx_context(
                 p_PLATFORM_gfx_context);
 
+#warning TODO: as of right now things will likely not work, we need to request a tiling texture
+    // TODO: as of right now things will likely not work, we need to request a tiling texture
     PLATFORM_Texture *p_PLATFORM_texture__ui_tilesheet =
-        get_p_PLATFORM_texture_by__alias(
-                get_p_aliased_texture_manager_from__gfx_context(p_gfx_context), 
-                name_of__texture__tilesheet_ui__c_str);
+        0;
+        // get_p_PLATFORM_texture_by__alias(
+        //         get_p_aliased_texture_manager_from__gfx_context(p_gfx_context), 
+        //         name_of__texture__tilesheet_ui__c_str);
 
     GL_push_framebuffer_onto__framebuffer_manager(
             p_GL_framebuffer_manager,

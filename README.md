@@ -1,3 +1,19 @@
+# NOTE
+
+Lavender is the engine that has been pulled from my AncientsGame repo.
+The README is subject to change soon.
+
+Only the SDL backend builds at the moment, and you need to define:
+LAVENDER\_DIR to point to the Lavender directory. If you add ./tools to PATH
+you can utilize the engine's tooling.
+
+Run the following in an empty directory:
+
+lav\_new\_project
+lav\_build -e PLATFORM=sdl
+
+If all goes well you should have a SDL executible! It will be in ./build/sdl/(NAME-OF-DIR)
+
 # Donate
 [Please consider donating to help the project](https://www.paypal.com/donate/?hosted_button_id=HDFNAB5DC9F2L)
 

@@ -1,5 +1,6 @@
 $(OFILES_SDL):
 	$(SILENTCMD)mkdir -p $(BUILD)/$$(dirname $@)
-	$(SILENTCMD)$(CC) $(LIBS) $(INCLUDE) $(FLAGS) -o $(BUILD)/$@ -c $(SOURCE_PLATFORM)/$(@:.o=.c) 
+	$(SILENTCMD)$(CC) $(LIBS) $(INCLUDE) $(FLAGS) \
+		-o $(BUILD)/$@ -c $(SOURCE_PLATFORM)/$(@:.o=.c) 
 	@$(ADD_COMPILE_COMMAND) add $(CC) "$(CFLAGS) $(LIBS) $(INCLUDE) $(FLAGS) \
 		-o $(BUILD)/$@ -c $(SOURCE_PLATFORM)/$(@:.o=.c)" $(BUILD)/$@

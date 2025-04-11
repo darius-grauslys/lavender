@@ -5,7 +5,7 @@
 #include "defines_weak.h"
 #include "game.h"
 #include "game_action/game_action.h"
-#include "game_action/implemented/tcp/game_action__tcp_connect.h"
+#include "game_action/core/tcp/game_action__tcp_connect.h"
 #include "multiplayer/tcp_socket.h"
 #include "multiplayer/tcp_socket_manager.h"
 #include "platform.h"

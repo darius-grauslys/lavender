@@ -1,0 +1,26 @@
+
+include $(BASE_DIR)/core/Makefile.include
+include $(BASE_DIR)/$(PLATFORM)/Makefile.include
+
+ifneq ($(GAME_DIR),$(BASE_DIR))
+include $(GAME_DIR)/Makefile.include
+endif
+
+export OFILES := $(SPRITE_FILES:.png=.o) \
+	$(SHARED_SPRITE_FILES) \
+	$(OFILES_GAME) $(OFILES_CORE) $(OFILES_PLATFORM)
+
+export CFLAGS := -march=$(shell uname -m | sed "s/_/-/")
+
+export INCLUDES := $(INCLUDE_GAME) $(INCLUDE_CORE) $(INCLUDE_SDL)
+export LIBS		:= $(PLATFORM_LIBS)
+
+export DEPSDIR := $(BUILD)
+
+export INCLUDE := \
+  $(foreach dir,$(INCLUDES),-I$(dir)) \
+  $(foreach dir,$(LIBDIRS),-I$(dir)/include) \
+  -I$(BUILD)/$(ASSETS)\
+  -I$(BUILD)
+
+export LIBPATHS := $(foreach dir,$(LIBDIRS),-L$(dir)/lib)

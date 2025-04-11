@@ -4,7 +4,6 @@
 #include "numerics.h"
 #include "platform.h"
 #include "rendering/aliased_texture_manager.h"
-#include "rendering/implemented/texture_strings.h"
 #include "ui/ui_element.h"
 #include "vectors.h"
 #include <ui/ui_slider.h>
@@ -185,9 +184,10 @@ bool f_sprite_gfx_allocator__ui_slider(
         get_p_aliased_texture_manager_from__gfx_context(p_gfx_context);
 
     PLATFORM_Texture *p_PLATFORM_texture_for__items =
-        get_p_PLATFORM_texture_by__alias(
-                p_aliased_texture_manager, 
-                name_of__texture__ui_16x16__c_str);
+        0; // TODO: a decent way of resolving this:
+    //     get_p_PLATFORM_texture_by__alias(
+    //             p_aliased_texture_manager, 
+    //             name_of__texture__ui_16x16__c_str);
 
     if (!p_PLATFORM_texture_for__items)
         return 0;

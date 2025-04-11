@@ -1,14 +1,14 @@
 #include "game_action/implemented/game_action__registrar.h"
-#include "game_action/implemented/game_action__bad_request.h"
-#include "game_action/implemented/tcp/game_action__tcp_begin_connect.h"
-#include "game_action/implemented/tcp/game_action__tcp_connect.h"
-#include "game_action/implemented/tcp/game_action__tcp_connect__accept.h"
-#include "game_action/implemented/tcp/game_action__tcp_connect__reject.h"
-#include "game_action/implemented/tcp/game_action__tcp_delivery.h"
+#include "game_action/core/game_action__bad_request.h"
+#include "game_action/core/tcp/game_action__tcp_begin_connect.h"
+#include "game_action/core/tcp/game_action__tcp_connect.h"
+#include "game_action/core/tcp/game_action__tcp_connect__accept.h"
+#include "game_action/core/tcp/game_action__tcp_connect__reject.h"
+#include "game_action/core/tcp/game_action__tcp_delivery.h"
 
-#include "game_action/implemented/global_space/game_action__global_space__store.h"
-#include "game_action/implemented/global_space/game_action__global_space__request.h"
-#include "game_action/implemented/global_space/game_action__global_space__resolve.h"
+#include "game_action/core/global_space/game_action__global_space__store.h"
+#include "game_action/core/global_space/game_action__global_space__request.h"
+#include "game_action/core/global_space/game_action__global_space__resolve.h"
 
 void register_game_actions__offline(
         Game_Action_Logic_Table *p_game_action_logic_table) {

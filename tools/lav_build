@@ -1,0 +1,10 @@
+if [ -z "${LAVENDER_DIR}" ]; then
+    echo LAVENDER_DIR is not set.
+    exit -1
+fi
+
+export GAME_DIR=$(pwd)
+export GAME_INCLUDE_DIR=$(pwd)/include
+export GAME_SOURCE_DIR=$(pwd)/source
+
+make -f $LAVENDER_DIR/Makefile "$@"

@@ -1,0 +1,39 @@
+print_usage() {
+    printf \
+    "Usage: update_ui.sh [-b BACKEND]
+
+            -b\ttarget backend\n"
+}
+
+BACKEND=''
+
+while getopts 'b:f' flag; do
+    case "$flag" in
+        b) BACKEND="$OPTARG" ;;
+        \?) ;;
+        *) print_usage
+            exit 1 ;;
+    esac
+done
+
+if [ "$BACKEND" = "" ]; then
+    print_usage
+    printf "\n\tREQUIRED: -b\n"
+    exit 1
+fi
+
+BACKEND=$(echo $BACKEND | tr '[:upper:]' '[:lower:]')
+
+./lav_ui_builder.sh -d "is_visualizing false" -b ${BACKEND} -f ui_window__game__equip
+./lav_ui_builder.sh -d "is_visualizing false" -b ${BACKEND} -f ui_window__game__hud
+./lav_ui_builder.sh -d "is_visualizing false" -b ${BACKEND} -f ui_window__game__idle
+./lav_ui_builder.sh -d "is_visualizing false" -b ${BACKEND} -f ui_window__game__labor
+./lav_ui_builder.sh -d "is_visualizing false" -b ${BACKEND} -f ui_window__game__settings
+./lav_ui_builder.sh -d "is_visualizing false" -b ${BACKEND} -f ui_window__game__station
+./lav_ui_builder.sh -d "is_visualizing false" -b ${BACKEND} -f ui_window__game__trade
+./lav_ui_builder.sh -d "is_visualizing false" -b ${BACKEND} -f ui_window__game__typer
+
+./lav_ui_builder.sh -d "is_visualizing false" -b ${BACKEND} -f ui_window__menu__main
+./lav_ui_builder.sh -d "is_visualizing false" -b ${BACKEND} -f ui_window__menu__multiplayer
+./lav_ui_builder.sh -d "is_visualizing false" -b ${BACKEND} -f ui_window__menu__singleplayer
+./lav_ui_builder.sh -d "is_visualizing false" -b ${BACKEND} -f ui_window__menu__settings

@@ -1,7 +1,6 @@
 #include "rendering/implemented/aliased_texture_registrar.h"
 #include "game.h"
 #include "rendering/aliased_texture_manager.h"
-#include "rendering/implemented/texture_strings.h"
 
 void register_aliased_textures(
         Aliased_Texture_Manager *p_aliased_texture_manager,

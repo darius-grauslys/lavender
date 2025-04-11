@@ -5,7 +5,6 @@
 #include "platform.h"
 
 #include "rendering/aliased_texture_manager.h"
-#include "rendering/implemented/texture_strings.h"
 #include "ui/ui_slider.h"
 
 static inline

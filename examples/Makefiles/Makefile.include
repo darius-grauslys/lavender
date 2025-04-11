@@ -1,0 +1,15 @@
+export INCLUDE_GAME += $(GAME_DIR)/include
+
+export SOURCE_GAME := $(GAME_DIR)/source
+
+ifeq ($(GAME_OMIT),)
+export CFILES_GAME != realpath --relative-to=$(SOURCE_GAME) $$(find $(SOURCE_GAME) -name *.c)
+else
+export CFILES_GAME != realpath --relative-to=$(SOURCE_GAME) $$(find $(SOURCE_GAME) -name *.c ! -name $(GAME_OMIT))
+endif
+export OFILES_GAME := $(CFILES_GAME:.c=.o)
+
+export SPRITE_FILES != realpath --relative-to=$(GAME_DIR) \
+	$$(find $(GAME_DIR)/assets -name *.png)
+export AUDIO_FILES != find $(GAME_DIR)/assets -name *.wav
+export SPRITE_DIRS != dirname $(SPRITE_FILES) | uniq

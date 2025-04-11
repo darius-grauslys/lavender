@@ -1,0 +1,6 @@
+$(OFILES_GAME:.c=.o):
+	@mkdir -p $(BUILD)/$$(dirname $@)
+	@$(CC) $(CFLAGS) $(LIBS) $(INCLUDE) $(FLAGS) \
+		-o $(BUILD)/$@ -c $(SOURCE_GAME)/$(@:.o=.c) 
+	@$(ADD_COMPILE_COMMAND) add $(CC) "$(CFLAGS) $(LIBS) $(INCLUDE) $(FLAGS) \
+		-o $(BUILD)/$@ -c $(SOURCE_GAME)/$(@:.o=.c)" $(BUILD)/$@

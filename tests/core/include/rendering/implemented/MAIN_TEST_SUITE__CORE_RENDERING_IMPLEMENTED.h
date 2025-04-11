@@ -1,5 +1,4 @@
 #include "test_suite_rendering_implemented_aliased_texture_registrar.h"
-#include "test_suite_rendering_implemented_texture_strings.h"
 
 #include <test_util.h>
 

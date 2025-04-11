@@ -1,0 +1,84 @@
+[
+{
+  "directory": "/home/shalidor/Projects/Lavender",
+  "command": "/usr/bin/gcc -march=x86-64 -lm -lGL -lGLEW -lSDL2 -lcglm -I/home/shalidor/Projects/Lavender/core/include -I/home/shalidor/Projects/Lavender/sdl/include  -I/home/shalidor/Projects/Lavender/build/sdl/ -I/home/shalidor/Projects/Lavender/build/sdl  	-o /home/shalidor/Projects/Lavender/build/sdl/input/input.o -c /home/shalidor/Projects/Lavender/core/source/input/input.c",
+  "file": "/home/shalidor/Projects/Lavender/build/sdl/input/input.o"
+}
+,
+{
+  "directory": "/home/shalidor/Projects/Lavender",
+  "command": "/usr/bin/gcc -march=x86-64 -lm -lGL -lGLEW -lSDL2 -lcglm -I/home/shalidor/Projects/Lavender/core/include -I/home/shalidor/Projects/Lavender/sdl/include  -I/home/shalidor/Projects/Lavender/build/sdl/ -I/home/shalidor/Projects/Lavender/build/sdl  	-o /home/shalidor/Projects/Lavender/build/sdl/input/input.o -c /home/shalidor/Projects/Lavender/core/source/input/input.c",
+  "file": "/home/shalidor/Projects/Lavender/build/sdl/input/input.o"
+}
+,
+{
+  "directory": "/home/shalidor/Projects/Lavender",
+  "command": "/usr/bin/gcc -march=x86-64 -lm -lGL -lGLEW -lSDL2 -lcglm -I/home/shalidor/Projects/Lavender/core/include -I/home/shalidor/Projects/Lavender/sdl/include  -I/home/shalidor/Projects/Lavender/build/sdl/ -I/home/shalidor/Projects/Lavender/build/sdl  	-o /home/shalidor/Projects/Lavender/build/sdl/input/input.o -c /home/shalidor/Projects/Lavender/core/source/input/input.c",
+  "file": "/home/shalidor/Projects/Lavender/build/sdl/input/input.o"
+}
+,
+{
+  "directory": "/home/shalidor/Projects/Lavender",
+  "command": "/usr/bin/gcc -march=x86-64 -lm -lGL -lGLEW -lSDL2 -lcglm -I/home/shalidor/Projects/Lavender/core/include -I/home/shalidor/Projects/Lavender/sdl/include  -I/home/shalidor/Projects/Lavender/build/sdl/ -I/home/shalidor/Projects/Lavender/build/sdl  	-o /home/shalidor/Projects/Lavender/build/sdl/input/input.o -c /home/shalidor/Projects/Lavender/core/source/input/input.c",
+  "file": "/home/shalidor/Projects/Lavender/build/sdl/input/input.o"
+}
+,
+{
+  "directory": "/home/shalidor/Projects/Lavender",
+  "command": "/usr/bin/gcc -march=x86-64 -lm -lGL -lGLEW -lSDL2 -lcglm -I/home/shalidor/Projects/Lavender/core/include -I/home/shalidor/Projects/Lavender/sdl/include  -I/home/shalidor/Projects/Lavender/build/sdl/ -I/home/shalidor/Projects/Lavender/build/sdl  	-o /home/shalidor/Projects/Lavender/build/sdl/input/input.o -c /home/shalidor/Projects/Lavender/core/source/input/input.c",
+  "file": "/home/shalidor/Projects/Lavender/build/sdl/input/input.o"
+}
+,
+{
+  "directory": "/home/shalidor/Projects/Lavender",
+  "command": "/usr/bin/gcc -march=x86-64 -lm -lGL -lGLEW -lSDL2 -lcglm -I/home/shalidor/Projects/Lavender/core/include -I/home/shalidor/Projects/Lavender/sdl/include  -I/home/shalidor/Projects/Lavender/build/sdl/ -I/home/shalidor/Projects/Lavender/build/sdl  	-o /home/shalidor/Projects/Lavender/build/sdl/input/input.o -c /home/shalidor/Projects/Lavender/core/source/input/input.c",
+  "file": "/home/shalidor/Projects/Lavender/build/sdl/input/input.o"
+}
+,
+{
+  "directory": "/home/shalidor/Projects/Lavender",
+  "command": "/usr/bin/gcc -march=x86-64 -lm -lGL -lGLEW -lSDL2 -lcglm -I/home/shalidor/Projects/Lavender/core/include -I/home/shalidor/Projects/Lavender/sdl/include  -I/home/shalidor/Projects/Lavender/build/sdl/ -I/home/shalidor/Projects/Lavender/build/sdl  	-o /home/shalidor/Projects/Lavender/build/sdl/input/input.o -c /home/shalidor/Projects/Lavender/core/source/input/input.c",
+  "file": "/home/shalidor/Projects/Lavender/build/sdl/input/input.o"
+}
+,
+{
+  "directory": "/home/shalidor/Projects/Lavender",
+  "command": "/usr/bin/gcc -march=x86-64 -lm -lGL -lGLEW -lSDL2 -lcglm -I/home/shalidor/Projects/Lavender/core/include -I/home/shalidor/Projects/Lavender/sdl/include  -I/home/shalidor/Projects/Lavender/build/sdl/ -I/home/shalidor/Projects/Lavender/build/sdl  	-o /home/shalidor/Projects/Lavender/build/sdl/input/input.o -c /home/shalidor/Projects/Lavender/core/source/input/input.c",
+  "file": "/home/shalidor/Projects/Lavender/build/sdl/input/input.o"
+}
+,
+{
+  "directory": "/home/shalidor/Projects/Lavender",
+  "command": "/usr/bin/gcc -march=x86-64 -lm -lGL -lGLEW -lSDL2 -lcglm -I/home/shalidor/Projects/Lavender/core/include -I/home/shalidor/Projects/Lavender/sdl/include  -I/home/shalidor/Projects/Lavender/build/sdl/ -I/home/shalidor/Projects/Lavender/build/sdl  	-o /home/shalidor/Projects/Lavender/build/sdl/input/input.o -c /home/shalidor/Projects/Lavender/core/source/input/input.c",
+  "file": "/home/shalidor/Projects/Lavender/build/sdl/input/input.o"
+}
+,
+{
+  "directory": "/home/shalidor/Projects/Lavender",
+  "command": "/usr/bin/gcc -march=x86-64 -lm -lGL -lGLEW -lSDL2 -lcglm -I/home/shalidor/Projects/Lavender/core/include -I/home/shalidor/Projects/Lavender/sdl/include  -I/home/shalidor/Projects/Lavender/build/sdl/ -I/home/shalidor/Projects/Lavender/build/sdl  	-o /home/shalidor/Projects/Lavender/build/sdl/input/input.o -c /home/shalidor/Projects/Lavender/core/source/input/input.c",
+  "file": "/home/shalidor/Projects/Lavender/build/sdl/input/input.o"
+}
+,
+{
+  "directory": "/home/shalidor/Projects/Lavender",
+  "command": "/usr/bin/gcc -march=x86-64 -lm -lGL -lGLEW -lSDL2 -lcglm -I/home/shalidor/Projects/Lavender/core/include -I/home/shalidor/Projects/Lavender/sdl/include  -I/home/shalidor/Projects/Lavender/build/sdl/ -I/home/shalidor/Projects/Lavender/build/sdl  	-o /home/shalidor/Projects/Lavender/build/sdl/input/input.o -c /home/shalidor/Projects/Lavender/core/source/input/input.c",
+  "file": "/home/shalidor/Projects/Lavender/build/sdl/input/input.o"
+}
+,
+{
+  "directory": "/home/shalidor/Projects/Lavender",
+  "command": "/usr/bin/gcc -march=x86-64 -lm -lGL -lGLEW -lSDL2 -lcglm -I/home/shalidor/Projects/Lavender/core/include -I/home/shalidor/Projects/Lavender/sdl/include  -I/home/shalidor/Projects/Lavender/build/sdl/ -I/home/shalidor/Projects/Lavender/build/sdl  	-o /home/shalidor/Projects/Lavender/build/sdl/input/input.o -c /home/shalidor/Projects/Lavender/core/source/input/input.c",
+  "file": "/home/shalidor/Projects/Lavender/build/sdl/input/input.o"
+}
+,
+{
+  "directory": "/home/shalidor/Projects/Lavender",
+  "command": "/usr/bin/gcc -march=x86-64 -lm -lGL -lGLEW -lSDL2 -lcglm -I/home/shalidor/Projects/Lavender/core/include -I/home/shalidor/Projects/Lavender/sdl/include  -I/home/shalidor/Projects/Lavender/build/sdl/ -I/home/shalidor/Projects/Lavender/build/sdl  	-o /home/shalidor/Projects/Lavender/build/sdl/input/input.o -c /home/shalidor/Projects/Lavender/core/source/input/input.c",
+  "file": "/home/shalidor/Projects/Lavender/build/sdl/input/input.o"
+}
+,
+{
+  "directory": "/home/shalidor/Projects/Lavender",
+  "command": "/usr/bin/gcc -march=x86-64 -lm -lGL -lGLEW -lSDL2 -lcglm -I/home/shalidor/Projects/Lavender/core/include -I/home/shalidor/Projects/Lavender/sdl/include  -I/home/shalidor/Projects/Lavender/build/sdl/ -I/home/shalidor/Projects/Lavender/build/sdl  	-o /home/shalidor/Projects/Lavender/build/sdl/input/input.o -c /home/shalidor/Projects/Lavender/core/source/input/input.c",
+  "file": "/home/shalidor/Projects/Lavender/build/sdl/input/input.o"
+}

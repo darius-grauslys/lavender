@@ -1,0 +1,14 @@
+DIR=$(pwd)
+
+if [ "$#" -ne 0 ]; then
+    DIR=$1
+fi
+
+if ! test -d $DIR; then
+    echo Directory not found.
+    exit 1
+fi
+
+find $LAVENDER_DIR/core -iname *implemented* -type d -exec sh -c "echo \$(dirname \$(realpath --relative-to $LAVENDER_DIR/core {})) && mkdir -p $DIR/\$(dirname \$(realpath --relative-to $LAVENDER_DIR/core {}))/implemented && cp -r {}/* $DIR/\$(realpath --relative-to $LAVENDER_DIR/core {})" \;
+
+cp $LAVENDER_DIR/examples/Makefiles/* $DIR/

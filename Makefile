@@ -12,68 +12,69 @@
 # "!="	-	Shell assignment. This will treat the RValue is a shell command and run it.
 # 			The output then becomes the RValue.
 
-.PHONY: nds test_nds sdl unix_opengl test_unix_opengl clean
+.PHONY: test clean
 
-export BASE_DIR := $(CURDIR)
+export BASE_DIR := $(LAVENDER_DIR)
 
 export SILENT := @
 
-export DIR_NDS := $(CURDIR)/nds
-export DIR_SDL := $(CURDIR)/sdl
-export DIR_CORE := $(CURDIR)/core
+export GAME_INCLUDE_DIR?=$(BASE_DIR)
+export GAME_SOURCE_DIR?=$(BASE_DIR)
 
-export BUILD_NDS := $(CURDIR)/build/nds
-export BUILD_SDL := $(CURDIR)/build/sdl
-export BUILD_TEST_CORE := $(CURDIR)/build/test_core
-export BUILD_TEST_SDL := $(CURDIR)/build/test_sdl
+ifeq ($(GAME_DIR),)
+	export GAME_DIR=$(BASE_DIR)
+endif
+
+export BUILD=$(GAME_DIR)/build/$(PLATFORM)
+ifeq ($(GAME),)
+	export GAME=$(basename $(notdir $(GAME_DIR)))
+endif
 
 GENERATE_COMPILE_COMMANDS := 1
 ifeq ($(GENERATE_COMPILE_COMMANDS),1)
     export ADD_COMPILE_COMMAND := $(BASE_DIR)/generate_compile_commands
 else
-	export ADD_
 endif
 
+ifeq ($(PLATFORM),)
 default:
 	@echo "--- Targets ---"
+	@echo "Specify with -e PLATFORM={platform}"
 	@echo "test 		-	make corresponding tests for given {-DPLATFORM}, omit for just core testing."
 	@echo "sdl			-	SDL2, see sdl/README for supported systems."
 	@echo "nds			-	Native 2D engine NDS platform"
 	@echo ""
 	@echo "--- Useful FLAGS ---"
 	@echo "X: anything, NA: omit to disable."
-	@echo "-DPLATFORM	- 	specify target platform"
+	@echo "-DPLATFORM	- 	specify target platform. DONT USE."
 	@echo "-DIS_SERVER 	-	treat build as a server."
 	@echo "-DNDEBUG		-	disable debug, performant but most errors will result in a crash now!"
 	@echo "-ggdb		-	generate gdb debug symbols - required for gdb."
 	@echo "-DNLOG		-	disable logging, keep debug safety checks."
-
-nds:
-	$(SILENT)mkdir -p ./build && make -C $(CURDIR)/nds -f $(CURDIR)/nds/Makefile -e BUILD=$(BUILD_NDS)
-	$(SILENT)stat $(BUILD_NDS)/compile_commands.json && ln -sf $(BUILD_NDS)/compile_commands.json ./compile_commands.json
-
-sdl:
-	$(SILENT)mkdir -p ./build && make -C $(CURDIR)/sdl -f $(CURDIR)/sdl/Makefile -e BUILD=$(BUILD_SDL)
-	$(SILENT)stat $(BUILD_SDL)/compile_commands.json && ln -sf $(BUILD_SDL)/compile_commands.json ./compile_commands.json
+else
+default:
+	$(SILENT)make -f $(LAVENDER_DIR)/Makefile.build $(BUILD)
+	$(SILENT)stat $(BUILD)/compile_commands.json && ln -sf $(BUILD)/compile_commands.json ./compile_commands.json
+endif
 
 test:
 	sh -c "cd ./tests && ./update.sh $(PLATFORM)"
 	$(SILENT)if [ -z "${PLATFORM}" ]; then \
 		mkdir -p ./build \
-		&& make -C $(CURDIR)/tests \
-		-f $(CURDIR)/tests/Makefile \
-		-e BUILD=$(CURDIR)/build/test_core; \
+		&& make -C $(LAVENDER_DIR)/tests \
+		-f $(LAVENDER_DIR)/tests/Makefile \
+		-e BUILD=$(LAVENDER_DIR)/build/test_core; \
 		stat $(BUILD_TEST_CORE)/compile_commands.json \
-		&& ln -sf $(CURDIR)/build/test_core/compile_commands.json ./compile_commands.json; \
+		&& ln -sf $(LAVENDER_DIR)/build/test_core/compile_commands.json ./compile_commands.json; \
 	else \
 		mkdir -p ./build && make \
-			-C $(CURDIR)/tests \
-			-f $(CURDIR)/tests/Makefile \
-			-e BUILD=$(CURDIR)/build/test_$(PLATFORM) \
-				DIR_CORE=$(CURDIR)/core \
+			-C $(LAVENDER_DIR)/tests \
+			-f $(LAVENDER_DIR)/tests/Makefile \
+			-e BUILD=$(LAVENDER_DIR)/build/test_$(PLATFORM) \
+				DIR_CORE=$(LAVENDER_DIR)/core \
 				PLATFORM=$(PLATFORM); \
-		stat $(CURDIR)/build/test_$(PLATFORM)/compile_commands.json \
-			&& ln -sf $(CURDIR)build/test_$(PLATFORM)/compile_commands.json ./compile_commands.json; \
+		stat $(LAVENDER_DIR)/build/test_$(PLATFORM)/compile_commands.json \
+			&& ln -sf $(LAVENDER_DIR)build/test_$(PLATFORM)/compile_commands.json ./compile_commands.json; \
 	fi
 
 clean:

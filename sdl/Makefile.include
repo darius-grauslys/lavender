@@ -20,3 +20,6 @@ export PLATFORM_LIBS	+= -lopengl32 -lglew32 -lSDL2 -lcglm -lwinmm
 else
 export PLATFORM_LIBS	+= -lGL -lGLEW -lSDL2 -lcglm
 endif
+
+export CC := gcc
+export LD := $(CC)
