@@ -26,6 +26,12 @@ void give_PLATFORM_texture_to__aliased_texture(
 }
 
 static inline
+PLATFORM_Texture *get_p_PLATFORM_texture_from__aliased_texture(
+        Aliased_Texture *p_aliased_texture) {
+    return p_aliased_texture->P_PLATFORM_texture;
+}
+
+static inline
 bool is_aliased_texture__used(
         Aliased_Texture *p_aliased_texture) {
     return (bool)p_aliased_texture->name_of__texture__c_str[0];

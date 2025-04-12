@@ -2,6 +2,7 @@
 #define ALIASED_TEXTURE_MANAGER_H
 
 #include "defines.h"
+#include "defines_weak.h"
 
 void initialize_aliased_texture_manager(
         Aliased_Texture_Manager *p_aliased_texture_manager);
@@ -26,12 +27,30 @@ PLATFORM_Texture *load_p_PLATFORM_texture_from__path_with__alias(
         Texture_Flags texture_flags,
         const char *c_str__path);
 
+Identifier__u32 get_uuid_of__aliased_texture(
+        Aliased_Texture_Manager *p_aliased_texture_manager,
+        Texture_Name__c_str name_of__texture__c_str);
+
 PLATFORM_Texture *get_p_PLATFORM_texture_by__alias(
         Aliased_Texture_Manager *p_aliased_texture_manager,
         Texture_Name__c_str name_of__texture__c_str);
 
+PLATFORM_Texture *get_p_PLATFORM_texture_by__uuid(
+        Aliased_Texture_Manager *p_aliased_texture_manager,
+        Identifier__u32 uuid__u32);
+
 void release_all_aliased_textures(
         PLATFORM_Gfx_Context *p_PLATFORM_gfx_context,
         Aliased_Texture_Manager *p_aliased_texture_manager);
+
+void release_aliased_texture_by__alias(
+        PLATFORM_Gfx_Context *p_PLATFORM_gfx_context,
+        Aliased_Texture_Manager *p_aliased_texture_manager,
+        Texture_Name__c_str name_of__texture__c_str);
+
+void release_aliased_texture_by__uuid(
+        PLATFORM_Gfx_Context *p_PLATFORM_gfx_context,
+        Aliased_Texture_Manager *p_aliased_texture_manager,
+        Identifier__u32 uuid__u32);
 
 #endif

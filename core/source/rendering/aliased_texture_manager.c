@@ -3,8 +3,11 @@
 #include "game.h"
 #include "platform.h"
 #include "platform_defines.h"
+#include "random.h"
 #include "rendering/aliased_texture.h"
 #include "defines.h"
+#include "serialization/hashing.h"
+#include "serialization/serialization_header.h"
 
 static inline
 Aliased_Texture *get_p_aliased_texture_by__index_from__aliased_texture_manager(
@@ -21,17 +24,15 @@ Aliased_Texture *get_p_aliased_texture_by__index_from__aliased_texture_manager(
 
 void initialize_aliased_texture_manager(
         Aliased_Texture_Manager *p_aliased_texture_manager) {
-    for (Index__u32 index_of__aliased_texture = 0;
-            index_of__aliased_texture
-            < MAX_QUANTITY_OF__ALIASED_TEXTURES;
-            index_of__aliased_texture++) {
-        Aliased_Texture *p_aliased_texture =
-            get_p_aliased_texture_by__index_from__aliased_texture_manager(
-                    p_aliased_texture_manager, 
-                    index_of__aliased_texture);
-
-        initialize_aliased_texture(p_aliased_texture);
-    }
+    initialize_serialization_header__contiguous_array(
+            (Serialization_Header*)p_aliased_texture_manager
+                ->aliased_textures, 
+            MAX_QUANTITY_OF__ALIASED_TEXTURES, 
+            sizeof(Aliased_Texture));
+    initialize_repeatable_psuedo_random(
+            &p_aliased_texture_manager
+            ->repeatable_psuedo_random_for__texture_uuid, 
+            (uint32_t)(uint64_t)p_aliased_texture_manager);
 }
 
 Aliased_Texture *get_p_aliased_texture_thats__available_from__manager(
@@ -95,6 +96,15 @@ PLATFORM_Texture *allocate_p_PLATFORM_texture_with__alias(
     give_PLATFORM_texture_to__aliased_texture(
             p_aliased_texture__available, 
             P_PLATFORM_texture);
+    initialize_serialization_header(
+            (Serialization_Header*)p_aliased_texture__available, 
+            get_next_available__random_uuid_in__contiguous_array(
+                (Serialization_Header*)p_aliased_texture_manager
+                ->aliased_textures, 
+                MAX_QUANTITY_OF__ALIASED_TEXTURES, 
+                &p_aliased_texture_manager
+                    ->repeatable_psuedo_random_for__texture_uuid), 
+            sizeof(Aliased_Texture));
     return P_PLATFORM_texture;
 }
 
@@ -156,7 +166,8 @@ PLATFORM_Texture *load_p_PLATFORM_texture_from__path_with__alias(
     return P_PLATFORM_texture;
 }
 
-PLATFORM_Texture *get_p_PLATFORM_texture_by__alias(
+static inline
+Aliased_Texture *get_p_aliased_texture_by__alias(
         Aliased_Texture_Manager *p_aliased_texture_manager,
         Texture_Name__c_str name_of__texture__c_str) {
     Aliased_Texture *p_aliased_texture__matching = 0;
@@ -180,13 +191,84 @@ PLATFORM_Texture *get_p_PLATFORM_texture_by__alias(
         }
     }
     if (!p_aliased_texture__matching) {
-        name_of__texture__c_str[MAX_LENGTH_OF__TEXTURE_NAME-1] = 0;
-        debug_error("get_p_PLATFORM_texture_by__alias, failed to find texture for given name: %s", name_of__texture__c_str);
         return 0;
     }
 
-    return p_aliased_texture__matching
-        ->P_PLATFORM_texture;
+    return p_aliased_texture__matching;
+}
+
+Identifier__u32 get_uuid_of__aliased_texture(
+        Aliased_Texture_Manager *p_aliased_texture_manager,
+        Texture_Name__c_str name_of__texture__c_str) {
+    Aliased_Texture *p_aliased_texture__matching =
+        get_p_aliased_texture_by__alias(
+                p_aliased_texture_manager, 
+                name_of__texture__c_str);
+
+    if (!p_aliased_texture__matching) {
+        char name_of__texture__copied__c_str[MAX_LENGTH_OF__TEXTURE_NAME+1];
+        memcpy(
+                name_of__texture__copied__c_str,
+                name_of__texture__c_str,
+                MAX_LENGTH_OF__TEXTURE_NAME);
+        name_of__texture__copied__c_str[MAX_LENGTH_OF__TEXTURE_NAME] = 0;
+        debug_error("get_uuid_of__aliased_texture, failed to find texture for given name: %s", name_of__texture__copied__c_str);
+    }
+
+    return GET_UUID_P(p_aliased_texture__matching);
+}
+
+PLATFORM_Texture *get_p_PLATFORM_texture_by__alias(
+        Aliased_Texture_Manager *p_aliased_texture_manager,
+        Texture_Name__c_str name_of__texture__c_str) {
+    Aliased_Texture *p_aliased_texture__matching =
+        get_p_aliased_texture_by__alias(
+                p_aliased_texture_manager, 
+                name_of__texture__c_str);
+
+    if (!p_aliased_texture__matching) {
+        char name_of__texture__copied__c_str[MAX_LENGTH_OF__TEXTURE_NAME+1];
+        memcpy(
+                name_of__texture__copied__c_str,
+                name_of__texture__c_str,
+                MAX_LENGTH_OF__TEXTURE_NAME);
+        name_of__texture__copied__c_str[MAX_LENGTH_OF__TEXTURE_NAME] = 0;
+        debug_error("get_p_PLATFORM_texture_by__alias, failed to find texture for given name: %s", name_of__texture__copied__c_str);
+    }
+
+    return get_p_PLATFORM_texture_from__aliased_texture(
+            p_aliased_texture__matching);
+}
+
+static inline
+Aliased_Texture *get_p_aliased_texture_by__uuid(
+        Aliased_Texture_Manager *p_aliased_texture_manager,
+        Identifier__u32 uuid__u32) {
+    Aliased_Texture *p_aliased_texture =
+        (Aliased_Texture*)dehash_identitier_u32_in__contigious_array(
+                (Serialization_Header*)p_aliased_texture_manager
+                ->aliased_textures, 
+                MAX_QUANTITY_OF__ALIASED_TEXTURES, 
+                uuid__u32);
+
+    return p_aliased_texture;
+}
+
+PLATFORM_Texture *get_p_PLATFORM_texture_by__uuid(
+        Aliased_Texture_Manager *p_aliased_texture_manager,
+        Identifier__u32 uuid__u32) {
+    Aliased_Texture *p_aliased_texture =
+        get_p_aliased_texture_by__uuid(
+                p_aliased_texture_manager, 
+                uuid__u32);
+
+    if (!p_aliased_texture) {
+        debug_error("get_p_PLATFORM_texture_by__uuid, failed to find texture.");
+        return 0;
+    }
+
+    return get_p_PLATFORM_texture_from__aliased_texture(
+            p_aliased_texture);
 }
 
 void release_all_aliased_textures(
@@ -205,4 +287,44 @@ void release_all_aliased_textures(
                 p_aliased_texture->P_PLATFORM_texture);
         initialize_aliased_texture(p_aliased_texture);
     }
+}
+
+void release_aliased_texture_by__uuid(
+        PLATFORM_Gfx_Context *p_PLATFORM_gfx_context,
+        Aliased_Texture_Manager *p_aliased_texture_manager,
+        Identifier__u32 uuid__u32) {
+    Aliased_Texture *p_aliased_texture =
+        get_p_aliased_texture_by__uuid(
+                p_aliased_texture_manager, 
+                uuid__u32);
+
+    if (!p_aliased_texture) {
+        debug_warning("release_aliased_texture_by__uuid, failed to find.");
+        return;
+    }
+
+    PLATFORM_release_texture(
+            p_PLATFORM_gfx_context, 
+            p_aliased_texture->P_PLATFORM_texture);
+    initialize_aliased_texture(p_aliased_texture);
+}
+
+void release_aliased_texture_by__alias(
+        PLATFORM_Gfx_Context *p_PLATFORM_gfx_context,
+        Aliased_Texture_Manager *p_aliased_texture_manager,
+        Texture_Name__c_str name_of__texture__c_str) {
+    Aliased_Texture *p_aliased_texture =
+        get_p_aliased_texture_by__alias(
+                p_aliased_texture_manager, 
+                name_of__texture__c_str);
+
+    if (!p_aliased_texture) {
+        debug_warning("release_aliased_texture_by__alias, failed to find.");
+        return;
+    }
+
+    PLATFORM_release_texture(
+            p_PLATFORM_gfx_context, 
+            p_aliased_texture->P_PLATFORM_texture);
+    initialize_aliased_texture(p_aliased_texture);
 }

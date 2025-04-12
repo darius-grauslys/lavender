@@ -213,6 +213,9 @@ void *memset(void *, int, unsigned long);
 int abs(int x);
 void srand(unsigned int seed);
 int rand(void);
+int strncmp(const char *, const char *, size_t);
+size_t strnlen(const char *, size_t);
+char *strncpy(char *dest, const char *src, size_t n);
 
 void PLATFORM_get_date_time(Date_Time *p_date_time);
 
@@ -229,34 +232,6 @@ void PLATFORM_post_render(Game *game);
 /// 
 /// SECTION_ui
 ///
-
-// TODO: remove
-UI_Manager *PLATFORM_get_p_ui_manager_from__gfx_window(
-        PLATFORM_Graphics_Window *p_PLATFORM_gfx_window);
-
-// TODO: remove
-Game_Action PLATFORM_get_gfx_window__game_action(
-        PLATFORM_Graphics_Window *p_PLATFORM_gfx_window);
-
-// TODO: remove
-UI_Tile_Map__Wrapper PLATFORM_get_tile_map__wrapper_from__gfx_window(
-        PLATFORM_Graphics_Window *p_PLATFORM_gfx_window);
-
-// TODO: remove
-void PLATFORM_set_gfx_window__position(
-        PLATFORM_Graphics_Window *p_PLATFORM_gfx_window,
-        Vector__3i32 position_of__window);
-
-///
-/// Returns the position of the PLATFORM_gfx_window at time of allocation.
-///
-// TODO: remove
-Vector__3i32 PLATFORM_get_gfx_window__origin(
-        PLATFORM_Graphics_Window *p_PLATFORM_gfx_window);
-
-// TODO: remove
-Vector__3i32 PLATFORM_get_gfx_window__position(
-        PLATFORM_Graphics_Window *p_PLATFORM_gfx_window);
 
 PLATFORM_Graphics_Window *PLATFORM_allocate_gfx_window(
         Gfx_Context *p_gfx_context,

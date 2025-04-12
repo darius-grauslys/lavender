@@ -64,8 +64,20 @@ void register_ui_window__loader_into__ui_context(
         UI_Context *p_ui_context,
         f_UI_Window__Load f_ui_window__load,
         Graphics_Window_Kind the_kind_of__window) {
-    // TODO: validate args
-#warning validate args
+#ifndef NDEBUG
+    if (!p_ui_context) {
+        debug_error("register_ui_window__loader_into__ui_context, p_ui_context == 0.");
+        return;
+    }
+    if (!f_ui_window__load) {
+        debug_error("register_ui_window__loader_into__ui_context, f_ui_window__load == 0.");
+        return;
+    }
+#endif
+    if ((u32)the_kind_of__window >= Graphics_Window_Kind__Unknown) {
+        debug_error("register_ui_window__loader_into__ui_context, the_kind_of__window >= Graphics_Window_Kind__Unknown");
+        return;
+    }
     p_ui_context->F_ui_window__loaders[
         the_kind_of__window] = f_ui_window__load;
 }
@@ -74,8 +86,20 @@ void register_ui_window__closer_into__ui_context(
         UI_Context *p_ui_context,
         f_UI_Window__Close f_ui_window__close,
         Graphics_Window_Kind the_kind_of__window) {
-    // TODO: validate args
-#warning validate args
+#ifndef NDEBUG
+    if (!p_ui_context) {
+        debug_error("register_ui_window__closer_into__ui_context, p_ui_context == 0.");
+        return;
+    }
+    if (!f_ui_window__close) {
+        debug_error("register_ui_window__closer_into__ui_context, f_ui_window__close == 0.");
+        return;
+    }
+#endif
+    if ((u32)the_kind_of__window >= Graphics_Window_Kind__Unknown) {
+        debug_error("register_ui_window__closer_into__ui_context, the_kind_of__window >= Graphics_Window_Kind__Unknown");
+        return;
+    }
     p_ui_context->F_ui_window__closers[
         the_kind_of__window] = f_ui_window__close;
 }
@@ -83,8 +107,17 @@ void register_ui_window__closer_into__ui_context(
 Graphics_Window *open_ui(
         Game *p_game,
         Graphics_Window_Kind the_kind_of__window_to__open) {
-    // TODO: validate args
-#warning validate args
+#ifndef NDEBUG
+    if (!p_game) {
+        debug_error("open_ui, p_game == 0.");
+        return 0;
+    }
+#endif
+    if ((u32)the_kind_of__window_to__open >= Graphics_Window_Kind__Unknown) {
+        debug_error("open_ui, the_kind_of__window_to__open >= Graphics_Window_Kind__Unknown");
+        return 0;
+    }
+
     Gfx_Context *p_gfx_context =
         get_p_gfx_context_from__game(p_game);
     UI_Context *p_ui_context =
@@ -140,10 +173,19 @@ Graphics_Window *open_ui(
 void close_ui(
         Game *p_game,
         Graphics_Window_Kind the_kind_of__window_to__close) {
+#ifndef NDEBUG
+    if (!p_game) {
+        debug_error("close_ui, p_game == 0.");
+        return;
+    }
+#endif
+    if ((u32)the_kind_of__window_to__close >= Graphics_Window_Kind__Unknown) {
+        debug_error("close_ui, the_kind_of__window_to__close >= Graphics_Window_Kind__Unknown");
+        return;
+    }
     Gfx_Context *p_gfx_context =
         get_p_gfx_context_from__game(p_game);
-    // TODO: validate args
-#warning validate args
+
     UI_Context *p_ui_context =
         get_p_ui_context_from__gfx_context(p_gfx_context);
     

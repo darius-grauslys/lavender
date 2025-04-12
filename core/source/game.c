@@ -3,7 +3,7 @@
 #include "defines_weak.h"
 #include "game_action/game_action.h"
 #include "game_action/game_action_logic_table.h"
-#include "game_action/implemented/game_action__registrar.h"
+#include "game_action/implemented/game_action_registrar.h"
 #include "inventory/inventory_manager.h"
 #include "inventory/item_manager.h"
 #include "log/log.h"

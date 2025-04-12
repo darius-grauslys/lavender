@@ -3,6 +3,8 @@
 #include "defines.h"
 #include "defines_weak.h"
 #include "input/input.h"
+#include "rendering/graphics_window.h"
+#include "ui/ui_tile_map.h"
 #include <ui/ui_element.h>
 #include <ui/ui_manager.h>
 #include <vectors.h>
@@ -721,6 +723,69 @@ void render_all_ui_elements_in__ui_manager(
         UI_Manager *p_ui_manager,
         Game *p_game,
         Graphics_Window *p_gfx_window) {
+#ifndef NDEBUG
+    if (!p_ui_manager) {
+        debug_error("render_all_ui_elements_in__ui_manager, p_ui_manager == 0.");
+        return;
+    }
+    if (!p_game) {
+        debug_error("render_all_ui_elements_in__ui_manager, p_game == 0.");
+        return;
+    }
+    if (!p_gfx_window) {
+        debug_error("render_all_ui_elements_in__ui_manager, p_gfx_window == 0.");
+        return;
+    }
+#endif
+    foreach_ui_element_in__ui_manager(
+            p_ui_manager, 
+            p_game,
+            p_gfx_window,
+            _f_render_ui_element_callback__ui_manager);
+}
+
+void _f_compose_ui_element_callback__ui_manager(
+        UI_Manager *p_ui_manager,
+        Game *p_game,
+        Graphics_Window *p_gfx_window,
+        UI_Element *p_ui_element) {
+    if (!p_ui_element
+            || !is_ui_element__enabled(p_ui_element)) {
+        return;
+    }
+    if (is_ui_element__using_sprite(
+                p_ui_element)) {
+        return;
+    }
+
+    generate_ui_span_in__ui_tile_map(
+            get_ui_tile_map_from__graphics_window(
+                p_gfx_window), 
+            get_ui_element__p_ui_tile_span(p_ui_element), 
+            get_width_from__p_ui_element(p_ui_element) >> 3, 
+            get_height_from__p_ui_element(p_ui_element) >> 3, 
+            get_x_i32_from__p_ui_element(p_ui_element) >> 3, 
+            get_y_i32_from__p_ui_element(p_ui_element) >> 3);
+}
+
+void compose_all_ui_elements_in__ui_manager(
+        UI_Manager *p_ui_manager,
+        Game *p_game,
+        Graphics_Window *p_gfx_window) {
+#ifndef NDEBUG
+    if (!p_ui_manager) {
+        debug_error("compose_all_ui_elements_in__ui_manager, p_ui_manager == 0.");
+        return;
+    }
+    if (!p_game) {
+        debug_error("compose_all_ui_elements_in__ui_manager, p_game == 0.");
+        return;
+    }
+    if (!p_gfx_window) {
+        debug_error("compose_all_ui_elements_in__ui_manager, p_gfx_window == 0.");
+        return;
+    }
+#endif
     foreach_ui_element_in__ui_manager(
             p_ui_manager, 
             p_game,

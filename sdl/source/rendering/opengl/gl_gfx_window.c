@@ -107,13 +107,15 @@ void GL_compose_gfx_window(
         GL_get_p_framebuffer_manager_from__PLATFORM_gfx_context(
                 p_PLATFORM_gfx_context);
 
-#warning TODO: as of right now things will likely not work, we need to request a tiling texture
-    // TODO: as of right now things will likely not work, we need to request a tiling texture
     PLATFORM_Texture *p_PLATFORM_texture__ui_tilesheet =
-        0;
-        // get_p_PLATFORM_texture_by__alias(
-        //         get_p_aliased_texture_manager_from__gfx_context(p_gfx_context), 
-        //         name_of__texture__tilesheet_ui__c_str);
+        get_p_PLATFORM_texture_by__uuid(
+                get_p_aliased_texture_manager_from__gfx_context(
+                    p_gfx_context), 
+                get_uuid_of__ui_tile_map__texture_from__gfx_window(
+                    p_gfx_window));
+
+    if (!p_PLATFORM_texture__ui_tilesheet)
+        return;
 
     GL_push_framebuffer_onto__framebuffer_manager(
             p_GL_framebuffer_manager,

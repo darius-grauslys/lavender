@@ -1,4 +1,4 @@
-#include "ui/implemented/ui_registrar__implemented.h"
+#include "ui/implemented/ui_window_registrar.h"
 #include "defines.h"
 #include "defines_weak.h"
 #include "rendering/gfx_context.h"

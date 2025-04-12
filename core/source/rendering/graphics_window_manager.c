@@ -331,7 +331,11 @@ void compose_graphic_windows_in__graphics_window_manager(
         PLATFORM_compose_gfx_window(
                 p_gfx_context, 
                 p_gfx_window);
-#warning compose ui_elements after
+        compose_all_ui_elements_in__ui_manager(
+                get_p_ui_manager_from__graphics_window(
+                    p_gfx_window),
+                p_game,
+                p_gfx_window);
 
         if (is_graphics_window_possessing__a_child(
                     p_gfx_window)) {

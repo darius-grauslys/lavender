@@ -122,4 +122,9 @@ void render_all_ui_elements_in__ui_manager(
         Game *p_game,
         Graphics_Window *p_gfx_window);
 
+void compose_all_ui_elements_in__ui_manager(
+        UI_Manager *p_ui_manager,
+        Game *p_game,
+        Graphics_Window *p_gfx_window);
+
 #endif

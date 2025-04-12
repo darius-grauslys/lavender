@@ -46,7 +46,7 @@ void initialize_world(
 
     initialize_repeatable_psuedo_random(
             &p_world->repeatable_pseudo_random, 
-            (u32)p_game);
+            (u32)(u64)p_game);
 
     // TODO: take world name in by world_parameters
     strncpy(p_world->name, "default_world", WORLD_NAME_MAX_SIZE_OF);

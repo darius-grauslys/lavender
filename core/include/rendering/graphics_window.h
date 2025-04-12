@@ -22,6 +22,12 @@ void set_graphics_window__ui_tile_map(
         UI_Tile_Map__Wrapper ui_tile_map_wrapper);
 
 static inline
+UI_Tile_Map__Wrapper get_ui_tile_map_from__graphics_window(
+        Graphics_Window *p_graphics_window) {
+    return p_graphics_window->ui_tile_map__wrapper;
+}
+
+static inline
 void set_p_ui_manager_of__graphics_window(
         Graphics_Window *p_graphics_window,
         UI_Manager *p_ui_manager) {
@@ -36,6 +42,12 @@ void set_p_ui_manager_of__graphics_window(
 
 static inline
 bool is_graphics_window_with__ui_manager(
+        Graphics_Window *p_graphics_window) {
+    return p_graphics_window->p_ui_manager;
+}
+
+static inline
+UI_Manager *get_p_ui_manager_from__graphics_window(
         Graphics_Window *p_graphics_window) {
     return p_graphics_window->p_ui_manager;
 }
@@ -167,6 +179,20 @@ void set_graphics_window_as__NOT_rendering_world(
     p_gfx_window->graphics_window__flags &=
         ~GRAPHICS_WINDOW__FLAG__IS_RENDERING_WORLD
         ;
+}
+
+static inline
+void set_graphics_window__ui_tile_map__texture(
+        Graphics_Window *p_gfx_window,
+        Identifier__u32 uuid__u32) {
+    p_gfx_window->ui_tile_map__texture__uuid =
+        uuid__u32;
+}
+
+static inline
+Identifier__u32 get_uuid_of__ui_tile_map__texture_from__gfx_window(
+        Graphics_Window *p_gfx_window) {
+    return p_gfx_window->ui_tile_map__texture__uuid;
 }
 
 #endif

@@ -7,10 +7,7 @@
 #include <sdl_defines.h>
 
 void SDL_initialize_gfx_window(
-        PLATFORM_Gfx_Context *p_PLATFORM_gfx_context,
-        PLATFORM_Graphics_Window *p_PLATFORM_gfx_window,
-        Camera *p_camera,
-        Vector__3i32F4 position_of__graphics_window__3i32F4);
+        PLATFORM_Graphics_Window *p_PLATFORM_gfx_window);
 
 void SDL_compose_gfx_window(
         Gfx_Context *p_gfx_context,
@@ -19,16 +16,6 @@ void SDL_compose_gfx_window(
 void SDL_render_gfx_window(
         Gfx_Context *p_gfx_context,
         Graphics_Window *p_gfx_window);
-
-static inline
-void SDL_initialize_gfx_window_as__deallocated(
-        PLATFORM_Graphics_Window *p_PLATFORM_gfx_window) {
-    SDL_initialize_gfx_window(
-            0, 
-            p_PLATFORM_gfx_window,
-            0,
-            VECTOR__3i32F4__OUT_OF_BOUNDS);
-}
 
 static inline
 bool SDL_is_gfx_window__allocated(
@@ -52,29 +39,6 @@ void SDL_set_gfx_window_as__deallocated(
         PLATFORM_Graphics_Window *p_PLATFORM_gfx_window) {
     p_PLATFORM_gfx_window
         ->is_allocated = false;
-}
-
-static inline
-void SDL_set_position_of__gfx_window(
-        PLATFORM_Graphics_Window *p_PLATFORM_gfx_window,
-        Vector__3i32F4 position_of__gfx_window) {
-    p_PLATFORM_gfx_window
-        ->SDL_position_of__graphics_window =
-        position_of__gfx_window;
-}
-
-static inline
-Vector__3i32F4 SDL_get_position_of__gfx_window(
-        PLATFORM_Graphics_Window *p_PLATFORM_gfx_window) {
-    return p_PLATFORM_gfx_window
-        ->SDL_position_of__graphics_window;
-}
-
-static inline
-UI_Tile_Map__Wrapper SDL_get_tile_map__wrapper_from__PLATFORM_gfx_window(
-        PLATFORM_Graphics_Window *p_PLATFORM_gfx_window) {
-    return p_PLATFORM_gfx_window
-        ->SDL_graphics_window__ui_tile_map__wrapper;
 }
 
 #endif

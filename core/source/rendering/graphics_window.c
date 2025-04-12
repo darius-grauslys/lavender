@@ -77,3 +77,59 @@ void set_graphics_window__ui_tile_map(
     p_gfx_window->ui_tile_map__wrapper =
         ui_tile_map_wrapper;
 }
+
+
+/* TODO: pulled from SDL back end, needed?
+    switch (get_texture_flags__size(
+                texture_flags)) {
+        default:
+            debug_error("SDL_allocate_gfx_window, unknown texture size.");
+            break;
+        case TEXTURE_FLAG__SIZE_8x8:
+        case TEXTURE_FLAG__SIZE_8x16:
+        case TEXTURE_FLAG__SIZE_8x32:
+        case TEXTURE_FLAG__SIZE_16x8:
+        case TEXTURE_FLAG__SIZE_16x16:
+        case TEXTURE_FLAG__SIZE_16x32:
+        case TEXTURE_FLAG__SIZE_32x16:
+        case TEXTURE_FLAG__SIZE_32x32:
+        case TEXTURE_FLAG__SIZE_32x64:
+        case TEXTURE_FLAG__SIZE_64x64:
+            p_PLATFORM_gfx_window
+                ->SDL_graphics_window__ui_tile_map__wrapper =
+                allocate_ui_tile_map_with__ui_tile_map_manager(
+                        SDL_get_p_ui_tile_map_manager_from__PLATFORM_gfx_context(
+                            p_PLATFORM_gfx_context), 
+                        UI_Tile_Map_Size__Small);
+            break;
+        case TEXTURE_FLAG__SIZE_128x128:
+            p_PLATFORM_gfx_window
+                ->SDL_graphics_window__ui_tile_map__wrapper =
+                allocate_ui_tile_map_with__ui_tile_map_manager(
+                        SDL_get_p_ui_tile_map_manager_from__PLATFORM_gfx_context(
+                            p_PLATFORM_gfx_context), 
+                        UI_Tile_Map_Size__Medium);
+            break;
+        case TEXTURE_FLAG__SIZE_256x256:
+        case TEXTURE_FLAG__SIZE_256x512:
+        case TEXTURE_FLAG__SIZE_512x256:
+        case TEXTURE_FLAG__SIZE_512x512:
+            p_PLATFORM_gfx_window
+                ->SDL_graphics_window__ui_tile_map__wrapper =
+                allocate_ui_tile_map_with__ui_tile_map_manager(
+                        SDL_get_p_ui_tile_map_manager_from__PLATFORM_gfx_context(
+                            p_PLATFORM_gfx_context), 
+                        UI_Tile_Map_Size__Large);
+            break;
+    }
+
+    set_ui_tile_map__wrapper__utilized_size(
+            &p_PLATFORM_gfx_window
+            ->SDL_graphics_window__ui_tile_map__wrapper, 
+            get_length_of__texture_flag__width(
+                texture_flags)
+            / TILE_WIDTH__IN_PIXELS, 
+            get_length_of__texture_flag__height(
+                texture_flags)
+            / TILE_WIDTH__IN_PIXELS);
+ */

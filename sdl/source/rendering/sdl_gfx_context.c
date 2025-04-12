@@ -170,7 +170,7 @@ void SDL_initialize_gfx_context(
                 p_PLATFORM_gfx_context));
 
     // TODO: do better
-    SDL_initialize_gfx_window_as__deallocated(
+    SDL_initialize_gfx_window(
             &p_PLATFORM_gfx_context
             ->SDL_graphics_window__main);
     SDL_set_gfx_window_as__allocated(

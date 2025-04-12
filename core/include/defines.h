@@ -746,6 +746,7 @@ typedef struct Texture_Allocation_Specification_t {
 typedef char Texture_Name__c_str[MAX_LENGTH_OF__TEXTURE_NAME];
 
 typedef struct Aliased_Texture_t {
+    Serialization_Header _serialization_header;
     Texture_Name__c_str name_of__texture__c_str;
     PLATFORM_Texture *P_PLATFORM_texture;
 } Aliased_Texture;
@@ -757,6 +758,7 @@ typedef struct Aliased_Texture_t {
 ///
 typedef struct Aliased_Texture_Manager_t {
     Aliased_Texture aliased_textures[MAX_QUANTITY_OF__ALIASED_TEXTURES];
+    Repeatable_Psuedo_Random repeatable_psuedo_random_for__texture_uuid;
 } Aliased_Texture_Manager;
 
 typedef uint8_t Sprite_Flags;
@@ -2420,6 +2422,7 @@ typedef struct Graphics_Window_t {
     UI_Manager *p_ui_manager;
     PLATFORM_Graphics_Window *p_PLATFORM_gfx_window;
     struct Graphics_Window_t *p_child__graphics_window;
+    Identifier__u32 ui_tile_map__texture__uuid;
     Graphics_Window_Kind the_kind_of__window;
     Index__u8 priority_of__window;
     Graphics_Window_Flags__u8 graphics_window__flags;

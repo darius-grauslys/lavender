@@ -1,4 +1,4 @@
-#include "game_action/implemented/game_action__registrar.h"
+#include "game_action/implemented/game_action_registrar.h"
 #include "game_action/core/game_action__bad_request.h"
 #include "game_action/core/tcp/game_action__tcp_begin_connect.h"
 #include "game_action/core/tcp/game_action__tcp_connect.h"

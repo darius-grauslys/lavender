@@ -34,7 +34,7 @@ void initialize_serialization_header(
         Quantity__u32 size_of__struct);
 
 void initialize_serialization_header__uuid_64(
-        Serialization_Header__UUID_64 *p_serialization_header,
+    Serialization_Header__UUID_64 *p_serialization_header,
         Identifier__u64 identifier_for__serialized_struct,
         Quantity__u32 size_of__struct);
 

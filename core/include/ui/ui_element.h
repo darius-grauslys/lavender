@@ -535,4 +535,11 @@ bool does_ui_element_have__render_handler(
             p_ui_element);
 }
 
+static inline
+const UI_Tile_Span *get_ui_element__p_ui_tile_span(
+        UI_Element *p_ui_element) {
+    return &p_ui_element
+        ->ui_tile_span;
+}
+
 #endif
