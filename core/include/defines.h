@@ -372,6 +372,12 @@ typedef struct Hitbox_AABB_t {
     Quantity__u32 height__quantity_u32;
 } Hitbox_AABB;
 
+typedef void (*f_Hitbox_AABB_Collision_Handler)(
+        Game *p_game,
+        World *p_world,
+        Hitbox_AABB *p_hitbox_aabb__colliding,
+        Hitbox_AABB *p_hitbox_aabb__collided);
+
 #define MAX_QUANTITY_OF__HITBOX_AABB 128
 
 typedef struct Hitbox_AABB_Manager_t {
@@ -425,7 +431,7 @@ typedef struct Collision_Manager__Collision_Node_t {
 #define MAX_QUANTITY_OF__COLLISION_NODE__RECORD_POOLS
 
 typedef struct Collision_Node_Entry_t {
-    Serialized_Field s_hitbox;
+    Identifier__u32 uuid_of__hitbox__u32;
     struct Collision_Node_Entry_t *p_previous_entry;
 } Collision_Node_Entry;
 
@@ -959,53 +965,6 @@ typedef struct Entity_t Entity;
 typedef void (*m_Entity_Dispose_Handler)(
         Entity *p_entity_self, 
         Game *p_game);
-///
-/// method callback for entity AI.
-/// Use this for pathfinding, attacking, and the like.
-///
-typedef void (*m_Entity_AI_Handler)(
-        Entity *p_entity_self, 
-        Game *p_game);
-///
-/// method callback for entity body.
-/// Use this for homeostasis, and "specie-like" abilities.
-///
-typedef void (*m_Entity_Body_Handler)(
-        Entity *p_entity_self,
-        Game *p_game);
-
-typedef void (*m_Entity_Game_Action_Handler)(
-        Entity *p_entity_self,
-        Game_Action *p_game_action,
-        Game *p_game);
-
-///
-/// callee_data is an opaque pointer to whatever
-/// data the user of this function pointer needs
-/// passed in addition to collided entities.
-///
-typedef void (*m_Entity_Collision_Handler)(
-        Entity *p_entity_collision_source,
-        Entity *p_entity_collided,
-        Direction__u8 direction_of_collision,
-        Game *p_game);
-
-typedef struct Tile_t Tile;
-
-typedef void (*m_Entity_Tile_Collision_Handler)(
-        Entity *p_entity_self,
-        Tile *p_tile_collided,
-        Signed_Index__i32 x_collision__i32,
-        Signed_Index__i32 y_collision__i32,
-        Direction__u8 direction_of__tile_collision);
-
-typedef void (*m_Entity_Animation_Handler) 
-    (Entity *p_entity_self);
-
-///
-/// Here we define the entity super struct. It has everything we could need
-/// for an entity, even if some of the things are not used.
-///
 
 typedef uint8_t Entity_Flags__u8;
 
@@ -1022,123 +981,18 @@ typedef uint8_t Entity_Flags__u8;
 #define ENTITY_FLAG__IS_HIDDEN \
     NEXT_BIT(ENTITY_FLAG__IS_UNLOADED)
 
-typedef uint8_t Humanoid_Flags;
-#define HUMANOID_FLAG__IS_UNDEAD                BIT(0)
-#define HUMANOID_FLAG__HAS_DIVINE_PROVIDENCE    BIT(1)
-
-#define ENTITY_RESOURCE_SYMBOL_MAX_QUANTITY_OF 32
-
-typedef uint8_t Resource_Symbol__u8;
-typedef uint8_t Heart__u8;
-typedef uint8_t Energy_Orb__u8;
-
-typedef struct Resource_Reserve_t {
-    Resource_Symbol__u8 resource_symbols
-        [ENTITY_RESOURCE_SYMBOL_MAX_QUANTITY_OF];
-    ///
-    /// Used for entities who has more than
-    /// ENTITY_RESOURCE_SYMBOL_MAX_QUANTITY_OF
-    /// of a resource.
-    ///
-    /// This overflow cannot be modified. ie it
-    /// cannot be poisoned, etc.
-    ///
-    /// This is primarily used for Ancients only.
-    ///
-    Quantity__u16 resource_overflow;
-    Quantity__u16 max_quantity_of__resource_overflow;
-    Quantity__u8 max_quantity_of__resource_symbols;
-} Resource_Reserve;
-
-typedef uint8_t Hearts_Damaging_Flags;
-#define HEARTS_DAMAGING_FLAGS__NONE 0
-#define HEARTS_DAMAGING_FLAG__IS_POISONING \
-    BIT(0)
-#define HEARTS_DAMAGING_FLAG__IS_ORDER \
-    BIT(1)
-#define HEARTS_DAMAGING_FLAG__IS_CHAOS \
-    BIT(2)
-#define HEARTS_DAMAGING_FLAG__IS_CURSING \
-    BIT(3)
-#define HEARTS_DAMAGING_FLAG__IS_BLUDGEONING \
-    BIT(4)
-#define HEARTS_DAMAGING_FLAG__IS_SLASHING \
-    BIT(5)
-#define HEARTS_DAMAGING_FLAG__IS_PIERCING \
-    BIT(6)
-typedef struct Hearts_Damaging_Specifier_t {
-    Quantity__u16 quantity_of__damage;
-    Hearts_Damaging_Flags hearts_damaging__flags;
-} Hearts_Damaging_Specifier;
-
-#define HEARTS_HEALING_FLAG__IS_ANTIDOTE \
-    BIT(0)
-#define HEARTS_HEALING_FLAG__IS_IMMORTALIZING \
-    BIT(1)
-typedef uint8_t Hearts_Healing_Flags;
-typedef struct Hearts_Healing_Specifier_t {
-    Quantity__u16 quantity_of__healing;
-    Hearts_Healing_Flags hearts_healing__flags;
-} Hearts_Healing_Specifier;
-
-#define ENERGY_DAMAGING_FLAG__IS_POISONING \
-    BIT(0)
-#define ENERGY_DAMAGING_FLAG__IS_ORDER \
-    BIT(1)
-#define ENERGY_DAMAGING_FLAG__IS_CHAOS \
-    BIT(2)
-typedef uint8_t Energy_Damaging_Flags;
-typedef struct Energy_Damaging_Specifier_t {
-    Quantity__u16 quantity_of__damage;
-    Energy_Damaging_Flags energy_damaging__flags;
-} Energy_Damaging_Specifier;
-
-#define ENERGY_HEALING_FLAG__IS_ANTIDOTE \
-    BIT(0)
-#define ENERGY_HEALING_FLAG__IS_DEMONIZING \
-    BIT(1)
-typedef uint8_t Energy_Healing_Flags;
-typedef struct Energy_Healing_Specifier_t {
-    Quantity__u16 quantity_of__healing;
-    Energy_Damaging_Flags energy_healing__flags;
-} Energy_Healing_Specifier;
-
-typedef int8_t Homeostasis__i8;
-#define HOMEOSTASIS_MAX_QUANTITY_OF MASK(7)
-#define HOMEOSTASIS_MIN_QUANTITY_OF (int8_t)BIT(7)
-
-#define HOMEOSTASIS__EXTREME_BURNING 110
-#define HOMEOSTASIS__BURNING 80
-#define HOMEOSTASIS__HOT 40
-#define HOMEOSTASIS__NEUTRAL 0
-#define HOMEOSTASIS__COLD -40
-#define HOMEOSTASIS__FREEZING -80
-#define HOMEOSTASIS__EXTREME_FREEZING -110
-
-#define HOMEOSTASIS__SOULFUL -100
-#define HOMEOSTASIS__FLEETING_SOUL -50
-#define HOMEOSTASIS__SOULLESS 0
-#define HOMEOSTASIS__LICHLING 120
-#define HOMEOSTASIS__LICH 128
-
-typedef uint8_t Sustenance__u8;
-#define SUSTENANCE_MAX_QUANTITY_OF (uint8_t)MASK(8)
-#define SUSTENANCE_MIN_QUANTITY_OF 0
-
-#define SUSTENANCE__BLOATED 240
-#define SUSTENANCE__FULL 234
-#define SUSTENANCE__SATISFIED 206
-#define SUSTENANCE__WELL 178
-#define SUSTENANCE__INDIFFERENT 150
-#define SUSTENANCE__WANTING 122
-#define SUSTENANCE__NEEDING 84
-#define SUSTENANCE__DESPERATE 56
-#define SUSTENANCE__DYING 28
-
+#include "types/implemented/entity_data.h"
 #ifndef DEFINE_ENTITY_DATA
 typedef struct Entity_Data_t {
     Entity_Kind the_kind_of__entity;
 } Entity_Data;
+#endif
+
+#include "types/implemented/entity_functions.h"
+#ifndef DEFINE_ENTITY_FUNCTIONS
+typedef struct Entity_Functions_t {
+    m_Entity_Dispose_Handler        m_entity_dispose_handler;
+} Entity_Functions;
 #endif
 
 typedef struct Entity_t {
@@ -1146,11 +1000,16 @@ typedef struct Entity_t {
     /// Do not interact with this.
     ///
     Serialization_Header            _serialization_header;
-
-    m_Entity_Dispose_Handler        m_entity_dispose_handler;
-
     Entity_Data                     entity_data;
+    Entity_Flags__u8                entity_flags;
+    Entity_Functions                entity_functions;
 } Entity;
+
+typedef void (*f_Entity_Initializer)(
+        Game *p_game,
+        World *p_world,
+        Entity *p_entity,
+        Vector__3i32F4 position__3i32F4);
 
 #define ENTITY_TILE_LOCAL_SPACE__BIT_SIZE 3
 #define CHUNK_LOCAL_SPACE__BIT_SIZE 3
@@ -1176,6 +1035,7 @@ typedef struct Entity_t {
 
 typedef struct Entity_Manager_t {
     Entity entities[ENTITY_MAXIMUM_QUANTITY_OF];
+    f_Entity_Initializer F_entity_initializer_table[Entity_Kind__Unknown];
     Repeatable_Psuedo_Random randomizer;
     Quantity__u32 entity_count__quantity_u32;
 } Entity_Manager;

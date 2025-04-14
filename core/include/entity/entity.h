@@ -24,4 +24,16 @@ bool is_entity__allocated(
             &p_entity->_serialization_header);
 }
 
+static inline
+void set_entity_as__enabled(Entity *p_entity) {
+    p_entity->entity_flags |=
+        ENTITY_FLAG__IS_ENABLED;
+}
+
+static inline
+void set_entity_as__disabled(Entity *p_entity) {
+    p_entity->entity_flags &=
+        ~ENTITY_FLAG__IS_ENABLED;
+}
+
 #endif

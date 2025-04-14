@@ -63,8 +63,7 @@ void m_process__serialize_entities_in__global_space(
 
     Identifier__u32 uuid__u32 =
         p_collision_node__entry
-        ->s_hitbox
-        .identifier_for__serialized_field
+        ->uuid_of__hitbox__u32
         ;
 
     remove_entry_from__collision_node(
@@ -142,6 +141,8 @@ void m_process__serialize_global_space(
         (Serialization_Request*)p_this_process->p_process_data;
     Global_Space *p_global_space = 
         (Global_Space*)p_serialization_request->p_data;
+    Collision_Node_Entry *p_collision_node_entry = 0;
+    Entity *p_entity = 0;
     if (IS_DEALLOCATED_P(p_global_space)) {
         PLATFORM_close_file(
                 get_p_PLATFORM_file_system_context_from__game(p_game), 
@@ -170,6 +171,18 @@ void m_process__serialize_global_space(
                 fail_process(p_this_process);
                 break;
             }
+
+            p_collision_node_entry =
+                get_p_collision_node_from__global_space(p_global_space)
+                ->p_linked_list__collision_node_entries__tail;
+            p_entity = 0;
+            while (iterate_entities_in__collision_node_entry(
+                        get_p_entity_manager_from__game(p_game), 
+                        &p_collision_node_entry, 
+                        &p_entity)) {
+                set_entity_as__disabled(p_entity);
+            }
+
             p_process->p_process_data =
                 p_this_process->p_process_data;
             enqueue_process(
@@ -287,6 +300,7 @@ void m_process__deserialize_global_space(
                 fail_process(p_this_process);
                 break;
             }
+
             p_process->p_process_data =
                 p_this_process->p_process_data;
             enqueue_process(
@@ -420,3 +434,4 @@ Process *dispatch_process__deserialize_global_space(
 
     return p_process;
 }
+

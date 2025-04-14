@@ -9,22 +9,27 @@
 
 void initialize_entity_manager(Entity_Manager *p_entity_manager);
 
+void register_f_entity_initializer_into__entity_manager(
+        Entity_Manager *p_entity_manager,
+        f_Entity_Initializer f_entity_initializer,
+        Entity_Kind the_kind_of__entity);
+
 ///
 /// Create a new entity instance within the entity_manager object pool.
 /// Return nullptr (0) if fails to get new entity.
 ///
 Entity *allocate_entity_in__entity_manager(
         Game *p_game,
+        World *p_world,
         Entity_Manager *p_entity_manager,
         enum Entity_Kind kind_of_entity,
-        Vector__3i32F4 position,
-        Graphics_Window
-            *p_graphics_window);
+        Vector__3i32F4 position);
 
 ///
 /// Release entity from the entity_manager object pool.
 ///
 void release_entity_from__entity_manager(
+        Game *p_game,
         Entity_Manager *p_manager, 
         Entity *p_entity);
 

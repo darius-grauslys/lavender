@@ -206,6 +206,7 @@ Entity *get_p_entity_from__world_using__3i32F4(
 
     Hitbox_AABB *p_hitbox_aabb =
         get_p_hitbox_aabb_at__vector_3i32F4_from__collision_node(
+                get_p_hitbox_aabb_manager_from__world(p_world),
                 p_collision_node, 
                 position__3i32F4);
 

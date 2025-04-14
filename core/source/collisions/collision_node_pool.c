@@ -4,8 +4,27 @@
 #include "numerics.h"
 #include "platform_defines.h"
 #include "serialization/hashing.h"
+#include "serialization/identifiers.h"
 #include "serialization/serialization_header.h"
 #include "serialization/serialized_field.h"
+
+static inline
+Collision_Node_Entry *get_p_collision_node_entry_by__index_from__collision_node_pool(
+        Collision_Node_Pool *p_collision_node_pool,
+        Index__u32 index_of__collision_node_entry) {
+#ifndef NDEBUG
+    if (!p_collision_node_pool) {
+        debug_error("get_p_collision_node_entry_by__index_from__collision_node_pool, p_collision_node == 0.");
+        return 0;
+    }
+    if (index_of__collision_node_entry >= MAX_QUANTITY_OF__HITBOX_AABB) {
+        debug_error("get_p_collision_node_entry_by__index_from__collision_node_pool, index_of__collision_node_entry > MAX_QUANTITY_OF__HITBOX_AABB.");
+        return 0;
+    }
+#endif
+    return &p_collision_node_pool->collision_node_entries[
+        index_of__collision_node_entry];
+}
 
 static inline
 Collision_Node *get_p_collision_node_by__index_from__collision_node_pool(
@@ -20,6 +39,14 @@ Collision_Node *get_p_collision_node_by__index_from__collision_node_pool(
     return &p_collision_node_pool->collision_nodes[index_of__collision_node];
 }
 
+static inline
+void initialize_collision_node_entry(
+        Collision_Node_Entry *p_collision_node_entry) {
+    p_collision_node_entry->uuid_of__hitbox__u32 =
+        IDENTIFIER__UNKNOWN__u32;
+    p_collision_node_entry->p_previous_entry = 0;
+}
+
 void initialize_collision_node_pool(
         Collision_Node_Pool *p_collision_node_pool) {
     initialize_serialization_header__contiguous_array__uuid_64(
@@ -27,6 +54,14 @@ void initialize_collision_node_pool(
                 p_collision_node_pool->collision_nodes, 
             QUANTITY_OF__GLOBAL_SPACE, 
             sizeof(Collision_Node));
+    for (Index__u32 index_of__collision_node_entry = 0;
+            index_of__collision_node_entry < MAX_QUANTITY_OF__HITBOX_AABB;
+            index_of__collision_node_entry++) {
+        initialize_collision_node_entry(
+                get_p_collision_node_entry_by__index_from__collision_node_pool(
+                    p_collision_node_pool,
+                    index_of__collision_node_entry));
+    }
 }
 
 Collision_Node *allocate_collision_node_from__collision_node_pool(
@@ -73,8 +108,9 @@ void release_collision_node_from__collision_node_pool(
             sizeof(Collision_Node));
 }
 
-Collision_Node_Entry *get_next_available__collision_node_entry(
+Collision_Node_Entry *allocate_collision_node_entry_from__collision_node_pool(
         Collision_Node_Pool *p_collision_node_pool) {
+    // TODO: can we do better than O(N) here?
     for (Index__u32 index_of__entry = 0;
             index_of__entry < MAX_QUANTITY_OF__HITBOX_AABB;
             index_of__entry++) {
@@ -82,8 +118,8 @@ Collision_Node_Entry *get_next_available__collision_node_entry(
             &p_collision_node_pool->collision_node_entries[
                 index_of__entry];
 
-        if (is_p_serialized_field__linked(
-                    &p_collision_node_entry->s_hitbox)) {
+        if (!is_identifier_u32__invalid(
+                    p_collision_node_entry->uuid_of__hitbox__u32)) {
             continue;
         }
 
@@ -92,4 +128,25 @@ Collision_Node_Entry *get_next_available__collision_node_entry(
     
     debug_error("get_next_available__collision_node_entry, failed to find available entry.");
     return 0;
+}
+
+void release_collision_node_entry_from__collision_node_pool(
+        Collision_Node_Pool *p_collision_node_pool,
+        Collision_Node_Entry *p_collision_node_entry) {
+#ifndef NDEBUG
+    if (!p_collision_node_pool) {
+        debug_error("release_collision_node_from__collision_node_pool, p_collision_node_pool == 0.");
+        return;
+    }
+    if (!p_collision_node_entry) {
+        debug_error("release_collision_node_from__collision_node_pool, p_collision_node_entry == 0.");
+        return;
+    }
+    if (p_collision_node_entry - p_collision_node_pool->collision_node_entries
+            >= MAX_QUANTITY_OF__HITBOX_AABB) {
+        debug_error("release_collision_node_entry_from__collision_node_pool, p_collision_node_entry is not allocated with this collision_node_pool.");
+        return;
+    }
+#endif
+    initialize_collision_node_entry(p_collision_node_entry);
 }

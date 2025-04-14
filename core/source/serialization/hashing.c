@@ -199,7 +199,8 @@ Serialization_Header *get_next_available__allocation_in__contiguous_array(
                 index_of__allocation);
 }
 
-Serialization_Header *get_next_available__allocation_in__contiguous_array__u64(
+Serialization_Header__UUID_64 
+*get_next_available__allocation_in__contiguous_array__u64(
         Serialization_Header__UUID_64 *p_serialization_headers,
         Quantity__u32 length_of__p_serialization_headers,
         Identifier__u64 identifier__u64) {
@@ -211,9 +212,56 @@ Serialization_Header *get_next_available__allocation_in__contiguous_array__u64(
                 INDEX__UNKNOWN__u32);
     if (index_of__allocation == INDEX__UNKNOWN__u32)
         return 0;
-    return (Serialization_Header*)
+    return (Serialization_Header__UUID_64*)
         get_p_serialization_header_from__contigious_array__uuid_64(
                 p_serialization_headers,
                 length_of__p_serialization_headers,
                 index_of__allocation);
+}
+
+Serialization_Header *get_next_available__random_allocation_in__contiguous_array(
+        Serialization_Header *p_serialization_headers,
+        Quantity__u32 length_of__p_serialization_headers,
+        Repeatable_Psuedo_Random *p_randomizer) {
+    Identifier__u32 uuid__u32 =
+        get_next_available__random_uuid_in__contiguous_array(
+            p_serialization_headers, 
+            length_of__p_serialization_headers, 
+            p_randomizer);
+    Serialization_Header *p_allocation = 
+        get_next_available__allocation_in__contiguous_array(
+            p_serialization_headers, 
+            ENTITY_MAXIMUM_QUANTITY_OF,
+            uuid__u32);
+
+    initialize_serialization_header(
+            p_allocation, 
+            uuid__u32, 
+            p_allocation->size_of__struct);
+
+    return p_allocation;
+}
+
+Serialization_Header__UUID_64
+*get_next_available__random_allocation_in__contiguous_array__uuid_64(
+        Serialization_Header__UUID_64 *p_serialization_headers,
+        Quantity__u32 length_of__p_serialization_headers,
+        Repeatable_Psuedo_Random *p_randomizer) {
+    Identifier__u64 uuid__u64 =
+        get_next_available__random_uuid_in__contiguous_array__uuid_64(
+            p_serialization_headers, 
+            length_of__p_serialization_headers, 
+            p_randomizer);
+    Serialization_Header__UUID_64 *p_allocation = 
+        get_next_available__allocation_in__contiguous_array__u64(
+            p_serialization_headers, 
+            ENTITY_MAXIMUM_QUANTITY_OF,
+            uuid__u64);
+
+    initialize_serialization_header__uuid_64(
+            p_allocation, 
+            uuid__u64, 
+            p_allocation->size_of__struct);
+
+    return p_allocation;
 }

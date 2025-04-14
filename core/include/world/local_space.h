@@ -30,6 +30,26 @@ Global_Space *get_p_global_space_from__local_space(
 }
 
 static inline
+Collision_Node *get_p_collision_node_from__local_space(
+        Local_Space *p_local_space) {
+    return (p_local_space)
+        ? get_p_collision_node_from__global_space(
+            get_p_global_space_from__local_space(p_local_space))
+        : 0
+        ;
+}
+
+static inline
+Chunk *get_p_chunk_from__local_space(
+        Local_Space *p_local_space) {
+    return (p_local_space)
+        ? get_p_chunk_from__global_space(
+            get_p_global_space_from__local_space(p_local_space))
+        : 0
+        ;
+}
+
+static inline
 bool is_local_space__allocated(Local_Space *p_local_space) {
     return 
         p_local_space
@@ -44,16 +64,6 @@ bool is_local_space__active(Local_Space *p_local_space) {
             p_local_space)
         && is_global_space__active(
                 get_p_global_space_from__local_space(p_local_space));
-}
-
-static inline
-Chunk *get_p_chunk_from__local_space(
-        Local_Space *p_local_space) {
-    if (!p_local_space)
-        return 0;
-    if (!p_local_space->p_global_space)
-        return 0;
-    return p_local_space->p_global_space->p_chunk;
 }
 
 #endif

@@ -1,5 +1,4 @@
 $(OFILES_NO_GUI):
-	echo ^^^^^ $@ :: $(dirname $@)
 	$(SILENTCMD)mkdir -p $(BUILD)/$$(dirname $@)
 	$(SILENTCMD)$(CC) $(LIBS) $(INCLUDE) $(FLAGS) \
 		-o $(BUILD)/$@ -c $(SOURCE_PLATFORM)/$(@:.o=.c) 

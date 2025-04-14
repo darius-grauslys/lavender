@@ -116,6 +116,11 @@ typedef enum Entity_Kind {
 #endif
 
 typedef struct Entity_t Entity;
+typedef struct Game_t Game;
+
+typedef void (*m_Entity_Dispose_Handler)(
+        Entity *p_entity_self, 
+        Game *p_game);
 
 ///
 /// SECTION_input
