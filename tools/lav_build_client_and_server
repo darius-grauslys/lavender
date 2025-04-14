@@ -1,3 +1,4 @@
+#!/bin/sh
 rm -r ./build*
 make sdl -e FLAGS="-ggdb -DIS_SERVER"
 mv build build_server

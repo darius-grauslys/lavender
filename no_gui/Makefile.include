@@ -1,0 +1,25 @@
+export INCLUDE_PLATFORM := $(BASE_DIR)/no_gui/include
+export SOURCE_PLATFORM := $(BASE_DIR)/no_gui/source
+
+export INCLUDE_NO_GUI := $(BASE_DIR)/no_gui/include
+export SOURCE_NO_GUI := $(BASE_DIR)/no_gui/source
+
+ifeq ($(PLATFORM_OMIT),)
+export CFILES_NO_GUI != realpath --relative-to=$(SOURCE_NO_GUI) $$(find $(SOURCE_NO_GUI) -name *.c)
+else
+export CFILES_NO_GUI != realpath --relative-to=$(SOURCE_NO_GUI) $$(find $(SOURCE_NO_GUI) -name *.c ! -name $(PLATFORM_OMIT))
+endif
+export CFILES_PLATFORM = $(CFILES_NO_GUI)
+export OFILES_NO_GUI := $(CFILES_NO_GUI:.c=.o)
+export OFILES_PLATFORM = $(OFILES_NO_GUI)
+
+export SHARED_SPRITE_FILES := $(foreach sprite_dir,$(SPRITE_DIRS),$(sprite_dir)/GFX_$(shell basename $(sprite_dir)).o)
+
+ifeq ($(OS),Windows_NT)
+export PLATFORM_LIBS	+=
+else
+export PLATFORM_LIBS	+=
+endif
+
+export CC := gcc
+export LD := $(CC)

@@ -41,6 +41,7 @@ default:
 	@echo "--- Targets ---"
 	@echo "Specify with -e PLATFORM={platform}"
 	@echo "test 		-	make corresponding tests for given {-DPLATFORM}, omit for just core testing."
+	@echo "no_gui		-	No graphics good for server/bot."
 	@echo "sdl			-	SDL2, see sdl/README for supported systems."
 	@echo "nds			-	Native 2D engine NDS platform"
 	@echo ""

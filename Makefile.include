@@ -12,7 +12,7 @@ export OFILES := $(SPRITE_FILES:.png=.o) \
 
 export CFLAGS := -march=$(shell uname -m | sed "s/_/-/")
 
-export INCLUDES := $(INCLUDE_GAME) $(INCLUDE_CORE) $(INCLUDE_SDL)
+export INCLUDES := $(INCLUDE_GAME) $(INCLUDE_CORE) $(INCLUDE_PLATFORM)
 export LIBS		:= $(PLATFORM_LIBS)
 
 export DEPSDIR := $(BUILD)

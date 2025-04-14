@@ -1,3 +1,4 @@
+#!/bin/sh
 DIR=$(pwd)
 
 if [ "$#" -ne 0 ]; then

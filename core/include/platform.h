@@ -1,12 +1,10 @@
 #ifndef PLATFORM_H
 #define PLATFORM_H
 
-#include "platform_defines.h"
+#include <platform_defines.h>
 #ifndef PLATFORM_DEFINES_H
 #error Cannot build AncientsGame without a backend implementation.
 #endif
-
-#include "platform_defaults.h"
 
 #include <defines_weak.h>
 

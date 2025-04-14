@@ -1,3 +1,4 @@
+#!/bin/sh
 if [ -z "${LAVENDER_DIR}" ]; then
     echo LAVENDER_DIR is not set.
     exit -1

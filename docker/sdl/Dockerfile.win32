@@ -1,0 +1,42 @@
+FROM debian:bullseye-slim
+
+RUN apt-get update && apt-get install -y \
+    mingw-w64 \
+    cmake \
+    git \
+    pkg-config \
+    libtool \
+    autoconf \
+    automake \
+    make \
+    wget \
+    unzip \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /deps
+
+# --- GLEW ---
+RUN wget https://sourceforge.net/projects/glew/files/glew/2.2.0/glew-2.2.0.zip/download -O glew.zip && \
+    unzip glew.zip && \
+    cd glew-2.2.0 && \
+    make SYSTEM=mingw && \
+    make install SYSTEM=mingw GLEW_DEST=/usr/x86_64-w64-mingw32
+
+# --- SDL2, SDL_image, SDL_ttf ---
+# Optional: Build or download Windows prebuilt SDL libs
+# You can wget the development libs from libsdl.org and unzip them into /usr/x86_64-w64-mingw32
+
+# --- cglm ---
+RUN git clone https://github.com/recp/cglm.git && \
+    cd cglm && \
+    mkdir build && cd build && \
+    cmake .. -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_C_COMPILER=x86_64-w64-mingw32-gcc && \
+    make && make install
+
+ENV LAVENDER_DIR=/usr/share/lav_engine
+ENV PATH="$LAVENDER_DIR/tools:$PATH"
+
+WORKDIR /usr/share/lav_game
+
+ENTRYPOINT ["sh", "-c"]
+CMD [ "x86_64-w64-mingw32-gcc", "--version" ]
