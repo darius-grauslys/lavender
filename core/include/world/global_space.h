@@ -12,6 +12,14 @@ void initialize_global_space_as__allocated(
         Global_Space *p_global_space,
         Identifier__u64 uuid_64);
 
+void m_process__serialize_global_space(
+        Process *p_this_process,
+        Game *p_game);
+
+Process *dispatch_process__deserialize_global_space(
+        Game *p_game,
+        Global_Space *p_global_space);
+
 static inline
 void hold_global_space(
         Global_Space *p_global_space) {

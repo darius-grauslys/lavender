@@ -298,6 +298,7 @@ void PLATFORM_release_serialization_request(
     }
 #endif
 
+    p_serialization_request->p_data = 0;
     set_serialization_request_as__inactive(
             p_serialization_request);
 }

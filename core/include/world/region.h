@@ -13,8 +13,16 @@ bool is_structure_within__region(
         Structure *p_structure,
         Region_Vector__3i32 region_position__3i32);
 
-Region_Vector__3i32 get_region_that__this_chunk_map_node_is_in(
-        Chunk_Manager__Chunk_Map_Node *p_chunk_map_node);
+Region_Vector__3i32 get_region_that__this_global_space_is_in(
+        Global_Space *p_global_space);
+
+void m_process__serialize_region(
+        Process *p_this_process,
+        Game *p_game);
+
+void m_process__deserialize_region(
+        Process *p_this_process,
+        Game *p_game);
 
 static inline
 void truncate_p_chunk_vector_3i32_to__region(

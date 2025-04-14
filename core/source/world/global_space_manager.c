@@ -1,4 +1,5 @@
 #include "world/global_space_manager.h"
+#include "collisions/collision_node_pool.h"
 #include "defines.h"
 #include "defines_weak.h"
 #include "game.h"
@@ -13,7 +14,9 @@
 #include "serialization/serialization_header.h"
 #include "serialization/serialized_field.h"
 #include "vectors.h"
+#include "world/chunk_pool.h"
 #include "world/global_space.h"
+#include "world/world.h"
 
 #define BIT_MASK__GLOBAL_SPACE__0_XY__u24 0b101010101010101010101010
 #define BIT_MASK__GLOBAL_SPACE__1_XY__u24 0b010101010101010101010101
@@ -81,6 +84,38 @@ Global_Space *allocate_global_space_in__global_space_manager(
     p_global_space->chunk_vector__3i32 =
         chunk_vector__3i32;
     return p_global_space;
+}
+
+void release_global_space(
+        World *p_world,
+        Global_Space *p_global_space) {
+#ifndef NDEBUG
+    if (p_global_space->quantity_of__references > 1) {
+        debug_abort("release_global_space, quantity_of__references > 1 - releasing now will cause big problems!");
+        return;
+    }
+#endif
+
+    if (get_p_chunk_from__global_space(p_global_space)) {
+        release_chunk_from__chunk_pool(
+                get_p_chunk_pool_from__world(
+                    p_world), 
+                get_p_chunk_from__global_space(p_global_space));
+    }
+
+    if (get_p_collision_node_from__global_space(p_global_space)) {
+        release_collision_node_from__collision_node_pool(
+                get_p_collision_node_pool_from__world(
+                    p_world), 
+                get_p_collision_node_from__global_space(p_global_space));
+    }
+
+    p_global_space->p_chunk = 0;
+    p_global_space->p_collision_node = 0;
+
+    release_global_space_in__global_space_manager(
+            get_p_global_space_manager_from__world(p_world), 
+            p_global_space);
 }
 
 void release_global_space_in__global_space_manager(
@@ -160,8 +195,6 @@ Global_Space *hold_global_space_within__global_space_manager(
         return 0;
     }
 
-    set_global_space_as__constructing(p_global_space);
-
     return p_global_space;
 }
 
@@ -193,6 +226,4 @@ void drop_global_space_within__global_space_manager(
         debug_error("drop_global_space_within__global_space_manager, failed to dispatch process.");
         return;
     }
-
-    set_global_space_as__deconstructing(p_global_space);
 }

@@ -1,6 +1,7 @@
 #include "game_action/core/global_space/game_action__global_space__store.h"
 #include "collisions/collision_node_pool.h"
 #include "defines_weak.h"
+#include "game.h"
 #include "game_action/game_action.h"
 #include "game_action/game_action_logic_entry.h"
 #include "game_action/game_action_logic_table.h"
@@ -8,6 +9,7 @@
 #include "world/chunk_pool.h"
 #include "world/global_space.h"
 #include "world/global_space_manager.h"
+#include "world/serialization/world_directory.h"
 
 void m_process__game_action__global_space__store(
         Process *p_this_process,
@@ -16,25 +18,11 @@ void m_process__game_action__global_space__store(
     Game_Action *p_game_action =
         (Game_Action*)p_this_process->p_process_data;
 
-    Global_Space_Vector__3i32 gsv__3i32 =
-        p_game_action
-        ->ga_kind__global_space__store__gsv__3i32;
-
-    World *p_world = get_p_world_from__game(p_game);
-    Process_Manager *p_process_manager =
-        get_p_process_manager_from__game(p_game);
-    Global_Space_Manager *p_global_space_manager =
-        get_p_global_space_manager_from__world(p_world);
-    Chunk_Pool *p_chunk_pool =
-        get_p_chunk_pool_from__world(p_world);
-    Collision_Node_Pool *p_collision_node_pool =
-        get_p_collision_node_pool_from__world(p_world);
-
     Global_Space *p_global_space =
         get_p_global_space_from__global_space_manager(
-                p_global_space_manager, 
-                gsv__3i32);
-
+                get_p_global_space_manager_from__game(p_game), 
+                p_game_action->ga_kind__global_space__store__gsv__3i32);
+    
     if (!p_global_space) {
         debug_error("m_process__game_action__global_space__store, p_global_space == 0.");
         fail_game_action_process(
@@ -42,38 +30,59 @@ void m_process__game_action__global_space__store(
                 p_this_process);
         return;
     }
-    
-    Chunk *p_chunk =
-        get_p_chunk_from__global_space(p_global_space);
 
-    if (p_chunk) {
-        release_chunk_from__chunk_pool(
-                p_chunk_pool, 
-                p_chunk);
-        set_chunk_for__global_space(
-                p_global_space, 
-                0);
+    Serialization_Request *p_serialization_request =
+        PLATFORM_allocate_serialization_request(
+                get_p_PLATFORM_file_system_context_from__game(p_game));
+
+    if (!p_serialization_request) {
+        debug_error("m_process__game_action__global_space__store, failed to allocate p_serialization_request.");
+        fail_process(p_this_process);
+        return;
     }
 
-    Collision_Node *p_collision_node =
-        get_p_collision_node_from__global_space(p_global_space);
+    p_serialization_request->p_data =
+        p_global_space;
 
-    if (p_collision_node) {
-        release_collision_node_from__collision_node_pool(
-                p_collision_node_pool, 
-                p_collision_node);
-        set_collision_node_for__global_space(
-                p_global_space, 
-                0);
+    IO_path path_to__chunk_file;
+    stat_chunk_file__tiles(
+            get_p_PLATFORM_file_system_context_from__game(p_game), 
+            get_p_world_from__game(p_game), 
+            p_global_space, 
+            path_to__chunk_file);
+
+    PLATFORM_Open_File_Error error =
+        PLATFORM_open_file(
+                get_p_PLATFORM_file_system_context_from__game(p_game),
+                path_to__chunk_file,
+                "wb",
+                p_serialization_request);
+
+    if (error) {
+        PLATFORM_release_serialization_request(
+                get_p_PLATFORM_file_system_context_from__game(p_game), 
+                p_serialization_request);
+        path_to__chunk_file[MAX_LENGTH_OF__IO_PATH-1] = 0;
+        debug_error("m_process__game_action__global_space__store, failed to open(%d) global_space file: %s",
+                error,
+                path_to__chunk_file);
+        fail_process(p_this_process);
+        return;
     }
 
-    release_global_space_in__global_space_manager(
-            p_global_space_manager, 
-            p_global_space);
+    p_this_process->p_process_data =
+        p_serialization_request;
 
-    complete_game_action_process(
+    p_this_process->m_process_run__handler =
+                m_process__serialize_global_space;
+
+    resolve_game_action(
             p_game,
-            p_this_process);
+            p_game_action->uuid_of__client__u32,
+            p_game_action);
+
+    set_global_space_as__deconstructing(
+            p_global_space);
 }
 
 void register_game_action__global_space__store(

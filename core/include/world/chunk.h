@@ -22,8 +22,11 @@ void m_process__deserialize_chunk(
         Process *p_this_process,
         Game *p_game);
 
-Identifier__u32 get_uuid__chunk(
-        Chunk *p_chunk);
+static inline
+Identifier__u64 get_uuid__chunk(
+        Chunk *p_chunk) {
+    return p_chunk->_serialization_header.uuid;
+}
 
 ///
 /// x, y, and z are local to the chunk.

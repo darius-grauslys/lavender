@@ -313,10 +313,10 @@ void compose_graphic_windows_in__graphics_window_manager(
                     p_gfx_window)) {
             // --- TODO: remove this, and
             // only compose the world if updates have been made.
-            if (!is_graphics_window__rendering_world(
-                        p_gfx_window)) {
-                continue;
-            }
+            // if (!is_graphics_window__rendering_world(
+            //             p_gfx_window)) {
+            //     continue;
+            // }
             // ---
         }
         set_graphics_window_as__no_longer_needing__composition(

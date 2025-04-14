@@ -7,13 +7,14 @@
 Index__u32 stat_chunk_directory(
         PLATFORM_File_System_Context *p_PLATOFRM_file_system_context,
         World *p_world,
-        Chunk_Manager__Chunk_Map_Node *p_chunk_map_node,
+        Global_Space *p_global_space,
         char *buffer);
 
+// TODO: rename to just stat_chunk_file
 Index__u32 stat_chunk_file__tiles(
         PLATFORM_File_System_Context *p_PLATOFRM_file_system_context,
         World *p_world,
-        Chunk_Manager__Chunk_Map_Node *p_chunk_map_node,
+        Global_Space *p_global_space,
         char *buffer);
 
 ///

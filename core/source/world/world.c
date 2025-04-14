@@ -255,16 +255,6 @@ void m_process__serialize_world(
             1, 
             p_serialization_request
             ->p_file_handler);
-
-    // TODO: save other players if any.
-    Entity *p_local_player =
-        get_p_local_player_from__game(p_game);
-
-#warning serialize player as sub_process
-    // p_local_player->_serializer.m_serialize_handler(
-    //         p_game,
-    //         p_serialization_request,
-    //         &p_local_player->_serializer);
 }
 
 void m_process__deserialize_world(
@@ -275,16 +265,6 @@ void m_process__deserialize_world(
 
     World *p_world = 
         (World*)p_serialization_request->p_data;
-#warning [***] load_world, manage player
-    Entity *p_player = 0;
-    // Entity *p_player =
-    //     allocate_entity_into__world(
-    //             p_game, 
-    //             Entity_Kind__Player, 
-    //             VECTOR__3i32F4__0_0_0);
-
-    p_world->entity_manager.p_local_player =
-        p_player;
 
     Quantity__u32 length_of__read = WORLD_NAME_MAX_SIZE_OF;
     PLATFORM_read_file(
@@ -315,15 +295,4 @@ void m_process__deserialize_world(
             1, 
             p_serialization_request
             ->p_file_handler);
-
-    if (!p_player) {
-        debug_abort("m_deserialize_handler__world, failed to allocate player.");
-        return;
-    }
-
-#warning TODO: deserialize player as sub process
-    // p_player->_serializer.m_deserialize_handler(
-    //         p_game,
-    //         p_serialization_request,
-    //         &p_player->_serializer);
 }

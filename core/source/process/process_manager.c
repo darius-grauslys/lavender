@@ -234,21 +234,11 @@ Quantity__u32 poll_process_manager(
         if (!p_ptr_process || !*p_ptr_process)
             break;
 
-        if (is_process__finished(*p_ptr_process)) {
-            release_process_from__process_manager(
-                    p_process_manager, 
-                    *p_ptr_process);
-            continue;
-        }
-
         Quantity__u32 ticks_elapsed =
             poll__game_tick_timer(p_game);
 
-        Process *p_process = *p_ptr_process;
-
         if (!is_process__critical(*p_ptr_process)) {
             if (ticks_elapsed) {
-                debug_info("pm: tick elapse, %d", ticks_elapsed);
                 continue;
             }
 
@@ -264,6 +254,21 @@ Quantity__u32 poll_process_manager(
                     p_ptr_process);
         }
 
+        Process *p_process = *p_ptr_process;
+
+        if (is_process__finished(p_process)) {
+            if (p_process->p_enqueued_process) {
+                set_process_as__dequeued(
+                        p_process->p_enqueued_process);
+            }
+            release_process_from__process_manager(
+                    p_process_manager, 
+                    p_process);
+            continue;
+        }
+        if (is_process__enqueued(p_process)) {
+            continue;
+        }
         if (!p_process->m_process_run__handler) {
             continue;
         }

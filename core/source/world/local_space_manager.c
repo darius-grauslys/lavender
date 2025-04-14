@@ -104,7 +104,7 @@ void initialize_local_space_manager(
                 get_vector__3i32(
                         x__i32
                         + center_of__local_space_manager__3i32.x__i32
-                        - (WIDTH_OF__LOCAL_SPACE_MANAGER>>1), 
+                        - (WIDTH_OF__LOCAL_SPACE_MANAGER>>1) + 2, 
                         y__i32
                         + center_of__local_space_manager__3i32.y__i32
                         - (HEIGHT_OF__LOCAL_SPACE_MANAGER>>1), 

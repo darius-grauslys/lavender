@@ -38,7 +38,7 @@ void append_hex_value_to__path(
 Index__u32 stat_chunk_directory(
         PLATFORM_File_System_Context *p_PLATFORM_file_system_context,
         World *p_world,
-        Chunk_Manager__Chunk_Map_Node *p_chunk_map_node,
+        Global_Space *p_global_space,
         char *buffer) {
     // assume buffer is of minimium length:
     // WORLD_NAME_MAX_SIZE_OF + "/r_XXXXXX" + "/c_XXXX" + "/c_X" + "/F\0"
@@ -78,8 +78,8 @@ Index__u32 stat_chunk_directory(
     buffer[index_of__path_append++] = '_';
     
     Region_Vector__3i32 region_vector__3i32 =
-        get_region_that__this_chunk_map_node_is_in(
-                p_chunk_map_node);
+        get_region_that__this_global_space_is_in(
+                p_global_space);
 
     append_hex_value_to__path(
             &index_of__path_append, 
@@ -103,7 +103,7 @@ Index__u32 stat_chunk_directory(
     }
     
     Chunk_Vector__3i32 chunk_vector__3i32 =
-        p_chunk_map_node->position_of__chunk_3i32;
+        p_global_space->chunk_vector__3i32;
     chunk_vector__3i32.x__i32 &= MASK(8);
     chunk_vector__3i32.y__i32 &= MASK(8);
 
@@ -193,14 +193,14 @@ Index__u32 stat_chunk_directory(
 Index__u32 stat_chunk_file(
         PLATFORM_File_System_Context *p_PLATFORM_file_system_context,
         World *p_world,
-        Chunk_Manager__Chunk_Map_Node *p_chunk_map_node,
+        Global_Space *p_global_space,
         char *buffer,
         char file_character) {
     Index__u32 end_of__path = 
         stat_chunk_directory(
                 p_PLATFORM_file_system_context, 
                 p_world,
-                p_chunk_map_node, 
+                p_global_space, 
                 buffer);
     if (!end_of__path) {
         debug_abort("stat_chunk_file__tile, directories do not exist: %s",
@@ -261,12 +261,12 @@ Index__u32 stat_world_header_file(
 Index__u32 stat_chunk_file__tiles(
         PLATFORM_File_System_Context *p_PLATFORM_file_system_context,
         World *p_world,
-        Chunk_Manager__Chunk_Map_Node *p_chunk_map_node,
+        Global_Space *p_global_space,
         char *buffer) {
     return stat_chunk_file(
             p_PLATFORM_file_system_context,
             p_world,
-            p_chunk_map_node,
+            p_global_space,
             buffer,
             't');
 }
@@ -274,12 +274,12 @@ Index__u32 stat_chunk_file__tiles(
 Index__u32 stat_chunk_file__entities(
         PLATFORM_File_System_Context *p_PLATFORM_file_system_context,
         World *p_world,
-        Chunk_Manager__Chunk_Map_Node *p_chunk_map_node,
+        Global_Space *p_global_space,
         char *buffer) {
     return stat_chunk_file(
             p_PLATFORM_file_system_context,
             p_world,
-            p_chunk_map_node,
+            p_global_space,
             buffer,
             'e');
 }
@@ -287,12 +287,12 @@ Index__u32 stat_chunk_file__entities(
 Index__u32 stat_chunk_file__inventories(
         PLATFORM_File_System_Context *p_PLATFORM_file_system_context,
         World *p_world,
-        Chunk_Manager__Chunk_Map_Node *p_chunk_map_node,
+        Global_Space *p_global_space,
         char *buffer) {
     return stat_chunk_file(
             p_PLATFORM_file_system_context,
             p_world,
-            p_chunk_map_node,
+            p_global_space,
             buffer,
             'i');
 }

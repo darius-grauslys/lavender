@@ -105,11 +105,6 @@ Chunk_Pool *get_p_chunk_pool_from__world(
 }
 
 static inline
-Entity *get_p_local_player_from__world(World *p_world) {
-    return p_world->entity_manager.p_local_player;
-}
-
-static inline
 Repeatable_Psuedo_Random *get_p_repeatable_psuedo_random_from__world(
         World *p_world) {
     return &p_world->repeatable_pseudo_random;

@@ -254,6 +254,7 @@ void GL_compose_world(
                 x 
                 < GFX_CONTEXT__RENDERING_WIDTH__IN_CHUNKS;
                 x++) {
+#warning TODO: TODO: why does this segfault
             // TODO: this causes seg fault
             // if (!is_local_space__active(
             //             p_local_space__current)) {

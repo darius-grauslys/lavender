@@ -181,7 +181,7 @@ static inline
 void enqueue_process(
         Process *p_process_to__enqueue,
         Process *p_process_to__enqueue_behind) {
-    p_process_to__enqueue_behind->p_queued_process =
+    p_process_to__enqueue_behind->p_enqueued_process =
         p_process_to__enqueue;
     set_process_as__enqueued(
             p_process_to__enqueue);

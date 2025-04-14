@@ -223,11 +223,6 @@ Input *get_p_input_from__game(Game *p_game) {
 }
 
 static inline
-Entity *get_p_local_player_from__game(Game *p_game) {
-    return get_p_local_player_from__world(&p_game->world);
-}
-
-static inline
 Quantity__u32 get_quantity_of__clients_connect_to__game(
         Game *p_game) {
     return p_game->quantity_of__clients;

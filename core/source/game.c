@@ -379,7 +379,8 @@ int run_game(Game *p_game) {
     debug_info("Game stopping...");
     while (PLATFORM_get_quantity_of__active_serialization_requests(
                 get_p_PLATFORM_file_system_context_from__game(p_game))) {
-        loop_timer_u32(&p_game->tick__timer_u32);
+        while (poll__game_tick_timer(p_game));
+        reset__game_tick_timer(p_game);
         poll_process_manager(
                 get_p_process_manager_from__game(p_game), 
                 p_game);

@@ -3,6 +3,7 @@
 #include "serialization/serialization_header.h"
 #include "timer.h"
 #include <process/process.h>
+#include <string.h>
 
 void initialize_process(
         Process *p_process,
@@ -10,6 +11,7 @@ void initialize_process(
         m_Process m_process_run__handler,
         void *p_process_data,
         Process_Flags__u8 process_flags__u8) {
+    memset(p_process, 0, sizeof(Process));
     initialize_serialization_header(
             &p_process->_serialization_header, 
             uuid__u32, 

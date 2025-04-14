@@ -76,10 +76,6 @@ void release_entity_from__entity_manager(
     initialize_entity(
             p_entity,
             Entity_Kind__None);
-    if (p_entity_manager->p_local_player
-            == p_entity) {
-        p_entity_manager->p_local_player = 0;
-    }
     initialize_serialization_header_for__deallocated_struct(
             &p_entity->_serialization_header, 
             sizeof(Entity));

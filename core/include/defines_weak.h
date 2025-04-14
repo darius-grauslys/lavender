@@ -79,15 +79,21 @@ typedef struct Date_Time_t Date_Time;
 typedef u8 Audio_Flags__u8;
 typedef struct Audio_Effect_t Audio_Effect;
 
+#include <types/implemented/audio_effect_kind.h>
+#ifndef DEFINE_AUDIO_EFFECT_KIND
 enum Audio_Effect_Kind {
     Audio_Effect_Kind__None,
     Audio_Effect_Kind__Unknown,
 };
+#endif
 
+#include <types/implemented/audio_stream_kind.h>
+#ifndef DEFINE_AUDIO_STREAM_KIND
 enum Audio_Stream_Kind {
     Audio_Stream_Kind__None,
     Audio_Stream_Kind__Unknown
 };
+#endif
 
 ///
 /// SECTION_collisions
@@ -101,21 +107,13 @@ enum Audio_Stream_Kind {
 /// SECTION_entity
 ///
 
-
-///
-/// All possible entity kinds.
-/// Feel free to add your own, but put it
-/// before Entity_Kind__Unknown. Putting it
-/// after Entity_Kind__Unknown will cause
-/// undefined behavior.
-///
-/// Furthermore DO NOT explicitly assign values to
-/// any Entity_Kind, even your own.
-///
+#include <types/implemented/entity_kind.h>
+#ifndef DEFINE_ENTITY_KIND
 typedef enum Entity_Kind {
     Entity_Kind__None,
     Entity_Kind__Unknown
 } Entity_Kind;
+#endif
 
 typedef struct Entity_t Entity;
 
@@ -160,10 +158,13 @@ typedef struct Item_t Item;
 typedef struct Item_Stack_t Item_Stack;
 typedef struct Inventory_t Inventory;
 
+#include <types/implemented/item_kind.h>
+#ifndef DEIFNE_ITEM_KIND
 typedef enum Item_Kind {
     Item_Kind__None = 0,
     Item_Kind__Unknown
 } Item_Kind;
+#endif
 
 /// 
 /// SECTION_multiplayer
@@ -200,22 +201,21 @@ typedef struct Typer_t Typer;
 typedef struct PLATFORM_Graphics_Window_t PLATFORM_Graphics_Window;
 typedef struct Graphics_Window_t Graphics_Window;
 
-///
-/// Types of graphical window abstractions
-/// supported. There can possibly be multiple
-/// Graphics_Window_Kind__UI windows open on a
-/// given platform, while there is likely only
-/// one Graphics_Window_Kind__World window context.
-///
+#include <types/implemented/graphics_window_kind.h>
+#ifndef DEFINE_GRAPHICS_WINDOW_KIND
 typedef enum Graphics_Window_Kind {
     Graphics_Window_Kind__None,
     Graphics_Window_Kind__Unknown
 } Graphics_Window_Kind;
+#endif
 
+#include <types/implemented/sprite_animation_kind.h>
+#ifndef DEFINE_SPRITE_ANIMATION_KIND
 enum Sprite_Animation_Kind {
     Sprite_Animation_Kind__None,
     Sprite_Animation_Kind__Unknown
 };
+#endif
 
 enum Sprite_Allocation_Kind {
     Sprite_Allocation_Kind__None,
@@ -236,11 +236,14 @@ typedef struct Texture_Allocation_Specification_t
 /// SECTION_scene
 ///
 
+#include <types/implemented/scene_kind.h>
+#ifndef DEFINE_SCENE_KIND
 typedef enum Scene_Kind {
     Scene_Kind__None,
     Scene_Kind__Test = Scene_Kind__None,
     Scene_Kind__Unknown
 } Scene_Kind;
+#endif
 
 typedef struct Scene_t Scene;
 typedef struct Scene_Manager_t Scene_Manager;
@@ -287,11 +290,16 @@ typedef enum UI_Tile_Map_Size {
     UI_Tile_Map_Size__Unknown
 } UI_Tile_Map_Size;
 
+#include <types/implemented/ui_tile_kind.h>
+#ifndef DEFINE_UI_TILE_KIND
 typedef enum UI_Tile_Kind {
     UI_Tile_Kind__None = 0,
-    UI_Tile_Kind__Unknown = 1023
+    UI_Tile_Kind__Unknown
 } UI_Tile_Kind;
+#endif
 
+#include <types/implemented/ui_sprite_kind.h>
+#ifndef DEFINE_UI_SPRITE_KIND
 typedef enum UI_Sprite_Kind {
     UI_Sprite_Kind__None = 0,
     UI_Sprite_Kind__8x8,
@@ -301,10 +309,13 @@ typedef enum UI_Sprite_Kind {
         = UI_Sprite_Kind__16x16,
     UI_Sprite_Kind__Unknown = UI_Sprite_Kind__32x32
 } UI_Sprite_Kind;
+#endif
 
 typedef struct UI_Element_t UI_Element;
 typedef struct UI_Manager_t UI_Manager;
 
+#include <types/implemented/ui_element_kind.h>
+#ifndef DEFINE_UI_ELEMENT_KIND
 enum UI_Element_Kind {
     UI_Element_Kind__None,
     UI_Element_Kind__Button,
@@ -314,6 +325,7 @@ enum UI_Element_Kind {
     UI_Element_Kind__Logical,
     UI_Element_Kind__Unknown
 };
+#endif
 
 ///
 /// SECTION_world
@@ -325,13 +337,13 @@ typedef struct Global_Space_t Global_Space;
 typedef struct Local_Space_t Local_Space;
 typedef struct Local_Space_Manager_t Local_Space_Manager;
 
-// TODO: change this to reflect new tileset
+#include <types/implemented/tile_kind.h>
+#ifndef DEFINE_TILE_KIND
 typedef enum Tile_Kind {
     Tile_Kind__None = 0,
-    Tile_Kind__One = 1,
-    Tile_Kind__Two,
     Tile_Kind__Unknown
 } Tile_Kind;
+#endif
 
 ///
 /// These specify the various kinds of Game_Actions
@@ -346,6 +358,8 @@ typedef enum Tile_Kind {
 /// than or equal to Game_Action_Kind__Custom, and less than 
 /// the value of Game_Action_Kind__Unknown.
 ///
+#include <types/implemented/game_action_kind.h>
+#ifndef DEFINE_GAME_ACTION_KIND
 typedef enum Game_Action_Kind {
     Game_Action_Kind__None = 0,
     Game_Action_Kind__Bad_Request,
@@ -373,6 +387,7 @@ typedef enum Game_Action_Kind {
 
     Game_Action_Kind__Unknown
 } Game_Action_Kind;
+#endif
 
 typedef struct Camera_t Camera;
 typedef struct Chunk_Manager_t Chunk_Manager;

@@ -114,4 +114,22 @@ static Chunk_Vector__3i32 inline vector_3i32_to__chunk_vector_3i32(
     };
 }
 
+static Vector__3i32 inline chunk_vector_3i32_to__vector_3i32(
+        Chunk_Vector__3i32 chunk_vector) {
+    return (Vector__3i32) {
+        chunk_vector.x__i32 
+            << ENTITY_CHUNK_LOCAL_SPACE__BIT_SIZE,
+        chunk_vector.y__i32 
+            << ENTITY_CHUNK_LOCAL_SPACE__BIT_SIZE,
+        chunk_vector.z__i32
+            << ENTITY_CHUNK_LOCAL_SPACE__BIT_SIZE
+    };
+}
+
+static Vector__3i32F4 inline chunk_vector_3i32_to__vector_3i32F4(
+        Chunk_Vector__3i32 chunk_vector) {
+    return vector_3i32_to__vector_3i32F4(
+            chunk_vector_3i32_to__vector_3i32(chunk_vector));
+}
+
 #endif

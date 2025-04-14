@@ -2,14 +2,18 @@
 #include "collisions/collision_node_pool.h"
 #include "defines.h"
 #include "defines_weak.h"
+#include "game.h"
 #include "game_action/game_action.h"
 #include "game_action/game_action_logic_entry.h"
 #include "game_action/game_action_logic_table.h"
 #include "process/game_action_process.h"
+#include "process/process.h"
 #include "serialization/serialization_header.h"
 #include "world/chunk_pool.h"
 #include "world/global_space.h"
 #include "world/global_space_manager.h"
+#include "world/serialization/world_directory.h"
+#include "world/world.h"
 
 void m_process__game_action__global_space__resolve(
         Process *p_this_process,
@@ -41,6 +45,13 @@ void m_process__game_action__global_space__resolve(
         fail_game_action_process(
                 p_game, 
                 p_this_process);
+        return;
+    }
+
+    if (get_p_chunk_from__global_space(p_global_space)) {
+        /// assume that this process is being run after
+        /// being dequeued from the deserialization process.
+        complete_process(p_this_process);
         return;
     }
 
@@ -81,6 +92,34 @@ void m_process__game_action__global_space__resolve(
 
     p_global_space->p_chunk = p_chunk;
     p_global_space->p_collision_node = p_collision_node;
+
+    // TODO: rely on region file for file stat-ing
+
+    IO_path path;
+    if (stat_chunk_file__tiles(
+                get_p_PLATFORM_file_system_context_from__game(p_game), 
+                get_p_world_from__game(p_game), 
+                p_global_space, 
+                path)) {
+        Process *p_process =
+            dispatch_process__deserialize_global_space(
+                    p_game,
+                    p_global_space);
+
+        if (!p_process) {
+            debug_error("m_process__game_action__global_space__resolve, failed to dispatch deserialization process.");
+            fail_game_action_process(
+                    p_game, 
+                    p_this_process);
+            return;
+        }
+        enqueue_process(
+                p_this_process, 
+                p_process);
+
+        return;
+    }
+
     f_Chunk_Generator f_chunk_generator =
         get_p_world_parameters_from__world(p_world)
         ->f_chunk_generator;

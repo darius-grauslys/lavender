@@ -326,7 +326,12 @@ typedef struct Serialization_Request_t {
     void *p_data;
     Serialization_Header *p_serialization_header;
     union {
-        void *p_file_handler;
+        struct {
+            void *p_file_handler;
+            // Available for user usage unless the engine
+            // is already using it (serialization processes)
+            Quantity__u32 quantity_of__file_contents;
+        };
         struct {
             u8 *p_tcp_packet_destination;
             u8 *pM_packet_bitmap;
@@ -1130,13 +1135,21 @@ typedef uint8_t Sustenance__u8;
 #define SUSTENANCE__DESPERATE 56
 #define SUSTENANCE__DYING 28
 
+#ifndef DEFINE_ENTITY_DATA
+typedef struct Entity_Data_t {
+    Entity_Kind the_kind_of__entity;
+} Entity_Data;
+#endif
+
 typedef struct Entity_t {
     ///
     /// Do not interact with this.
     ///
     Serialization_Header            _serialization_header;
 
-    m_Entity_Dispose_Handler m_entity_dispose_handler;
+    m_Entity_Dispose_Handler        m_entity_dispose_handler;
+
+    Entity_Data                     entity_data;
 } Entity;
 
 #define ENTITY_TILE_LOCAL_SPACE__BIT_SIZE 3
@@ -1164,7 +1177,6 @@ typedef struct Entity_t {
 typedef struct Entity_Manager_t {
     Entity entities[ENTITY_MAXIMUM_QUANTITY_OF];
     Repeatable_Psuedo_Random randomizer;
-    Entity *p_local_player;
     Quantity__u32 entity_count__quantity_u32;
 } Entity_Manager;
 
@@ -1262,7 +1274,7 @@ typedef struct Process_t {
     Serialization_Header _serialization_header;
     m_Process m_process_run__handler;
     union {
-        Process *p_queued_process;
+        Process *p_enqueued_process;
         Process *p_sub_process;
     };
     void *p_process_data;
@@ -1856,6 +1868,7 @@ typedef struct Region_t {
 
 typedef struct Region_Manager_t {
     Region regions[REGION_MAX_QUANTITY_OF];
+    Region_Vector__3i32 center_of__region_manager;
 } Region_Manager;
 
 typedef struct Structure_Manager_t {
@@ -2374,6 +2387,7 @@ typedef char World_Name_String[WORLD_NAME_MAX_SIZE_OF];
 
 typedef struct World_t {
     Serialization_Header _serialization_header;
+    Region_Manager region_manager;
     Entity_Manager entity_manager;
 
     Chunk_Manager chunk_manager;
@@ -2393,7 +2407,7 @@ typedef struct World_t {
     Item_Manager        item_manager;
 
     Camera camera;
-    PLATFORM_Graphics_Window *p_PLATFORM_graphics_window_for__world;
+    Graphics_Window *p_graphics_window_for__world;
 
     World_Name_String name;
     Quantity__u8 length_of__world_name;
