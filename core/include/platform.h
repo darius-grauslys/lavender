@@ -108,19 +108,16 @@ void PLATFORM_release_sprite(
 void PLATFORM_release_all__sprites(
         PLATFORM_Gfx_Context *p_PLATFORM_gfx_context);
 
-// TODO: use wrapper types
+///
+/// NOTE: For platform implementor:
+/// If using OAM/GL, its recommended to batch this
+/// data for a final render call.
+///
 void PLATFORM_render_sprite(
         Gfx_Context *p_gfx_context,
         Graphics_Window *p_gfx_window,
-        Sprite_Wrapper *sprite,
+        Sprite *p_sprite,
         Vector__3i32F4 position_of__sprite__3i32F4);
-
-// TODO: remove
-void PLATFORM_update_sprite_gfx__to_current_frame(
-        Sprite_Wrapper *sprite_wrapper);
-
-void PLATFORM_update_sprite(
-        PLATFORM_Sprite *p_PLATFORM_sprite);
 
 /// 
 /// On NDS, this will init both main and sub.

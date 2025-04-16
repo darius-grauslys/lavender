@@ -1,10 +1,13 @@
 #include "collisions/hitbox_aabb.h"
+#include "collisions/hitbox_aabb_manager.h"
 #include "debug/debug.h"
 #include "defines.h"
 #include "defines_weak.h"
 #include "input/input.h"
 #include "rendering/graphics_window.h"
+#include "serialization/hashing.h"
 #include "ui/ui_tile_map.h"
+#include "world/world.h"
 #include <ui/ui_element.h>
 #include <ui/ui_manager.h>
 #include <vectors.h>
@@ -22,11 +25,7 @@ void initialize_ui_manager(
                 p_ui_element, 
                 0, 0, 0,
                 UI_Element_Kind__None, 
-                UI_FLAGS__NONE,
-                1, 
-                1,
-                get_vector__3i32(0,0,0));
-        p_ui_element->ui_identifier = ui_index;
+                UI_FLAGS__NONE);
         p_ui_manager->ui_element_ptrs[ui_index] = 0;
     }
 }
@@ -114,11 +113,22 @@ UI_Element *get_ui_parent_or__child_with__receive_drop_handler(
 
 UI_Element *get_highest_priority_ui_element_thats__under_this_ui_element(
         UI_Manager *p_ui_manager,
+        Hitbox_AABB_Manager *p_hitbox_aabb_manager,
         UI_Element *p_ui_element__above) {
+    Hitbox_AABB *p_hitbox_aabb =
+        get_p_hitbox_aabb_by__uuid_u32_from__hitbox_aabb_manager(
+                p_hitbox_aabb_manager, 
+                GET_UUID_P(p_ui_element__above));
+
+    if (p_hitbox_aabb) {
+        debug_error("get_highest_priority_ui_element_thats__under_the_cursor, ui_element lacks hitbox component.");
+        return 0;
+    }
+
     Vector__3i32 position =
-        vector_3i32F4_to__vector_3i32(p_ui_element__above
-            ->ui_bounding_box__aabb
-            .position__3i32F4);
+        vector_3i32F4_to__vector_3i32(
+                p_hitbox_aabb
+                ->position__3i32F4);
     for (Quantity__u8 ui_index=0;
             is_not_at_end_of__ui_element_array(p_ui_manager, ui_index);
             ui_index++) {
@@ -132,7 +142,7 @@ UI_Element *get_highest_priority_ui_element_thats__under_this_ui_element(
 
         if (is_vector_3i32_inside__hitbox(
                     position,
-                    &p_ui_element->ui_bounding_box__aabb)) {
+                    p_hitbox_aabb)) {
             return p_ui_element;
         }
     }
@@ -159,10 +169,19 @@ UI_Element *get_highest_priority_ui_element_thats__under_the_cursor(
             continue;
         }
 
+        Hitbox_AABB *p_hitbox_aabb =
+            get_p_hitbox_aabb_by__uuid_u32_from__hitbox_aabb_manager(
+                    get_p_hitbox_aabb_manager_from__world(
+                        get_p_world_from__game(p_game)), 
+                    GET_UUID_P(p_ui_element));
+
+        if (!p_hitbox_aabb)
+            return 0;
+
         //TODO: look into why using cursor old.
         if (is_vector_3i32_inside__hitbox(
                     cursor_position,
-                    &p_ui_element->ui_bounding_box__aabb)) {
+                    p_hitbox_aabb)) {
             return p_ui_element;
         }
     }
@@ -272,6 +291,8 @@ void poll_ui_manager__update_for__drop(
     UI_Element *p_ui_element__receiving_drop =
         get_highest_priority_ui_element_thats__under_this_ui_element(
             p_ui_manager,
+            get_p_hitbox_aabb_manager_from__world(
+                get_p_world_from__game(p_game)),
             p_ui_manager->p_ui_element__focused);
     p_ui_element__receiving_drop =
         get_ui_parent_or__child_with__receive_drop_handler(
@@ -373,39 +394,32 @@ UI_Element *allocate_ui_element_from__ui_manager(
         get_next__available_slot_in__ui_element_ptrs(
                 p_ui_manager);
     if (!p_ui_element_ptr) {
-        goto failure;
+        debug_error("allocate_ui_element_from__ui_manager, failed to allocate ui_element (full).");
+        return 0;
     }
 
-    for (Quantity__u8 ui_index=0;
-            ui_index<UI_ELEMENT_MAXIMUM_QUANTITY_OF;
-            ui_index++) {
-        UI_Element *p_ui_element =
-            &p_ui_manager->ui_elements[ui_index];
-        if (!is_ui_element__allocated(p_ui_element)) {
-            *p_ui_element_ptr =
-                p_ui_element;
-            p_ui_manager->quantity_of__ui_elements__quantity_u8++;
-            initialize_ui_element(
-                    p_ui_element, 
-                    0, 0, 0,
-                    UI_Element_Kind__None,
-                    UI_FLAGS__NONE,
-                    1,
-                    1,
-                    get_vector__3i32(0,0,0));
-            p_ui_element->ui_identifier = ui_index;
-            set_ui_element_as__allocated(p_ui_element);
-            set_ui_element_as__enabled(p_ui_element);
-            return p_ui_element;
-        }
+    UI_Element *p_ui_element =
+        (UI_Element*)get_next_available__random_allocation_in__contiguous_array(
+                (Serialization_Header *)p_ui_manager->ui_elements, 
+                UI_ELEMENT_MAXIMUM_QUANTITY_OF, 
+                &p_ui_manager->randomizer, 
+                Lavender_Type__UI_Element);
+
+    *p_ui_element_ptr = p_ui_element;
+
+#ifndef NDEBUG
+    if (!p_ui_element) {
+        debug_error("allocate_ui_element_from__ui_manager, failed to allocate ui_element.");
+        return 0;
     }
-failure:
-    debug_abort("Cannot allocate new UI_Element.");
-    return 0;
+#endif
+
+    return p_ui_element;
 }
 
 UI_Element *allocate_ui_element_from__ui_manager_as__child(
         UI_Manager *p_ui_manager,
+        Hitbox_AABB_Manager *p_hitbox_aabb_manager,
         UI_Element *p_parent) {
     UI_Element *p_child =
         allocate_ui_element_from__ui_manager(p_ui_manager);
@@ -413,8 +427,12 @@ UI_Element *allocate_ui_element_from__ui_manager_as__child(
             p_ui_manager,
             p_parent, 
             p_child);
-    p_child->ui_bounding_box__aabb.position__3i32F4 =
-        p_parent->ui_bounding_box__aabb.position__3i32F4;
+    set_position_3i32_of__ui_element(
+            p_hitbox_aabb_manager,
+            p_child, 
+            get_position_3i32_from__p_ui_element(
+                p_hitbox_aabb_manager,
+                p_parent));
     return p_child;
 }
 
@@ -542,10 +560,7 @@ void release__ui_element_from__ui_manager(
             p_ui_element, 
             0, 0, 0,
             UI_Element_Kind__None, 
-            UI_FLAGS__NONE,
-            1, 
-            1,
-            get_vector__3i32(0,0,0));
+            UI_FLAGS__NONE);
     p_ui_manager->quantity_of__ui_elements__quantity_u8--;
 }
 
@@ -758,14 +773,18 @@ void _f_compose_ui_element_callback__ui_manager(
         return;
     }
 
+    Hitbox_AABB_Manager *p_hitbox_aabb_manager =
+        get_p_hitbox_aabb_manager_from__world(
+                get_p_world_from__game(p_game));
+
     generate_ui_span_in__ui_tile_map(
             get_ui_tile_map_from__graphics_window(
                 p_gfx_window), 
             get_ui_element__p_ui_tile_span(p_ui_element), 
-            get_width_from__p_ui_element(p_ui_element) >> 3, 
-            get_height_from__p_ui_element(p_ui_element) >> 3, 
-            get_x_i32_from__p_ui_element(p_ui_element) >> 3, 
-            get_y_i32_from__p_ui_element(p_ui_element) >> 3);
+            get_width_from__p_ui_element(p_hitbox_aabb_manager, p_ui_element) >> 3, 
+            get_height_from__p_ui_element(p_hitbox_aabb_manager, p_ui_element) >> 3, 
+            get_x_i32_from__p_ui_element(p_hitbox_aabb_manager, p_ui_element) >> 3, 
+            get_y_i32_from__p_ui_element(p_hitbox_aabb_manager, p_ui_element) >> 3);
 }
 
 void compose_all_ui_elements_in__ui_manager(

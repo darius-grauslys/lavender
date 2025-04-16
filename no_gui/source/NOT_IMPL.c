@@ -90,7 +90,7 @@ void PLATFORM_release_all__sprites(
 void PLATFORM_render_sprite(
         Gfx_Context *p_gfx_context,
         Graphics_Window *p_gfx_window,
-        Sprite_Wrapper *sprite,
+        Sprite *sprite,
         Vector__3i32F4 position_of__sprite__3i32F4) {}
 
 void PLATFORM_poll_input(

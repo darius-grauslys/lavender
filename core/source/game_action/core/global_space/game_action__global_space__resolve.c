@@ -9,6 +9,7 @@
 #include "process/game_action_process.h"
 #include "process/process.h"
 #include "serialization/serialization_header.h"
+#include "types/implemented/tile_kind.h"
 #include "world/chunk_pool.h"
 #include "world/global_space.h"
 #include "world/global_space_manager.h"
@@ -123,6 +124,16 @@ void m_process__game_action__global_space__resolve(
     f_Chunk_Generator f_chunk_generator =
         get_p_world_parameters_from__world(p_world)
         ->f_chunk_generator;
+    if (!f_chunk_generator) {
+        memset(&get_p_chunk_from__global_space(p_global_space)
+                ->chunk_data,
+                0,
+                sizeof(Chunk_Data));
+        complete_game_action_process(
+                p_game,
+                p_this_process);
+        return;
+    }
     f_chunk_generator(
             p_game,
             p_global_space);

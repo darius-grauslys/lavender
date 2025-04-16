@@ -1,6 +1,7 @@
 #ifndef HITBOX_AABB_H
 #define HITBOX_AABB_H
 
+#include "defines_weak.h"
 #include <defines.h>
 #include <vectors.h>
 #include <world/chunk_vectors.h>
@@ -48,6 +49,47 @@ static Signed_Index__i32 inline get_chunk_y_i32_from__hitbox(
 static Signed_Index__i32 inline get_chunk_z_i32_from__hitbox(
         Hitbox_AABB *p_hitbox) {
     return get_chunk_z_i32_from__vector_3i32F4(p_hitbox->position__3i32F4);
+}
+
+static inline
+Vector__3i32F4 get_position_3i32F4_of__hitbox_aabb(
+        Hitbox_AABB *p_hitbox_aabb) {
+    return p_hitbox_aabb->position__3i32F4;
+}
+
+static inline
+Vector__3i32 get_position_3i32_of__hitbox_aabb(
+        Hitbox_AABB *p_hitbox_aabb) {
+    return 
+        vector_3i32F4_to__vector_3i32(
+                p_hitbox_aabb->position__3i32F4);
+}
+
+static inline
+Vector__3i32F4 get_velocity_3i32F4_of__hitbox_aabb(
+        Hitbox_AABB *p_hitbox_aabb) {
+    return p_hitbox_aabb->velocity__3i32F4;
+}
+
+static inline
+Quantity__u32 get_width_u32_of__hitbox_aabb(
+        Hitbox_AABB *p_hitbox_aabb) {
+    return p_hitbox_aabb->width__quantity_u32;
+}
+
+static inline
+Quantity__u32 get_height_u32_of__hitbox_aabb(
+        Hitbox_AABB *p_hitbox_aabb) {
+    return p_hitbox_aabb->height__quantity_u32;
+}
+
+static inline
+void set_size_of__hitbox_aabb(
+        Hitbox_AABB *p_hitbox_aabb,
+        Quantity__u32 width__quantity_u32,
+        Quantity__u32 height__quantity_u32) {
+    p_hitbox_aabb->width__quantity_u32 = width__quantity_u32;
+    p_hitbox_aabb->height__quantity_u32 = height__quantity_u32;
 }
 
 Direction__u8 is_hitbox__colliding(

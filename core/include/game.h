@@ -115,6 +115,12 @@ World *get_p_world_from__game(Game *p_game) {
     return &p_game->world;
 }
 
+static inline
+Hitbox_AABB_Manager *get_p_hitbox_aabb_manager_from__game(Game *p_game) {
+    return get_p_hitbox_aabb_manager_from__world(
+            get_p_world_from__game(p_game));
+}
+
 static inline 
 Global_Space_Manager *get_p_global_space_manager_from__game(Game *p_game) {
     return get_p_global_space_manager_from__world(
@@ -122,9 +128,9 @@ Global_Space_Manager *get_p_global_space_manager_from__game(Game *p_game) {
 }
 
 static inline 
-Sprite_Gfx_Allocation_Manager *get_p_sprite_gfx_allocation_manager_from__game(
+Sprite_Manager *get_p_sprite_manager_from__game(
         Game *p_game) {
-    return &p_game->gfx_context.sprite_gfx_allocation_manager;
+    return &p_game->gfx_context.sprite_manager;
 }
 
 static inline 

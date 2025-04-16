@@ -1,11 +1,15 @@
 #include "rendering/graphics_window.h"
 #include "defines.h"
 #include "defines_weak.h"
+#include "serialization/serialization_header.h"
 #include "ui/ui_tile_map.h"
 #include "vectors.h"
 
 void initialize_graphics_window(
         Graphics_Window *p_graphics_window) {
+    initialize_serialization_header_for__deallocated_struct(
+            (Serialization_Header *)p_graphics_window, 
+            sizeof(Graphics_Window));
     p_graphics_window->p_PLATFORM_gfx_window = 0;
     p_graphics_window->p_child__graphics_window = 0;
     p_graphics_window->origin_of__gfx_window =

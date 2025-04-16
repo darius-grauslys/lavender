@@ -4,16 +4,12 @@
 #include "game.h"
 #include "rendering/gfx_context.h"
 #include "rendering/sprite.h"
-#include "rendering/sprite_gfx_allocator_manager.h"
 #include "ui/ui_element.h"
 #include "vectors.h"
 #include <defines.h>
 
 void initialize_ui_element_as__slider(
         UI_Element *p_ui_slider,
-        Quantity__u8 width__u8,
-        Quantity__u8 height__u8,
-        Vector__3i32 position__3i32,
         Vector__3i32 spanning_length__3i32,
         m_UI_Dragged m_ui_dragged_handler,
         bool is_snapped_x_or_y__axis);
@@ -37,6 +33,7 @@ void m_ui_slider__render_handler__default(
 
 static inline
 i32F20 get_percentage_i32F20_from__ui_slider(
+        Hitbox_AABB_Manager *p_hitbox_aabb_manager,
         UI_Element *p_ui_slider) {
 #ifndef NDEBUG
     if (!is_ui_element_of__this_kind(
@@ -49,8 +46,13 @@ i32F20 get_percentage_i32F20_from__ui_slider(
     return i32_to__i32F20(
             p_ui_slider->slider__distance__u32)
         / (is_ui_element__snapped_x_or_y_axis(p_ui_slider)
-        ? p_ui_slider->ui_bounding_box__aabb.height__quantity_u32
-        : p_ui_slider->ui_bounding_box__aabb.width__quantity_u32);
+        ? get_height_from__p_ui_element(
+            p_hitbox_aabb_manager, 
+            p_ui_slider)
+        : get_width_from__p_ui_element(
+            p_hitbox_aabb_manager, 
+            p_ui_slider)
+        );
 }
 
 ///
@@ -59,6 +61,7 @@ i32F20 get_percentage_i32F20_from__ui_slider(
 ///
 static inline
 i32 get_offset_from__ui_slider_percentage(
+        Hitbox_AABB_Manager *p_hitbox_aabb_manager,
         UI_Element *p_ui_slider,
         i32 range) {
 #ifndef NDEBUG
@@ -70,7 +73,9 @@ i32 get_offset_from__ui_slider_percentage(
     }
 #endif
     return i32F20_to__i32(
-            get_percentage_i32F20_from__ui_slider(p_ui_slider)
+            get_percentage_i32F20_from__ui_slider(
+                p_hitbox_aabb_manager,
+                p_ui_slider)
             * range);
 }
 

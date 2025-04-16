@@ -5,6 +5,8 @@
 #include "platform.h"
 #include "rendering/gfx_context.h"
 #include "rendering/graphics_window.h"
+#include "serialization/hashing.h"
+#include "serialization/serialization_header.h"
 #include "ui/ui_manager.h"
 #include "util/bitmap/bitmap.h"
 #include "world/camera.h"
@@ -38,29 +40,22 @@ void initialize_graphics_window_manager(
         initialize_graphics_window(
                 p_graphics_window);
     }
+    initialize_repeatable_psuedo_random(
+            &p_graphics_window_manager->randomizer,
+            (u32)(u64)p_graphics_window_manager);
 }
 
-Graphics_Window *allocate_graphics_window_with__graphics_window_manager(
+Graphics_Window *allocate_graphics_window_with__uuid_from__graphics_window_manager(
         Gfx_Context *p_gfx_context,
         Graphics_Window_Manager *p_graphics_window_manager,
+        Identifier__u32 uuid__u32,
         Texture_Flags texture_flags_for__gfx_window) {
-    Graphics_Window *p_graphics_window__available = 0;
-
-    for (Index__u32 index_of__graphics_window = 0;
-            index_of__graphics_window
-            < MAX_QUANTITY_OF__GRAPHICS_WINDOWS;
-            index_of__graphics_window++) {
-        Graphics_Window *p_graphics_window =
-            get_p_graphics_window_by__index_from__manager(
-                    p_graphics_window_manager, 
-                    index_of__graphics_window);
-
-        if (is_graphics_window__allocated(p_graphics_window))
-            continue;
-
-        p_graphics_window__available = p_graphics_window;
-        break;
-    }
+    Graphics_Window *p_graphics_window__available = 
+        (Graphics_Window*)get_next_available__allocation_in__contiguous_array(
+                (Serialization_Header *)p_graphics_window_manager
+                    ->graphics_windows, 
+                MAX_QUANTITY_OF__GRAPHICS_WINDOWS, 
+                uuid__u32);
 
     if (!p_graphics_window__available) {
         debug_error("allocate_graphics_window_with__graphics_window_manager, graphics window limit reached.");
@@ -350,4 +345,30 @@ void compose_graphic_windows_in__graphics_window_manager(
                     p_gfx_window->p_child__graphics_window);
         }
     }
+}
+
+Graphics_Window *get_p_graphics_window_by__uuid_from__graphics_window_manager(
+        Graphics_Window_Manager *p_graphics_window_manager,
+        Identifier__u32 uuid__u32) {
+#ifndef NDEBUG
+    if (!p_graphics_window_manager) {
+        debug_error("get_p_graphics_window_by__uuid_from__graphics_window_manager, p_graphics_window_manager == 0.");
+        return 0;
+    }
+#endif
+    Graphics_Window *p_graphics_window =
+        (Graphics_Window*)dehash_identitier_u32_in__contigious_array(
+                (Serialization_Header *)p_graphics_window_manager
+                    ->graphics_windows, 
+                MAX_QUANTITY_OF__GRAPHICS_WINDOWS, 
+                uuid__u32);
+    
+#ifndef NDEBUG
+    if (!p_graphics_window) {
+        debug_error("get_p_graphics_window_by__uuid_from__graphics_window_manager, failed to find graphics_window.");
+        return 0;
+    }
+#endif
+
+    return p_graphics_window;
 }

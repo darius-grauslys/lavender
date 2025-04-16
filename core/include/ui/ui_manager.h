@@ -67,6 +67,7 @@ void swap_ui_element__children(
 
 UI_Element *allocate_ui_element_from__ui_manager_as__child(
         UI_Manager *p_ui_manager,
+        Hitbox_AABB_Manager *p_hitbox_aabb_manager,
         UI_Element *p_parent);
 
 void allocate_many_ui_elements_from__ui_manager(

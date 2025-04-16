@@ -16,7 +16,6 @@
 #include "world/global_space_manager.h"
 #include "world/local_space_manager.h"
 #include "world/serialization/world_directory.h"
-#include "world/tile_logic_manager.h"
 #include <world/world.h>
 #include <game.h>
 #include <entity/entity_manager.h>
@@ -58,10 +57,6 @@ void initialize_world(
     initialize_hitbox_aabb_manager(
             get_p_hitbox_aabb_manager_from__world(p_world));
     initialize_entity_manager(&p_world->entity_manager);
-    initialize_tile_logic_manager(
-            get_p_tile_logic_manager_from__world(p_world));
-    register_core_tile_logic_handlers(
-            get_p_tile_logic_manager_from__world(p_world));
 
     initialize_collision_node_pool(
             get_p_collision_node_pool_from__world(p_world));
@@ -110,12 +105,6 @@ void manage_world(
     }
 }
 
-void manage_world__entity(
-        Game *p_game,
-        Entity *p_entity) {
-    debug_warning("manage_world__entity, requires impl.");
-}
-
 void manage_world__entities(Game *p_game) {
     World *p_world =
         &p_game->world;
@@ -127,43 +116,17 @@ void manage_world__entities(Game *p_game) {
         Entity *p_entity =
             get_p_entity_from__entity_manager(
                     p_entity_manager, i);
-        if (!is_entity__allocated(p_entity)) {
+        if (!is_entity__allocated(p_entity)
+                || !is_entity__enabled(p_entity)) {
             continue;
         }
 
-        manage_world__entity(
-                p_game,
-                p_entity);
-    }
-}
-
-void render_world__entity(
-        Gfx_Context *p_gfx_context,
-        Graphics_Window *p_gfx_window,
-        Entity *p_entity) {
-    debug_warning("render_world__entity, impl");
-}
-
-void render_entities_in__world(
-        Gfx_Context *p_gfx_context,
-        Graphics_Window *p_gfx_window,
-        World *p_world) {
-    Entity_Manager *p_entity_manager =
-        get_p_entity_manager_from__world(p_world);
-
-    for (Quantity__u16 i=0;
-            i<ENTITY_MAXIMUM_QUANTITY_OF;i++) {
-        Entity *p_entity =
-            get_p_entity_from__entity_manager(
-                    p_entity_manager, i);
-        if (!is_entity__allocated(p_entity)) {
-            continue;
+        if (p_entity->entity_functions.m_entity_update_handler) {
+            p_entity->entity_functions.m_entity_update_handler(
+                    p_entity,
+                    p_game,
+                    p_world);
         }
-
-        render_world__entity(
-                p_gfx_context,
-                p_gfx_window,
-                p_entity);
     }
 }
 

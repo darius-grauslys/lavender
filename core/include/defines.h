@@ -4,6 +4,7 @@
 #include "platform.h"
 #include "platform_defaults.h"
 #include "platform_defines.h"
+#include "types/implemented/sprite_animation_kind.h"
 #include "util/bitmap/bitmap.h"
 #include <stdbool.h>
 #include <stdint.h>
@@ -78,6 +79,14 @@ typedef struct Vector__3i32F4_t {
 typedef struct Vector__3i32F20_t {
     i32F20 x__i32F20, y__i32F20, z__i32F20;
 } Vector__3i32F20;
+
+///
+/// Mainly used for acceleration
+///
+typedef struct Vector__3i16F8_t {
+    i16F8 x__i16F8, y__i16F8, z__i16F8;
+} Vector__3i16F8;
+
 
 typedef int32_t Signed_Index__i32;
 typedef int16_t Signed_Index__i16;
@@ -368,6 +377,7 @@ typedef struct Hitbox_AABB_t {
     Serialization_Header _serialization_header;
     Vector__3i32F4 position__3i32F4;
     Vector__3i32F4 velocity__3i32F4;
+    Vector__3i16F8 acceleration__3i16F8;
     Quantity__u32 width__quantity_u32;
     Quantity__u32 height__quantity_u32;
 } Hitbox_AABB;
@@ -378,7 +388,7 @@ typedef void (*f_Hitbox_AABB_Collision_Handler)(
         Hitbox_AABB *p_hitbox_aabb__colliding,
         Hitbox_AABB *p_hitbox_aabb__collided);
 
-#define MAX_QUANTITY_OF__HITBOX_AABB 128
+#define MAX_QUANTITY_OF__HITBOX_AABB 256
 
 typedef struct Hitbox_AABB_Manager_t {
     Hitbox_AABB hitboxes[MAX_QUANTITY_OF__HITBOX_AABB];
@@ -412,24 +422,6 @@ typedef void f_Foreach_Serialized_Field(
         Serialized_Field *p_serialized_field,
         void *p_data);
 
-///
-/// This type is specific to Collision_Manager,
-/// so there is no header files supporting it.
-///
-typedef struct Collision_Manager__Collision_Node_t {
-    Collision_Node_Record collision_node_records[
-        ENTITY_MAXIMUM_QUANTITY_OF__COLLIDABLE];
-
-    struct Collision_Manager__Collision_Node_t *p_north__collision_node;
-    struct Collision_Manager__Collision_Node_t *p_east__collision_node;
-    struct Collision_Manager__Collision_Node_t *p_south__collision_node;
-    struct Collision_Manager__Collision_Node_t *p_west__collision_node;
-
-    Direction__u8 legal_directions;
-} Collision_Manager__Collision_Node;
-
-#define MAX_QUANTITY_OF__COLLISION_NODE__RECORD_POOLS
-
 typedef struct Collision_Node_Entry_t {
     Identifier__u32 uuid_of__hitbox__u32;
     struct Collision_Node_Entry_t *p_previous_entry;
@@ -446,47 +438,6 @@ typedef struct Collision_Node_Pool_t {
 } Collision_Node_Pool;
 
 ///
-/// 4 Collision Nodes per layer 3 node.
-///
-typedef struct Collision_Manager__Layer_Three_t {
-    Collision_Manager__Collision_Node *p_top_left__collision_node;
-    Collision_Manager__Collision_Node *p_top_right__collision_node;
-    Collision_Manager__Collision_Node *p_bottom_left__collision_node;
-    Collision_Manager__Collision_Node *p_bottom_right__collision_node;
-
-    Signed_Index__i32 
-        x__center_chunk__signed_index_i32, 
-        y__center_chunk__signed_index_i32;
-} Collision_Manager__Layer_Three;
-
-typedef struct Collision_Manager__Layer_Two_t {
-    Collision_Manager__Layer_Three top_left__layer_three;
-    Collision_Manager__Layer_Three top_right__layer_three;
-    Collision_Manager__Layer_Three bottom_left__layer_three;
-    Collision_Manager__Layer_Three bottom_right__layer_three;
-
-    Signed_Index__i32 
-        x__center_chunk__signed_index_i32, 
-        y__center_chunk__signed_index_i32;
-} Collision_Manager__Layer_Two;
-
-typedef struct Collision_Manager__t {
-    Collision_Manager__Collision_Node collision_nodes[
-        CHUNK_MANAGER__QUANTITY_OF_CHUNKS];
-
-    Collision_Manager__Layer_Two top_left__layer_two;
-    Collision_Manager__Layer_Two top_right__layer_two;
-    Collision_Manager__Layer_Two bottom_left__layer_two;
-    Collision_Manager__Layer_Two bottom_right__layer_two;
-
-    Collision_Manager__Collision_Node *p_most_north_western__collision_node;
-
-    Signed_Index__i32 
-        x__center_chunk__signed_index_i32, 
-        y__center_chunk__signed_index_i32;
-} Collision_Manager;
-
-///
 /// SECTION_debug
 ///
 
@@ -494,78 +445,53 @@ typedef struct Collision_Manager__t {
 /// SECTION_rendering
 ///
 
-typedef uint8_t Sprite_Frame_Index__u8;
-typedef uint16_t Sprite_Frame_Index__u16;
+typedef uint8_t Sprite_Animation_Flags__u4;
 
-#define ANIMATION_BIT_MASK__TICK_RATE MASK(4)
+#define SPRITE_ANIMATION_FLAGS__NONE 0
+#define SPRITE_ANIMATION_FLAG__IS_LOOPING BIT(0)
 
-typedef struct Sprite_Wrapper_t {
-    PLATFORM_Sprite *p_sprite;
+typedef struct Sprite_Animation_t {
+    Quantity__u8                sprite_animation__initial_frame__u6         :7;
+    Quantity__u8                sprite_animation__quantity_of__frames__u5   :5;
+    Sprite_Animation_Flags__u4  sprite_animation__flags__u4                 :4;
+} Sprite_Animation;
+
+typedef uint8_t Sprite_Flags;
+
+#define SPRITE_FLAGS__NONE 0
+
+#define SPRITE_FLAG__BIT_SHIFT_IS_ENABLED 0
+#define SPRITE_FLAG__BIT_IS_ENABLED BIT(\
+        SPRITE_FLAG__BIT_SHIFT_IS_ENABLED)
+
+typedef struct Sprite_t {
+    Serialization_Header _serialization_header;
+    PLATFORM_Sprite *p_PLATFORM_sprite;
     Timer__u32 animation_timer__u32;
+    Sprite_Animation_Kind the_kind_of_animation__this_sprite_has;
+    Sprite_Kind the_kind_of__sprite;
+    Index__u8 sprite__index_of__frame;
     Direction__u8 direction;
     Direction__u8 direction__requested;
-    Sprite_Frame_Index__u16 frame__initial;
-    Sprite_Frame_Index__u16 frame__current;
-    Sprite_Frame_Index__u16 frame__final;
-    enum Sprite_Animation_Kind the_kind_of_animation__this_sprite_has;
-} Sprite_Wrapper;
+    Sprite_Flags sprite_flags__u8;
+} Sprite;
 
-typedef bool (*f_Sprite_Gfx_Allocator)(
-        Gfx_Context *p_gfx_context,
-        Graphics_Window *p_gfx_window,
-        Sprite_Wrapper *p_sprite_wrapper,
-        u32 enum_value);
+typedef struct Sprite_Render_Record_t {
+    Vector__3i32F4 position__3i32F4;
+    Sprite *p_sprite;
+} Sprite_Render_Record;
 
-typedef struct Sprite_Gfx_Allocation_Manager_t {
-    f_Sprite_Gfx_Allocator F_sprite_gfx_allocators_for__entities[
-        Entity_Kind__Unknown];
-    f_Sprite_Gfx_Allocator F_sprite_gfx_allocators_for__ui[
-        UI_Sprite_Kind__Unknown];
-    f_Sprite_Gfx_Allocator F_sprite_gfx_allocators_for__items[
-        Item_Kind__Unknown];
-} Sprite_Gfx_Allocation_Manager;
+typedef struct Sprite_Manager_t {
+    Sprite sprites[MAX_QUANTITY_OF__SPRITES];
+    Sprite_Render_Record sprite_render_records[
+        MAX_QUANTITY_OF__SPRITES];
+    Sprite_Animation sprite_animations[Sprite_Animation_Kind__Unknown];
+    Sprite_Render_Record *p_sprite_render_record__last;
+} Sprite_Manager;
 
 #define SPRITE_FRAME__32x32__OFFSET (32 * 32)
 #define SPRITE_FRAME__16x16__OFFSET (16 * 16)
 #define SPRITE_FRAME__8x8__OFFSET (8 * 8)
-
-#define SPRITE_FRAME_WIDTH__ENTITY_HUMANOID_ARMORED 16
-#define SPRITE_FRAME_HEIGHT__ENTITY_HUMANOID_ARMORED 16
-
-#define SPRITE_FRAME_WIDTH__ENTITY_HUMANOID_UNARMORED 6
-#define SPRITE_FRAME_HEIGHT__ENTITY_HUMANOID_UNARMORED 4
-
-#define SPRITE_FRAME_COL__ENTITY_HUMANOID__IDLE 0
-#define SPRITE_FRAME_COL__ENTITY_HUMANOID__WALK 1
-#define SPRITE_FRAME_COL__ENTITY_HUMANOID__USE 3
-#define SPRITE_FRAME_COL__ENTITY_HUMANOID__HURT 0
-#define SPRITE_FRAME_COL__ENTITY_HUMANOID__DIE 1
-#define SPRITE_FRAME_COL__ENTITY_HUMANOID__SLEEP 3
-
-#define SPRITE_ANIMATION_FRAME_COUNT__ENTITY_HUMANOID__IDLE 0
-#define SPRITE_ANIMATION_FRAME_COUNT__ENTITY_HUMANOID__WALK 2
-#define SPRITE_ANIMATION_FRAME_COUNT__ENTITY_HUMANOID__USE 2
-#define SPRITE_ANIMATION_FRAME_COUNT__ENTITY_HUMANOID__HURT 1
-#define SPRITE_ANIMATION_FRAME_COUNT__ENTITY_HUMANOID__DIE 2
-#define SPRITE_ANIMATION_FRAME_COUNT__ENTITY_HUMANOID__SLEEP 0
-
-#define SPRITE_FRAME_ROW__ENTITY_HUMANOID__SIDE_FACING 0
-#define SPRITE_FRAME_ROW__ENTITY_HUMANOID__FORWARD_FACING 1
-#define SPRITE_FRAME_ROW__ENTITY_HUMANOID__BACK_FACING 2
-#define SPRITE_FRAME_ROW__ENTITY_HUMANOID__FALLING 3
-
-#define SPRITE_FRAME_COL_GROUP_OFFSET__ENTITY_HUMANOID 6
-#define SPRITE_FRAME_ROW_GROUP_OFFSET__ENTITY_HUMANOID (3*16)
-
-#define SPRITE_FRAME_GROUP_INDEX__ENTITY_HUMANOID__ARMOR_CLOTH 1
-#define SPRITE_FRAME_GROUP_INDEX__ENTITY_HUMANOID__ARMOR_IRON 2
-#define SPRITE_FRAME_GROUP_INDEX__ENTITY_HUMANOID__ARMOR_IRON__RUSTED 3
-#define SPRITE_FRAME_GROUP_INDEX__ENTITY_HUMANOID__ARMOR_STEEL 4
-#define SPRITE_FRAME_GROUP_INDEX__ENTITY_HUMANOID__ARMOR_STEEL__DIAMOND 5
-#define SPRITE_FRAME_GROUP_INDEX__ENTITY_HUMANOID__ARMOR_STEEL__AMETHYST 6
-#define SPRITE_FRAME_GROUP_INDEX__ENTITY_HUMANOID__ARMOR_GOLD 7
-#define SPRITE_FRAME_GROUP_INDEX__ENTITY_HUMANOID__ARMOR_GOLD__DIAMOND 8
-#define SPRITE_FRAME_GROUP_INDEX__ENTITY_HUMANOID__ARMOR_GOLD__AMETHYST 9
 
 ///
 /// The meaning of these flags is dependent on
@@ -772,33 +698,6 @@ typedef struct Aliased_Texture_Manager_t {
     Repeatable_Psuedo_Random repeatable_psuedo_random_for__texture_uuid;
 } Aliased_Texture_Manager;
 
-typedef uint8_t Sprite_Flags;
-
-#define SPRITE_FLAGS__NONE 0
-
-#define SPRITE_FLAG__BIT_SHIFT_IS_ALLOCATED 0
-#define SPRITE_FLAG__BIT_IS_ALLOCATED BIT(\
-        SPRITE_FLAG__BIT_SHIFT_IS_ALLOCATED)
-
-typedef struct Sprite_Allocation_Specification_t {
-    enum Sprite_Allocation_Kind the_kind_of__sprite_allocation;
-    Texture_Allocation_Specification texture_allocation_specification;
-    union {
-        struct { // Sprite_Allocation_Kind__Entity
-            enum Entity_Kind the_kind_of__entity_this__sprite_is;
-        };
-        struct { // Sprite_Allocation_Kind__Item
-            enum Item_Kind the_kind_of__item_this__sprite_is;
-        };
-        struct { // Sprite_Allocation_Kind__UI
-            enum UI_Sprite_Kind the_kind_of__ui__this_sprite_is;
-        };
-        struct { // Sprite_Allocation_Kind__Graphics_Pointer
-            void *p_gfx;
-        };
-    };
-} Sprite_Allocation_Specification;
-
 typedef struct Font_Letter_t {
     Quantity__u8 width_of__font_letter       :4;
     Quantity__u8 height_of__font_letter      :4;
@@ -991,7 +890,8 @@ typedef struct Entity_Data_t {
 #include "types/implemented/entity_functions.h"
 #ifndef DEFINE_ENTITY_FUNCTIONS
 typedef struct Entity_Functions_t {
-    m_Entity_Dispose_Handler        m_entity_dispose_handler;
+    m_Entity_Handler    m_entity_dispose_handler;
+    m_Entity_Handler    m_entity_update_handler;
 } Entity_Functions;
 #endif
 
@@ -1138,10 +1038,23 @@ typedef struct Process_t {
         Process *p_sub_process;
     };
     void *p_process_data;
-    i32F20 process_runtime__i32F20;
     Process_Status_Kind the_kind_of_status__this_process_has;
     Process_Kind the_kind_of__process_this__process_is;
-    u8 process_sub_state__u8;
+    union {
+        i32 process_valueA__i32; // free to use by m_process
+        i32 process_valueB__i32; // free to use by m_process
+        struct {
+            i16 process_valueA__i16;
+            i16 process_valueB__i16;
+            i16 process_valueC__i16;
+            i16 process_valueD__i16;
+        };
+        union {
+            u8 process_sub_state__u8;
+            u8 process_value_bytes__u8[
+                sizeof(i32)*2];
+        };
+    };
     Process_Flags__u8 process_flags__u8;
 } Process;
 
@@ -1212,10 +1125,24 @@ typedef struct Sort_Node_t {
 
 ///
 /// Heuristic for sorting.
+/// Leverage this if you want task based sorting.
 ///
 typedef Signed_Quantity__i32 (*f_Sort_Heuristic)(
         Sort_Node *p_node__one,
         Sort_Node *p_node__two);
+
+///
+/// Used for data structures not leveraging Sort_Nodes.
+/// This is not supported by the process_manager, use it
+/// if you need the results in a single frame.
+///
+typedef Signed_Quantity__i32 (*f_Sort_Heuristic__Void)(
+        void *p_one,
+        void *p_two);
+
+typedef void (*f_Sort_Swap__Void)(
+        void *p_one,
+        void *p_two);
 
 typedef struct Sort_List_t Sort_List;
 
@@ -1460,9 +1387,16 @@ typedef uint8_t UI_Button_Flags__u8;
 #define UI_BUTTON_FLAGS__BIT_IS_TOGGLED \
     BIT(UI_BUTTON_FLAGS__BIT_SHIFT_IS_TOGGLED)
 
+#include "types/implemented/ui_element_data.h"
+#ifndef DEFINE_UI_ELEMENT_DATA
+typedef struct UI_Element_Data_t {
+
+} UI_Element_Data;
+#endif
+
 typedef struct UI_Element_t {
+    Serialization_Header    _serialization_header;
     enum UI_Element_Kind    the_kind_of_ui_element__this_is;
-    Hitbox_AABB             ui_bounding_box__aabb;
     /// DO NOT INVOKE
     m_UI_Clicked            m_ui_clicked_handler;
     /// DO NOT INVOKE
@@ -1480,15 +1414,12 @@ typedef struct UI_Element_t {
     /// When implementing your own, be sure to
     /// also invoke m_ui_element__dispose_handler__default(...)
     m_UI_Dispose            m_ui_dispose_handler;
-    void                    *p_ui_data;
-    Serialized_Field        s_serialized_field;
+
     UI_Element *p_parent,   *p_child, *p_next;
-    Identifier__u16         ui_identifier;
     UI_Flags__u16            ui_flags;
-    union {
-        Sprite_Wrapper          ui_sprite_wrapper;
-        UI_Tile_Span            ui_tile_span;
-    };
+
+    UI_Tile_Span            ui_tile_span;
+
     union {
         struct { // UI_Button
             UI_Button_Flags__u8 ui_button_flags;
@@ -1500,6 +1431,8 @@ typedef struct UI_Element_t {
             u32             slider__distance__u32;
         };
     };
+
+    UI_Element_Data ui_element_data;
 } UI_Element;
 
 #define UI_ELEMENT_MAXIMUM_QUANTITY_OF 128
@@ -1535,6 +1468,7 @@ typedef struct UI_Manager_t {
     Quantity__u8 quantity_of__ui_elements__quantity_u8;
     UI_Element ui_elements[UI_ELEMENT_MAXIMUM_QUANTITY_OF];
     UI_Element *ui_element_ptrs[UI_ELEMENT_MAXIMUM_QUANTITY_OF];
+    Repeatable_Psuedo_Random randomizer;
     UI_Element *p_ui_element__focused;
 
     PLATFORM_Graphics_Window 
@@ -1831,36 +1765,29 @@ typedef struct Tile_t Tile;
 
 typedef uint8_t Tile_Flags__u8;
 
-typedef void (*f_Tile_Handler__Touch)(
-        Game *p_game,
-        Tile *p_tile,
-        Tile_Vector__3i32 tile_vector__3i32,
-        Entity *p_entity);
+typedef struct Tile_Logic_Table_t Tile_Logic_Table;
+typedef struct Tile_Logic_Record_t Tile_Logic_Record;
 
-///
-/// Returns false on placement failure
-///
-typedef bool (*f_Tile_Handler__Place)(
-        Game *p_game,
-        Tile *p_tile,
-        u32 tile__placement_code__u32,
-        Tile_Vector__3i32 tile_vector__3i32);
-
-typedef bool (*f_Tile_Handler__Destroy)(
-        Game *p_game,
-        Tile *p_tile,
-        u32 tile__destruction_code__u32,
-        Tile_Vector__3i32 tile_vector__3i32);
+typedef void (*m_Tile_Logic_Table__Get_Tile_Logic_Record)(
+        Tile_Logic_Table *p_tile_logic_manager,
+        Tile_Logic_Record *p_tile_logic_record,
+        Tile *p_tile);
 
 typedef uint8_t Tile_Logic_Flags__u8;
 #define TILE_LOGIC_FLAGS__NONE 0
 #define TILE_LOGIC_FLAG__IS_UNPASSABLE BIT(0)
 #define TILE_LOGIC_FLAG__IS_SIGHT_BLOCKING BIT(1)
 
+#include "types/implemented/tile_logic_record_data.h"
+#ifndef DEFINE_TILE_LOGIC_RECORD_DATA
+typedef struct Tile_Logic_Record_Data_t {
+    Tile_Logic_Record tile_logic_record__tile_kind[
+        Tile_Kind__Unknown];
+} Tile_Logic_Record_Data;
+#endif
+
 typedef struct Tile_Logic_Record_t {
-    f_Tile_Handler__Touch       f_tile_handler__touch;
-    f_Tile_Handler__Place       f_tile_handler__place;
-    f_Tile_Handler__Destroy     f_tile_handler__destroy;
+    Tile_Logic_Record_Data      tile_logic_record_data;
     Tile_Logic_Flags__u8        tile_logic_flags__u8;
 } Tile_Logic_Record;
 
@@ -1868,10 +1795,19 @@ typedef struct Tile_Logic_Record_t {
 /// Manages the logic associated with special tiles.
 /// IE. lava tile, water tile, chest tile, etc.
 ///
-typedef struct Tile_Logic_Manager_t {
-    Tile_Logic_Record tile_logic_records_for__ground_kinds[
-        Tile_Kind__Unknown];
-} Tile_Logic_Manager;
+typedef struct Tile_Logic_Table_t {
+    Tile_Logic_Record *p_tile_logic_records;
+    m_Tile_Logic_Table__Get_Tile_Logic_Record m_get_tile_logic_record;
+    Quantity__u32 quantity_of__records;
+} Tile_Logic_Table;
+
+
+#define MAX_QUANTITY_OF__TILE_LOGIC_TABLES 8
+
+typedef struct Tile_Logic_Table_Manager_t {
+    Tile_Logic_Table tile_logic_tables[
+        MAX_QUANTITY_OF__TILE_LOGIC_TABLES];
+} Tile_Logic_Table_Manager;
 
 typedef struct Tile_t {
     enum Tile_Kind                  
@@ -2251,15 +2187,13 @@ typedef struct World_t {
     Entity_Manager entity_manager;
 
     Chunk_Manager chunk_manager;
-    Collision_Manager collision_manager;
-
     Global_Space_Manager global_space_manager;
     Collision_Node_Pool collision_node_pool;
     Chunk_Pool chunk_pool;
     Hitbox_AABB_Manager hitbox_aabb_manager;
 
     Structure_Manager structure_manager;
-    Tile_Logic_Manager tile_logic_manager;
+    Tile_Logic_Table_Manager tile_logic_table_manager;
     World_Parameters world_parameters;
     Repeatable_Psuedo_Random repeatable_pseudo_random;
 
@@ -2287,6 +2221,7 @@ typedef uint8_t Graphics_Window_Flags__u8;
 #define GRAPHICS_WINDOW__FLAGS__NONE 0
 
 typedef struct Graphics_Window_t {
+    Serialization_Header _serialization_header;
     UI_Tile_Map__Wrapper ui_tile_map__wrapper;
     Vector__3i32 origin_of__gfx_window;
     Vector__3i32 position_of__gfx_window;
@@ -2305,6 +2240,7 @@ typedef struct Graphics_Window_t {
 typedef struct Graphics_Window_Manager_t {
     Graphics_Window graphics_windows[
         MAX_QUANTITY_OF__GRAPHICS_WINDOWS];
+    Repeatable_Psuedo_Random randomizer;
 } Graphics_Window_Manager;
 
 ///
@@ -2314,7 +2250,7 @@ typedef struct Graphics_Window_Manager_t {
 typedef struct Gfx_Context_t {
     PLATFORM_Gfx_Context *p_PLATFORM_gfx_context;
     Graphics_Window_Manager graphics_window_manager;
-    Sprite_Gfx_Allocation_Manager sprite_gfx_allocation_manager;
+    Sprite_Manager sprite_manager;
     Aliased_Texture_Manager aliased_texture_manager;
     UI_Context ui_context;
     UI_Manager ui_manager;

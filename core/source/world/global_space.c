@@ -5,14 +5,18 @@
 #include "defines_weak.h"
 #include "entity/entity_manager.h"
 #include "game.h"
+#include "inventory/container.h"
+#include "inventory/inventory.h"
 #include "platform.h"
 #include "platform_defines.h"
 #include "process/process_manager.h"
 #include "serialization/serialization_header.h"
 #include "process/process.h"
+#include "vectors.h"
 #include "world/chunk.h"
 #include "entity/entity.h"
 #include "world/chunk_pool.h"
+#include "world/chunk_vectors.h"
 #include "world/global_space_manager.h"
 #include "world/serialization/world_directory.h"
 #include "world/world.h"
@@ -110,18 +114,180 @@ void m_process__deserialize_entities_in__global_space(
             p_serialization_request);
 }
 
+#define M_PROCESS__SERIALIZE_CONTAINERS__STEPS 32
+
 void m_process__serialize_containers_in__global_space(
         Process *p_this_process,
         Game *p_game) {
-    debug_warning("m_process__serialize_containers_in__global_space, impl");
+    Serialization_Request *p_serialized_request =
+        (Serialization_Request*)p_this_process->p_process_data;
+    Global_Space *p_global_space =
+        (Global_Space*)p_serialized_request->p_data;
+
+    if (!p_this_process->process_valueA__i16) {
+        p_this_process->process_valueA__i16 = PLATFORM_get_position_in__file(
+                get_p_PLATFORM_file_system_context_from__game(p_game), 
+                p_serialized_request->p_file_handler);
+
+        Quantity__u16 quantity_of__containers = 0;
+        PLATFORM_write_file(
+                get_p_PLATFORM_file_system_context_from__game(p_game), 
+                (u8*)&quantity_of__containers, 
+                sizeof(quantity_of__containers), 
+                1, 
+                p_serialized_request->p_file_handler);
+    }
+
+    Signed_Index__i16 *p_index_of__tile_in__chunk =
+        &p_this_process
+        ->process_valueB__i16;
+
+    u16 steps_remaining = 
+        M_PROCESS__SERIALIZE_CONTAINERS__STEPS;
+
+    Signed_Index__i16 *p_quantity_of__containers_in__chunk =
+        &p_this_process
+        ->process_valueB__i16;
+
+    Tile_Vector__3i32 tile_vector__3i32 =
+        chunk_vector_3i32_to__vector_3i32(
+                p_global_space->chunk_vector__3i32);
+
+    for (Index__u8 z = *p_index_of__tile_in__chunk
+            / (CHUNK__WIDTH * CHUNK__HEIGHT);
+            z < CHUNK__DEPTH;
+            z++) {
+        for (Index__u8 y = *p_index_of__tile_in__chunk
+                & (CHUNK__WIDTH * CHUNK__HEIGHT - 1)
+                / CHUNK__WIDTH;
+                y < CHUNK__HEIGHT;
+                y++) {
+            for (Index__u8 x = *p_index_of__tile_in__chunk
+                    & (CHUNK__WIDTH-1);
+                    x < CHUNK__WIDTH;
+                    x++) {
+                Tile_Vector__3i32 container_vector__3i32 =
+                    add_vectors__3i32(
+                            tile_vector__3i32,
+                            get_vector__3i32(x, y, z));
+
+                Inventory *p_inventory_of__container =
+                    get_inventory_of__container(
+                            p_game,
+                            container_vector__3i32);
+
+                if (p_inventory_of__container) {
+                    (*p_quantity_of__containers_in__chunk)++;
+                    Process *p_process =
+                        run_process(
+                                get_p_process_manager_from__game(p_game), 
+                                m_process__serialize_inventory, 
+                                PROCESS_FLAGS__NONE);
+                    if (!p_process) {
+                        debug_error("m_process__serialize_containers_in__global_space, failed to dispatch container serialization process.");
+                        // TODO: try returning, and then re-attempting instead.
+                        //          while using a time-out counter.
+                        fail_process(p_this_process);
+                        return;
+                    }
+                    p_process->p_process_data =
+                        p_serialized_request;
+                    enqueue_process(
+                            p_this_process,
+                            p_process);
+                    return;
+                }
+
+                (*p_index_of__tile_in__chunk)++;
+                if (!steps_remaining--) {
+                    return;
+                }
+            }
+        }
+    }
+
+    Index__u32 position_of__file =
+        PLATFORM_get_position_in__file(
+                get_p_PLATFORM_file_system_context_from__game(p_game), 
+                p_serialized_request->p_file_handler);
+    if (!PLATFORM_set_position_in__file(
+            get_p_PLATFORM_file_system_context_from__game(p_game), 
+            p_this_process
+            ->process_valueA__i16, 
+            p_serialized_request->p_file_handler)) {
+        debug_error("m_process__serialize_containers_in__global_space, failed to set position in file.");
+        fail_process(p_this_process);
+        return;
+    }
+
+    if (PLATFORM_write_file(
+            get_p_PLATFORM_file_system_context_from__game(p_game), 
+            (u8*)p_quantity_of__containers_in__chunk, 
+            sizeof(i16), 
+            1, 
+            p_serialized_request->p_file_handler)) {
+        debug_error("m_process__serialize_containers_in__global_space, failed to write container quantity into file.");
+        fail_process(p_this_process);
+        return;
+    }
+
+    if (!PLATFORM_set_position_in__file(
+            get_p_PLATFORM_file_system_context_from__game(p_game), 
+            position_of__file,
+            p_serialized_request->p_file_handler)) {
+        debug_error("m_process__serialize_containers_in__global_space, failed to RESET position in file.");
+        fail_process(p_this_process);
+        return;
+    }
+
     complete_process(p_this_process);
 }
 
 void m_process__deserialize_containers_in__global_space(
         Process *p_this_process,
         Game *p_game) {
-    debug_warning("m_process__deserialize_containers_in__global_space, impl");
-    complete_process(p_this_process);
+    Serialization_Request *p_serialized_request =
+        (Serialization_Request*)p_this_process->p_process_data;
+    Global_Space *p_global_space =
+        (Global_Space*)p_serialized_request->p_data;
+
+    if (!p_this_process->process_valueA__i16) {
+        Quantity__u32 quantity_of__bytes_read = sizeof(
+                p_this_process->process_valueA__i16);
+        if (PLATFORM_read_file(
+                get_p_PLATFORM_file_system_context_from__game(p_game), 
+                (u8*)&p_this_process->process_valueA__i16, 
+                &quantity_of__bytes_read, 
+                1, 
+                p_serialized_request->p_file_handler)) {
+            debug_error("m_process__deserialize_containers_in__global_space, failed to read container quantity.");
+            fail_process(p_this_process);
+        }
+    }
+
+    if (!p_this_process->process_valueA__i16--) {
+        complete_process(p_this_process);
+        return;
+    }
+
+    Process *p_process =
+        run_process(
+                get_p_process_manager_from__game(p_game), 
+                m_process__deserialize_inventory, 
+                PROCESS_FLAGS__NONE);
+
+    if (!p_process) {
+        debug_error("m_process__deserialize_containers_in__global_space, failed to dispatch container deserialization process.");
+        // TODO: do a retry and timeout instead
+        fail_process(p_this_process);
+        return;
+    }
+
+    p_process->p_process_data =
+        p_serialized_request;
+    enqueue_process(
+            p_this_process, 
+            p_process);
 }
 
 typedef enum IO_Global_Space_State {

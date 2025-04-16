@@ -222,9 +222,16 @@ Serialization_Header__UUID_64
 Serialization_Header *get_next_available__random_allocation_in__contiguous_array(
         Serialization_Header *p_serialization_headers,
         Quantity__u32 length_of__p_serialization_headers,
-        Repeatable_Psuedo_Random *p_randomizer) {
+        Repeatable_Psuedo_Random *p_randomizer,
+        Identifier__u32 uuid__branding__u32) {
     Identifier__u32 uuid__u32 =
-        get_next_available__random_uuid_in__contiguous_array(
+        (uuid__branding__u32)
+        ? get_next_available__random_branded_uuid_in__contiguous_array(
+            p_serialization_headers, 
+            length_of__p_serialization_headers, 
+            p_randomizer,
+            uuid__branding__u32)
+        : get_next_available__random_uuid_in__contiguous_array(
             p_serialization_headers, 
             length_of__p_serialization_headers, 
             p_randomizer);
@@ -246,9 +253,16 @@ Serialization_Header__UUID_64
 *get_next_available__random_allocation_in__contiguous_array__uuid_64(
         Serialization_Header__UUID_64 *p_serialization_headers,
         Quantity__u32 length_of__p_serialization_headers,
-        Repeatable_Psuedo_Random *p_randomizer) {
+        Repeatable_Psuedo_Random *p_randomizer,
+        Identifier__u64 uuid__branding__u64) {
     Identifier__u64 uuid__u64 =
-        get_next_available__random_uuid_in__contiguous_array__uuid_64(
+        (uuid__branding__u64)
+        ? get_next_available__random_branded_uuid_in__contiguous_array__uuid_64(
+            p_serialization_headers, 
+            length_of__p_serialization_headers, 
+            p_randomizer,
+            uuid__branding__u64)
+        : get_next_available__random_uuid_in__contiguous_array__uuid_64(
             p_serialization_headers, 
             length_of__p_serialization_headers, 
             p_randomizer);

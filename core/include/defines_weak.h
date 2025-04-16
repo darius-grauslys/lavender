@@ -117,10 +117,12 @@ typedef enum Entity_Kind {
 
 typedef struct Entity_t Entity;
 typedef struct Game_t Game;
+typedef struct World_t World;
 
-typedef void (*m_Entity_Dispose_Handler)(
+typedef void (*m_Entity_Handler)(
         Entity *p_entity_self, 
-        Game *p_game);
+        Game *p_game,
+        World *p_world);
 
 ///
 /// SECTION_input
@@ -222,16 +224,15 @@ enum Sprite_Animation_Kind {
 };
 #endif
 
-enum Sprite_Allocation_Kind {
-    Sprite_Allocation_Kind__None,
-    Sprite_Allocation_Kind__Entity,
-    Sprite_Allocation_Kind__Item,
-    Sprite_Allocation_Kind__UI,
-    Sprite_Allocation_Kind__Graphics_Pointer,
-    Sprite_Allocation_Kind__Unknown
-};
+#include "types/implemented/sprite_kind.h"
+#ifndef DEFINE_SPRITE_KIND
+typedef enum Sprite_Kind {
+    Sprite_Kind__None = 0,
+    Sprite_Kind__Unknown
+} Sprite_Kind;
+#endif
 
-typedef struct Sprite_Wrapper_t Sprite_Wrapper;
+typedef struct Sprite_t Sprite;
 typedef struct Sprite_Allocation_Specification_t 
                Sprite_Allocation_Specification;
 typedef struct Texture_Allocation_Specification_t
@@ -416,6 +417,28 @@ typedef void (*f_Tile_Render_Kernel)(
 ///
 /// SECTION_core
 ///
+
+///
+/// This is mainly used to perform UUID branding, but some types
+/// listed here do not undergo uuid branding.
+///
+typedef enum Lavender_Type {
+    Lavender_Type__None = 0,
+    Lavender_Type__Aliased_Texture,
+    Lavender_Type__Sprite,
+    Lavender_Type__Hitbox,
+    Lavender_Type__UI_Element,
+    Lavender_Type__Entity,
+    Lavender_Type__Game_Action,
+    Lavender_Type__Inventory,
+
+    // no uuid branding:
+    Lavender_Type__Chunk,
+    Lavender_Type__Collision_Node,
+    Lavender_Type__Global_Space,
+
+    Lavender_Type__Unknown = 0b111111 // not expecting more than 63 types.
+} Lavneder_Type;
 
 typedef struct Game_t Game;
 typedef struct Game_Action_t Game_Action;

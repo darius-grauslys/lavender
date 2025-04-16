@@ -1,5 +1,6 @@
 #include "rendering/aliased_texture.h"
 #include "defines.h"
+#include "serialization/serialization_header.h"
 
 void initialize_aliased_texture(
         Aliased_Texture *p_aliased_texture) {
@@ -8,6 +9,9 @@ void initialize_aliased_texture(
             ->name_of__texture__c_str,
             0,
             sizeof(p_aliased_texture->name_of__texture__c_str));
+    initialize_serialization_header_for__deallocated_struct(
+            (Serialization_Header*)p_aliased_texture, 
+            sizeof(Aliased_Texture));
 }
 
 void set_c_str_of__aliased_texture(

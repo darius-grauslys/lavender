@@ -82,11 +82,11 @@ GL_Sprite *GL_get_p_sprite_from__PLATFORM_sprite(
         ;
 }
 
-GL_Sprite *GL_get_p_sprite_from__sprite_wrapper(
-        Sprite_Wrapper *p_sprite_wrapper) {
+GL_Sprite *GL_get_p_sprite_from__sprite(
+        Sprite *p_sprite) {
     return (GL_Sprite*)
-        p_sprite_wrapper
-        ->p_sprite
+        p_sprite
+        ->p_PLATFORM_sprite
         ->p_SDL_sprite
         ;
 }
@@ -94,15 +94,15 @@ GL_Sprite *GL_get_p_sprite_from__sprite_wrapper(
 void GL_render_sprite(
         Gfx_Context *p_gfx_context,
         Graphics_Window *p_gfx_window,
-        Sprite_Wrapper *p_sprite_wrapper,
+        Sprite *p_sprite,
         Vector__3i32F4 position__3i32F4) {
     GL_Gfx_Sub_Context *p_GL_gfx_sub_context =
         GL_get_p_gfx_sub_context_from__PLATFORM_gfx_context(
                 get_p_PLATFORM_gfx_context_from__gfx_context(
                     p_gfx_context));
     PLATFORM_Sprite *p_PLATFORM_sprite =
-        p_sprite_wrapper
-        ->p_sprite
+        p_sprite
+        ->p_PLATFORM_sprite
         ;
     GL_Sprite *p_GL_sprite =
         (GL_Sprite*)
@@ -165,10 +165,10 @@ void GL_render_sprite(
             ->p_PLATFORM_texture);
     glUniform2f(
             p_GL_sprite->location_of__sprite_frame_row_col,
-            p_sprite_wrapper->frame__current
+            p_sprite->sprite__index_of__frame
             % p_PLATFORM_sprite->quantity_of__sprite_frame__columns, 
             (u8)(p_PLATFORM_sprite->quantity_of__sprite_frame__rows-1)
-            - (u8)((p_sprite_wrapper->frame__current
+            - (u8)((p_sprite->sprite__index_of__frame
                 / p_PLATFORM_sprite->quantity_of__sprite_frame__columns)
             ) % p_PLATFORM_sprite->quantity_of__sprite_frame__rows
             );
@@ -178,7 +178,7 @@ void GL_render_sprite(
             p_PLATFORM_sprite->sprite_frame__height);
     glUniform2f(
             p_GL_sprite->location_of__sprite_flip,
-            p_sprite_wrapper->direction & DIRECTION__WEST
+            p_sprite->direction & DIRECTION__WEST
             ? 1.0
             : 0.0, 
             0.0);

@@ -36,7 +36,7 @@ void SDL_initialize_sprite_as__deallocated(
 void PLATFORM_render_sprite(
         Gfx_Context *p_gfx_context,
         Graphics_Window *p_gfx_window,
-        Sprite_Wrapper *p_sprite_wrapper,
+        Sprite *p_sprite,
         Vector__3i32F4 position_of__sprite__3i32F4) {
     f_SDL_Render_Sprite f_SDL_render_sprite = 
         p_gfx_context
@@ -53,6 +53,6 @@ void PLATFORM_render_sprite(
     f_SDL_render_sprite(
             p_gfx_context,
             p_gfx_window,
-            p_sprite_wrapper,
+            p_sprite,
             position_of__sprite__3i32F4);
 }

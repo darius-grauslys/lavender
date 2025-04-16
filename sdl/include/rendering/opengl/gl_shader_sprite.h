@@ -9,6 +9,6 @@ void initialize_shader_2d_as__shader_sprite(
 
 void m_SDL_render_sprite_with__gl(
         PLATFORM_Gfx_Context *p_PLATFORM_gfx_context,
-        Sprite_Wrapper *p_sprite_wrapper);
+        Sprite *p_sprite);
 
 #endif

@@ -6,7 +6,16 @@
 #define DEFINE_ENTITY_FUNCTIONS
 
 typedef struct Entity_Functions_t {
-    m_Entity_Dispose_Handler        m_entity_dispose_handler;
+    /// 
+    /// NOTE: Lavender will not compile if these definitions are missing.
+    ///
+    m_Entity_Handler    m_entity_dispose_handler;
+    m_Entity_Handler    m_entity_update_handler;
+
+    ///
+    /// Extend the struct here:
+    ///
+
 } Entity_Functions;
 
 #endif

@@ -30,6 +30,7 @@ Entity *allocate_entity_in__entity_manager(
 ///
 void release_entity_from__entity_manager(
         Game *p_game,
+        World *p_world,
         Entity_Manager *p_manager, 
         Entity *p_entity);
 

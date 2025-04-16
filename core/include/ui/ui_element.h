@@ -2,9 +2,11 @@
 #define UI_ELEMENT_H
 
 #include "collisions/hitbox_aabb.h"
+#include "collisions/hitbox_aabb_manager.h"
 #include "defines_weak.h"
 #include "numerics.h"
 #include "platform.h"
+#include "serialization/identifiers.h"
 #include "vectors.h"
 #include <defines.h>
 
@@ -14,25 +16,23 @@ void initialize_ui_element(
         UI_Element *p_ui_element__child,
         UI_Element *p_ui_element__next,
         enum UI_Element_Kind kind_of_ui_element,
-        UI_Flags__u16 ui_flags,
-        Quantity__u16 width__u16,
-        Quantity__u16 height__u16,
-        Vector__3i32 position__3i32);
+        UI_Flags__u16 ui_flags);
 
 void m_ui_element__dispose_handler__default(
         UI_Element *p_this_ui_element,
         Game *p_game);
 
 void set_positions_of__ui_elements_in__succession(
+        Hitbox_AABB_Manager *p_hitbox_aabb_manager,
         UI_Element *p_ui_element__succession_collection,
         Vector__3i32 starting_position__3i32,
         i32 x__stride,
         Quantity__u32 quantity_of__elements_per_row,
         i32 y__stride);
 
-void set_ui_element__PLATFORM_sprite(
+void set_ui_element__sprite(
         UI_Element *p_ui_element,
-        PLATFORM_Sprite *p_PLATFORM_sprite);
+        Sprite *p_sprite);
 
 void release_ui_element__PLATFORM_sprite(
         Gfx_Context *p_gfx_context,
@@ -43,6 +43,7 @@ void set_ui_tile_span_of__ui_element(
         UI_Tile_Span *p_ui_tile_span);
 
 const UI_Tile_Span *get_ui_tile_span_of__ui_element(
+        Hitbox_AABB_Manager *p_hitbox_aabb_manager,
         UI_Element *p_ui_element,
         Quantity__u32 *p_width_in__tiles,
         Quantity__u32 *p_height_in__tiles,
@@ -50,6 +51,7 @@ const UI_Tile_Span *get_ui_tile_span_of__ui_element(
         Index__u32 *p_index_y__u32);
 
 void set_position_3i32_of__ui_element(
+        Hitbox_AABB_Manager *p_hitbox_aabb_manager,
         UI_Element *p_ui_element,
         Vector__3i32 position__3i32);
 
@@ -58,50 +60,98 @@ void m_ui_element__render_handler_for__sprite__default(
         Game *p_game,
         Graphics_Window *p_gfx_window);
 
+bool does_ui_element_have__sprite(
+        Sprite_Manager *p_sprite_manager,
+        UI_Element *p_ui_element);
+
+static inline
+Hitbox_AABB *get_p_hitbox_aabb_of__ui_element(
+        Hitbox_AABB_Manager *p_hitbox_aabb_manager,
+        UI_Element *p_ui_element) {
+    return get_p_hitbox_aabb_by__uuid_u32_from__hitbox_aabb_manager(
+            p_hitbox_aabb_manager, 
+            GET_UUID_P(p_ui_element));
+}
+
+static inline
+void clamp_p_vector_3i32_to__ui_element(
+        Hitbox_AABB_Manager *p_hitbox_aabb_manager,
+        UI_Element *p_ui_element,
+        Vector__3i32 *p_position__3i32) {
+    clamp_p_vector_3i32_to__hitbox(
+            get_p_hitbox_aabb_of__ui_element(
+                p_hitbox_aabb_manager, 
+                p_ui_element), 
+            p_position__3i32);
+}
+
 static inline 
 Signed_Index__i32 get_x_i32_from__p_ui_element(
+        Hitbox_AABB_Manager *p_hitbox_aabb_manager,
         UI_Element *p_ui_element) {
-    return get_x_i32_from__hitbox(&p_ui_element->ui_bounding_box__aabb);
+    return get_x_i32_from__hitbox(
+            get_p_hitbox_aabb_of__ui_element(
+                p_hitbox_aabb_manager, 
+                p_ui_element));
 }
 static inline 
 Signed_Index__i32 get_y_i32_from__p_ui_element(
+        Hitbox_AABB_Manager *p_hitbox_aabb_manager,
         UI_Element *p_ui_element) {
-    return get_y_i32_from__hitbox(&p_ui_element->ui_bounding_box__aabb);
+    return get_y_i32_from__hitbox(
+            get_p_hitbox_aabb_of__ui_element(
+                p_hitbox_aabb_manager, 
+                p_ui_element));
 }
 static inline 
 Signed_Index__i32 get_z_i32_from__p_ui_element(
+        Hitbox_AABB_Manager *p_hitbox_aabb_manager,
         UI_Element *p_ui_element) {
-    return get_z_i32_from__hitbox(&p_ui_element->ui_bounding_box__aabb);
+    return get_z_i32_from__hitbox(
+            get_p_hitbox_aabb_of__ui_element(
+                p_hitbox_aabb_manager, 
+                p_ui_element));
 }
 
 static inline 
 Vector__3i32 get_position_3i32_from__p_ui_element(
+        Hitbox_AABB_Manager *p_hitbox_aabb_manager,
         UI_Element *p_ui_element) {
     return vector_3i32F4_to__vector_3i32(
-            p_ui_element
-            ->ui_bounding_box__aabb
-            .position__3i32F4);
+            get_position_3i32F4_of__hitbox_aabb(
+                get_p_hitbox_aabb_of__ui_element(
+                    p_hitbox_aabb_manager, 
+                    p_ui_element)));
 }
 
 static inline 
 Vector__3i32F4 get_position_3i32F4_from__p_ui_element(
+        Hitbox_AABB_Manager *p_hitbox_aabb_manager,
         UI_Element *p_ui_element) {
-    return p_ui_element
-            ->ui_bounding_box__aabb
-            .position__3i32F4
-            ;
+    return get_position_3i32F4_of__hitbox_aabb(
+            get_p_hitbox_aabb_of__ui_element(
+                p_hitbox_aabb_manager, 
+                p_ui_element));
 }
 
 static inline
 Quantity__u32 get_width_from__p_ui_element(
+        Hitbox_AABB_Manager *p_hitbox_aabb_manager,
         UI_Element *p_ui_element) {
-    return p_ui_element->ui_bounding_box__aabb.width__quantity_u32;
+    return get_width_u32_of__hitbox_aabb(
+            get_p_hitbox_aabb_of__ui_element(
+                p_hitbox_aabb_manager, 
+                p_ui_element));
 } 
 
 static inline
 Quantity__u32 get_height_from__p_ui_element(
+        Hitbox_AABB_Manager *p_hitbox_aabb_manager,
         UI_Element *p_ui_element) {
-    return p_ui_element->ui_bounding_box__aabb.height__quantity_u32;
+    return get_height_u32_of__hitbox_aabb(
+            get_p_hitbox_aabb_of__ui_element(
+                p_hitbox_aabb_manager, 
+                p_ui_element));
 }
 
 ///
@@ -441,29 +491,33 @@ void set_ui_element__render_handler(
 
 static inline
 void set_ui_element__size(
+        Hitbox_AABB_Manager *p_hitbox_aabb_manager,
         UI_Element *p_ui_element,
         Quantity__u32 width, Quantity__u32 height) {
-    p_ui_element->ui_bounding_box__aabb
-        .width__quantity_u32 = width;
-    p_ui_element->ui_bounding_box__aabb
-        .height__quantity_u32 = height;
+    set_size_of__hitbox_aabb(
+            get_p_hitbox_aabb_of__ui_element(
+                p_hitbox_aabb_manager, 
+                p_ui_element), 
+            width, 
+            height);
 }
 
 static inline
 void set_ui_element__hitbox(
+        Hitbox_AABB_Manager *p_hitbox_aabb_manager,
         UI_Element *p_ui_element,
         Quantity__u32 width, 
         Quantity__u32 height,
         Vector__3i32 position__3i32) {
-    set_position_3i32_of__ui_element(p_ui_element, position__3i32);
-    set_ui_element__size(p_ui_element, width, height);
-}
-
-static inline
-void set_ui_element__p_data(
-        UI_Element *p_ui_element,
-        void *p_ui_data) {
-    p_ui_element->p_ui_data = p_ui_data;
+    set_position_3i32_of__ui_element(
+            p_hitbox_aabb_manager,
+            p_ui_element, 
+            position__3i32);
+    set_ui_element__size(
+            p_hitbox_aabb_manager,
+            p_ui_element, 
+            width, 
+            height);
 }
 
 static inline
@@ -500,25 +554,6 @@ static inline
 bool does_ui_element_have__held_handler(
         UI_Element *p_ui_element) {
     return (bool)p_ui_element->m_ui_held_handler;
-}
-
-static inline
-bool does_ui_element_have__PLATFORM_sprite(
-        UI_Element *p_ui_element){
-    return 
-        is_ui_element__using_sprite(p_ui_element)
-        && (bool)p_ui_element
-        ->ui_sprite_wrapper
-        .p_sprite;
-}
-
-static inline
-void clamp_p_vector_3i32_to__ui_element(
-        UI_Element *p_ui_element,
-        Vector__3i32 *p_position__3i32) {
-    clamp_p_vector_3i32_to__hitbox(
-            &p_ui_element->ui_bounding_box__aabb, 
-            p_position__3i32);
 }
 
 static inline

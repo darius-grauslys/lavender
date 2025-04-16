@@ -71,7 +71,8 @@ Entity *allocate_entity_in__entity_manager(
         (Entity*)get_next_available__random_allocation_in__contiguous_array(
                 (Serialization_Header*)p_entity_manager->entities, 
                 ENTITY_MAXIMUM_QUANTITY_OF,
-                &p_entity_manager->randomizer);
+                &p_entity_manager->randomizer,
+                Lavender_Type__Entity);
     
     if (!p_entity) {
         debug_error("allocate__entity, failed to allocate new entity.");
@@ -101,6 +102,7 @@ Entity *allocate_entity_in__entity_manager(
 
 void release_entity_from__entity_manager(
         Game *p_game,
+        World *p_world,
         Entity_Manager *p_entity_manager, 
         Entity *p_entity) {
     if (p_entity_manager->entity_count__quantity_u32 > 0)
@@ -108,7 +110,8 @@ void release_entity_from__entity_manager(
     if (p_entity->entity_functions.m_entity_dispose_handler) {
         p_entity->entity_functions.m_entity_dispose_handler(
                 p_entity,
-                p_game);
+                p_game,
+                p_world);
     }
     initialize_entity(
             p_entity,

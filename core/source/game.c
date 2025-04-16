@@ -13,7 +13,6 @@
 #include "platform_defines.h"
 #include "process/process_manager.h"
 #include "rendering/aliased_texture_manager.h"
-#include "rendering/sprite_gfx_allocator_manager.h"
 #include "scene/implemented/scene_registrar.h"
 #include "scene/scene.h"
 #include "scene/scene_manager.h"
@@ -22,7 +21,6 @@
 #include "sort/sort_list/sort_list_manager.h"
 #include "vectors.h"
 #include "world/local_space_manager.h"
-#include "world/tile_logic_manager.h"
 #include <game.h>
 #include <entity/entity.h>
 #include <entity/entity_manager.h>
@@ -79,11 +77,6 @@ void initialize_game(
             get_p_item_manager_from__game(p_game));
     register_core_items_into__item_manager(
             get_p_item_manager_from__game(p_game));
-
-    initialize_sprite_gfx_allocator_manager(
-            get_p_sprite_gfx_allocation_manager_from__game(p_game));
-    register_sprite_gfx_allocators_in__sprite_gfx_allocator_manager(
-            get_p_sprite_gfx_allocation_manager_from__game(p_game));
 
     initialize_aliased_texture_manager(
             get_p_aliased_texture_manager_from__game(p_game));

@@ -76,10 +76,25 @@ Identifier__u32 get_next_available__random_uuid_in__contiguous_array(
             uuid);
 }
 
+static inline
+Identifier__u32 get_next_available__random_branded_uuid_in__contiguous_array(
+        Serialization_Header *p_serialization_headers,
+        Quantity__u32 length_of__p_serialization_headers,
+        Repeatable_Psuedo_Random *p_randomizer,
+        Identifier__u32 uuid__branding__u32) {
+    Identifier__u32 uuid=
+        BRAND_UUID(get_random__uuid_u32(p_randomizer), uuid__branding__u32);
+    return get_next_available__uuid_in__contiguous_array(
+            p_serialization_headers, 
+            length_of__p_serialization_headers, 
+            uuid);
+}
+
 Serialization_Header *get_next_available__random_allocation_in__contiguous_array(
         Serialization_Header *p_serialization_headers,
         Quantity__u32 length_of__p_serialization_headers,
-        Repeatable_Psuedo_Random *p_randomizer);
+        Repeatable_Psuedo_Random *p_randomizer,
+        Identifier__u32 uuid__branding__u32);
 
 static inline
 Identifier__u64 get_next_available__random_uuid_in__contiguous_array__uuid_64(
@@ -94,11 +109,29 @@ Identifier__u64 get_next_available__random_uuid_in__contiguous_array__uuid_64(
             uuid);
 }
 
+static inline
+Identifier__u64 
+get_next_available__random_branded_uuid_in__contiguous_array__uuid_64(
+        Serialization_Header__UUID_64 *p_serialization_headers,
+        Quantity__u32 length_of__p_serialization_headers,
+        Repeatable_Psuedo_Random *p_randomizer,
+        Identifier__u64 uuid__branding__u64) {
+    Identifier__u64 uuid=
+        BRAND_UUID__64(
+                get_random__uuid_u64(p_randomizer),
+                uuid__branding__u64);
+    return get_next_available__uuid_in__contiguous_array__uuid_64(
+            p_serialization_headers, 
+            length_of__p_serialization_headers, 
+            uuid);
+}
+
 Serialization_Header__UUID_64
 *get_next_available__random_allocation_in__contiguous_array__uuid_64(
         Serialization_Header__UUID_64 *p_serialization_headers,
         Quantity__u32 length_of__p_serialization_headers,
-        Repeatable_Psuedo_Random *p_randomizer);
+        Repeatable_Psuedo_Random *p_randomizer,
+        Identifier__u64 uuid__branding__u64);
 
 static inline
 bool has_uuid_in__contiguous_array(

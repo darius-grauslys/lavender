@@ -4,6 +4,12 @@
 #include "defines_weak.h"
 #include <defines.h>
 
+#define BRAND_UUID(uuid, type)\
+    (type | (uuid & (~(Lavender_Type__Unknown << 25))))
+
+#define BRAND_UUID__64(uuid, type)\
+    (type | (uuid & (~((u64)Lavender_Type__Unknown << (25+32)))))
+
 #define GET_UUID(serialized_header)\
     (((Serialization_Header*)&serialized_header)->uuid)
 #define GET_UUID_P(p_serialized_header)\

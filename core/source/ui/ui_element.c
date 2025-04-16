@@ -1,10 +1,14 @@
 #include "collisions/hitbox_aabb.h"
+#include "collisions/hitbox_aabb_manager.h"
 #include "debug/debug.h"
 #include "defines.h"
 #include "defines_weak.h"
 #include "platform.h"
 #include "platform_defaults.h"
+#include "rendering/gfx_context.h"
 #include "rendering/sprite.h"
+#include "rendering/sprite_manager.h"
+#include "serialization/serialization_header.h"
 #include "ui/ui_button.h"
 #include "ui/ui_draggable.h"
 #include "ui/ui_slider.h"
@@ -20,25 +24,16 @@ void initialize_ui_element(
         UI_Element *p_ui_element__child,
         UI_Element *p_ui_element__next,
         enum UI_Element_Kind kind_of_ui_element,
-        UI_Flags__u16 ui_flags,
-        Quantity__u16 width__u16,
-        Quantity__u16 height__u16,
-        Vector__3i32 position__3i32) {
-    p_ui_element->p_ui_data = 0;
+        UI_Flags__u16 ui_flags) {
+    initialize_serialization_header_for__deallocated_struct(
+            (Serialization_Header*)p_ui_element,
+            sizeof(UI_Element));
     p_ui_element->p_parent = p_ui_element__parent;
     p_ui_element->p_child = p_ui_element__child;
     p_ui_element->p_next = p_ui_element__next;
-    p_ui_element->ui_identifier = 
-        IDENTIFIER__UNKNOWN__u16;
     p_ui_element->the_kind_of_ui_element__this_is =
         kind_of_ui_element;
     p_ui_element->ui_flags = ui_flags;
-    initialize_hitbox_as__allocated(
-            &p_ui_element->ui_bounding_box__aabb, 
-            IDENTIFIER__UNKNOWN__u32,
-            width__u16, 
-            height__u16, 
-            vector_3i32_to__vector_3i32F4(position__3i32));
     p_ui_element->m_ui_clicked_handler = 0;
     p_ui_element->m_ui_dragged_handler = 0;
     p_ui_element->m_ui_receive_drop_handler = 0;
@@ -46,13 +41,6 @@ void initialize_ui_element(
     p_ui_element->m_ui_render_handler = 0;
     p_ui_element->m_ui_dispose_handler = 
         m_ui_element__dispose_handler__default;
-    initialize_sprite_wrapper(
-            &p_ui_element
-            ->ui_sprite_wrapper, 
-            TEXTURE_FLAGS__NONE);
-    p_ui_element->
-        ui_sprite_wrapper
-        .p_sprite = 0;
 }
 
 void m_ui_element__dispose_handler__default(
@@ -68,15 +56,20 @@ void m_ui_element__dispose_handler__default(
                     p_game);
         }
     }
-    if (does_ui_element_have__PLATFORM_sprite(
+    if (does_ui_element_have__sprite(
+                get_p_sprite_manager_from__game(p_game),
                 p_this_ui_element)) {
-        PLATFORM_release_sprite(
-                get_p_gfx_context_from__game(p_game), 
-                p_this_ui_element->ui_sprite_wrapper.p_sprite); 
+        Sprite *p_sprite =
+            get_p_sprite_by__uuid_from__sprite_manager(
+                    get_p_sprite_manager_from__game(p_game), 
+                    GET_UUID_P(p_this_ui_element));
+        if (p_sprite) {
+            release_sprite_from__sprite_manager(
+                    get_p_gfx_context_from__game(p_game), 
+                    get_p_sprite_manager_from__game(p_game), 
+                    p_sprite);
+        }
     }
-    p_this_ui_element->
-        ui_sprite_wrapper
-        .p_sprite = 0;
     p_this_ui_element->p_parent = 0;
     p_this_ui_element->p_child = 0;
     p_this_ui_element->p_next = 0;
@@ -104,6 +97,7 @@ void m_ui_element__dispose_handler__default_collection(
 }
 
 void set_positions_of__ui_elements_in__succession(
+        Hitbox_AABB_Manager *p_hitbox_aabb_manager,
         UI_Element *p_ui_element__succession_collection,
         Vector__3i32 starting_position__3i32,
         i32 x__stride,
@@ -114,6 +108,7 @@ void set_positions_of__ui_elements_in__succession(
         starting_position__3i32;
     do {
         set_position_3i32_of__ui_element(
+                p_hitbox_aabb_manager,
                 p_ui_element__succession_collection, 
                 current_position__3i32);
         if (++index_of__current_ui_element
@@ -132,64 +127,62 @@ void set_positions_of__ui_elements_in__succession(
 }
 
 void set_position_3i32_of__ui_element(
+        Hitbox_AABB_Manager *p_hitbox_aabb_manager,
         UI_Element *p_ui_element,
         Vector__3i32 position__3i32) {
     Vector__3i32 vector_of__child_relative_to__parent =
         VECTOR__3i32__0_0_0;
+    Hitbox_AABB *p_hitbox_aabb =
+        get_p_hitbox_aabb_of__ui_element(
+                p_hitbox_aabb_manager, 
+                p_ui_element);
     if (does_ui_element_have__child(p_ui_element)) {
         vector_of__child_relative_to__parent =
             subtract_vectors__3i32(
                 position__3i32, 
                 vector_3i32F4_to__vector_3i32(
-                    p_ui_element
-                    ->ui_bounding_box__aabb
-                    .position__3i32F4));
+                    get_position_3i32F4_of__hitbox_aabb(
+                        p_hitbox_aabb)));
     }
-    p_ui_element->ui_bounding_box__aabb
-        .position__3i32F4 = 
-            vector_3i32_to__vector_3i32F4(position__3i32);
+    set_hitbox__position_with__3i32(
+            p_hitbox_aabb, 
+            position__3i32);
     if (does_ui_element_have__child(p_ui_element)) {
         set_position_3i32_of__ui_element(
+                p_hitbox_aabb_manager,
                 p_ui_element->p_child,
                 add_vectors__3i32(
                     vector_of__child_relative_to__parent, 
-                    get_position_3i32_from__p_ui_element(p_ui_element)));
+                    get_position_3i32_from__p_ui_element(
+                        p_hitbox_aabb_manager,
+                        p_ui_element)));
     }
 }
 
-void set_ui_element__PLATFORM_sprite(
-        UI_Element *p_ui_element,
-        PLATFORM_Sprite *p_PLATFORM_sprite) {
-#ifndef NDEBUG
-    if(!p_PLATFORM_sprite) {
-        debug_error("set_ui_element__PLATFORM_sprite, p_PLATFORM_sprite is null.");
-        debug_warning("Do not dispose sprites this way. Use release_ui_element__PLATFORM_sprite instead.");
-        return;
-    }
-#endif
-    set_ui_element_as__using_sprite(
-            p_ui_element);
-    p_ui_element->ui_sprite_wrapper.p_sprite=
-        p_PLATFORM_sprite;
-}
-
-void release_ui_element__PLATFORM_sprite(
+void release_ui_element__sprite(
         Gfx_Context *p_gfx_context,
         UI_Element *p_ui_element) {
-    if (!does_ui_element_have__PLATFORM_sprite(p_ui_element)) {
 #ifndef NDEBUG
+    if (!does_ui_element_have__sprite(
+                get_p_sprite_manager_from__gfx_context(
+                    p_gfx_context),
+                p_ui_element)) {
         debug_error("release_ui_element__PLATFORM_sprite, p_PLATFORM_sprite is null.");
-#endif
         return;
     }
+#endif
 
-    PLATFORM_release_sprite(
-            p_gfx_context,
-            p_ui_element->ui_sprite_wrapper.p_sprite);
+    Sprite *p_sprite =
+        get_p_sprite_by__uuid_from__sprite_manager(
+                get_p_sprite_manager_from__gfx_context(p_gfx_context), 
+                GET_UUID_P(p_ui_element));
 
-    p_ui_element
-        ->ui_sprite_wrapper
-        .p_sprite = 0;
+    if (p_sprite) {
+        release_sprite_from__sprite_manager(
+                p_gfx_context, 
+                get_p_sprite_manager_from__gfx_context(p_gfx_context), 
+                p_sprite);
+    }
 }
 
 void set_ui_tile_span_of__ui_element(
@@ -202,6 +195,7 @@ void set_ui_tile_span_of__ui_element(
 }
 
 const UI_Tile_Span *get_ui_tile_span_of__ui_element(
+        Hitbox_AABB_Manager *p_hitbox_aabb_manager,
         UI_Element *p_ui_element,
         Quantity__u32 *p_width_in__tiles,
         Quantity__u32 *p_height_in__tiles,
@@ -216,28 +210,33 @@ const UI_Tile_Span *get_ui_tile_span_of__ui_element(
         return 0;
     }
 
+    Hitbox_AABB *p_hitbox_aabb =
+        get_p_hitbox_aabb_by__uuid_u32_from__hitbox_aabb_manager(
+                p_hitbox_aabb_manager, 
+                GET_UUID_P(p_ui_element));
+
+    if (!p_hitbox_aabb) {
+        return 0;
+    }
+
     *p_width_in__tiles = 
-        p_ui_element
-        ->ui_bounding_box__aabb
-        .width__quantity_u32
+        p_hitbox_aabb
+        ->width__quantity_u32
         / UI_TILE__WIDTH_IN__PIXELS;
     *p_height_in__tiles =
-        p_ui_element
-        ->ui_bounding_box__aabb
-        .height__quantity_u32
+        p_hitbox_aabb
+        ->height__quantity_u32
         / UI_TILE__HEIGHT_IN__PIXELS;
 
     *p_index_x__u32 = 
-        (p_ui_element
-        ->ui_bounding_box__aabb
-        .position__3i32F4
+        (p_hitbox_aabb
+        ->position__3i32F4
         .x__i32F4
         / UI_TILE__WIDTH_IN__PIXELS)
         - (*p_width_in__tiles >> 1);
     *p_index_y__u32 =
-        (p_ui_element
-        ->ui_bounding_box__aabb
-        .position__3i32F4
+        (p_hitbox_aabb
+        ->position__3i32F4
         .y__i32F4
         / UI_TILE__HEIGHT_IN__PIXELS)
         - (*p_height_in__tiles >> 1);
@@ -246,6 +245,7 @@ const UI_Tile_Span *get_ui_tile_span_of__ui_element(
 }
 
 void m_ui_render__element__tile_span(
+        Hitbox_AABB_Manager *p_hitbox_aabb_manager,
         UI_Element *p_ui_element,
         PLATFORM_Graphics_Window *p_PLATFORM_gfx_window,
         Game *p_game) {
@@ -255,6 +255,7 @@ void m_ui_render__element__tile_span(
     Index__u32 index_y__u32;
     const UI_Tile_Span *p_const_ui_tile_span =
         get_ui_tile_span_of__ui_element(
+                p_hitbox_aabb_manager,
                 p_ui_element,
                 &width_of__ui_tile_span,
                 &height_of__ui_tile_span,
@@ -264,18 +265,10 @@ void m_ui_render__element__tile_span(
     debug_error("m_ui_render__element__tile_span, impl");
 }
 
-void m_ui_element__render_handler_for__sprite__default(
-        UI_Element *p_this_ui_element,
-        Game *p_game,
-        Graphics_Window *p_gfx_window) {
-    if (!p_this_ui_element->ui_sprite_wrapper.p_sprite) {
-        return;
-    }
-    PLATFORM_render_sprite(
-            get_p_gfx_context_from__game(p_game),
-            p_gfx_window,
-            &p_this_ui_element
-            ->ui_sprite_wrapper, 
-            get_position_3i32F4_from__p_ui_element(
-                p_this_ui_element));
+bool does_ui_element_have__sprite(
+        Sprite_Manager *p_sprite_manager,
+        UI_Element *p_ui_element) {
+    return get_p_sprite_by__uuid_from__sprite_manager(
+            p_sprite_manager, 
+            GET_UUID_P(p_ui_element));
 }

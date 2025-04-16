@@ -25,6 +25,12 @@ bool is_entity__allocated(
 }
 
 static inline
+bool is_entity__enabled(
+        Entity *p_entity) {
+    return p_entity->entity_flags & ENTITY_FLAG__IS_ENABLED;
+}
+
+static inline
 void set_entity_as__enabled(Entity *p_entity) {
     p_entity->entity_flags |=
         ENTITY_FLAG__IS_ENABLED;

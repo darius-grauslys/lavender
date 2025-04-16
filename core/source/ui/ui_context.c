@@ -134,7 +134,7 @@ Graphics_Window *open_ui(
     }
 
     Graphics_Window *p_graphics_window =
-        allocate_graphics_window_with__graphics_window_manager(
+        allocate_graphics_window_from__graphics_window_manager(
                 p_gfx_context, 
                 get_p_graphics_window_manager_from__gfx_context(
                     p_gfx_context),

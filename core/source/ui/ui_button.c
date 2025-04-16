@@ -18,10 +18,7 @@ void initialize_ui_element_as__button(
             p_ui_button->p_child,
             p_ui_button->p_next,
             UI_Element_Kind__Button, 
-            p_ui_button->ui_flags,
-            width__u8, 
-            height__u8,
-            position__3i32);
+            p_ui_button->ui_flags);
     set_ui_element__clicked_handler(
             p_ui_button, 
             m_ui_button__clicked_handler);

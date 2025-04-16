@@ -1,5 +1,8 @@
+#include "collisions/hitbox_aabb.h"
+#include "collisions/hitbox_aabb_manager.h"
 #include "defines.h"
 #include "defines_weak.h"
+#include "game.h"
 #include "ui/ui_element.h"
 #include "vectors.h"
 #include <ui/ui_draggable.h>
@@ -16,10 +19,7 @@ void initialize_ui_element_as__draggable(
             p_ui_draggable->p_child,
             p_ui_draggable->p_next,
             UI_Element_Kind__Draggable, 
-            p_ui_draggable->ui_flags, 
-            width__u8, 
-            height__u8,
-            position__3i32);
+            p_ui_draggable->ui_flags);
     set_ui_element__dragged_handler(
             p_ui_draggable, 
             m_ui_dragged_handler);
@@ -33,12 +33,25 @@ void m_ui_draggable__dragged_handler__default(
         Game *p_game) {
     Vector__3i32 position =
         p_game->input.cursor__3i32;
+
+    Hitbox_AABB *p_hitbox_aabb =
+        get_p_hitbox_aabb_by__uuid_u32_from__hitbox_aabb_manager(
+                get_p_hitbox_aabb_manager_from__game(p_game), 
+                GET_UUID_P(p_this_draggable));
+
+    if (!p_hitbox_aabb) {
+        debug_error("m_ui_draggable__dragged_handler__default, missing hitbox component.");
+        set_ui_element_as__disabled(p_this_draggable);
+        return;
+    }
+
     position.x__i32 -= 
-      p_this_draggable->ui_bounding_box__aabb.width__quantity_u32 >> 1;
+        get_width_u32_of__hitbox_aabb(p_hitbox_aabb) >> 1;
     position.y__i32 -= 
-        p_this_draggable->ui_bounding_box__aabb.height__quantity_u32 >> 1;
+        get_height_u32_of__hitbox_aabb(p_hitbox_aabb) >> 1;
 
     set_position_3i32_of__ui_element(
+            get_p_hitbox_aabb_manager_from__game(p_game),
             p_this_draggable, 
             position);
 }
@@ -46,14 +59,14 @@ void m_ui_draggable__dragged_handler__default(
 void m_ui_draggable__dropped_handler__default(
         UI_Element *p_this_draggable,
         Game *p_game) {
-    debug_info("dropped");
     if (!p_this_draggable->p_parent) {
-        debug_info("no parent");
         return;
     }
 
     set_position_3i32_of__ui_element(
+            get_p_hitbox_aabb_manager_from__game(p_game),
             p_this_draggable, 
             get_position_3i32_from__p_ui_element(
+                get_p_hitbox_aabb_manager_from__game(p_game),
                 p_this_draggable->p_parent));
 }

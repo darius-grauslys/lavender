@@ -34,11 +34,12 @@ Game_Action *allocate_game_action_with__this_uuid_from__game_action_manager(
     if (is_identifier_u32__invalid(uuid)) {
         debug_warning("allocate_game_action_from__game_action_manager, invalid uuid. New uuid assigned.");
         uuid =
-            get_next_available__random_uuid_in__contiguous_array(
-                    (Serialization_Header*)p_game_action_manager
-                    ->game_actions, 
-                    MAX_QUANTITY_OF__GAME_ACTIONS, 
-                    &p_game_action_manager->repeatable_pseudo_random);
+            BRAND_UUID(get_next_available__random_uuid_in__contiguous_array(
+                        (Serialization_Header*)p_game_action_manager
+                        ->game_actions, 
+                        MAX_QUANTITY_OF__GAME_ACTIONS, 
+                        &p_game_action_manager->repeatable_pseudo_random),
+                    Lavender_Type__Game_Action);
     }
 
     Game_Action *p_game_action =

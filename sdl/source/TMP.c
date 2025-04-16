@@ -84,7 +84,7 @@ void PLATFORM_release_all__sprites_using__this_graphics_window(
         PLATFORM_Graphics_Window *p_PLATFORM_graphics_window) {}
 
 void PLATFORM_update_sprite_gfx__to_current_frame(
-        Sprite_Wrapper *sprite_wrapper) {}
+        Sprite *sprite) {}
 
 void PLATFORM_update_sprite(
         PLATFORM_Sprite *p_PLATFORM_sprite) {}

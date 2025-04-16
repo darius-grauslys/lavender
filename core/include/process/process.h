@@ -220,16 +220,6 @@ void set_process__sub_state(
 }
 
 static inline
-i32F20 get_process__runtime(Process *p_process) {
-    return p_process->process_runtime__i32F20;
-}
-
-static inline
-i32 get_process_runtime_in__ticks(Process *p_process) {
-    return p_process->process_runtime__i32F20 >> 14;
-}
-
-static inline
 bool is_process__critical(Process *p_process) {
     return p_process->process_flags__u8
          & PROCESS_FLAG__IS_CRITICAL

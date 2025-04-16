@@ -148,7 +148,7 @@ typedef void (*f_SDL_Initialize_Sprite)(
 typedef void (*f_SDL_Render_Sprite)(
         Gfx_Context *p_gfx_context,
         Graphics_Window *p_gfx_window,
-        Sprite_Wrapper *p_sprite_wrapper,
+        Sprite *p_sprite,
         Vector__3i32F4 position_of__sprite__3i32F4);
 
 typedef void (*f_SDL_Release_Sprite)(
@@ -188,7 +188,7 @@ typedef void (*f_SDL_Release_Camera_Data)(
 
 typedef void (*m_SDL_Render_Sprite)(
         PLATFORM_Gfx_Context *p_PLATFORM_gfx_context,
-        Sprite_Wrapper *p_sprite_wrapper);
+        Sprite *p_sprite);
 
 typedef struct PLATFORM_Sprite_t {
     /// 

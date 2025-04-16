@@ -33,10 +33,9 @@ UI_Tile_Map_Manager *get_p_ui_tile_map_manager_from__gfx_context(
 }
 
 static inline
-Sprite_Gfx_Allocation_Manager 
-*get_p_sprite_gfx_allocation_manager_from__gfx_context(
+Sprite_Manager *get_p_sprite_manager_from__gfx_context(
         Gfx_Context *p_gfx_context) {
-    return &p_gfx_context->sprite_gfx_allocation_manager;
+    return &p_gfx_context->sprite_manager;
 }
 
 static inline

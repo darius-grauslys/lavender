@@ -19,11 +19,6 @@ Entity *allocate_entity_into__world(
         enum Entity_Kind the_kind_of_entity,
         Vector__3i32F4 position__3i32F4);
 
-void render_entities_in__world(
-        Gfx_Context *p_gfx_context,
-        Graphics_Window *p_gfx_window,
-        World *p_world);
-
 bool poll_world_for__scrolling(
         Game *p_game,
         World *p_world,
@@ -71,8 +66,8 @@ Entity_Manager *get_p_entity_manager_from__world(World *p_world) {
 }
 
 static inline
-Tile_Logic_Manager *get_p_tile_logic_manager_from__world(World *p_world) {
-    return &p_world->tile_logic_manager;
+Tile_Logic_Table_Manager *get_p_tile_logic_table_manager_from__world(World *p_world) {
+    return &p_world->tile_logic_table_manager;
 }
 
 static inline
