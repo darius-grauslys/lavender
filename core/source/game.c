@@ -13,6 +13,7 @@
 #include "platform_defines.h"
 #include "process/process_manager.h"
 #include "rendering/aliased_texture_manager.h"
+#include "rendering/gfx_context.h"
 #include "scene/implemented/scene_registrar.h"
 #include "scene/scene.h"
 #include "scene/scene_manager.h"
@@ -65,6 +66,8 @@ bool m_game_action_handler__resolve__multiplayer(
 
 void initialize_game(
         Game *p_game) {
+    initialize_gfx_context(
+            get_p_gfx_context_from__game(p_game));
     initialize_scene_manager(get_p_scene_manager_from__game(p_game));
     register_scenes(get_p_scene_manager_from__game(p_game));
     initialize_process_manager(

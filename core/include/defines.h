@@ -2,8 +2,8 @@
 #define DEFINES_H
 
 #include "platform.h"
-#include "platform_defaults.h"
 #include "platform_defines.h"
+#include "platform_defaults.h"
 #include "types/implemented/sprite_animation_kind.h"
 #include "util/bitmap/bitmap.h"
 #include <stdbool.h>
@@ -1966,16 +1966,23 @@ typedef struct Local_Space_t {
     struct Local_Space_t *p_local_space__east;
     struct Local_Space_t *p_local_space__south;
     struct Local_Space_t *p_local_space__west;
+    struct Local_Space_t *p_local_space__above;
+    struct Local_Space_t *p_local_space__below;
 } Local_Space;
 
 typedef struct Local_Space_Manager_t {
     Local_Space local_spaces[
-        AREA_OF__LOCAL_SPACE_MANAGER];
+        VOLUME_OF__LOCAL_SPACE_MANAGER];
     Vector__3i32 center_of__local_space_manager__3i32;
     Local_Space *p_local_space__north_west;
     Local_Space *p_local_space__north_east;
     Local_Space *p_local_space__south_west;
     Local_Space *p_local_space__south_east;
+
+    Local_Space *p_local_space__north_west__top;
+    Local_Space *p_local_space__north_east__top;
+    Local_Space *p_local_space__south_west__top;
+    Local_Space *p_local_space__south_east__top;
 } Local_Space_Manager;
 
 typedef struct Global_Space_Manager_t {

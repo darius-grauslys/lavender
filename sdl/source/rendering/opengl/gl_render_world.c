@@ -68,6 +68,15 @@ void GL_compose_chunk(
     chunk_pos_in__world__3i32f4.z__i32F4 = 
         i32_to__i32F4(10);
 
+    Camera *p_camera =
+        p_ptr_array_of__gfx_windows[0]
+        ->p_camera;
+
+    Index__u8 index_of__z_tile =
+        (u32)((p_camera->position.z__i32F4 
+                    >> 3)
+                & MASK(CHUNK__DEPTH_BIT_SHIFT));
+
     for (Index__u8 index_of__y_tile = 0;
             index_of__y_tile < CHUNK_WIDTH__IN_TILES;
             index_of__y_tile++) {
@@ -81,7 +90,7 @@ void GL_compose_chunk(
                     quantity_of__gfx_windows,
                     index_of__x_tile,
                     index_of__y_tile,
-                    0);
+                    index_of__z_tile);
 
             for (Index__u32 index_of__gfx_window = 0;
                     index_of__gfx_window
@@ -124,17 +133,13 @@ void GL_compose_chunk(
                         ->p_SDL_graphics_window__texture
                         ->height);
 
-                Camera *p_camera =
-                    p_gfx_window
-                    ->p_camera;
-
                 Vector__3i32F4 tile_pos_in__world__3i32F4 =
                     add_vectors__3i32F4(
                             chunk_pos_in__world__3i32f4, 
                             get_vector__3i32F4_using__i32(
                                 index_of__x_tile << 3, 
                                 index_of__y_tile << 3, 
-                                0));
+                                index_of__z_tile << 3));
 
                 GL_link_data_to__shader(
                         p_PLATFORM_gfx_context,

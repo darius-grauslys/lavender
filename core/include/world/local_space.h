@@ -2,6 +2,7 @@
 #define LOCAL_SPACE_H
 
 #include "defines.h"
+#include "defines_weak.h"
 #include "world/global_space.h"
 
 void initialize_local_space(
@@ -13,11 +14,15 @@ void set_neighbors_of__local_space(
         Local_Space *p_local_space__north,
         Local_Space *p_local_space__east,
         Local_Space *p_local_space__south,
-        Local_Space *p_local_space__west) {
+        Local_Space *p_local_space__west,
+        Local_Space *p_local_space__above,
+        Local_Space *p_local_space__below) {
     p_local_space->p_local_space__north = p_local_space__north;
     p_local_space->p_local_space__east = p_local_space__east;
     p_local_space->p_local_space__south = p_local_space__south;
     p_local_space->p_local_space__west = p_local_space__west;
+    p_local_space->p_local_space__above = p_local_space__above;
+    p_local_space->p_local_space__below = p_local_space__below;
 }
 
 static inline

@@ -4,9 +4,7 @@
 #include "defines.h"
 #include "defines_weak.h"
 
-void initialize_gfx_context(
-        Gfx_Context *p_gfx_context,
-        PLATFORM_Gfx_Context *p_PLATFORM_gfx_context);
+void initialize_gfx_context(Gfx_Context *p_gfx_context);
 
 static inline
 PLATFORM_Gfx_Context *get_p_PLATFORM_gfx_context_from__gfx_context(

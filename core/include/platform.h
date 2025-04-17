@@ -38,6 +38,7 @@ typedef char IO_path[MAX_LENGTH_OF__IO_PATH];
 /// SECTION_audio
 ///
 
+// TODO: remove
 void PLATFORM_initialize_audio(
         PLATFORM_Audio_Context *p_PLATFORM_audio_context);
 
@@ -124,9 +125,6 @@ void PLATFORM_render_sprite(
 ///
 // TODO: remove
 void PLATFORM_initialize_rendering__game(PLATFORM_Gfx_Context *gfx_context);
-
-void PLATFORM_initialize_gfx_context(
-        PLATFORM_Gfx_Context *p_PLATFORM_gfx_context);
 
 PLATFORM_Texture *PLATFORM_allocate_texture(
         PLATFORM_Gfx_Context *p_PLATFORM_gfx_context,
@@ -260,6 +258,7 @@ void PLATFORM_render_gfx_window(
 /// SECTION_serialization
 ///
 
+// TODO: remove
 void PLATFORM_initialize_file_system_context(
         Game *p_game,
         PLATFORM_File_System_Context *p_PLATOFRM_file_system_context);
