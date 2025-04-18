@@ -11,6 +11,7 @@
 #include "rendering/opengl/gl_shader_manager.h"
 #include "rendering/opengl/gl_vertex_object.h"
 #include "rendering/opengl/gl_viewport.h"
+#include "rendering/opengl/glad/glad.h"
 #include "vectors.h"
 #include "world/global_space.h"
 #include "world/local_space.h"
@@ -240,7 +241,7 @@ void GL_compose_world(
                 p_gfx_window
                 ->p_PLATFORM_gfx_window
                 ->p_SDL_graphics_window__texture);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
     glClearColor(
             clear_color[0],

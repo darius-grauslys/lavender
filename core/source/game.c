@@ -14,6 +14,7 @@
 #include "process/process_manager.h"
 #include "rendering/aliased_texture_manager.h"
 #include "rendering/gfx_context.h"
+#include "rendering/sprite_manager.h"
 #include "scene/implemented/scene_registrar.h"
 #include "scene/scene.h"
 #include "scene/scene_manager.h"

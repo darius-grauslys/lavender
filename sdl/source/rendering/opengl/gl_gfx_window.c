@@ -44,10 +44,11 @@ void GL_allocate_gfx_window(
     }
 
     GL_Framebuffer *p_GL_framebuffer =
-        GL_allocate_framebuffer_with__framebuffer_manager(
+        GL_allocate_framebuffer_with__depth_buffer_from__framebuffer_manager(
                 p_PLATFORM_gfx_context, 
                 GL_get_p_framebuffer_manager_from__PLATFORM_gfx_context(
-                    p_PLATFORM_gfx_context));
+                    p_PLATFORM_gfx_context),
+                texture_flags);
 
     if (!p_GL_framebuffer) {
         PLATFORM_release_texture(
@@ -130,7 +131,7 @@ void GL_compose_gfx_window(
     glGetFloatv(GL_COLOR_CLEAR_VALUE, clear_color);
 
     glClearColor(1.0, 0.0, 1.0, 0.0);
-    glClear(GL_COLOR_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glClearColor(
             clear_color[0],
             clear_color[1],

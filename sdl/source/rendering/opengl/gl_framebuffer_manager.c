@@ -3,6 +3,7 @@
 #include "rendering/opengl/gl_defines.h"
 #include "rendering/opengl/gl_framebuffer.h"
 #include "rendering/opengl/glad/glad.h"
+#include "rendering/texture.h"
 #include <rendering/opengl/gl_framebuffer_manager.h>
 
 static inline
@@ -64,6 +65,55 @@ GL_Framebuffer *GL_allocate_framebuffer_with__framebuffer_manager(
         return p_GL_framebuffer;
     }
     return 0;
+}
+
+GL_Framebuffer 
+*GL_allocate_framebuffer_with__depth_buffer_from__framebuffer_manager(
+        PLATFORM_Gfx_Context *p_PLATFORM_gfx_context,
+        GL_Framebuffer_Manager *p_GL_framebuffer_manager,
+        Texture_Flags depth_buffer_size) {
+    GL_Framebuffer *p_GL_framebuffer =
+        GL_allocate_framebuffer_with__framebuffer_manager(
+                p_PLATFORM_gfx_context,
+                p_GL_framebuffer_manager);
+
+    if (!p_GL_framebuffer) {
+        return 0;
+    }
+
+    GLint framebuffer_handle__previous;
+    glGetIntegerv(
+            GL_FRAMEBUFFER_BINDING, 
+            &framebuffer_handle__previous);
+
+    glBindFramebuffer(
+            GL_FRAMEBUFFER,
+            GL_get_framebuffer__handle(
+                p_GL_framebuffer));
+
+    GLuint depth_render_buffer;
+    glGenRenderbuffers(
+            1, 
+            &depth_render_buffer);
+    glBindRenderbuffer(
+            GL_RENDERBUFFER, 
+            depth_render_buffer);
+    glRenderbufferStorage(
+            GL_RENDERBUFFER, 
+            GL_DEPTH_COMPONENT24, 
+            get_length_of__texture_flag__width(depth_buffer_size), 
+            get_length_of__texture_flag__height(depth_buffer_size));
+    glFramebufferRenderbuffer(
+            GL_FRAMEBUFFER, 
+            GL_DEPTH_ATTACHMENT, 
+            GL_RENDERBUFFER, 
+            depth_render_buffer);
+
+    glBindFramebuffer(
+            GL_FRAMEBUFFER,
+            framebuffer_handle__previous);
+
+    return p_GL_framebuffer;
 }
 
 void GL_release_framebuffer_from__framebuffer_manager(

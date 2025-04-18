@@ -115,9 +115,6 @@ void GL_render_sprite(
         p_gfx_window
         ->p_camera;
 
-    position__3i32F4.z__i32F4 = 
-        i32_to__i32F4(2);
-
     GL_Framebuffer *p_GL_framebuffer =
         (GL_Framebuffer*)p_gfx_window
         ->p_PLATFORM_gfx_window

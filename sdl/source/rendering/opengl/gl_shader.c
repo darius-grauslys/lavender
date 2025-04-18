@@ -239,7 +239,7 @@ void GL_link_model_data_to__shader(
             vector3_cglm);
     vector3_cglm[0] *= (1.0/8);
     vector3_cglm[1] *= (1.0/8);
-    vector3_cglm[2] *= (1.0/8);
+    vector3_cglm[2] *= -(1.0/8);
     glm_translate(
             model, 
             vector3_cglm);

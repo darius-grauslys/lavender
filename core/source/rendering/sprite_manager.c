@@ -73,6 +73,9 @@ Sprite *allocate_sprite_from__sprite_manager(
         return 0;
     }
 
+    p_sprite->p_PLATFORM_sprite =
+        p_PLATFORM_sprite;
+
     p_sprite_manager
         ->p_sprite_render_record__last
         ->p_sprite = p_sprite;
