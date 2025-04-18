@@ -100,7 +100,7 @@ typedef struct GL_Chunk_Texture_t {
     CHUNK_MANAGER__QUANTITY_OF_CHUNKS
 
 typedef struct GL_Chunk_Texture_Manager_t {
-    GL_Chunk_Texture GL_chunk_textures[MAX_QUANTITY_OF__CHUNK_TEXTURES];
+    GL_Chunk_Texture GL_chunk_textures[VOLUME_OF__LOCAL_SPACE_MANAGER];
     GL_Framebuffer *p_GL_framebuffer__chunk_rendering;
     PLATFORM_Texture *p_PLATFORM_texture_of__tilesheet_cover;
     PLATFORM_Texture *p_PLATFORM_texture_of__tilesheet_ground;

@@ -2,17 +2,20 @@
 #define ENTITY_MANAGER_H
 
 #include "defines_weak.h"
+#include "entity/entity.h"
 #include "platform_defines.h"
 #include "serialization/hashing.h"
+#include "types/implemented/entity_kind.h"
 #include <defines.h>
 #include <debug/debug.h>
 
 void initialize_entity_manager(Entity_Manager *p_entity_manager);
 
-void register_f_entity_initializer_into__entity_manager(
+void register_entity_into__entity_manager(
         Entity_Manager *p_entity_manager,
-        f_Entity_Initializer f_entity_initializer,
-        Entity_Kind the_kind_of__entity);
+        Entity_Kind the_kind_of__entity,
+        Entity_Functions entity_functions,
+        f_Entity_Initializer f_entity_initializer);
 
 ///
 /// Create a new entity instance within the entity_manager object pool.
@@ -62,5 +65,20 @@ static Entity inline *get_p_entity_from__entity_manager(
     return &p_entity_manager->entities[index_of__entity];
 }
 
+static inline
+void set_entity_functions(
+        Entity_Manager *p_entity_manager,
+        Entity *p_entity) {
+#ifndef NDEBUG
+    if (get_kind_of__entity(p_entity)
+            >= Entity_Kind__Unknown) {
+        debug_error("set_entity_functions, invalid entity kind.");
+        return;
+    }
+#endif
+    p_entity->p_const_entity_functions =
+        &p_entity_manager->entity_functions[
+            get_kind_of__entity(p_entity)];
+}
 
 #endif

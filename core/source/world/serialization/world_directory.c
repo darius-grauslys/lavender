@@ -10,6 +10,30 @@
 #include <string.h>
 #include "world/region.h"
 
+const char *_base64_lexicon = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-";
+
+void append_base64_value_to__path(
+        Index__u32 *p_index_of__path_append,
+        u32 value,
+        i32 beginning_index,
+        char *buffer) {
+    u32 b64;
+    Index__u32 index_of__hex = 0;
+    for (;
+            index_of__hex<(8 - beginning_index);
+            index_of__hex++) {
+        value <<= 4;
+    }
+    for (Index__u32 index_of__hex = 0;
+            index_of__hex < beginning_index;
+            index_of__hex++) {
+        b64 = ((MASK(6) << 26) & value) >> 26;
+        buffer[(*p_index_of__path_append)++] =
+            _base64_lexicon[value];
+        value <<= 6;
+    }
+}
+
 void append_hex_value_to__path(
         Index__u32 *p_index_of__path_append,
         u32 value,
@@ -92,6 +116,12 @@ Index__u32 stat_chunk_directory(
             region_vector__3i32.y__i32, 
             8,
             buffer);
+    buffer[index_of__path_append++] = '_';
+    append_hex_value_to__path(
+            &index_of__path_append, 
+            region_vector__3i32.z__i32, 
+            8,
+            buffer);
 
     if (!(p_dir = PLATFORM_opendir(buffer))) {
         if (PLATFORM_mkdir(buffer, 0777)) {
@@ -147,6 +177,12 @@ Index__u32 stat_chunk_directory(
                 chunk_vector_descend__3i32.y__i32, 
                 2,
                 buffer);
+        buffer[index_of__path_append++] = '_';
+        append_hex_value_to__path(
+                &index_of__path_append, 
+                chunk_vector_descend__3i32.z__i32, 
+                2,
+                buffer);
         if (!(p_dir = PLATFORM_opendir(buffer))) {
             if (PLATFORM_mkdir(buffer, 0777)) {
             debug_error("stat_chunk_directory, failed recur: %d, %d",
@@ -173,6 +209,12 @@ Index__u32 stat_chunk_directory(
     append_hex_value_to__path(
             &index_of__path_append, 
             chunk_vector__3i32.y__i32, 
+            2,
+            buffer);
+    buffer[index_of__path_append++] = '_';
+    append_hex_value_to__path(
+            &index_of__path_append, 
+            chunk_vector__3i32.z__i32, 
             2,
             buffer);
     if (!(p_dir = PLATFORM_opendir(buffer))) {

@@ -2,6 +2,7 @@
 #define ITEM_STACK_H
 
 #include "defines_weak.h"
+#include "sdl_defines.h"
 #include <defines.h>
 #include <inventory/item.h>
 
@@ -16,13 +17,16 @@ void initialize_item_stack_as__empty(
         Item_Stack *p_item_stack,
         Identifier__u32 identifier_for__item_stack__u32);
 
-void m_process__serialize_item_stack(
-        Process *p_this_process,
-        Game *p_game);
+void serialize_item_stack(
+        PLATFORM_File_System_Context *p_PLATFORM_file_system_context,
+        Serialization_Request *p_serialization_request,
+        Item_Stack *p_item_stack);
 
-void m_process__deserialize_item_stack(
-        Process *p_this_process,
-        Game *p_game);
+void deserialize_item_stack(
+        PLATFORM_File_System_Context *p_PLATFORM_file_system_context,
+        Item_Manager *p_item_manager,
+        Serialization_Request *p_serialization_request,
+        Item_Stack *p_item_stack);
 
 void set_item_stack(
         Item_Stack *p_item_stack,

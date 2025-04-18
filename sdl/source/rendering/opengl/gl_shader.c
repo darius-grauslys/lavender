@@ -185,7 +185,7 @@ void GL_link_camera_projection_to__shader(
                 (int)( p_viewport->height / 2 / TILE_PIXEL_WIDTH) + 16,
                 (int)( p_viewport->height / 2 / TILE_PIXEL_WIDTH) - 16, 
                 -0.25f,
-                 100.0f,
+                 1808.0f,
                  *p_projection);
     }
 

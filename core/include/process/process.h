@@ -181,6 +181,13 @@ static inline
 void enqueue_process(
         Process *p_process_to__enqueue,
         Process *p_process_to__enqueue_behind) {
+#ifndef NDEBUG
+    if (p_process_to__enqueue_behind
+            == p_process_to__enqueue) {
+        debug_error("enqueue_process, cannot enqueue itself.");
+        return;
+    }
+#endif
     p_process_to__enqueue_behind->p_enqueued_process =
         p_process_to__enqueue;
     set_process_as__enqueued(

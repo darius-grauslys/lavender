@@ -4,6 +4,7 @@
 #include "platform.h"
 #include "platform_defines.h"
 #include "platform_defaults.h"
+#include "types/implemented/entity_kind.h"
 #include "types/implemented/sprite_animation_kind.h"
 #include "util/bitmap/bitmap.h"
 #include <stdbool.h>
@@ -399,10 +400,6 @@ typedef struct Hitbox_AABB_Manager_t {
 /// displacement. This useful threshold is what allows a colliding player
 /// to move up while an entity is moving into them from the right.
 #define COLLISION_DELTA_THRESHOLD 4096
-#define COLLISION_MANAGER__LAYER_TWO__CHUNK_CENTER_OFFSET \
-    (CHUNK_MANAGER__QUANTITY_OF_CHUNKS__PER_ROW / 4)
-#define COLLISION_MANAGER__LAYER_THREE__CHUNK_CENTER_OFFSET \
-    (CHUNK_MANAGER__QUANTITY_OF_CHUNKS__PER_ROW / 8)
 
 typedef struct Collision_Node_Record_t {
     Hitbox_AABB *p_hitbox;
@@ -844,15 +841,10 @@ typedef struct Inventory_t {
     Quantity__u8 quantity_of__item_stacks;
 } Inventory;
 
-#define INVENTORY_MAX_QUANTITY_OF__ENTITY 32
-#define INVENTORY_MAX_QUANTITY_OF__CONTAINER 32
+#define MAX_QUANTITY_OF__INVENTORY 64
 
 typedef struct Inventory_Manager_t {
-    Inventory inventories_for__containers[INVENTORY_MAX_QUANTITY_OF__CONTAINER];
-    Inventory inventories_for__entities[INVENTORY_MAX_QUANTITY_OF__ENTITY];
-    Repeatable_Psuedo_Random randomizer_of__inventory_manager;
-    Quantity__u8 quantity_of__active_inventories_for__containers;
-    Quantity__u8 quantity_of__active_inventories_for__entities;
+    Inventory inventories[MAX_QUANTITY_OF__INVENTORY];
 } Inventory_Manager;
 
 ///
@@ -860,10 +852,6 @@ typedef struct Inventory_Manager_t {
 ///
 
 typedef struct Entity_t Entity;
-
-typedef void (*m_Entity_Dispose_Handler)(
-        Entity *p_entity_self, 
-        Game *p_game);
 
 typedef uint8_t Entity_Flags__u8;
 
@@ -890,8 +878,10 @@ typedef struct Entity_Data_t {
 #include "types/implemented/entity_functions.h"
 #ifndef DEFINE_ENTITY_FUNCTIONS
 typedef struct Entity_Functions_t {
-    m_Entity_Handler    m_entity_dispose_handler;
-    m_Entity_Handler    m_entity_update_handler;
+    m_Entity_Handler                m_entity_dispose_handler;
+    m_Entity_Handler                m_entity_update_handler;
+    m_Entity_Serialization_Handler  m_entity_serialize_handler;
+    m_Entity_Serialization_Handler  m_entity_deserialize_handler;
 } Entity_Functions;
 #endif
 
@@ -902,7 +892,7 @@ typedef struct Entity_t {
     Serialization_Header            _serialization_header;
     Entity_Data                     entity_data;
     Entity_Flags__u8                entity_flags;
-    Entity_Functions                entity_functions;
+    const Entity_Functions          *p_const_entity_functions;
 } Entity;
 
 typedef void (*f_Entity_Initializer)(
@@ -935,6 +925,7 @@ typedef void (*f_Entity_Initializer)(
 
 typedef struct Entity_Manager_t {
     Entity entities[ENTITY_MAXIMUM_QUANTITY_OF];
+    Entity_Functions entity_functions[Entity_Kind__Unknown];
     f_Entity_Initializer F_entity_initializer_table[Entity_Kind__Unknown];
     Repeatable_Psuedo_Random randomizer;
     Quantity__u32 entity_count__quantity_u32;
@@ -1904,35 +1895,6 @@ typedef struct Chunk_Pool_t {
     Chunk chunks[QUANTITY_OF__GLOBAL_SPACE];
 } Chunk_Pool;
 
-typedef struct Chunk_Manager__Chunk_Map_Node_t {
-    Chunk *p_chunk__here;
-    struct Chunk_Manager__Chunk_Map_Node_t *p_north__chunk_map_node;
-    struct Chunk_Manager__Chunk_Map_Node_t *p_east__chunk_map_node;
-    struct Chunk_Manager__Chunk_Map_Node_t *p_south__chunk_map_node;
-    struct Chunk_Manager__Chunk_Map_Node_t *p_west__chunk_map_node;
-    Chunk_Vector__3i32 position_of__chunk_3i32;
-} Chunk_Manager__Chunk_Map_Node;
-
-typedef Chunk_Manager__Chunk_Map_Node
-    Chunk_Manager__Chunk_Map[CHUNK_MANAGER__QUANTITY_OF_CHUNKS];
-
-typedef struct Chunk_Manager_t {
-    Chunk chunks[CHUNK_MANAGER__QUANTITY_OF_CHUNKS];
-    Chunk_Manager__Chunk_Map_Node *ptr_array_queue__serialized_nodes[
-        CHUNK_MANAGER__QUANTITY_OF_IO_QUEUED_CHUNKS];
-    Chunk_Manager__Chunk_Map chunk_map;
-    
-    Chunk_Manager__Chunk_Map_Node *p_local_player_occupied__chunk_map_node;
-    Chunk_Manager__Chunk_Map_Node *p_most_north_western__chunk_map_node;
-    Chunk_Manager__Chunk_Map_Node *p_most_south_eastern__chunk_map_node;
-    Chunk_Manager__Chunk_Map_Node *p_most_north_eastern__chunk_map_node;
-    Chunk_Manager__Chunk_Map_Node *p_most_south_western__chunk_map_node;
-
-    Signed_Index__i32 
-        x__center_chunk__signed_index_i32, 
-        y__center_chunk__signed_index_i32;
-} Chunk_Manager;
-
 typedef u8 Global_Space_Flags__u8;
 
 #define GLOBAL_SPACE_FLAG__IS_CONSTRUCTING BIT(0)
@@ -2193,7 +2155,6 @@ typedef struct World_t {
     Region_Manager region_manager;
     Entity_Manager entity_manager;
 
-    Chunk_Manager chunk_manager;
     Global_Space_Manager global_space_manager;
     Collision_Node_Pool collision_node_pool;
     Chunk_Pool chunk_pool;

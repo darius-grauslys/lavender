@@ -65,8 +65,7 @@ void GL_compose_chunk(
     chunk_pos_in__world__3i32f4.y__i32F4 *= 1<<6;
     // chunk_pos_in__world__3i32f4.x__i32F4 += i32_to__i32F4(32);
     // chunk_pos_in__world__3i32f4.y__i32F4 += i32_to__i32F4(28);
-    chunk_pos_in__world__3i32f4.z__i32F4 = 
-        i32_to__i32F4(10);
+    chunk_pos_in__world__3i32f4.z__i32F4 *= 1<<6;
 
     Camera *p_camera =
         p_ptr_array_of__gfx_windows[0]

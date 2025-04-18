@@ -702,6 +702,7 @@ void move_local_space_manager(
                     p_local_space__end,
                     chunk_vector__start__3i32,
                     DIRECTION__SOUTH);
+            chunk_vector__start__3i32.x__i32++;
             move_p_ptr_local_space__east(&p_local_space__end);
         } while (poll_local_space__traversal(
                     &p_local_space__current, 
@@ -709,14 +710,14 @@ void move_local_space_manager(
                     DIRECTION__EAST));
     } else if (direction__u8 & DIRECTION__DOWNWARDS) {
         p_local_space_manager->center_of__local_space_manager__3i32
-            .z__i32++;
+            .z__i32--;
 
         chunk_vector__start__3i32 =
             p_local_space_manager
             ->p_local_space__north_west
             ->global_space__vector__3i32
             ;
-        chunk_vector__start__3i32.z__i32++;
+        chunk_vector__start__3i32.z__i32--;
 
         move_p_ptr_local_space__downwards(
                 &p_local_space_manager->p_local_space__north_east);
@@ -748,6 +749,7 @@ void move_local_space_manager(
                     p_local_space__end,
                     chunk_vector__start__3i32,
                     DIRECTION__SOUTH);
+            chunk_vector__start__3i32.x__i32++;
             move_p_ptr_local_space__east(&p_local_space__end);
         } while (poll_local_space__traversal(
                     &p_local_space__current, 

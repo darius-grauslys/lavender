@@ -68,15 +68,13 @@ Tile* get_p_tile_from__chunk_using__u8(
         Index__u8 x__local__u8,
         Index__u8 y__local__u8,
         Index__u8 z__local__u8) {
-    // TODO: improve
-    // int32_t index = (1 << (z * CHUNK__DEPTH_BIT_SHIFT)) +
-    //     ((CHUNK_WIDTH__IN_TILES - y) << CHUNK__HEIGHT_BIT_SHIFT) + x;
-    Index__u8 index__u8 = 
-        x__local__u8
-        + (7 - y__local__u8) 
-        * 8;
+    Index__u16 index__u16 =
+        (x__local__u8
+         + ((CHUNK__HEIGHT - 1 - y__local__u8)
+             * CHUNK__WIDTH)
+         + ((CHUNK__HEIGHT * CHUNK__DEPTH * z__local__u8)));
 
-    return &chunk->tiles[index__u8];
+    return &chunk->tiles[index__u16];
 }
 
 ///

@@ -11,13 +11,16 @@ void initialize_inventory(
 void initialize_inventory_as__empty(
         Inventory *p_inventory);
 
-void m_process__serialize_inventory(
-        Process *p_this_process,
-        Game *p_game);
+void serialize_inventory(
+        PLATFORM_File_System_Context *p_PLATFORM_file_system_context,
+        Serialization_Request *p_serialization_request,
+        Inventory *p_inventory);
 
-void m_process__deserialize_inventory(
-        Process *p_this_process,
-        Game *p_game);
+void deserialize_inventory(
+        PLATFORM_File_System_Context *p_PLATFORM_file_system_context,
+        Item_Manager *p_item_manager,
+        Serialization_Request *p_serialization_request,
+        Inventory *p_inventory);
 
 bool is_inventory__empty(Inventory *p_inventory);
 
@@ -82,6 +85,14 @@ Item_Stack *get_p_item_stack_from__inventory_by__index(
 Item_Stack *get_p_item_stack_from__inventory(
         Inventory *p_inventory,
         Identifier__u32 identifier_for__item_stack);
+
+bool does_inventory_have_this_many_of__item_kind(
+        Inventory *p_inventory,
+        enum Item_Kind the_kind_of__item,
+        Quantity__u32 quantity_of__items);
+
+bool does_inventory_have__available_item_stacks(
+        Inventory *p_inventory);
 
 static inline
 bool does_inventory_have_this__item_kind(
@@ -186,13 +197,5 @@ Identifier__u32 get_uuid_for__container(
             &uuid);
     return uuid;
 }
-
-bool does_inventory_have_this_many_of__item_kind(
-        Inventory *p_inventory,
-        enum Item_Kind the_kind_of__item,
-        Quantity__u32 quantity_of__items);
-
-bool does_inventory_have__available_item_stacks(
-        Inventory *p_inventory);
 
 #endif

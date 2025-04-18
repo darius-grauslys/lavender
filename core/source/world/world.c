@@ -121,8 +121,8 @@ void manage_world__entities(Game *p_game) {
             continue;
         }
 
-        if (p_entity->entity_functions.m_entity_update_handler) {
-            p_entity->entity_functions.m_entity_update_handler(
+        if (p_entity->p_const_entity_functions->m_entity_update_handler) {
+            p_entity->p_const_entity_functions->m_entity_update_handler(
                     p_entity,
                     p_game,
                     p_world);

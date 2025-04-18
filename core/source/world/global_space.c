@@ -1,12 +1,13 @@
 #include "world/global_space.h"
+#include "client.h"
 #include "collisions/collision_node.h"
 #include "collisions/collision_node_pool.h"
 #include "defines.h"
 #include "defines_weak.h"
 #include "entity/entity_manager.h"
 #include "game.h"
-#include "inventory/container.h"
 #include "inventory/inventory.h"
+#include "inventory/inventory_manager.h"
 #include "platform.h"
 #include "platform_defines.h"
 #include "process/process_manager.h"
@@ -18,6 +19,7 @@
 #include "world/chunk_pool.h"
 #include "world/chunk_vectors.h"
 #include "world/global_space_manager.h"
+#include "world/local_space_manager.h"
 #include "world/serialization/world_directory.h"
 #include "world/world.h"
 
@@ -88,6 +90,7 @@ void m_process__serialize_entities_in__global_space(
     }
 
     serialize_entity(
+            p_game,
             p_serialization_request, 
             p_entity);
 }
@@ -109,9 +112,21 @@ void m_process__deserialize_entities_in__global_space(
         return;
     }
 
+    Entity *p_entity =
+        allocate_entity_in__entity_manager(
+                p_game, 
+                get_p_world_from__game(p_game),
+                get_p_entity_manager_from__game(p_game),
+                Entity_Kind__None,
+                chunk_vector_3i32_to__vector_3i32F4(
+                    get_center_of__local_space_manager(
+                        get_p_local_space_manager_from__client(
+                            get_p_local_client_by__from__game(p_game)))));
+
     deserialize_entity(
             p_game, 
-            p_serialization_request);
+            p_serialization_request,
+            p_entity);
 }
 
 #define M_PROCESS__SERIALIZE_CONTAINERS__STEPS 32
@@ -119,6 +134,7 @@ void m_process__deserialize_entities_in__global_space(
 void m_process__serialize_containers_in__global_space(
         Process *p_this_process,
         Game *p_game) {
+    /*
     Serialization_Request *p_serialized_request =
         (Serialization_Request*)p_this_process->p_process_data;
     Global_Space *p_global_space =
@@ -172,9 +188,10 @@ void m_process__serialize_containers_in__global_space(
                             get_vector__3i32(x, y, z));
 
                 Inventory *p_inventory_of__container =
-                    get_inventory_of__container(
-                            p_game,
-                            container_vector__3i32);
+                    get_p_inventory_by__uuid_in__inventory_manager(
+                            get_p_inventory_manager_from__game(p_game), 
+                            get_uuid_for__container(
+                                tile_vector__3i32));
 
                 if (p_inventory_of__container) {
                     (*p_quantity_of__containers_in__chunk)++;
@@ -241,11 +258,13 @@ void m_process__serialize_containers_in__global_space(
     }
 
     complete_process(p_this_process);
+    */
 }
 
 void m_process__deserialize_containers_in__global_space(
         Process *p_this_process,
         Game *p_game) {
+    /*
     Serialization_Request *p_serialized_request =
         (Serialization_Request*)p_this_process->p_process_data;
     Global_Space *p_global_space =
@@ -288,6 +307,7 @@ void m_process__deserialize_containers_in__global_space(
     enqueue_process(
             p_this_process, 
             p_process);
+            */
 }
 
 typedef enum IO_Global_Space_State {
@@ -395,7 +415,10 @@ void m_process__serialize_global_space(
                     p_process);
             break;
         case IO_Global_Space_State__Containers:
+            // TODO: this requires Regions to be added, and we might not even want it.
+
             // We only reach this point if the subprocess has finished.
+            /*
             p_this_process->process_sub_state__u8 =
                 IO_Global_Space_State__Finished;
             p_process = run_process(
@@ -414,6 +437,7 @@ void m_process__serialize_global_space(
                     p_this_process, 
                     p_process);
             break;
+            */
         case IO_Global_Space_State__Finished:
             // We only reach this point if the subprocess has finished.
             PLATFORM_close_file(
@@ -514,6 +538,7 @@ void m_process__deserialize_global_space(
             break;
         case IO_Global_Space_State__Containers:
             // We only reach this point if the subprocess has finished.
+            /*
             p_this_process->process_sub_state__u8 =
                 IO_Global_Space_State__Finished;
             p_process = run_process(
@@ -531,6 +556,7 @@ void m_process__deserialize_global_space(
                     p_this_process, 
                     p_process);
             break;
+            */
         case IO_Global_Space_State__Finished:
             // We only reach this point if the subprocess has finished.
             set_global_space_as__NOT_constructing(

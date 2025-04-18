@@ -124,6 +124,16 @@ typedef void (*m_Entity_Handler)(
         Game *p_game,
         World *p_world);
 
+typedef struct PLATFORM_File_System_Context_t PLATFORM_File_System_Context;
+typedef struct Serialization_Request_t Serialization_Request;
+
+typedef void (*m_Entity_Serialization_Handler)(
+        Entity *p_entity_self, 
+        Game *p_game,
+        PLATFORM_File_System_Context *p_PLATFORM_file_system_context,
+        World *p_world,
+        Serialization_Request *p_serialization_request);
+
 ///
 /// SECTION_input
 ///

@@ -21,6 +21,9 @@ float i32F4_to__float(i32F4 x) {
         ;
 }
 
-float i32F20_to__float(i32F20 x);
+static inline
+float i32F20_to__float(i32F20 x) {
+    return (float)x / (BIT(20));
+}
 
 #endif

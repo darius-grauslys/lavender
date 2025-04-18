@@ -42,10 +42,11 @@ void initialize_entity_manager(Entity_Manager *p_entity_manager) {
     register_entities(p_entity_manager);
 }
 
-void register_f_entity_initializer_into__entity_manager(
+void register_entity_into__entity_manager(
         Entity_Manager *p_entity_manager,
-        f_Entity_Initializer f_entity_initializer,
-        Entity_Kind the_kind_of__entity) {
+        Entity_Kind the_kind_of__entity,
+        Entity_Functions entity_functions,
+        f_Entity_Initializer f_entity_initializer) {
 #ifndef NDEBUG
     if (!p_entity_manager) {
         debug_error("register_f_entity_initializer_into__entity_manager, p_entity_manager == 0.");
@@ -59,6 +60,8 @@ void register_f_entity_initializer_into__entity_manager(
 
     p_entity_manager->F_entity_initializer_table[
         the_kind_of__entity] = f_entity_initializer;
+    p_entity_manager->entity_functions[
+        the_kind_of__entity] = entity_functions;
 }
 
 Entity *allocate_entity_in__entity_manager(
@@ -107,8 +110,8 @@ void release_entity_from__entity_manager(
         Entity *p_entity) {
     if (p_entity_manager->entity_count__quantity_u32 > 0)
         p_entity_manager->entity_count__quantity_u32--;
-    if (p_entity->entity_functions.m_entity_dispose_handler) {
-        p_entity->entity_functions.m_entity_dispose_handler(
+    if (p_entity->p_const_entity_functions->m_entity_dispose_handler) {
+        p_entity->p_const_entity_functions->m_entity_dispose_handler(
                 p_entity,
                 p_game,
                 p_world);
