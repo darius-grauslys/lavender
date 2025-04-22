@@ -28,7 +28,7 @@ static void m_get_tile_logic_record__default(
         Tile_Logic_Record *p_tile_logic_record,
         Tile *p_tile) {
 #ifndef NDEBUG
-    if (p_tile->the_kind_of_tile__this_tile_is
+    if (p_tile->the_kind_of__tile
             >= p_tile_logic_table->quantity_of__records) {
         debug_error("m_get_tile_logic_record__default, cannot be used here as the_kind_of__tile exceeds maximum quantity of tile logic table.");
         return;

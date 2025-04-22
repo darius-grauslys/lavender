@@ -6,10 +6,6 @@
 #include <stdint.h>
 #include <defines.h>
 
-void initialize_tile(Tile *tile, 
-        enum Tile_Kind kind_of_tile,
-        Tile_Flags__u8 flags);
-
 static inline 
 bool is_tile__unpassable(Tile_Flags__u8 tile_flags__u8) {
     return (bool)(tile_flags__u8 & TILE_FLAGS__BIT_IS_UNPASSABLE);
@@ -42,21 +38,21 @@ static inline
 void set_tile_kind_of__tile(
         Tile *p_tile,
         Tile_Kind the_kind_of__tile) {
-    p_tile->the_kind_of_tile__this_tile_is =
+    p_tile->the_kind_of__tile =
         the_kind_of__tile;
 }
 
 static inline
 Tile_Kind get_tile_kind_from__tile(
         Tile *p_tile) {
-    return p_tile->the_kind_of_tile__this_tile_is;
+    return p_tile->the_kind_of__tile;
 }
 
 static inline
 bool is_tile_of__this_kind(
         Tile *p_tile,
         Tile_Kind the_kind_of__tile) {
-    return p_tile->the_kind_of_tile__this_tile_is
+    return p_tile->the_kind_of__tile
         == the_kind_of__tile;
 }
 

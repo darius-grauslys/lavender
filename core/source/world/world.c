@@ -11,6 +11,7 @@
 #include "rendering/graphics_window.h"
 #include "serialization/serialization_request.h"
 #include "world/camera.h"
+#include "world/chunk_generator_table.h"
 #include "world/chunk_pool.h"
 #include "world/chunk_vectors.h"
 #include "world/global_space_manager.h"
@@ -19,7 +20,6 @@
 #include <world/world.h>
 #include <game.h>
 #include <entity/entity_manager.h>
-#include <world/world_parameters.h>
 #include "serialization/serialized_field.h"
 
 #include <entity/entity.h>
@@ -51,9 +51,8 @@ void initialize_world(
     strncpy(p_world->name, "default_world", WORLD_NAME_MAX_SIZE_OF);
     p_world->length_of__world_name = strnlen(p_world->name, WORLD_NAME_MAX_SIZE_OF);
 
-    initialize_world_parameters(
-            &p_world->world_parameters, 
-            f_chunk_generator);
+    initialize_chunk_generator_table(
+            get_p_chunk_generation_table_from__world(p_world));
     initialize_hitbox_aabb_manager(
             get_p_hitbox_aabb_manager_from__world(p_world));
     initialize_entity_manager(&p_world->entity_manager);

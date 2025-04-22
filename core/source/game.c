@@ -339,7 +339,7 @@ int run_game(Game *p_game) {
             return -1;
         }
 
-        set_p_active_scene_for__scene_manager(
+        set_active_scene_for__scene_manager(
                 &p_game->scene_manager, 
                 Scene_Kind__None);
     }

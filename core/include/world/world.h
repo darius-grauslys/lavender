@@ -71,8 +71,8 @@ Tile_Logic_Table_Manager *get_p_tile_logic_table_manager_from__world(World *p_wo
 }
 
 static inline
-World_Parameters *get_p_world_parameters_from__world(World *p_world) {
-    return &p_world->world_parameters;
+Chunk_Generator_Table *get_p_chunk_generation_table_from__world(World *p_world) {
+    return &p_world->chunk_generator_table;
 }
 
 static inline

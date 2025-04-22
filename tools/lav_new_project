@@ -13,3 +13,4 @@ fi
 find $LAVENDER_DIR/core -iname *implemented* -type d -exec sh -c "echo \$(dirname \$(realpath --relative-to $LAVENDER_DIR/core {})) && mkdir -p $DIR/\$(dirname \$(realpath --relative-to $LAVENDER_DIR/core {}))/implemented && cp -r {}/* $DIR/\$(realpath --relative-to $LAVENDER_DIR/core {})" \;
 
 cp $LAVENDER_DIR/examples/Makefiles/* $DIR/
+cp -r $LAVENDER_DIR/core/assets $DIR/

@@ -1,0 +1,20 @@
+#!/bin/sh
+if [ -z "${LAVENDER_DIR}" ]; then
+    echo LAVENDER_DIR is not set.
+    exit -1
+fi
+
+if [ $# -lt 1 ]; then
+  echo "Usage: $0 scene_name"
+  exit 1
+fi
+
+cp $LAVENDER_DIR/core/source/scene/implemented/scene__main.c \
+"./source/scene/implemented/scene__${1}.c"
+cp $LAVENDER_DIR/core/include/scene/implemented/scene__main.h \
+"./include/scene/implemented/scene__${1}.h"
+
+sed -i "s/main/${1}/g" "./source/scene/implemented/scene__${1}.c"
+sed -i "s/main/${1}/g" "./include/scene/implemented/scene__${1}.h"
+upper_val=$(echo "${1}" | tr '[:lower:]' '[:upper:]')
+sed -i "s/MAIN/${upper_val}/g" "./include/scene/implemented/scene__${1}.h"

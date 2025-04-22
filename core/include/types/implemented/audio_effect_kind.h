@@ -9,5 +9,3 @@ typedef enum Audio_Effect_Kind {
 } Audio_Effect_Kind;
 
 #endif
-
-

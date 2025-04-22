@@ -63,7 +63,7 @@ Scene *get_p_scene_from__scene_manager(
     return &p_scene_manager->scenes[the_kind_of__scene];
 }
 
-void set_p_active_scene_for__scene_manager(
+void set_active_scene_for__scene_manager(
         Scene_Manager *p_scene_manager,
         Scene_Kind the_kind_of__scene) {
     Scene *p_scene =

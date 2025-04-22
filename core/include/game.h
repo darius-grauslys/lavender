@@ -176,8 +176,8 @@ Entity_Manager *get_p_entity_manager_from__game(Game *p_game) {
 }
 
 static inline
-World_Parameters *get_p_world_parameters_from__game(Game *p_game) {
-    return get_p_world_parameters_from__world(
+Chunk_Generator_Table *get_p_chunk_generation_table_from__game(Game *p_game) {
+    return get_p_chunk_generation_table_from__world(
             get_p_world_from__game(p_game));
 }
 

@@ -272,11 +272,6 @@ void GL_link_data_to__shader(
     }
     if (GL_does_shader_utilize__model_mat_4_4(
                 p_GL_shader)) {
-        // TODO: if statement here is a hack.
-        // if (!p_camera)
-        //     position__3i32F4.y__i32F4 =
-        //         i32_to__i32F4(256)
-        //         - position__3i32F4.y__i32F4;
         GL_link_model_data_to__shader(
                 p_GL_shader, 
                 position__3i32F4, 

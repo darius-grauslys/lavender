@@ -4,6 +4,7 @@
 #include "platform.h"
 #include "platform_defines.h"
 #include "platform_defaults.h"
+#include "types/implemented/chunk_generator_kind.h"
 #include "types/implemented/entity_kind.h"
 #include "types/implemented/sprite_animation_kind.h"
 #include "util/bitmap/bitmap.h"
@@ -1800,11 +1801,12 @@ typedef struct Tile_Logic_Table_Manager_t {
         MAX_QUANTITY_OF__TILE_LOGIC_TABLES];
 } Tile_Logic_Table_Manager;
 
+#include "types/implemented/tile.h"
+#ifndef DEFINE_TILE
 typedef struct Tile_t {
-    enum Tile_Kind                  
-        the_kind_of_tile__this_tile_is          :10;
-    Tile_Flags__u8 tile_flags                   :6;
+    Tile_Kind the_kind_of__tile;
 } Tile;
+#endif
 
 typedef uint16_t Tile_Render_Index__u16;
 typedef uint16_t Tile_Wall_Adjacency_Code__u16;
@@ -1838,7 +1840,6 @@ typedef struct Tile_Render_Result_t {
 #define TILE_RENDER__WALL_ADJACENCY__SPRITE_COVER_MASK \
     MASK(4)
 
-typedef struct World_Parameters_t World_Parameters;
 typedef struct Chunk_t Chunk;
 typedef struct Chunk_Data_t Chunk_Data;
 
@@ -1846,9 +1847,10 @@ typedef void (*f_Chunk_Generator)(
         Game *p_game,
         Global_Space *p_global_space);
 
-typedef struct World_Parameters_t {
-    f_Chunk_Generator f_chunk_generator;
-} World_Parameters;
+typedef struct Chunk_Generator_Table_t {
+    f_Chunk_Generator F_chunk_generators[
+        Chunk_Generator_Kind__Unknown];
+} Chunk_Generator_Table;
 
 /// Should only be made from calls to inlined helpers
 /// from chunk_manager.h
@@ -2162,7 +2164,7 @@ typedef struct World_t {
 
     Structure_Manager structure_manager;
     Tile_Logic_Table_Manager tile_logic_table_manager;
-    World_Parameters world_parameters;
+    Chunk_Generator_Table chunk_generator_table;
     Repeatable_Psuedo_Random repeatable_pseudo_random;
 
     Inventory_Manager   inventory_manager;

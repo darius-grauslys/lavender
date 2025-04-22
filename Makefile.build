@@ -1,5 +1,5 @@
 
-.PHONY: derpass COPY_CFILES
+.PHONY: COPY_CFILES
 
 ifneq ($(BUILD),$(CURDIR))
 
@@ -11,14 +11,14 @@ ifneq ($(GAME_DIR),$(BASE_DIR))
 include $(GAME_DIR)/Makefile.build
 endif
 
-$(BUILD):
+$(BUILD): 
 	$(SILENT)mkdir -p $(BUILD)
 	$(SILENT)make -f $(BASE_DIR)/Makefile.build -C $(BUILD) 
 
 else
 
 # I made this going off of /opt/devkitpro/devkitARM/base_rules
-$(GAME): $(OFILES) $(SPRITE_FILES)
+$(GAME): GAME_SETUP $(OFILES) $(SPRITE_FILES) 
 	$(SILENT)$(LD) $(LDFLAGS) $(FLAGS_LINKER) $(OFILES) $(LIBPATHS) $(LIBS) -o $@
 	@$(ADD_COMPILE_COMMAND) end
 
