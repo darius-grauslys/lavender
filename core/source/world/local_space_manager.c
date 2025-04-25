@@ -32,24 +32,24 @@ Local_Space *get_p_local_space_by__local_xyz_from__local_space_manager(
         u32 y__u32,
         u32 z__u32) {
 #ifndef NDEBUG
-    if (x__u32 >= WIDTH_OF__LOCAL_SPACE_MANAGER) {
-        debug_error("get_p_local_space_by__local_xyz_from__local_space_manager, x out of bounds: %d/%d", x__u32, WIDTH_OF__LOCAL_SPACE_MANAGER);
+    if (x__u32 >= LOCAL_SPACE_MANAGER__WIDTH) {
+        debug_error("get_p_local_space_by__local_xyz_from__local_space_manager, x out of bounds: %d/%d", x__u32, LOCAL_SPACE_MANAGER__WIDTH);
         return 0;
     }
-    if (y__u32 >= HEIGHT_OF__LOCAL_SPACE_MANAGER) {
-        debug_error("get_p_local_space_by__local_xyz_from__local_space_manager, y out of bounds: %d/%d", y__u32, HEIGHT_OF__LOCAL_SPACE_MANAGER);
+    if (y__u32 >= LOCAL_SPACE_MANAGER__HEIGHT) {
+        debug_error("get_p_local_space_by__local_xyz_from__local_space_manager, y out of bounds: %d/%d", y__u32, LOCAL_SPACE_MANAGER__HEIGHT);
         return 0;
     }
-    if (z__u32 >= DEPTH_OF__LOCAL_SPACE_MANAGER) {
-        debug_error("get_p_local_space_by__local_xyz_from__local_space_manager, z out of bounds: %d/%d", z__u32, DEPTH_OF__LOCAL_SPACE_MANAGER);
+    if (z__u32 >= LOCAL_SPACE_MANAGER__DEPTH) {
+        debug_error("get_p_local_space_by__local_xyz_from__local_space_manager, z out of bounds: %d/%d", z__u32, LOCAL_SPACE_MANAGER__DEPTH);
         return 0;
     }
 #endif
     return &p_local_space_manager->local_spaces[
         x__u32
-        + (y__u32 * WIDTH_OF__LOCAL_SPACE_MANAGER)
-        + (z__u32 * WIDTH_OF__LOCAL_SPACE_MANAGER
-            * HEIGHT_OF__LOCAL_SPACE_MANAGER)];
+        + (y__u32 * LOCAL_SPACE_MANAGER__WIDTH)
+        + (z__u32 * LOCAL_SPACE_MANAGER__WIDTH
+            * LOCAL_SPACE_MANAGER__HEIGHT)];
 }
 
 void initialize_local_space_manager(
@@ -59,18 +59,18 @@ void initialize_local_space_manager(
             0,
             sizeof(Local_Space_Manager));
 
-#if DEPTH_OF__LOCAL_SPACE_MANAGER > 1
+#if LOCAL_SPACE_MANAGER__DEPTH > 1
     for (i32 _z__i32 = 0;
-            _z__i32 < DEPTH_OF__LOCAL_SPACE_MANAGER;
+            _z__i32 < LOCAL_SPACE_MANAGER__DEPTH;
             _z__i32++) {
 #else
 #define _z__i32 0
 #endif
         for (i32 y__i32 = 0;
-                y__i32 < HEIGHT_OF__LOCAL_SPACE_MANAGER;
+                y__i32 < LOCAL_SPACE_MANAGER__HEIGHT;
                 y__i32++) {
             for (i32 x__i32 = 0;
-                    x__i32 < WIDTH_OF__LOCAL_SPACE_MANAGER;
+                    x__i32 < LOCAL_SPACE_MANAGER__WIDTH;
                     x__i32++) {
                 Local_Space *p_local_space__here =
                     get_p_local_space_by__local_xyz_from__local_space_manager(
@@ -82,10 +82,10 @@ void initialize_local_space_manager(
                 i32 x__left = 
                     (x__i32)
                     ? x__i32 - 1
-                    : WIDTH_OF__LOCAL_SPACE_MANAGER - 1
+                    : LOCAL_SPACE_MANAGER__WIDTH - 1
                     ;
                 i32 x__right = 
-                    (x__i32 + 1 < WIDTH_OF__LOCAL_SPACE_MANAGER)
+                    (x__i32 + 1 < LOCAL_SPACE_MANAGER__WIDTH)
                     ? x__i32 + 1
                     : 0
                     ;
@@ -93,22 +93,22 @@ void initialize_local_space_manager(
                 i32 y__down = 
                     (y__i32)
                     ? y__i32 - 1
-                    : HEIGHT_OF__LOCAL_SPACE_MANAGER - 1
+                    : LOCAL_SPACE_MANAGER__HEIGHT - 1
                     ;
                 i32 y__up = 
-                    (y__i32 + 1 < HEIGHT_OF__LOCAL_SPACE_MANAGER)
+                    (y__i32 + 1 < LOCAL_SPACE_MANAGER__HEIGHT)
                     ? y__i32 + 1
                     : 0
                     ;
 
-#if DEPTH_OF__LOCAL_SPACE_MANAGER > 1
+#if LOCAL_SPACE_MANAGER__DEPTH > 1
                 i32 z__below =
                     (_z__i32)
                     ? _z__i32 - 1
-                    : DEPTH_OF__LOCAL_SPACE_MANAGER - 1
+                    : LOCAL_SPACE_MANAGER__DEPTH - 1
                     ;
                 i32 z__above =
-                    (_z__i32 + 1 < DEPTH_OF__LOCAL_SPACE_MANAGER)
+                    (_z__i32 + 1 < LOCAL_SPACE_MANAGER__DEPTH)
                     ? _z__i32 + 1
                     : 0
                     ;
@@ -141,16 +141,16 @@ void initialize_local_space_manager(
                     get_vector__3i32(
                             x__i32
                             + center_of__local_space_manager__3i32.x__i32
-                            - (WIDTH_OF__LOCAL_SPACE_MANAGER>>1) + 2, 
+                            - (LOCAL_SPACE_MANAGER__WIDTH>>1) + 2, 
                             y__i32
                             + center_of__local_space_manager__3i32.y__i32
-                            - (HEIGHT_OF__LOCAL_SPACE_MANAGER>>1), 
+                            - (LOCAL_SPACE_MANAGER__HEIGHT>>1), 
                             _z__i32
                             + center_of__local_space_manager__3i32.z__i32
-                            - (DEPTH_OF__LOCAL_SPACE_MANAGER>>1));
+                            - (LOCAL_SPACE_MANAGER__DEPTH>>1));
             }
         }
-#if DEPTH_OF__LOCAL_SPACE_MANAGER > 1
+#if LOCAL_SPACE_MANAGER__DEPTH > 1
     }
 #endif
 
@@ -163,47 +163,47 @@ void initialize_local_space_manager(
     p_local_space_manager->p_local_space__south_east =
         get_p_local_space_by__local_xyz_from__local_space_manager(
                 p_local_space_manager, 
-                WIDTH_OF__LOCAL_SPACE_MANAGER - 1, 
+                LOCAL_SPACE_MANAGER__WIDTH - 1, 
                 0,
                 0);
     p_local_space_manager->p_local_space__north_west =
         get_p_local_space_by__local_xyz_from__local_space_manager(
                 p_local_space_manager, 
                 0, 
-                HEIGHT_OF__LOCAL_SPACE_MANAGER-1,
+                LOCAL_SPACE_MANAGER__HEIGHT-1,
                 0);
     p_local_space_manager->p_local_space__north_east =
         get_p_local_space_by__local_xyz_from__local_space_manager(
                 p_local_space_manager, 
-                WIDTH_OF__LOCAL_SPACE_MANAGER-1, 
-                HEIGHT_OF__LOCAL_SPACE_MANAGER-1,
+                LOCAL_SPACE_MANAGER__WIDTH-1, 
+                LOCAL_SPACE_MANAGER__HEIGHT-1,
                 0);
 
-#if DEPTH_OF__LOCAL_SPACE_MANAGER > 1
+#if LOCAL_SPACE_MANAGER__DEPTH > 1
     p_local_space_manager->p_local_space__south_west__top =
         get_p_local_space_by__local_xyz_from__local_space_manager(
                 p_local_space_manager, 
                 0, 
                 0,
-                DEPTH_OF__LOCAL_SPACE_MANAGER-1);
+                LOCAL_SPACE_MANAGER__DEPTH-1);
     p_local_space_manager->p_local_space__south_east__top =
         get_p_local_space_by__local_xyz_from__local_space_manager(
                 p_local_space_manager, 
-                WIDTH_OF__LOCAL_SPACE_MANAGER - 1, 
+                LOCAL_SPACE_MANAGER__WIDTH - 1, 
                 0,
-                DEPTH_OF__LOCAL_SPACE_MANAGER-1);
+                LOCAL_SPACE_MANAGER__DEPTH-1);
     p_local_space_manager->p_local_space__north_west__top =
         get_p_local_space_by__local_xyz_from__local_space_manager(
                 p_local_space_manager, 
                 0, 
-                HEIGHT_OF__LOCAL_SPACE_MANAGER-1,
-                DEPTH_OF__LOCAL_SPACE_MANAGER-1);
+                LOCAL_SPACE_MANAGER__HEIGHT-1,
+                LOCAL_SPACE_MANAGER__DEPTH-1);
     p_local_space_manager->p_local_space__north_east__top =
         get_p_local_space_by__local_xyz_from__local_space_manager(
                 p_local_space_manager, 
-                WIDTH_OF__LOCAL_SPACE_MANAGER-1, 
-                HEIGHT_OF__LOCAL_SPACE_MANAGER-1,
-                DEPTH_OF__LOCAL_SPACE_MANAGER-1);
+                LOCAL_SPACE_MANAGER__WIDTH-1, 
+                LOCAL_SPACE_MANAGER__HEIGHT-1,
+                LOCAL_SPACE_MANAGER__DEPTH-1);
 #else
     p_local_space_manager->p_local_space__south_west__top = 0;
     p_local_space_manager->p_local_space__south_east__top = 0;
@@ -469,7 +469,7 @@ void move_local_space_manager(
         move_p_ptr_local_space__north(
                 &p_local_space_manager->p_local_space__south_west);
 
-#if DEPTH_OF__LOCAL_SPACE_MANAGER > 1
+#if LOCAL_SPACE_MANAGER__DEPTH > 1
         move_p_ptr_local_space__north(
                 &p_local_space_manager->p_local_space__north_east__top);
         move_p_ptr_local_space__north(
@@ -485,7 +485,7 @@ void move_local_space_manager(
         p_local_space__end
             = p_local_space_manager->p_local_space__north_east;
 
-#if DEPTH_OF__LOCAL_SPACE_MANAGER > 1
+#if LOCAL_SPACE_MANAGER__DEPTH > 1
         do {
 #endif
             update_local_spaces_between__these_two_local_spaces(
@@ -494,7 +494,7 @@ void move_local_space_manager(
                     p_local_space__end,
                     chunk_vector__start__3i32,
                     DIRECTION__EAST);
-#if DEPTH_OF__LOCAL_SPACE_MANAGER > 1
+#if LOCAL_SPACE_MANAGER__DEPTH > 1
             move_p_ptr_local_space__upwards(&p_local_space__end);
         } while(poll_local_space__traversal(
                     &p_local_space__current, 
@@ -522,7 +522,7 @@ void move_local_space_manager(
         move_p_ptr_local_space__south(
                 &p_local_space_manager->p_local_space__south_west);
 
-#if DEPTH_OF__LOCAL_SPACE_MANAGER > 1
+#if LOCAL_SPACE_MANAGER__DEPTH > 1
         move_p_ptr_local_space__south(
                 &p_local_space_manager->p_local_space__north_east__top);
         move_p_ptr_local_space__south(
@@ -538,7 +538,7 @@ void move_local_space_manager(
         p_local_space__end
             = p_local_space_manager->p_local_space__south_east;
 
-#if DEPTH_OF__LOCAL_SPACE_MANAGER > 1
+#if LOCAL_SPACE_MANAGER__DEPTH > 1
         do {
 #endif
             update_local_spaces_between__these_two_local_spaces(
@@ -547,7 +547,7 @@ void move_local_space_manager(
                     p_local_space__end,
                     chunk_vector__start__3i32,
                     DIRECTION__EAST);
-#if DEPTH_OF__LOCAL_SPACE_MANAGER > 1
+#if LOCAL_SPACE_MANAGER__DEPTH > 1
             move_p_ptr_local_space__upwards(&p_local_space__end);
         } while(poll_local_space__traversal(
                     &p_local_space__current, 
@@ -575,7 +575,7 @@ void move_local_space_manager(
         move_p_ptr_local_space__east(
                 &p_local_space_manager->p_local_space__south_west);
 
-#if DEPTH_OF__LOCAL_SPACE_MANAGER > 1
+#if LOCAL_SPACE_MANAGER__DEPTH > 1
         move_p_ptr_local_space__east(
                 &p_local_space_manager->p_local_space__north_east__top);
         move_p_ptr_local_space__east(
@@ -591,7 +591,7 @@ void move_local_space_manager(
         p_local_space__end
             = p_local_space_manager->p_local_space__south_east;
 
-#if DEPTH_OF__LOCAL_SPACE_MANAGER > 1
+#if LOCAL_SPACE_MANAGER__DEPTH > 1
         do {
 #endif
             update_local_spaces_between__these_two_local_spaces(
@@ -600,7 +600,7 @@ void move_local_space_manager(
                     p_local_space__end,
                     chunk_vector__start__3i32,
                     DIRECTION__SOUTH);
-#if DEPTH_OF__LOCAL_SPACE_MANAGER > 1
+#if LOCAL_SPACE_MANAGER__DEPTH > 1
             move_p_ptr_local_space__upwards(&p_local_space__end);
         } while(poll_local_space__traversal(
                     &p_local_space__current, 
@@ -627,7 +627,7 @@ void move_local_space_manager(
         move_p_ptr_local_space__west(
                 &p_local_space_manager->p_local_space__south_west);
         
-#if DEPTH_OF__LOCAL_SPACE_MANAGER > 1
+#if LOCAL_SPACE_MANAGER__DEPTH > 1
         move_p_ptr_local_space__west(
                 &p_local_space_manager->p_local_space__north_east__top);
         move_p_ptr_local_space__west(
@@ -643,7 +643,7 @@ void move_local_space_manager(
         p_local_space__end
             = p_local_space_manager->p_local_space__south_west;
 
-#if DEPTH_OF__LOCAL_SPACE_MANAGER > 1
+#if LOCAL_SPACE_MANAGER__DEPTH > 1
         do {
 #endif
             update_local_spaces_between__these_two_local_spaces(
@@ -652,7 +652,7 @@ void move_local_space_manager(
                     p_local_space__end,
                     chunk_vector__start__3i32,
                     DIRECTION__SOUTH);
-#if DEPTH_OF__LOCAL_SPACE_MANAGER > 1
+#if LOCAL_SPACE_MANAGER__DEPTH > 1
             move_p_ptr_local_space__upwards(&p_local_space__end);
         } while(poll_local_space__traversal(
                     &p_local_space__current, 
@@ -660,7 +660,7 @@ void move_local_space_manager(
                     DIRECTION__UPWARDS));
 #endif
     }
-#if DEPTH_OF__LOCAL_SPACE_MANAGER > 1
+#if LOCAL_SPACE_MANAGER__DEPTH > 1
     if (direction__u8 & DIRECTION__UPWARDS) {
         p_local_space_manager->center_of__local_space_manager__3i32
             .z__i32++;
@@ -766,28 +766,28 @@ Local_Space *get_p_local_space_from__local_space_manager(
     if (chunk_vector__3i32.x__i32
             < (p_local_space_manager
                 ->center_of__local_space_manager__3i32.x__i32
-                - (WIDTH_OF__LOCAL_SPACE_MANAGER>>1))) {
+                - (LOCAL_SPACE_MANAGER__WIDTH>>1))) {
         debug_error("get_p_local_space_by__3i32F4_from__local_space_manager, position out of bounds.");
         return 0;
     }
     if (chunk_vector__3i32.x__i32
             > (p_local_space_manager
                 ->center_of__local_space_manager__3i32.x__i32
-                + (WIDTH_OF__LOCAL_SPACE_MANAGER>>1))) {
+                + (LOCAL_SPACE_MANAGER__WIDTH>>1))) {
         debug_error("get_p_local_space_by__3i32F4_from__local_space_manager, position out of bonuds.");
         return 0;
     }
     if (chunk_vector__3i32.y__i32
             < (p_local_space_manager
                 ->center_of__local_space_manager__3i32.y__i32
-                - (HEIGHT_OF__LOCAL_SPACE_MANAGER>>1))) {
+                - (LOCAL_SPACE_MANAGER__HEIGHT>>1))) {
         debug_error("get_p_local_space_by__3i32F4_from__local_space_manager, position out of bonuds.");
         return 0;
     }
     if (chunk_vector__3i32.y__i32
             > (p_local_space_manager
                 ->center_of__local_space_manager__3i32.y__i32
-                + (HEIGHT_OF__LOCAL_SPACE_MANAGER>>1))) {
+                + (LOCAL_SPACE_MANAGER__HEIGHT>>1))) {
         debug_error("get_p_local_space_by__3i32F4_from__local_space_manager, position out of bonuds.");
         return 0;
     }

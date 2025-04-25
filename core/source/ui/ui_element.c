@@ -5,6 +5,7 @@
 #include "defines_weak.h"
 #include "platform.h"
 #include "platform_defaults.h"
+#include "platform_defines.h"
 #include "rendering/gfx_context.h"
 #include "rendering/sprite.h"
 #include "rendering/sprite_manager.h"
@@ -222,23 +223,23 @@ const UI_Tile_Span *get_ui_tile_span_of__ui_element(
     *p_width_in__tiles = 
         p_hitbox_aabb
         ->width__quantity_u32
-        / UI_TILE__WIDTH_IN__PIXELS;
+        / UI_TILE__WIDTH_AND__HEIGHT_IN__PIXELS;
     *p_height_in__tiles =
         p_hitbox_aabb
         ->height__quantity_u32
-        / UI_TILE__HEIGHT_IN__PIXELS;
+        / UI_TILE__WIDTH_AND__HEIGHT_IN__PIXELS;
 
     *p_index_x__u32 = 
         (p_hitbox_aabb
         ->position__3i32F4
         .x__i32F4
-        / UI_TILE__WIDTH_IN__PIXELS)
+        / UI_TILE__WIDTH_AND__HEIGHT_IN__PIXELS)
         - (*p_width_in__tiles >> 1);
     *p_index_y__u32 =
         (p_hitbox_aabb
         ->position__3i32F4
         .y__i32F4
-        / UI_TILE__HEIGHT_IN__PIXELS)
+        / UI_TILE__WIDTH_AND__HEIGHT_IN__PIXELS)
         - (*p_height_in__tiles >> 1);
 
     return &p_ui_element->ui_tile_span;

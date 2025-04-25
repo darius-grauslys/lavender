@@ -37,32 +37,14 @@ void release_entity_from__entity_manager(
         Entity_Manager *p_manager, 
         Entity *p_entity);
 
-bool resolve_p_serialized_entity_ptr_with__entity_manager(
-        Entity_Manager *p_entity_manager,
-        Serialized_Entity_Ptr *s_entity_ptr);
-
 static inline
 Entity *get_p_entity_by__uuid_from__entity_manager(
         Entity_Manager *p_entity_manager,
         Identifier__u32 uuid) {
     return (Entity*)dehash_identitier_u32_in__contigious_array(
             (Serialization_Header*)&p_entity_manager->entities, 
-            ENTITY_MAXIMUM_QUANTITY_OF, 
+            MAX_QUANTITY_OF__ENTITIES, 
             uuid);
-}
-
-static Entity inline *get_p_entity_from__entity_manager(
-        Entity_Manager *p_entity_manager,
-        Index__u32 index_of__entity) {
-#ifndef NDEBUG
-    if (ENTITY_MAXIMUM_QUANTITY_OF 
-            <= index_of__entity) {
-        debug_abort("get_p_entity_from__entity_manager, index out of bounds %d",
-                index_of__entity);
-        return 0;
-    }
-#endif
-    return &p_entity_manager->entities[index_of__entity];
 }
 
 static inline
@@ -79,6 +61,33 @@ void set_entity_functions(
     p_entity->p_const_entity_functions =
         &p_entity_manager->entity_functions[
             get_kind_of__entity(p_entity)];
+}
+
+///
+/// NOTE: this is NOT a reliable way to reference specific entities
+/// and this function should only be used to blindly iterate over
+/// ALL entities. In other words, there is no guarantee that the
+/// entity "at index 1" will be the same entity 5 seconds ago.
+///
+/// If you need to keep track of a specific entity, hold onto
+/// that entity's UUID, and use the corresponding entity_manager 
+/// getter function to acquire it.
+///
+static inline
+Entity *get_p_entity_by__index_from__entity_manager(
+        Entity_Manager *p_entity_manager,
+        Index__u32 index_of__entity) {
+#ifndef NDEBUG
+    if (!p_entity_manager) {
+        debug_error("p_entity_manager == 0.");
+        return 0;
+    }
+    if (index_of__entity >= MAX_QUANTITY_OF__ENTITIES) {
+        debug_error("get_p_entity_by__index_from__entity_manager, index out of bounds.");
+        return 0;
+    }
+#endif
+    return p_entity_manager->ptr_array_of__entities[index_of__entity];
 }
 
 #endif

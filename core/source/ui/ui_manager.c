@@ -399,7 +399,7 @@ UI_Element *allocate_ui_element_from__ui_manager(
     }
 
     UI_Element *p_ui_element =
-        (UI_Element*)get_next_available__random_allocation_in__contiguous_array(
+        (UI_Element*)allocate_serialization_header_with__uuid_branding(
                 (Serialization_Header *)p_ui_manager->ui_elements, 
                 UI_ELEMENT_MAXIMUM_QUANTITY_OF, 
                 &p_ui_manager->randomizer, 

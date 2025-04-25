@@ -1,5 +1,6 @@
 #include "rendering/opengl/gl_gfx_window.h"
 #include "defines.h"
+#include "platform_defines.h"
 #include "rendering/aliased_texture_manager.h"
 #include "rendering/gfx_context.h"
 #include "rendering/graphics_window.h"
@@ -183,10 +184,10 @@ void GL_compose_gfx_window(
 
             GL_push_viewport(
                     p_GL_viewport_stack, 
-                    index_of__x_tile * TILE_WIDTH__IN_PIXELS, 
-                    index_of__y_tile * TILE_WIDTH__IN_PIXELS, 
-                    TILE_WIDTH__IN_PIXELS, 
-                    TILE_WIDTH__IN_PIXELS);
+                    index_of__x_tile * UI_TILE__WIDTH_AND__HEIGHT_IN__PIXELS, 
+                    index_of__y_tile * UI_TILE__WIDTH_AND__HEIGHT_IN__PIXELS, 
+                    UI_TILE__WIDTH_AND__HEIGHT_IN__PIXELS, 
+                    UI_TILE__WIDTH_AND__HEIGHT_IN__PIXELS);
 
             GL_render_with__shader__passthrough_using__index_sampling(
                     p_GL_shader__passthrough, 

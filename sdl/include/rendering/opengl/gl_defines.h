@@ -1,7 +1,7 @@
 #ifndef GL_DEFINES_H
 #define GL_DEFINES_H
 
-#include "platform_defines.h"
+#include "platform_defaults.h"
 #include "rendering/opengl/glad/glad.h"
 #include <cglm/types.h>
 #include <defines.h>

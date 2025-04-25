@@ -1,7 +1,7 @@
 #ifndef INPUT_H
 #define INPUT_H
 
-#include "platform_defines.h"
+#include "platform_defaults.h"
 #include <vectors.h>
 #include <defines.h>
 

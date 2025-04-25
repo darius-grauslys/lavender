@@ -2,7 +2,7 @@
 #include "client.h"
 #include "defines.h"
 #include "defines_weak.h"
-#include "platform_defines.h"
+#include "platform_defaults.h"
 #include "rendering/gfx_context.h"
 #include "rendering/opengl/gl_defines.h"
 #include "rendering/opengl/gl_framebuffer.h"
@@ -13,8 +13,10 @@
 #include "rendering/opengl/gl_viewport.h"
 #include "rendering/opengl/glad/glad.h"
 #include "vectors.h"
+#include "world/chunk_vectors.h"
 #include "world/global_space.h"
 #include "world/local_space.h"
+#include "world/tile_vectors.h"
 #include "world/world.h"
 #include "sdl_defines.h"
 
@@ -59,14 +61,14 @@ void GL_compose_chunk(
 
     // TODO: magic numbers
     Vector__3i32F4 chunk_pos_in__world__3i32f4 =
-        vector_3i32_to__vector_3i32F4(
+        chunk_vector_3i32_to__vector_3i32F4(
                 p_local_space->global_space__vector__3i32);
 
-    chunk_pos_in__world__3i32f4.x__i32F4 *= 1<<6;
-    chunk_pos_in__world__3i32f4.y__i32F4 *= 1<<6;
-    // chunk_pos_in__world__3i32f4.x__i32F4 += i32_to__i32F4(32);
-    // chunk_pos_in__world__3i32f4.y__i32F4 += i32_to__i32F4(28);
-    chunk_pos_in__world__3i32f4.z__i32F4 *= 1<<6;
+    // chunk_pos_in__world__3i32f4.x__i32F4 *= 1<<6;
+    // chunk_pos_in__world__3i32f4.y__i32F4 *= 1<<6;
+    // // chunk_pos_in__world__3i32f4.x__i32F4 += i32_to__i32F4(32);
+    // // chunk_pos_in__world__3i32f4.y__i32F4 += i32_to__i32F4(28);
+    // chunk_pos_in__world__3i32f4.z__i32F4 *= 1<<6;
 
     Camera *p_camera =
         p_ptr_array_of__gfx_windows[0]
@@ -75,13 +77,13 @@ void GL_compose_chunk(
     Index__u8 index_of__z_tile =
         (u32)((p_camera->position.z__i32F4 
                     >> 3)
-                & MASK(CHUNK__DEPTH_BIT_SHIFT));
+                & MASK(CHUNK__DEPTH__BIT_SHIFT));
 
     for (Index__u8 index_of__y_tile = 0;
-            index_of__y_tile < CHUNK_WIDTH__IN_TILES;
+            index_of__y_tile < CHUNK__HEIGHT;
             index_of__y_tile++) {
         for (Index__u8 index_of__x_tile = 0;
-                index_of__x_tile < CHUNK_WIDTH__IN_TILES;
+                index_of__x_tile < CHUNK__WIDTH;
                 index_of__x_tile++) {
 
             f_tile_render_kernel(
@@ -133,20 +135,23 @@ void GL_compose_chunk(
                         ->p_SDL_graphics_window__texture
                         ->height);
 
+                Tile_Vector__3i32 tile_vector__3i32 =
+                    get_tile_vector(
+                            index_of__x_tile, 
+                            index_of__y_tile, 
+                            index_of__z_tile);
                 Vector__3i32F4 tile_pos_in__world__3i32F4 =
                     add_vectors__3i32F4(
                             chunk_pos_in__world__3i32f4, 
-                            get_vector__3i32F4_using__i32(
-                                index_of__x_tile << 3, 
-                                index_of__y_tile << 3, 
-                                index_of__z_tile << 3));
+                            tile_vector_3i32_to__vector_3i32F4(tile_vector__3i32));
 
                 GL_link_data_to__shader(
                         p_PLATFORM_gfx_context,
                         p_GL_shader__chunk,
                         p_camera,
                         tile_pos_in__world__3i32F4,
-                        0b1000);
+                        0b1000
+                        << (TILE__WIDTH_AND__HEIGHT__BIT_SHIFT - 3));
                 
                 PLATFORM_use_texture(
                         p_PLATFORM_gfx_context, 
@@ -157,15 +162,25 @@ void GL_compose_chunk(
                 float width, height;
                 float flip_x, flip_y;
 
+                Quantity__u32 tilesheet__width_in__tiles =
+                    p_ptr_array_of__PLATFORM_textures[
+                    index_of__gfx_window]->width
+                        / TILE__WIDTH_AND__HEIGHT_IN__PIXELS;
+
+                Quantity__u32 tilesheet__height_in__tiles =
+                    p_ptr_array_of__PLATFORM_textures[
+                    index_of__gfx_window]->height
+                        / TILE__WIDTH_AND__HEIGHT_IN__PIXELS;
+
                 index_x =
                     tile_render_kernel_results[index_of__gfx_window]
-                        .index_of__texture % TILE_SHEET_WIDTH__IN_TILES;
+                        .index_of__texture % tilesheet__width_in__tiles;
                 index_y =
-                    (int)(TILE_SHEET_WIDTH__IN_TILES-1)
+                    (int)(tilesheet__width_in__tiles - 1)
                         - (int)(tile_render_kernel_results[
                                 index_of__gfx_window]
                             .index_of__texture 
-                            / (int)TILE_SHEET_WIDTH__IN_TILES);
+                            / (int)tilesheet__width_in__tiles);
 
                 glUniform2f(
                         p_GL_shader__chunk
@@ -174,9 +189,9 @@ void GL_compose_chunk(
                         index_y
                         );
                 width =
-                    1.0f / (int)TILE_SHEET_WIDTH__IN_TILES;
+                    1.0f / (int)tilesheet__width_in__tiles;
                 height =
-                    1.0f / (int)TILE_SHEET_WIDTH__IN_TILES;
+                    1.0f / (int)tilesheet__height_in__tiles;
                 glUniform2f(
                         p_GL_shader__chunk
                             ->location_of__general_uniform_1,

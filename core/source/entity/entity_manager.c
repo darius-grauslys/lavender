@@ -28,16 +28,25 @@ f_Entity_Initializer get_f_entity_initializer_by__kind_from__entity_manager(
 }
 
 void initialize_entity_manager(Entity_Manager *p_entity_manager) {
+#ifndef NDEBUG
+    if (!p_entity_manager) {
+        debug_error("initialize_entity_manager, p_entity_manager == 0.");
+        return;
+    }
+#endif
     memset(p_entity_manager,
             0,
             sizeof(Entity_Manager));
     initialize_serialization_header__contiguous_array(
             (Serialization_Header*)p_entity_manager->entities, 
-            ENTITY_MAXIMUM_QUANTITY_OF, 
+            MAX_QUANTITY_OF__ENTITIES, 
             sizeof(Entity));
     initialize_repeatable_psuedo_random(
             &p_entity_manager->randomizer, 
             (u32)(uint64_t)p_entity_manager);
+
+    p_entity_manager->p_ptr_entity__next_in_ptr_array =
+        p_entity_manager->ptr_array_of__entities;
 
     register_entities(p_entity_manager);
 }
@@ -71,9 +80,9 @@ Entity *allocate_entity_in__entity_manager(
         enum Entity_Kind kind_of_entity,
         Vector__3i32F4 position__3i32F4) {
     Entity *p_entity =
-        (Entity*)get_next_available__random_allocation_in__contiguous_array(
+        (Entity*)allocate_serialization_header_with__uuid_branding(
                 (Serialization_Header*)p_entity_manager->entities, 
-                ENTITY_MAXIMUM_QUANTITY_OF,
+                MAX_QUANTITY_OF__ENTITIES,
                 &p_entity_manager->randomizer,
                 Lavender_Type__Entity);
     
@@ -97,8 +106,9 @@ Entity *allocate_entity_in__entity_manager(
     }
 
     set_entity_as__enabled(p_entity);
-
-    p_entity_manager->entity_count__quantity_u32++;
+    *p_entity_manager->p_ptr_entity__next_in_ptr_array =
+        p_entity;
+    p_entity_manager->p_ptr_entity__next_in_ptr_array++;
     
     return p_entity;
 }
@@ -108,8 +118,6 @@ void release_entity_from__entity_manager(
         World *p_world,
         Entity_Manager *p_entity_manager, 
         Entity *p_entity) {
-    if (p_entity_manager->entity_count__quantity_u32 > 0)
-        p_entity_manager->entity_count__quantity_u32--;
     if (p_entity->p_const_entity_functions->m_entity_dispose_handler) {
         p_entity->p_const_entity_functions->m_entity_dispose_handler(
                 p_entity,
@@ -122,22 +130,20 @@ void release_entity_from__entity_manager(
     initialize_serialization_header_for__deallocated_struct(
             &p_entity->_serialization_header, 
             sizeof(Entity));
-}
 
-bool resolve_p_serialized_entity_ptr_with__entity_manager(
-        Entity_Manager *p_entity_manager,
-        Serialized_Entity_Ptr *s_entity_ptr) {
-    if (is_p_serialized_field__linked(
-                s_entity_ptr)
-            && s_entity_ptr->p_serialized_field__entity
-            - p_entity_manager->entities
-            < ENTITY_MAXIMUM_QUANTITY_OF
-            && s_entity_ptr->p_serialized_field__entity
-            - p_entity_manager->entities
-            >= 0)
-        return true;
-    return link_serialized_field_against__contiguous_array(
-            s_entity_ptr, 
-            (Serialization_Header*)p_entity_manager->entities, 
-            ENTITY_MAXIMUM_QUANTITY_OF);
+    for (Index__u32 index_of__entity = 0;
+            index_of__entity
+            < MAX_QUANTITY_OF__ENTITIES;
+            index_of__entity++) {
+        if (p_entity
+                != p_entity_manager->ptr_array_of__entities[index_of__entity]) {
+            continue;
+        }
+
+        p_entity_manager->p_ptr_entity__next_in_ptr_array--;
+        p_entity_manager->ptr_array_of__entities[index_of__entity] =
+            *p_entity_manager->p_ptr_entity__next_in_ptr_array;
+        *p_entity_manager->p_ptr_entity__next_in_ptr_array = 0;
+        break;
+    }
 }

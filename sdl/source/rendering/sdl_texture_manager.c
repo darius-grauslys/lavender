@@ -1,6 +1,6 @@
 #include "debug/debug.h"
 #include "defines_weak.h"
-#include "platform_defines.h"
+#include "platform_defaults.h"
 #include "rendering/sdl_gfx_context.h"
 #include "sdl_defines.h"
 #include <rendering/sdl_texture_manager.h>

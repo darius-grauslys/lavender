@@ -35,8 +35,7 @@ void m_process__deserialize_world(
 
 void initialize_world(
         Game *p_game,
-        World *p_world,
-        f_Chunk_Generator f_chunk_generator) {
+        World *p_world) {
 
     initialize_serialization_header(
             &p_world->_serialization_header, 
@@ -110,11 +109,14 @@ void manage_world__entities(Game *p_game) {
     Entity_Manager *p_entity_manager =
         &p_game->world.entity_manager;
 
-    for (Quantity__u16 i=0;
-            i<ENTITY_MAXIMUM_QUANTITY_OF;i++) {
+    for (Index__u32 index_of__entity = 0;
+            index_of__entity 
+            < MAX_QUANTITY_OF__ENTITIES;
+            index_of__entity++) {
         Entity *p_entity =
-            get_p_entity_from__entity_manager(
-                    p_entity_manager, i);
+            get_p_entity_by__index_from__entity_manager(
+                    p_entity_manager, 
+                    index_of__entity);
         if (!is_entity__allocated(p_entity)
                 || !is_entity__enabled(p_entity)) {
             continue;

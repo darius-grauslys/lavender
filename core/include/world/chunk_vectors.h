@@ -1,14 +1,22 @@
 #ifndef CHUNK_VECTORS_H
 #define CHUNK_VECTORS_H
 
+#include "platform_defaults.h"
 #include <defines.h>
 #include <vectors.h>
+
+static inline
+i32 normalize_xyz_i32_to__chunk_xyz_i32(
+        i32 tile_xyz__i32) {
+    return (tile_xyz__i32
+                >> LOCAL_SPACE__WIDTH_AND__HEIGHT_IN__PIXELS__BIT_SHIFT);
+}
 
 static inline
 i32 normalize_xyz_tile_i32_to__chunk_xyz_i32(
         i32 tile_xyz__i32) {
     return (tile_xyz__i32
-                >> CHUNK_LOCAL_SPACE__BIT_SIZE);
+                >> LOCAL_SPACE__WIDTH_AND__HEIGHT_IN__TILES__BIT_SHIFT);
 }
 
 static inline
@@ -36,7 +44,7 @@ static inline
 i32 normalize_xyz_i32F4_to__chunk_xyz_i32(i32F4 xyz__i32F4) {
     return ((xyz__i32F4
         >> FRACTIONAL_PERCISION_4__BIT_SIZE)
-        >> ENTITY_CHUNK_LOCAL_SPACE__BIT_SIZE);
+        >> LOCAL_SPACE__WIDTH_AND__HEIGHT_IN__PIXELS__BIT_SHIFT);
 }
 
 static Signed_Index__i32 inline get_chunk_x_i32_from__vector_3i32F4(
@@ -76,9 +84,9 @@ static Chunk_Vector__3i32 inline get_chunk_vector__3i32_with__i32F4(
         i32F4 y,
         i32F4 z) {
     return (Vector__3i32) {
-        x >> ENTITY_CHUNK_LOCAL_SPACE__BIT_SIZE, 
-        y >> ENTITY_CHUNK_LOCAL_SPACE__BIT_SIZE, 
-        z >> ENTITY_CHUNK_LOCAL_SPACE__BIT_SIZE
+        x >> LOCAL_SPACE__WIDTH_AND__HEIGHT_IN__PIXELS__BIT_SHIFT, 
+        y >> LOCAL_SPACE__WIDTH_AND__HEIGHT_IN__PIXELS__BIT_SHIFT, 
+        z >> LOCAL_SPACE__WIDTH_AND__HEIGHT_IN__PIXELS__BIT_SHIFT
     };
 }
 
@@ -106,11 +114,11 @@ static Chunk_Vector__3i32 inline vector_3i32_to__chunk_vector_3i32(
         Vector__3i32 vector) {
     return (Chunk_Vector__3i32) {
         vector.x__i32 
-            >> ENTITY_CHUNK_LOCAL_SPACE__BIT_SIZE,
+            >> LOCAL_SPACE__WIDTH_AND__HEIGHT_IN__PIXELS__BIT_SHIFT,
         vector.y__i32 
-            >> ENTITY_CHUNK_LOCAL_SPACE__BIT_SIZE,
+            >> LOCAL_SPACE__WIDTH_AND__HEIGHT_IN__PIXELS__BIT_SHIFT,
         vector.z__i32
-            >> ENTITY_CHUNK_LOCAL_SPACE__BIT_SIZE
+            >> LOCAL_SPACE__WIDTH_AND__HEIGHT_IN__PIXELS__BIT_SHIFT
     };
 }
 
@@ -118,11 +126,11 @@ static Vector__3i32 inline chunk_vector_3i32_to__vector_3i32(
         Chunk_Vector__3i32 chunk_vector) {
     return (Vector__3i32) {
         chunk_vector.x__i32 
-            << ENTITY_CHUNK_LOCAL_SPACE__BIT_SIZE,
+            << LOCAL_SPACE__WIDTH_AND__HEIGHT_IN__PIXELS__BIT_SHIFT,
         chunk_vector.y__i32 
-            << ENTITY_CHUNK_LOCAL_SPACE__BIT_SIZE,
+            << LOCAL_SPACE__WIDTH_AND__HEIGHT_IN__PIXELS__BIT_SHIFT,
         chunk_vector.z__i32
-            << ENTITY_CHUNK_LOCAL_SPACE__BIT_SIZE
+            << LOCAL_SPACE__WIDTH_AND__HEIGHT_IN__PIXELS__BIT_SHIFT
     };
 }
 

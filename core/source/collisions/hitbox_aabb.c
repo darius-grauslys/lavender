@@ -3,6 +3,7 @@
 #include "numerics.h"
 #include "serialization/serialization_header.h"
 #include "vectors.h"
+#include "world/tile_vectors.h"
 #include <collisions/hitbox_aabb.h>
 #include <debug/debug.h>
 
@@ -207,13 +208,11 @@ Direction__u8 get_tile_transition_direction_of__hitbox(
         DIRECTION__NONE;
 
     Signed_Index__i32 x__tile_pos =
-        (hitbox->position__3i32F4.x__i32F4 >> FRACTIONAL_PERCISION_4__BIT_SIZE)
-        >> TILE_PIXEL_WIDTH__BIT_SIZE
-        ;
+        normalize_xyz_i32F4_to__tile_xyz_i32(
+                hitbox->position__3i32F4.x__i32F4);
     Signed_Index__i32 y__tile_pos =
-        (hitbox->position__3i32F4.y__i32F4 >> FRACTIONAL_PERCISION_4__BIT_SIZE)
-        >> TILE_PIXEL_WIDTH__BIT_SIZE
-        ;
+        normalize_xyz_i32F4_to__tile_xyz_i32(
+                hitbox->position__3i32F4.y__i32F4);
 
     initialize_vector_3i32F4_as__aa_bb(
             aa, hitbox, 
@@ -224,21 +223,13 @@ Direction__u8 get_tile_transition_direction_of__hitbox(
 
     // TODO: consolidate bit manips
     Signed_Index__i32 x__aa_tile_pos =
-        (aa->x__i32F4 >> FRACTIONAL_PERCISION_4__BIT_SIZE)
-        >> TILE_PIXEL_WIDTH__BIT_SIZE
-        ;
+        normalize_xyz_i32F4_to__tile_xyz_i32(aa->x__i32F4);
     Signed_Index__i32 y__aa_tile_pos = 
-        (aa->y__i32F4 >> FRACTIONAL_PERCISION_4__BIT_SIZE)
-        >> TILE_PIXEL_WIDTH__BIT_SIZE
-        ;
+        normalize_xyz_i32F4_to__tile_xyz_i32(aa->y__i32F4);
     Signed_Index__i32 x__bb_tile_pos =
-        (bb->x__i32F4 >> FRACTIONAL_PERCISION_4__BIT_SIZE)
-        >> TILE_PIXEL_WIDTH__BIT_SIZE
-        ;
+        normalize_xyz_i32F4_to__tile_xyz_i32(bb->x__i32F4);
     Signed_Index__i32 y__bb_tile_pos = 
-        (bb->y__i32F4 >> FRACTIONAL_PERCISION_4__BIT_SIZE)
-        >> TILE_PIXEL_WIDTH__BIT_SIZE
-        ;
+        normalize_xyz_i32F4_to__tile_xyz_i32(bb->y__i32F4);
 
     if (direction_of_movement & DIRECTION__EAST
             && (x__bb_tile_pos > x__tile_pos)) {
@@ -352,6 +343,7 @@ Direction__u8 is_this_hitbox__overlapping_this_hitbox(
     return DIRECTION__NONE;
 
 get_direction:
+    ;
     Vector__3i32F4 aa__one_still;
     Vector__3i32F4 bb__one_still;
     initialize_vector_3i32F4_as__aa_bb_without__velocity(

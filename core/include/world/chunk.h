@@ -40,8 +40,8 @@ void set_tile_of__chunk(
         Tile* tile) {
     //TODO: we need debug stuffs.
     int32_t index = 
-        (1 << (local_tile_vector.z__u8 * CHUNK__DEPTH_BIT_SHIFT))
-        + (1 << (local_tile_vector.y__u8 * CHUNK__HEIGHT_BIT_SHIFT)) 
+        (1 << (local_tile_vector.z__u8 * CHUNK__DEPTH__BIT_SHIFT))
+        + (1 << (local_tile_vector.y__u8 * CHUNK__WIDTH__AND_HEIGHT__BIT_SHIFT)) 
         + local_tile_vector.x__u8;
 
     chunk->tiles[index] = *tile;

@@ -6,8 +6,7 @@
 
 void initialize_world(
         Game *p_game,
-        World *p_world,
-        f_Chunk_Generator f_chunk_generator);
+        World *p_world);
 
 void manage_world(
         Game *p_game,

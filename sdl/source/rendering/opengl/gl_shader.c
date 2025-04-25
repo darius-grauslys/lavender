@@ -1,6 +1,7 @@
 #include "align.h"
 #include "defines.h"
 #include "numerics.h"
+#include "platform_defaults.h"
 #include "rendering/opengl/gl_defines.h"
 #include "rendering/opengl/gl_numerics.h"
 #include "rendering/opengl/gl_viewport.h"
@@ -179,11 +180,12 @@ void GL_link_camera_projection_to__shader(
             GL_peek_viewport_stack(
                     p_viewport_stack);
         // TODO: magic numbers
+#warning TODO: if changing tile sizes in engine_config looks weird, update these magic numbers:
         glm_ortho_lh_no(
-                (int)(-p_viewport->width / 2 / TILE_PIXEL_WIDTH) +16, 
-                (int)( p_viewport->width / 2 / TILE_PIXEL_WIDTH) +16,
-                (int)( p_viewport->height / 2 / TILE_PIXEL_WIDTH) + 16,
-                (int)( p_viewport->height / 2 / TILE_PIXEL_WIDTH) - 16, 
+                (int)(-p_viewport->width / 2 /  TILE__WIDTH_AND__HEIGHT_IN__PIXELS) +16, 
+                (int)( p_viewport->width / 2 /  TILE__WIDTH_AND__HEIGHT_IN__PIXELS) +16,
+                (int)( p_viewport->height / 2 / TILE__WIDTH_AND__HEIGHT_IN__PIXELS) + 16,
+                (int)( p_viewport->height / 2 / TILE__WIDTH_AND__HEIGHT_IN__PIXELS) - 16, 
                 -0.25f,
                  1808.0f,
                  *p_projection);

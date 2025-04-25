@@ -90,11 +90,66 @@ Identifier__u32 get_next_available__random_branded_uuid_in__contiguous_array(
             uuid);
 }
 
+///
+/// NOTE: if p_OUT_uuid__u32 is NOT IDENTIFIER__UNKNOWN__u32, then it is
+/// treated as a branding UUID mask. Be sure to initialize the p_OUT
+/// parameter before passing it in!
+///
+/// p_OUT_uuid__u32: This will return the resolved uuid. Be sure to
+/// allocate the type!
+///
 Serialization_Header *get_next_available__random_allocation_in__contiguous_array(
         Serialization_Header *p_serialization_headers,
         Quantity__u32 length_of__p_serialization_headers,
         Repeatable_Psuedo_Random *p_randomizer,
-        Identifier__u32 uuid__branding__u32);
+        Identifier__u32 *p_OUT_uuid__u32);
+
+static inline
+Serialization_Header *allocate_serialization_header_with__this_uuid(
+        Serialization_Header *p_serialization_headers,
+        Quantity__u32 length_of__p_serialization_headers,
+        Identifier__u32 uuid__u32) {
+    Serialization_Header *p_serialization_header =
+        get_next_available__allocation_in__contiguous_array(
+                p_serialization_headers, 
+                length_of__p_serialization_headers, 
+                uuid__u32);
+    ALLOCATE_P(p_serialization_header, uuid__u32);
+    return p_serialization_header;
+}
+
+static inline
+Serialization_Header *allocate_serialization_header(
+        Serialization_Header *p_serialization_headers,
+        Quantity__u32 length_of__p_serialization_headers,
+        Repeatable_Psuedo_Random *p_randomizer) {
+    Identifier__u32 uuid__u32 = IDENTIFIER__UNKNOWN__u32;
+    Serialization_Header *p_serialization_header =
+        get_next_available__random_allocation_in__contiguous_array(
+                p_serialization_headers, 
+                length_of__p_serialization_headers, 
+                p_randomizer, 
+                &uuid__u32);
+    ALLOCATE_P(p_serialization_header, uuid__u32);
+    return p_serialization_header;
+}
+
+static inline
+Serialization_Header *allocate_serialization_header_with__uuid_branding(
+        Serialization_Header *p_serialization_headers,
+        Quantity__u32 length_of__p_serialization_headers,
+        Repeatable_Psuedo_Random *p_randomizer,
+        Identifier__u32 uuid__branding__u32) {
+    Serialization_Header *p_serialization_header =
+        get_next_available__random_allocation_in__contiguous_array(
+                p_serialization_headers, 
+                length_of__p_serialization_headers, 
+                p_randomizer, 
+                &uuid__branding__u32);
+    ALLOCATE_P(p_serialization_header,
+            uuid__branding__u32);
+    return p_serialization_header;
+}
 
 static inline
 Identifier__u64 get_next_available__random_uuid_in__contiguous_array__uuid_64(
@@ -126,12 +181,69 @@ get_next_available__random_branded_uuid_in__contiguous_array__uuid_64(
             uuid);
 }
 
+///
+/// NOTE: if p_OUT_uuid__u64 is NOT IDENTIFIER__UNKNOWN__u64, then it is
+/// treated as a branding UUID mask. Be sure to initialize the p_OUT
+/// parameter before passing it in!
+///
+/// p_OUT_uuid__u64: This will return the resolved uuid. Be sure to
+/// allocate the type!
+///
 Serialization_Header__UUID_64
 *get_next_available__random_allocation_in__contiguous_array__uuid_64(
         Serialization_Header__UUID_64 *p_serialization_headers,
         Quantity__u32 length_of__p_serialization_headers,
         Repeatable_Psuedo_Random *p_randomizer,
-        Identifier__u64 uuid__branding__u64);
+        Identifier__u64 *p_OUT_uuid__u64);
+
+static inline
+Serialization_Header__UUID_64 
+*allocate_serialization_header_with__this_uuid__u64(
+        Serialization_Header__UUID_64 *p_serialization_headers__u64,
+        Quantity__u32 length_of__p_serialization_headers,
+        Identifier__u64 uuid__u64) {
+    Serialization_Header__UUID_64 *p_serialization_header__u64 =
+        get_next_available__allocation_in__contiguous_array__u64(
+                p_serialization_headers__u64, 
+                length_of__p_serialization_headers, 
+                uuid__u64);
+    ALLOCATE_P(p_serialization_header__u64, uuid__u64);
+    return p_serialization_header__u64;
+}
+
+static inline
+Serialization_Header__UUID_64 *allocate_serialization_header__u64(
+        Serialization_Header__UUID_64 *p_serialization_headers__u64,
+        Quantity__u32 length_of__p_serialization_headers,
+        Repeatable_Psuedo_Random *p_randomizer) {
+    Identifier__u64 uuid__u64 = IDENTIFIER__UNKNOWN__u64;
+    Serialization_Header__UUID_64 *p_serialization_header__u64 =
+        get_next_available__random_allocation_in__contiguous_array__uuid_64(
+                p_serialization_headers__u64, 
+                length_of__p_serialization_headers, 
+                p_randomizer, 
+                &uuid__u64);
+    ALLOCATE_P__u64(p_serialization_header__u64, uuid__u64);
+    return p_serialization_header__u64;
+}
+
+static inline
+Serialization_Header__UUID_64 
+*allocate_serialization_header_with__uuid_branding__u64(
+        Serialization_Header__UUID_64 *p_serialization_headers,
+        Quantity__u32 length_of__p_serialization_headers,
+        Repeatable_Psuedo_Random *p_randomizer,
+        Identifier__u64 uuid__branding__u64) {
+    Serialization_Header__UUID_64 *p_serialization_header__u64 =
+        get_next_available__random_allocation_in__contiguous_array__uuid_64(
+                p_serialization_headers, 
+                length_of__p_serialization_headers, 
+                p_randomizer, 
+                &uuid__branding__u64);
+    ALLOCATE_P__u64(p_serialization_header__u64,
+            uuid__branding__u64);
+    return p_serialization_header__u64;
+}
 
 static inline
 bool has_uuid_in__contiguous_array(

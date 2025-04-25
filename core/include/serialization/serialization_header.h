@@ -34,6 +34,32 @@
     (!serialized_header || is_serialized_struct__deallocated__uuid_64(\
             (Serialization_Header__UUID_64*)serialized_header))
 
+#define ALLOCATE_P(p_serialized_header, uuid)\
+    initialize_serialization_header(\
+            (Serialization_Header*)p_serialized_header,\
+            uuid,\
+            ((Serialization_Header*)p_serialized_header)\
+            ->size_of__struct)
+
+#define ALLOCATE_P__u64(p_serialized_header, uuid)\
+    initialize_serialization_header__uuid_64(\
+            (Serialization_Header__UUID_64*)p_serialized_header,\
+            uuid,\
+            ((Serialization_Header__UUID_64*)p_serialized_header)\
+            ->size_of__struct)
+
+#define DEALLOCATE_P(p_serialized_header)\
+    initialize_serialization_header_for__deallocated_struct(\
+            (Serialization_Header*)p_serialized_header,\
+            ((Serialization_Header*)p_serialized_header)\
+            ->size_of__struct)
+
+#define DEALLOCATE_P__u64(p_serialized_header)\
+    initialize_serialization_header_for__deallocated_struct__uuid_64(\
+            (Serialization_Header__UUID_64*)p_serialized_header,\
+            ((Serialization_Header__UUID_64*)p_serialized_header)\
+            ->size_of__struct)
+
 void initialize_serialization_header(
         Serialization_Header *p_serialization_header,
         Identifier__u32 identifier_for__serialized_struct,

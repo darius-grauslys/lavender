@@ -234,7 +234,7 @@ enum Sprite_Animation_Kind {
 };
 #endif
 
-#include "types/implemented/sprite_kind.h"
+#include <types/implemented/sprite_kind.h>
 #ifndef DEFINE_SPRITE_KIND
 typedef enum Sprite_Kind {
     Sprite_Kind__None = 0,
@@ -396,11 +396,6 @@ typedef enum Game_Action_Kind {
     Game_Action_Kind__Hitbox__Set_Position,
     Game_Action_Kind__Hitbox__Apply_Velocity,
     Game_Action_Kind__Custom,
-
-    ///
-    /// Custom Game Actions YOU define for YOUR GAME go here.
-    ///
-
     Game_Action_Kind__Unknown
 } Game_Action_Kind;
 #endif

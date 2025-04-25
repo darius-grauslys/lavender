@@ -72,7 +72,7 @@ PLATFORM_Texture *allocate_p_PLATFORM_texture_with__alias(
     }
 
     Aliased_Texture *p_aliased_texture__available =
-        (Aliased_Texture*)get_next_available__random_allocation_in__contiguous_array(
+        (Aliased_Texture*)allocate_serialization_header_with__uuid_branding(
                 (Serialization_Header*)p_aliased_texture_manager->aliased_textures, 
                 MAX_QUANTITY_OF__ALIASED_TEXTURES, 
                 &p_aliased_texture_manager->repeatable_psuedo_random_for__texture_uuid, 
@@ -124,7 +124,7 @@ PLATFORM_Texture *load_p_PLATFORM_texture_from__path_with__alias(
     }
 
     Aliased_Texture *p_aliased_texture__available =
-        (Aliased_Texture*)get_next_available__random_allocation_in__contiguous_array(
+        (Aliased_Texture*)allocate_serialization_header_with__uuid_branding(
                 (Serialization_Header*)p_aliased_texture_manager->aliased_textures, 
                 MAX_QUANTITY_OF__ALIASED_TEXTURES, 
                 &p_aliased_texture_manager->repeatable_psuedo_random_for__texture_uuid, 

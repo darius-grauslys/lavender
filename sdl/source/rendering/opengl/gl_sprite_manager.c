@@ -1,5 +1,5 @@
 #include "defines_weak.h"
-#include "platform_defines.h"
+#include "platform_defaults.h"
 #include "rendering/opengl/gl_gfx_sub_context.h"
 #include "rendering/opengl/gl_shader.h"
 #include "rendering/opengl/gl_sprite.h"

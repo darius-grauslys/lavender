@@ -51,7 +51,7 @@ Graphics_Window *allocate_graphics_window_with__uuid_from__graphics_window_manag
         Identifier__u32 uuid__u32,
         Texture_Flags texture_flags_for__gfx_window) {
     Graphics_Window *p_graphics_window__available = 
-        (Graphics_Window*)get_next_available__allocation_in__contiguous_array(
+        (Graphics_Window*)allocate_serialization_header_with__this_uuid(
                 (Serialization_Header *)p_graphics_window_manager
                     ->graphics_windows, 
                 MAX_QUANTITY_OF__GRAPHICS_WINDOWS, 
@@ -69,6 +69,7 @@ Graphics_Window *allocate_graphics_window_with__uuid_from__graphics_window_manag
 
     if (!p_PLATFORM_gfx_window) {
         debug_error("allocate_graphics_window_with__graphics_window_manager, failed to allocate PLATFORM_gfx_window.");
+        DEALLOCATE_P(p_graphics_window__available);
         return 0;
     }
 

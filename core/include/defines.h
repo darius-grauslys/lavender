@@ -2,7 +2,6 @@
 #define DEFINES_H
 
 #include "platform.h"
-#include "platform_defines.h"
 #include "platform_defaults.h"
 #include "types/implemented/chunk_generator_kind.h"
 #include "types/implemented/entity_kind.h"
@@ -902,34 +901,13 @@ typedef void (*f_Entity_Initializer)(
         Entity *p_entity,
         Vector__3i32F4 position__3i32F4);
 
-#define ENTITY_TILE_LOCAL_SPACE__BIT_SIZE 3
-#define CHUNK_LOCAL_SPACE__BIT_SIZE 3
-
-#define ENTITY_CHUNK_LOCAL_SPACE__BIT_SIZE \
-    (ENTITY_TILE_LOCAL_SPACE__BIT_SIZE\
-     + CHUNK_LOCAL_SPACE__BIT_SIZE)
-
-#define ENTITY_TILE_FRACTIONAL__BIT_SIZE \
-    (FRACTIONAL_PERCISION_4__BIT_SIZE \
-     + ENTITY_TILE_LOCAL_SPACE__BIT_SIZE)
-
-#define ENTITY_CHUNK_LOCAL_SPACE_FRACTIONAL__BIT_SIZE \
-    (FRACTIONAL_PERCISION_4__BIT_SIZE \
-     + ENTITY_CHUNK_LOCAL_SPACE__BIT_SIZE)
-
-#define ENTITY_CHUNK_LOCAL_SPACE__BIT_MASK \
-    MASK(ENTITY_CHUNK_LOCAL_SPACE__BIT_SIZE)
-
-// 1.5 pixels.
-#define ENTITY_VELOCITY__PLAYER          0b1100
-#define ENTITY_VELOCITY__PLAYER_DIAGONAL 0b1001
-
 typedef struct Entity_Manager_t {
-    Entity entities[ENTITY_MAXIMUM_QUANTITY_OF];
+    Entity entities[MAX_QUANTITY_OF__ENTITIES];
+    Entity *ptr_array_of__entities[MAX_QUANTITY_OF__ENTITIES];
     Entity_Functions entity_functions[Entity_Kind__Unknown];
     f_Entity_Initializer F_entity_initializer_table[Entity_Kind__Unknown];
     Repeatable_Psuedo_Random randomizer;
-    Quantity__u32 entity_count__quantity_u32;
+    Entity **p_ptr_entity__next_in_ptr_array;
 } Entity_Manager;
 
 ///
@@ -1629,10 +1607,10 @@ typedef struct Site_t {
 
 #define REGION__WIDTH_IN__CHUNKS \
     (REGION__WIDTH \
-    >> CHUNK__WIDTH_BIT_SHIFT)
+    >> CHUNK__WIDTH__AND_HEIGHT__BIT_SHIFT)
 #define REGION__HEIGHT_IN__CHUNKS \
     (REGION__HEIGHT \
-    >> CHUNK__HEIGHT_BIT_SHIFT)
+    >> CHUNK__WIDTH__AND_HEIGHT__BIT_SHIFT)
 
 #define SITE_QUANTITY_OF__PER_REGION \
     ((REGION__WIDTH * REGION__HEIGHT) \
@@ -1688,20 +1666,6 @@ typedef uint8_t Chunk_Tile_Index__u8;
 /// Local to a chunk.
 ///
 typedef Vector__3u8 Local_Tile_Vector__3u8;
-
-
-#define TILE_PIXEL_HEIGHT 8
-#define TILE_PIXEL_WIDTH 8
-
-#define TILE_PIXEL_WIDTH__BIT_SIZE 3
-
-#define TILE_SHEET_PIXEL_WIDTH 256
-#define TILE_SHEET_PIXEL_HEIGHT 256
-
-#define TILE_SHEET_TILE_WIDTH (TILE_SHEET_PIXEL_WIDTH / TILE_PIXEL_WIDTH)
-#define TILE_SHEET_TILE_HEIGHT (TILE_SHEET_PIXEL_HEIGHT / TILE_PIXEL_HEIGHT)
-
-#define QUANTITY_OF_TILES__IN_TILE_SHEET_ROW (TILE_SHEET_PIXEL_WIDTH / TILE_PIXEL_WIDTH)
 
 #define TILE_FLAGS__BIT_SHIFT_IS_SIGHT_BLOCKING 0
 #define TILE_FLAGS__BIT_SHIFT_IS_UNPASSABLE \
