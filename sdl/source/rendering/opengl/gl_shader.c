@@ -2,6 +2,7 @@
 #include "defines.h"
 #include "numerics.h"
 #include "platform_defaults.h"
+#include "platform_defines.h"
 #include "rendering/opengl/gl_defines.h"
 #include "rendering/opengl/gl_numerics.h"
 #include "rendering/opengl/gl_viewport.h"
@@ -28,7 +29,6 @@ int initialize_shader_2d(GL_Shader_2D *shader, const char *source_vertex,
     shader->vertex_handle = 0;
     shader->fragment_handle = 0;
 
-    debug_info("compiling vertex shader...");
     shader->vertex_handle = 
         glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(shader->vertex_handle, 1, &source_vertex, NULL);
@@ -39,12 +39,11 @@ int initialize_shader_2d(GL_Shader_2D *shader, const char *source_vertex,
     if (!shader->success_code) {
         char log[512];
         glGetShaderInfoLog(shader->vertex_handle, 512, NULL, log);
-        debug_error("Failed to load vertex shader: %s", log);
+        debug_error("SDL::GL::initialize_shader_2d, failed to load vertex shader: %s", log);
         glDeleteShader(shader->vertex_handle);
         return shader->success_code;
     }
 
-    debug_info("compiling fragment shader...");
     shader->fragment_handle = 
         glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(shader->fragment_handle, 1, &source_fragment, NULL);
@@ -55,13 +54,12 @@ int initialize_shader_2d(GL_Shader_2D *shader, const char *source_vertex,
     if (!shader->success_code) {
         char log[512];
         glGetShaderInfoLog(shader->fragment_handle, 512, NULL, log);
-        debug_error("Failed to load fragment shader: %s", log);
+        debug_error("SDL::GL::initialize_shader_2d, ailed to load fragment shader: %s", log);
         glDeleteShader(shader->vertex_handle);
         glDeleteShader(shader->fragment_handle);
         return shader->success_code;
     }
 
-    debug_info("linking program...");
     shader->handle = glCreateProgram();
     glAttachShader(shader->handle, shader->vertex_handle);
     glAttachShader(shader->handle, shader->fragment_handle);
@@ -71,7 +69,7 @@ int initialize_shader_2d(GL_Shader_2D *shader, const char *source_vertex,
     if(!shader->success_code) {
         char log[512];
         glGetProgramInfoLog(shader->fragment_handle, 512, NULL, log);
-        debug_error("Failed to link shader: %s", log);
+        debug_error("SDL::GL::initialize_shader_2d, failed to link shader: %s", log);
         glDeleteShader(shader->vertex_handle);
         glDeleteShader(shader->fragment_handle);
         return shader->success_code;
@@ -163,12 +161,15 @@ void GL_link_camera_projection_to__shader(
     ALIGN(16, mat4, projection);
 
     if (p_camera) {
-        // TODO: magic numbers
         glm_ortho_lh_no(
-                -(float)p_camera->width_of__fulcrum / 16.0f, 
-                 (float)p_camera->width_of__fulcrum / 16.0f,
-                -(float)p_camera->height_of__fulcrum / 16.0f, 
-                 (float)p_camera->height_of__fulcrum / 16.0f,
+                -(float)p_camera->width_of__fulcrum 
+                    / (float)(TILE__WIDTH_AND__HEIGHT_IN__PIXELS<<1), 
+                 (float)p_camera->width_of__fulcrum 
+                    / (float)(TILE__WIDTH_AND__HEIGHT_IN__PIXELS<<1), 
+                -(float)p_camera->height_of__fulcrum  
+                    / (float)(TILE__WIDTH_AND__HEIGHT_IN__PIXELS<<1), 
+                 (float)p_camera->height_of__fulcrum 
+                    / (float)(TILE__WIDTH_AND__HEIGHT_IN__PIXELS<<1), 
                  i32F20_to__float(p_camera->z_near),
                  i32F20_to__float(p_camera->z_far),
                  *p_projection);
@@ -179,13 +180,16 @@ void GL_link_camera_projection_to__shader(
         GL_Viewport *p_viewport =
             GL_peek_viewport_stack(
                     p_viewport_stack);
-        // TODO: magic numbers
-#warning TODO: if changing tile sizes in engine_config looks weird, update these magic numbers:
         glm_ortho_lh_no(
-                (int)(-p_viewport->width / 2 /  TILE__WIDTH_AND__HEIGHT_IN__PIXELS) +16, 
-                (int)( p_viewport->width / 2 /  TILE__WIDTH_AND__HEIGHT_IN__PIXELS) +16,
-                (int)( p_viewport->height / 2 / TILE__WIDTH_AND__HEIGHT_IN__PIXELS) + 16,
-                (int)( p_viewport->height / 2 / TILE__WIDTH_AND__HEIGHT_IN__PIXELS) - 16, 
+                (int)((-p_viewport->width  >> 1) 
+                    / (TILE__WIDTH_AND__HEIGHT_IN__PIXELS << 1)), 
+                (int)(( p_viewport->width  >> 1) 
+                    / (TILE__WIDTH_AND__HEIGHT_IN__PIXELS << 1)),
+                (int)(( p_viewport->height >> 1) 
+                    / (TILE__WIDTH_AND__HEIGHT_IN__PIXELS << 1)),
+                (int)(( p_viewport->height >> 1) 
+                    / (TILE__WIDTH_AND__HEIGHT_IN__PIXELS << 1)), 
+                // TODO: magic numbers in no camera default projection
                 -0.25f,
                  1808.0f,
                  *p_projection);

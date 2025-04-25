@@ -446,9 +446,13 @@ void m_process__serialize_global_space(
             PLATFORM_release_serialization_request(
                     get_p_PLATFORM_file_system_context_from__game(p_game), 
                     p_serialization_request);
-            release_global_space(
-                    get_p_world_from__game(p_game),
-                    p_global_space);
+            if (!is_global_space__awaiting_construction(p_global_space)) {
+                release_global_space(
+                        get_p_world_from__game(p_game),
+                        p_global_space);
+            } else {
+                set_global_space_as__NOT_deconstructing(p_global_space);
+            }
             complete_process(p_this_process);
             break;
     }

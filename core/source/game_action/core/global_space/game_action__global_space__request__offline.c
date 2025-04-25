@@ -23,6 +23,26 @@ void m_process__game_action__global_space__request__outbound_offline(
     complete_game_action_process(
             p_game,
             p_this_process);
+
+    Global_Space *p_global_space =
+        get_p_global_space_from__global_space_manager(
+                get_p_global_space_manager_from__game(p_game), 
+                gsv__3i32);
+
+    if (!p_global_space) {
+        debug_error("m_process__game_action__global_space__request__outbound_offline, failed to find p_global_space.");
+        fail_game_action_process(p_game, p_this_process);
+        return;
+    }
+
+    if (is_global_space__deconstructing(p_global_space)) {
+        // TODO: impl timeout
+#warning TODO: impl timeout
+        return;
+    }
+
+    hold_global_space(p_global_space);
+
     dispatch_game_action__global_space__resolve(
             p_game, 
             gsv__3i32);

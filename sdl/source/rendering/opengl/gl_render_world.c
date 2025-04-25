@@ -64,11 +64,11 @@ void GL_compose_chunk(
         chunk_vector_3i32_to__vector_3i32F4(
                 p_local_space->global_space__vector__3i32);
 
-    // chunk_pos_in__world__3i32f4.x__i32F4 *= 1<<6;
-    // chunk_pos_in__world__3i32f4.y__i32F4 *= 1<<6;
-    // // chunk_pos_in__world__3i32f4.x__i32F4 += i32_to__i32F4(32);
-    // // chunk_pos_in__world__3i32f4.y__i32F4 += i32_to__i32F4(28);
-    // chunk_pos_in__world__3i32f4.z__i32F4 *= 1<<6;
+    chunk_pos_in__world__3i32f4.x__i32F4 += 
+        i32_to__i32F4(BIT(LOCAL_SPACE__WIDTH_AND__HEIGHT_IN__PIXELS__BIT_SHIFT) >> 1);
+    chunk_pos_in__world__3i32f4.y__i32F4 += 
+        i32_to__i32F4(BIT(LOCAL_SPACE__WIDTH_AND__HEIGHT_IN__PIXELS__BIT_SHIFT) >> 1);
+    chunk_pos_in__world__3i32f4.z__i32F4 -= 0b0100;
 
     Camera *p_camera =
         p_ptr_array_of__gfx_windows[0]

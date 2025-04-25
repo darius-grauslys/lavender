@@ -49,6 +49,55 @@ bool is_global_space__allocated(
 }
 
 static inline
+bool is_global_space__awaiting_construction(
+        Global_Space *p_global_space) {
+    return (p_global_space->global_space_flags__u8
+        & GLOBAL_SPACE_FLAG__IS_AWAITING__CONSTRUCTION)
+        ;
+}
+
+static inline
+bool set_global_space_as__awaiting_construction(
+        Global_Space *p_global_space) {
+    return p_global_space->global_space_flags__u8 |=
+        GLOBAL_SPACE_FLAG__IS_AWAITING__CONSTRUCTION
+        ;
+}
+
+static inline
+bool set_global_space_as__NOT_awaiting_construction(
+        Global_Space *p_global_space) {
+    return p_global_space->global_space_flags__u8 &=
+        ~GLOBAL_SPACE_FLAG__IS_AWAITING__CONSTRUCTION
+        ;
+}
+
+static inline
+bool is_global_space__awaiting_deconstruction(
+        Global_Space *p_global_space) {
+    return (p_global_space->global_space_flags__u8
+        & GLOBAL_SPACE_FLAG__IS_AWAITING__DECONSTRUCTION)
+        ;
+}
+
+static inline
+bool set_global_space_as__awaiting_deconstruction(
+        Global_Space *p_global_space) {
+    return p_global_space->global_space_flags__u8 |=
+        GLOBAL_SPACE_FLAG__IS_AWAITING__DECONSTRUCTION
+        ;
+}
+
+static inline
+bool set_global_space_as__NOT_awaiting_deconstruction(
+        Global_Space *p_global_space) {
+    return p_global_space->global_space_flags__u8 &=
+        ~GLOBAL_SPACE_FLAG__IS_AWAITING__DECONSTRUCTION
+        ;
+}
+
+
+static inline
 bool is_global_space__constructing(
         Global_Space *p_global_space) {
     return (p_global_space->global_space_flags__u8
@@ -59,6 +108,7 @@ bool is_global_space__constructing(
 static inline
 bool set_global_space_as__constructing(
         Global_Space *p_global_space) {
+    set_global_space_as__NOT_awaiting_construction(p_global_space);
     return p_global_space->global_space_flags__u8 |=
         GLOBAL_SPACE_FLAG__IS_CONSTRUCTING
         ;
@@ -83,6 +133,7 @@ bool is_global_space__deconstructing(
 static inline
 bool set_global_space_as__deconstructing(
         Global_Space *p_global_space) {
+    set_global_space_as__NOT_awaiting_deconstruction(p_global_space);
     return p_global_space->global_space_flags__u8 |=
         GLOBAL_SPACE_FLAG__IS_DECONSTRUCTING
         ;

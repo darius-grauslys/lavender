@@ -56,16 +56,26 @@ void m_process__game_action__global_space__request__outbound_server(
 
     if (is_global_space__deconstructing(
                 p_global_space)) {
+        // TODO: impl timeout,
+#warning TODO: impl timeout
+        return;
+    }
+
+    if (is_global_space__constructing(
+                p_global_space)) {
         dispatch_game_action__bad_request(
                 p_game, 
                 p_game_action, 
-                1);
-        debug_error("m_process__game_action__global_space__request__outbound_server, global space is deconstructing.");
+                0);
+        debug_error("m_process__game_action__global_space__request__outbound_server, global_space is already being constructed`.");
         fail_game_action_process(
                 p_game, 
                 p_this_process);
         return;
     }
+
+    hold_global_space(p_global_space);
+    set_global_space_as__constructing(p_global_space);
 
     complete_game_action_process(
             p_game, 
@@ -345,14 +355,8 @@ void m_process__game_action__global_space__request__outbound_client__init(
         return;
     }
 
-    // doesn't hurt to be redundant here.
-    // TODO: does it?
-    set_global_space_as__constructing(
-            p_global_space);
-
-    hold_global_space_within__global_space_manager(
-            p_game,
-            *p_gsv__3i32);
+    hold_global_space(p_global_space);
+    set_global_space_as__constructing(p_global_space);
 
     p_this_process->m_process_run__handler =
         m_process__game_action__global_space__request__outbound_client;

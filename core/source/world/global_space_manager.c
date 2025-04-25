@@ -167,6 +167,9 @@ Global_Space *hold_global_space_within__global_space_manager(
                 p_global_space_manager, 
                 local_space_vector__3i32);
     if (p_global_space) {
+        if (is_global_space__deconstructing(p_global_space)) {
+            goto dispatch;
+        }
         hold_global_space(p_global_space);
         return p_global_space;
     }
@@ -180,12 +183,15 @@ Global_Space *hold_global_space_within__global_space_manager(
         return 0;
     }
 
-    hold_global_space(p_global_space);
-
+dispatch:
+    ;
     bool is_dispatch__successful = 
         dispatch_game_action__global_space__request(
                 p_game, 
                 local_space_vector__3i32);
+
+    set_global_space_as__awaiting_construction(
+            p_global_space);
 
     if (!is_dispatch__successful) {
         debug_error("hold_global_space_within__global_space_manager, failed to dispatch process.");
@@ -213,9 +219,17 @@ void drop_global_space_within__global_space_manager(
         return;
     }
 
+    if (!is_global_space__active(p_global_space)) {
+        debug_error("drop_global_space_within__global_space_manager, p_global_space is not active.");
+        return;
+    }
+
     if (!drop_global_space(p_global_space)) {
         return;
     }
+
+    set_global_space_as__awaiting_deconstruction(
+            p_global_space);
 
     bool is_dispatch__successful =
         dispatch_game_action__global_space__store(
