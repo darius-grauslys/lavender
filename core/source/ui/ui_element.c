@@ -26,9 +26,6 @@ void initialize_ui_element(
         UI_Element *p_ui_element__next,
         enum UI_Element_Kind kind_of_ui_element,
         UI_Flags__u16 ui_flags) {
-    initialize_serialization_header_for__deallocated_struct(
-            (Serialization_Header*)p_ui_element,
-            sizeof(UI_Element));
     p_ui_element->p_parent = p_ui_element__parent;
     p_ui_element->p_child = p_ui_element__child;
     p_ui_element->p_next = p_ui_element__next;
@@ -47,7 +44,6 @@ void initialize_ui_element(
 void m_ui_element__dispose_handler__default(
         UI_Element *p_this_ui_element,
         Game *p_game) {
-    set_ui_element_as__deallocated(p_this_ui_element);
     if (does_ui_element_have__child(p_this_ui_element)) {
         UI_Element *p_child =
             get_child_of__ui_element(p_this_ui_element);

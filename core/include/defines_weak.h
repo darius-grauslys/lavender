@@ -406,6 +406,34 @@ typedef struct Chunk_t Chunk;
 typedef struct Chunk_Manager__Chunk_Map_Node_t Chunk_Manager__Chunk_Map_Node;
 typedef struct Tile_t Tile;
 
+// TODO: add tile flags as a implemented/type
+typedef uint8_t Tile_Flags__u8;
+
+#define TILE_FLAGS__NONE 0
+
+#define TILE_FLAGS__BIT_SHIFT_IS_SIGHT_BLOCKING 0
+#define TILE_FLAGS__BIT_SHIFT_IS_UNPASSABLE \
+    (TILE_FLAGS__BIT_SHIFT_IS_SIGHT_BLOCKING + 1)
+#define TILE_FLAGS__BIT_SHIFT_IS_CONTAINER \
+    (TILE_FLAGS__BIT_SHIFT_IS_UNPASSABLE + 1)
+#define TILE_FLAGS__BIT_SHIFT_GENERAL_PURPOSE_DATA_BIT \
+    (TILE_FLAGS__BIT_IS_CONTAINER + 1)
+
+#define TILE_FLAGS__BIT_IS_SIGHT_BLOCKING \
+    BIT(TILE_FLAGS__BIT_SHIFT_IS_SIGHT_BLOCKING)
+#define TILE_FLAGS__BIT_IS_UNPASSABLE \
+    BIT(TILE_FLAGS__BIT_SHIFT_IS_UNPASSABLE)
+#define TILE_FLAGS__BIT_IS_CONTAINER \
+    BIT(TILE_FLAGS__BIT_SHIFT_IS_CONTAINER)
+#define TILE_FLAGS__BIT_GENERAL_PURPOSE_DATA_BIT \
+    BIT(TILE_FLAGS__BIT_SHIFT_GENERAL_PURPOSE_DATA_BIT)
+
+typedef uint8_t Tile_Logic_Flags__u8;
+
+#define TILE_LOGIC_FLAGS__NONE 0
+#define TILE_LOGIC_FLAG__IS_UNPASSABLE BIT(0)
+#define TILE_LOGIC_FLAG__IS_SIGHT_BLOCKING BIT(1)
+
 typedef struct Tile_Render_Kernel_Result_t Tile_Render_Kernel_Result;
 
 ///

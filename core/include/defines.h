@@ -760,7 +760,12 @@ typedef struct Typer_t {
     Hitbox_AABB text_bounding_box;
     Vector__3i32 cursor_position__3i32;
     Font *p_font;
-    PLATFORM_Texture *p_PLATFORM_texture__typer_target;
+    union {
+        PLATFORM_Texture *p_PLATFORM_texture__typer_target;
+        PLATFORM_Graphics_Window *p_PLATFORM_graphics_window__typer_target;
+    };
+    Quantity__u16 quantity_of__space_in__pixels_between__lines;
+    bool is_using_PLATFORM_texture_or__PLATFORM_graphics_window;
 } Typer;
 
 ///
@@ -1312,9 +1317,7 @@ typedef uint8_t UI_Button_Flags__u8;
 #define UI_HUD_NOTIFICATION_LIFESPAN_IN__SECONDS 4
 #define UI_HUD_MESSAGE_LIFESPAN_IN__SECONDS 20
 
-#define UI_FLAGS__BIT_SHIFT_IS_ALLOCATED 0
-#define UI_FLAGS__BIT_SHIFT_IS_ENABLED \
-    (UI_FLAGS__BIT_SHIFT_IS_ALLOCATED + 1)
+#define UI_FLAGS__BIT_SHIFT_IS_ENABLED 0
 #define UI_FLAGS__BIT_SHIFT_IS_NON_INTERACTIVE \
     (UI_FLAGS__BIT_SHIFT_IS_ENABLED + 1)
 #define UI_FLAGS__BIT_SHIFT_IS_NEEDING_UPDATE \
@@ -1330,8 +1333,6 @@ typedef uint8_t UI_Button_Flags__u8;
 
 #define UI_FLAGS__NONE 0
 
-#define UI_FLAGS__BIT_IS_ALLOCATED \
-    BIT(UI_FLAGS__BIT_SHIFT_IS_ALLOCATED)
 #define UI_FLAGS__BIT_IS_ENABLED \
     BIT(UI_FLAGS__BIT_SHIFT_IS_ENABLED)
 #define UI_FLAGS__BIT_IS_NON_INTERACTIVE \
@@ -1405,7 +1406,7 @@ typedef struct UI_Element_t {
     UI_Element_Data ui_element_data;
 } UI_Element;
 
-#define UI_ELEMENT_MAXIMUM_QUANTITY_OF 128
+#define MAX_QUANTITY_OF__UI_ELEMENTS 128
 #define UI_CONTAINER_PTR_ENTRIES_MAXIMUM_QUANTITY_OF 8
 
 typedef UI_Element UI_Container_Entries[
@@ -1435,11 +1436,11 @@ typedef void (*f_Foreach_UI_Element)(
 /// then it should constantly return the singleton.
 ///
 typedef struct UI_Manager_t {
-    Quantity__u8 quantity_of__ui_elements__quantity_u8;
-    UI_Element ui_elements[UI_ELEMENT_MAXIMUM_QUANTITY_OF];
-    UI_Element *ui_element_ptrs[UI_ELEMENT_MAXIMUM_QUANTITY_OF];
+    UI_Element ui_elements[MAX_QUANTITY_OF__UI_ELEMENTS];
+    UI_Element *ptr_array_of__ui_elements[MAX_QUANTITY_OF__UI_ELEMENTS];
     Repeatable_Psuedo_Random randomizer;
     UI_Element *p_ui_element__focused;
+    UI_Element **p_ptr_of__ui_element__latest_in_ptr_array;
 
     PLATFORM_Graphics_Window 
         *p_PLATFORM_graphics_window_for__ui_manager;
@@ -1667,59 +1668,7 @@ typedef uint8_t Chunk_Tile_Index__u8;
 ///
 typedef Vector__3u8 Local_Tile_Vector__3u8;
 
-#define TILE_FLAGS__BIT_SHIFT_IS_SIGHT_BLOCKING 0
-#define TILE_FLAGS__BIT_SHIFT_IS_UNPASSABLE \
-    (TILE_FLAGS__BIT_SHIFT_IS_SIGHT_BLOCKING + 1)
-#define TILE_FLAGS__BIT_SHIFT_IS_CONTAINER \
-    (TILE_FLAGS__BIT_SHIFT_IS_UNPASSABLE + 1)
-#define TILE_FLAGS__BIT_SHIFT_GENERAL_PURPOSE_DATA_BIT \
-    (TILE_FLAGS__BIT_IS_CONTAINER + 1)
-
-#define TILE_FLAGS__BIT_IS_SIGHT_BLOCKING \
-    BIT(TILE_FLAGS__BIT_SHIFT_IS_SIGHT_BLOCKING)
-#define TILE_FLAGS__BIT_IS_UNPASSABLE \
-    BIT(TILE_FLAGS__BIT_SHIFT_IS_UNPASSABLE)
-#define TILE_FLAGS__BIT_IS_CONTAINER \
-    BIT(TILE_FLAGS__BIT_SHIFT_IS_CONTAINER)
-#define TILE_FLAGS__BIT_GENERAL_PURPOSE_DATA_BIT \
-    BIT(TILE_FLAGS__BIT_SHIFT_GENERAL_PURPOSE_DATA_BIT)
-
-#define TILE_FLAGS__NONE 0
-
-#define TILE_SHEET_ELEMENT_WIDTH 32
-
-#define TILE_SHEET_INDEX__WOOD 0
-#define TILE_SHEET_INDEX__STONE_BRICK 1
-#define TILE_SHEET_INDEX__GOLD 2
-#define TILE_SHEET_INDEX__IRON 3
-#define TILE_SHEET_INDEX__DIAMOND 4
-#define TILE_SHEET_INDEX__AMEYTHYST 5
-#define TILE_SHEET_INDEX__SANDSTONE 6
-#define TILE_SHEET_INDEX__STONE 7
-#define TILE_SHEET_INDEX__DIRT 8
-#define TILE_SHEET_INDEX__SAND 9
-#define TILE_SHEET_INDEX__GRASS 10
-#define TILE_SHEET_INDEX__LEAVES 11
-#define TILE_SHEET_INDEX__SNOW 12
-#define TILE_SHEET_INDEX__WATER 257
-
 typedef struct Tile_t Tile;
-
-#define TILE_COVER_SHEET_INDEX__WALL (1 + TILE_SHEET_TILE_WIDTH * 16)
-#define TILE_COVER_SHEET_INDEX__DOOR (16 + 1 + TILE_SHEET_TILE_WIDTH * 16)
-
-#define TILE_COVER_SHEET_INDEX__PLANT (1 + TILE_SHEET_TILE_WIDTH * 2)
-#define TILE_COVER_SHEET_INDEX__FLOWER_RED (1 + TILE_SHEET_TILE_WIDTH * 3)
-#define TILE_COVER_SHEET_INDEX__FLOWER_BLUE (1 + TILE_SHEET_TILE_WIDTH * 4)
-#define TILE_COVER_SHEET_INDEX__FLOWER_YELLOW (1 + TILE_SHEET_TILE_WIDTH * 5)
-#define TILE_COVER_SHEET_INDEX__CACTUS (5 + TILE_SHEET_TILE_WIDTH * 0)
-#define TILE_COVER_SHEET_INDEX__CHEST_SINGLE (7 + TILE_SHEET_TILE_WIDTH * 12)
-
-#define TILE_COVER__BIT_SHIFT_IS_WALL 9
-#define TILE_COVER__BIT_IS_WALL \
-    BIT(TILE_COVER__BIT_SHIFT_IS_WALL)
-
-typedef uint8_t Tile_Flags__u8;
 
 typedef struct Tile_Logic_Table_t Tile_Logic_Table;
 typedef struct Tile_Logic_Record_t Tile_Logic_Record;
@@ -1728,11 +1677,6 @@ typedef void (*m_Tile_Logic_Table__Get_Tile_Logic_Record)(
         Tile_Logic_Table *p_tile_logic_manager,
         Tile_Logic_Record *p_tile_logic_record,
         Tile *p_tile);
-
-typedef uint8_t Tile_Logic_Flags__u8;
-#define TILE_LOGIC_FLAGS__NONE 0
-#define TILE_LOGIC_FLAG__IS_UNPASSABLE BIT(0)
-#define TILE_LOGIC_FLAG__IS_SIGHT_BLOCKING BIT(1)
 
 #include "types/implemented/tile_logic_record_data.h"
 #ifndef DEFINE_TILE_LOGIC_RECORD_DATA
@@ -1765,7 +1709,7 @@ typedef struct Tile_Logic_Table_Manager_t {
         MAX_QUANTITY_OF__TILE_LOGIC_TABLES];
 } Tile_Logic_Table_Manager;
 
-#include "types/implemented/tile.h"
+#include <types/implemented/tile.h>
 #ifndef DEFINE_TILE
 typedef struct Tile_t {
     Tile_Kind the_kind_of__tile;
@@ -2151,8 +2095,9 @@ typedef struct World_t {
 
 typedef uint8_t Graphics_Window_Flags__u8;
 
-#define GRAPHICS_WINDOW__FLAG__IS_RENDERING_WORLD BIT(0)
-#define GRAPHICS_WINDOW__FLAG__COMPOSE__DIRTY BIT(1)
+#define GRAPHICS_WINDOW__FLAG__IS_ENABLED BIT(0)
+#define GRAPHICS_WINDOW__FLAG__IS_RENDERING_WORLD BIT(1)
+#define GRAPHICS_WINDOW__FLAG__COMPOSE__DIRTY BIT(2)
 
 #define GRAPHICS_WINDOW__FLAGS__NONE 0
 
@@ -2191,6 +2136,7 @@ typedef struct Gfx_Context_t {
     UI_Context ui_context;
     UI_Manager ui_manager;
     UI_Tile_Map_Manager ui_tile_map_manager;
+    Font_Manager font_manager;
 } Gfx_Context;
 
 typedef struct Game_Action_t Game_Action;

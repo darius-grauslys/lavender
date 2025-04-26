@@ -263,6 +263,48 @@ bool is_graphics_window_of__this_kind(
 }
 
 static inline
+bool is_graphics_window__enabled(
+        Graphics_Window *p_gfx_window) {
+#ifndef NDEBUG
+    if (!p_gfx_window) {
+        debug_error("is_graphics_window__enabled, p_gfx_window == 0.");
+        return false;
+    }
+#endif
+    return p_gfx_window->graphics_window__flags
+        & GRAPHICS_WINDOW__FLAG__IS_ENABLED
+        ;
+}
+
+static inline
+void set_graphics_window_as__enabled(
+        Graphics_Window *p_gfx_window) {
+#ifndef NDEBUG
+    if (!p_gfx_window) {
+        debug_error("set_graphics_window_as__enabled, p_gfx_window == 0.");
+        return;
+    }
+#endif
+    p_gfx_window->graphics_window__flags |=
+        GRAPHICS_WINDOW__FLAG__IS_ENABLED
+        ;
+}
+
+static inline
+void set_graphics_window_as__disabled(
+        Graphics_Window *p_gfx_window) {
+#ifndef NDEBUG
+    if (!p_gfx_window) {
+        debug_error("set_graphics_window_as__disabled, p_gfx_window == 0.");
+        return;
+    }
+#endif
+    p_gfx_window->graphics_window__flags &=
+        ~GRAPHICS_WINDOW__FLAG__IS_ENABLED
+        ;
+}
+
+static inline
 bool is_graphics_window__rendering_world(
         Graphics_Window *p_gfx_window) {
 #ifndef NDEBUG

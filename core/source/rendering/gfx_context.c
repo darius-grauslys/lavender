@@ -1,5 +1,6 @@
 #include "rendering/gfx_context.h"
 #include "rendering/aliased_texture_manager.h"
+#include "rendering/font/font_manager.h"
 #include "rendering/graphics_window_manager.h"
 #include "rendering/sprite_manager.h"
 #include "ui/ui_context.h"
@@ -17,4 +18,6 @@ void initialize_gfx_context(
             get_p_ui_context_from__gfx_context(p_gfx_context));
     initialize_ui_tile_map_manager(
             get_p_ui_tile_map_manager_from__gfx_context(p_gfx_context));
+    initialize_font_manager(
+            get_p_font_manager_from__gfx_context(p_gfx_context));
 }

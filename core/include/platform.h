@@ -92,7 +92,7 @@ void m_PLATFORM_game_action_handler_for__multiplayer(
 ///
 
 void PLATFORM_put_char_in__typer(
-        PLATFORM_Gfx_Context *p_PLATFORM_gfx_context,
+        Gfx_Context *p_gfx_context,
         Typer *p_typer,
         unsigned char letter);
 

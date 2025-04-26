@@ -12,41 +12,6 @@ void poll_ui_manager__update(
         Game *p_game,
         PLATFORM_Graphics_Window *p_PLATFORM_gfx_window);
 
-static inline
-Index__u16 get_index_of__p_ui_element_in__ui_manager(
-        UI_Manager *p_ui_manager,
-        UI_Element *p_ui_element) {
-    return (Index__u16)(
-            p_ui_element 
-            - p_ui_manager->ui_elements);
-}
-
-static inline
-UI_Element *get_p_ui_element_by__index_from__ui_manager(
-        UI_Manager *p_ui_manager,
-        Index__u16 index_of__ui_element) {
-#ifndef NDEBUG
-    if (index_of__ui_element >=
-            UI_ELEMENT_MAXIMUM_QUANTITY_OF) {
-        debug_abort("get_p_ui_element_by__index_from__ui_manager, index of out bounds: %d", index_of__ui_element);
-        return 0;
-    }
-#endif
-    return &p_ui_manager->ui_elements[index_of__ui_element];
-}
-
-UI_Element *allocate_ui_element_from__ui_manager(
-        UI_Manager *p_ui_manager);
-
-static inline
-UI_Element *allocate_ui_element_from__ui_manager_in__succession(
-        UI_Manager *p_ui_manager,
-        UI_Element *p_predecessor) {
-    p_predecessor->p_next =
-        allocate_ui_element_from__ui_manager(p_ui_manager);
-    return p_predecessor->p_next;
-}
-
 void set_ui_element_priority_higher_than__this_ui_element_in__ui_manager(
         UI_Manager *p_ui_manager,
         UI_Element *p_ui_element__higher_priority,
@@ -65,6 +30,9 @@ void swap_ui_element__children(
         UI_Element *p_parent__one,
         UI_Element *p_parent__two);
 
+UI_Element *allocate_ui_element_from__ui_manager(
+        UI_Manager *p_ui_manager);
+
 UI_Element *allocate_ui_element_from__ui_manager_as__child(
         UI_Manager *p_ui_manager,
         Hitbox_AABB_Manager *p_hitbox_aabb_manager,
@@ -73,12 +41,12 @@ UI_Element *allocate_ui_element_from__ui_manager_as__child(
 void allocate_many_ui_elements_from__ui_manager(
         UI_Manager *p_ui_manager,
         UI_Element **p_ptr_buffer,
-        Quantity__u8 quantity_of__ui_elements_in__ptr_buffer
+        Quantity__u16 quantity_of__ui_elements_in__ptr_buffer
         );
 
 UI_Element *allocate_many_ui_elements_from__ui_manager_in__succession(
         UI_Manager *p_ui_manager,
-        Quantity__u8 quantity_of__ui_elements_to__allocate
+        Quantity__u16 quantity_of__ui_elements_to__allocate
         );
 
 UI_Element *allocate_many_ui_elements_from__ui_manager_as__recursive_children(
@@ -94,6 +62,10 @@ void release__ui_element_from__ui_manager(
 void release_all__ui_elements_from__ui_manager(
         UI_Manager *p_ui_manager,
         Game *p_game);
+
+UI_Element *get_p_ui_element_by__uuid_from__ui_manager(
+        UI_Manager *p_ui_manager,
+        Identifier__u32 uuid__u32);
 
 ///
 /// You will want to call this whenever you're implementing a
@@ -127,5 +99,42 @@ void compose_all_ui_elements_in__ui_manager(
         UI_Manager *p_ui_manager,
         Game *p_game,
         Graphics_Window *p_gfx_window);
+
+static inline
+bool is_ui_manager__empty(
+        UI_Manager *p_ui_manager) {
+    return !p_ui_manager->ptr_array_of__ui_elements[0];
+}
+
+///
+/// NOTE: this should only be used for iterating across ALL UI_Elements BLINDLY.
+/// As this function is NOT a reliable means of referencing any specific UI_Element
+/// over time. IE, elements in the structure may move around.
+///
+/// If you need to acquire the same UI_Element, get that UI_Element's UUID and
+/// use the corresponding uuid getter.
+///
+static inline
+UI_Element *get_p_ui_element_by__index_from__ui_manager(
+        UI_Manager *p_ui_manager,
+        Index__u16 index_of__ui_element) {
+#ifndef NDEBUG
+    if (index_of__ui_element >=
+            MAX_QUANTITY_OF__UI_ELEMENTS) {
+        debug_abort("get_p_ui_element_by__index_from__ui_manager, index of out bounds: %d", index_of__ui_element);
+        return 0;
+    }
+#endif
+    return p_ui_manager->ptr_array_of__ui_elements[index_of__ui_element];
+}
+
+static inline
+UI_Element *allocate_ui_element_from__ui_manager_in__succession(
+        UI_Manager *p_ui_manager,
+        UI_Element *p_predecessor) {
+    p_predecessor->p_next =
+        allocate_ui_element_from__ui_manager(p_ui_manager);
+    return p_predecessor->p_next;
+}
 
 #endif

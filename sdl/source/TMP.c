@@ -66,11 +66,6 @@ PLATFORM_Graphics_Window
     return 0;
 }
 
-void PLATFORM_put_char_in__typer(
-        PLATFORM_Gfx_Context *p_PLATFORM_gfx_context,
-        Typer *p_typer,
-        unsigned char letter) {}
-
 Sprite_Flags *PLATFORM_get_p_sprite_flags__from_PLATFORM_sprite(
         PLATFORM_Sprite *p_PLATFORM_sprite) {
     return 0;

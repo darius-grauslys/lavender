@@ -42,4 +42,10 @@ Graphics_Window_Manager *get_p_graphics_window_manager_from__gfx_context(
     return &p_gfx_context->graphics_window_manager;
 }
 
+static inline
+Font_Manager *get_p_font_manager_from__gfx_context(
+        Gfx_Context *p_gfx_context) {
+    return &p_gfx_context->font_manager;
+}
+
 #endif

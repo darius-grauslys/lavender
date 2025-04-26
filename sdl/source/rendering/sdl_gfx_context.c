@@ -9,6 +9,7 @@
 #include "rendering/opengl/gl_texture.h"
 #include "rendering/opengl/gl_gfx_window.h"
 #include "rendering/opengl/gl_render_world.h"
+#include "rendering/opengl/gl_typer.h"
 #include "rendering/sdl_gfx_window.h"
 #include "rendering/sdl_sprite_manager.h"
 #include "rendering/sdl_texture_manager.h"
@@ -140,6 +141,10 @@ bool _SDL_link_opengl_3_0(
     p_SDL_gfx_sub_context__wrapper
         ->f_SDL_release_sprite =
         GL_release_sprite;
+
+    p_SDL_gfx_sub_context__wrapper
+        ->f_SDL_put_char_in__typer =
+        GL_put_char_in__typer;
 
     p_SDL_gfx_sub_context__wrapper
         ->f_SDL_compose_world =

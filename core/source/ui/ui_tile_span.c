@@ -69,7 +69,7 @@ const UI_Tile *get_ui_tile_of__ui_tile_span(
         ;
 
     bool is_on_bottom_edge =
-        index_x_of__ui_tile_span__u32 ==
+        index_y_of__ui_tile_span__u32 ==
         height_of__ui_tile_span__u32
         - 1
         ;

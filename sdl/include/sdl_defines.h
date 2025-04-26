@@ -137,6 +137,11 @@ typedef void (*f_SDL_Use_Texture)(
 typedef void (*f_SDL_Release_Texture)(
         PLATFORM_Texture *p_PLATFORM_texture);
 
+typedef void (*f_SDL_Put_Char_In__Typer)(
+        Gfx_Context *p_gfx_context,
+        Typer *p_typer,
+        unsigned char letter);
+
 typedef void (*f_SDL_Allocate_Sprite)(
         Gfx_Context *p_gfx_context,
         PLATFORM_Sprite *p_PLATFORM_sprite);
@@ -250,6 +255,8 @@ typedef struct SDL_Gfx_Sub_Context__Wrapper_t {
     f_SDL_Initialize_Sprite             f_SDL_initialize_sprite;
     f_SDL_Render_Sprite                 f_SDL_render_sprite;
     f_SDL_Release_Sprite                f_SDL_release_sprite;
+
+    f_SDL_Put_Char_In__Typer            f_SDL_put_char_in__typer;
 
     f_SDL_Compose_World                 f_SDL_compose_world;
 

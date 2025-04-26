@@ -7,6 +7,7 @@
 #include "numerics.h"
 #include "platform.h"
 #include "serialization/identifiers.h"
+#include "serialization/serialization_header.h"
 #include "vectors.h"
 #include <defines.h>
 
@@ -236,11 +237,6 @@ UI_Flags__u16 get_ui_element__flags(
 }
 
 static inline
-bool is_ui_element__allocated(UI_Element *p_ui_element) {
-    return (bool)(p_ui_element->ui_flags & UI_FLAGS__BIT_IS_ALLOCATED);
-}
-
-static inline
 bool is_ui_element__enabled(UI_Element *p_ui_element) {
     return (bool)(p_ui_element->ui_flags & UI_FLAGS__BIT_IS_ENABLED);
 }
@@ -315,22 +311,6 @@ static inline
 bool does_ui_element_have__next(
         UI_Element *p_ui_element) {
     return (bool)p_ui_element->p_next;
-}
-
-//TODO: move to private header
-static inline
-void set_ui_element_as__allocated(
-        UI_Element *p_ui_element) {
-    p_ui_element->ui_flags |=
-        UI_FLAGS__BIT_IS_ALLOCATED;
-}
-
-//TODO: move to private header
-static inline
-void set_ui_element_as__deallocated(
-        UI_Element *p_ui_element) {
-    p_ui_element->ui_flags &=
-        ~UI_FLAGS__BIT_IS_ALLOCATED;
 }
 
 static inline

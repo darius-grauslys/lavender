@@ -6,92 +6,6 @@
 #include <vectors.h>
 #include <world/chunk_vectors.h>
 
-static i32F4 inline get_x_i32F4_from__hitbox(
-        Hitbox_AABB *p_hitbox) {
-    return get_x_i32F4_from__vector_3i32F4(p_hitbox->position__3i32F4);
-}
-
-static i32F4 inline get_y_i32F4_from__hitbox(
-        Hitbox_AABB *p_hitbox) {
-    return get_y_i32F4_from__vector_3i32F4(p_hitbox->position__3i32F4);
-}
-
-static i32F4 inline get_z_i32F4_from__hitbox(
-        Hitbox_AABB *p_hitbox) {
-    return get_z_i32F4_from__vector_3i32F4(p_hitbox->position__3i32F4);
-}
-
-static Signed_Index__i32 inline get_x_i32_from__hitbox(
-        Hitbox_AABB *p_hitbox) {
-    return get_x_i32_from__vector_3i32F4(p_hitbox->position__3i32F4);
-}
-
-static Signed_Index__i32 inline get_y_i32_from__hitbox(
-        Hitbox_AABB *p_hitbox) {
-    return get_y_i32_from__vector_3i32F4(p_hitbox->position__3i32F4);
-}
-
-static Signed_Index__i32 inline get_z_i32_from__hitbox(
-        Hitbox_AABB *p_hitbox) {
-    return get_z_i32_from__vector_3i32F4(p_hitbox->position__3i32F4);
-}
-
-static Signed_Index__i32 inline get_chunk_x_i32_from__hitbox(
-        Hitbox_AABB *p_hitbox) {
-    return get_chunk_x_i32_from__vector_3i32F4(p_hitbox->position__3i32F4);
-}
-
-static Signed_Index__i32 inline get_chunk_y_i32_from__hitbox(
-        Hitbox_AABB *p_hitbox) {
-    return get_chunk_y_i32_from__vector_3i32F4(p_hitbox->position__3i32F4);
-}
-
-static Signed_Index__i32 inline get_chunk_z_i32_from__hitbox(
-        Hitbox_AABB *p_hitbox) {
-    return get_chunk_z_i32_from__vector_3i32F4(p_hitbox->position__3i32F4);
-}
-
-static inline
-Vector__3i32F4 get_position_3i32F4_of__hitbox_aabb(
-        Hitbox_AABB *p_hitbox_aabb) {
-    return p_hitbox_aabb->position__3i32F4;
-}
-
-static inline
-Vector__3i32 get_position_3i32_of__hitbox_aabb(
-        Hitbox_AABB *p_hitbox_aabb) {
-    return 
-        vector_3i32F4_to__vector_3i32(
-                p_hitbox_aabb->position__3i32F4);
-}
-
-static inline
-Vector__3i32F4 get_velocity_3i32F4_of__hitbox_aabb(
-        Hitbox_AABB *p_hitbox_aabb) {
-    return p_hitbox_aabb->velocity__3i32F4;
-}
-
-static inline
-Quantity__u32 get_width_u32_of__hitbox_aabb(
-        Hitbox_AABB *p_hitbox_aabb) {
-    return p_hitbox_aabb->width__quantity_u32;
-}
-
-static inline
-Quantity__u32 get_height_u32_of__hitbox_aabb(
-        Hitbox_AABB *p_hitbox_aabb) {
-    return p_hitbox_aabb->height__quantity_u32;
-}
-
-static inline
-void set_size_of__hitbox_aabb(
-        Hitbox_AABB *p_hitbox_aabb,
-        Quantity__u32 width__quantity_u32,
-        Quantity__u32 height__quantity_u32) {
-    p_hitbox_aabb->width__quantity_u32 = width__quantity_u32;
-    p_hitbox_aabb->height__quantity_u32 = height__quantity_u32;
-}
-
 Direction__u8 is_hitbox__colliding(
         Hitbox_AABB *hitbox__checking,
         Hitbox_AABB *hitbox__other);
@@ -167,63 +81,6 @@ void initialize_hitbox_as__allocated(
         Vector__3i32F4 position__3i32F4);
 
 ///
-/// TODO: really funny stuff happens when
-///       we don't take vector as a pointer.
-///       Why?
-///
-static void inline apply_velocity_to__hitbox(
-        Hitbox_AABB *hitbox,
-        Vector__3i32F4 *vector) {
-    hitbox->velocity__3i32F4.x__i32F4 += vector->x__i32F4;
-    hitbox->velocity__3i32F4.y__i32F4 += vector->y__i32F4;
-    hitbox->velocity__3i32F4.z__i32F4 += vector->z__i32F4;
-}
-
-static void inline apply_x_velocity_to__hitbox(
-        Hitbox_AABB *hitbox,
-        i32F4 x__velocity) {
-    hitbox->velocity__3i32F4.x__i32F4 += x__velocity;
-}
-
-static void inline apply_y_velocity_to__hitbox(
-        Hitbox_AABB *hitbox,
-        i32F4 y__velocity) {
-    hitbox->velocity__3i32F4.y__i32F4 += y__velocity;
-}
-
-static void inline apply_z_velocity_to__hitbox(
-        Hitbox_AABB *hitbox,
-        i32F4 z__velocity) {
-    hitbox->velocity__3i32F4.z__i32F4 += z__velocity;
-}
-
-static void inline set_velocity_to__hitbox(
-        Hitbox_AABB *hitbox,
-        Vector__3i32F4 velocity) {
-    hitbox->velocity__3i32F4.x__i32F4 = velocity.x__i32F4;
-    hitbox->velocity__3i32F4.y__i32F4 = velocity.y__i32F4;
-    hitbox->velocity__3i32F4.z__i32F4 = velocity.z__i32F4;
-}
-
-static void inline set_x_velocity_to__hitbox(
-        Hitbox_AABB *hitbox,
-        i32F4 x__velocity) {
-    hitbox->velocity__3i32F4.x__i32F4 = x__velocity;
-}
-
-static void inline set_y_velocity_to__hitbox(
-        Hitbox_AABB *hitbox,
-        i32F4 y__velocity) {
-    hitbox->velocity__3i32F4.y__i32F4 = y__velocity;
-}
-
-static void inline set_z_velocity_to__hitbox(
-        Hitbox_AABB *hitbox,
-        i32F4 z__velocity) {
-    hitbox->velocity__3i32F4.z__i32F4 = z__velocity;
-}
-
-///
 /// NOTE: Only checks the corners of hitbox__one
 /// against hitbox__two. In otherwords, if hitbox__two
 /// is fully within hitbox__one, this will return
@@ -244,5 +101,304 @@ bool is_vector_3i32_inside__hitbox(
 bool is_this_hitbox__fully_inside_this_hitbox__without_velocity(
         Hitbox_AABB *hitbox__one,
         Hitbox_AABB *hitbox__two);
+
+static inline
+i32F4 get_x_i32F4_from__hitbox(
+        Hitbox_AABB *p_hitbox) {
+#ifndef NDEBUG
+    if (!p_hitbox) {
+        debug_error("get_x_i32F4_from__hitbox, p_hitbox == 0.");
+        return 0;
+    }
+#endif
+    return get_x_i32F4_from__vector_3i32F4(p_hitbox->position__3i32F4);
+}
+
+static inline
+i32F4 get_y_i32F4_from__hitbox(
+        Hitbox_AABB *p_hitbox) {
+#ifndef NDEBUG
+    if (!p_hitbox) {
+        debug_error("get_y_i32F4_from__hitbox, p_hitbox == 0.");
+        return 0;
+    }
+#endif
+    return get_y_i32F4_from__vector_3i32F4(p_hitbox->position__3i32F4);
+}
+
+static inline
+i32F4 get_z_i32F4_from__hitbox(
+        Hitbox_AABB *p_hitbox) {
+#ifndef NDEBUG
+    if (!p_hitbox) {
+        debug_error("get_z_i32F4_from__hitbox, p_hitbox == 0.");
+        return 0;
+    }
+#endif
+    return get_z_i32F4_from__vector_3i32F4(p_hitbox->position__3i32F4);
+}
+
+static inline
+Signed_Index__i32 get_x_i32_from__hitbox(
+        Hitbox_AABB *p_hitbox) {
+#ifndef NDEBUG
+    if (!p_hitbox) {
+        debug_error("get_x_i32_from__hitbox, p_hitbox == 0.");
+        return 0;
+    }
+#endif
+    return get_x_i32_from__vector_3i32F4(p_hitbox->position__3i32F4);
+}
+
+static inline
+Signed_Index__i32 get_y_i32_from__hitbox(
+        Hitbox_AABB *p_hitbox) {
+#ifndef NDEBUG
+    if (!p_hitbox) {
+        debug_error("get_y_i32_from__hitbox, p_hitbox == 0.");
+        return 0;
+    }
+#endif
+    return get_y_i32_from__vector_3i32F4(p_hitbox->position__3i32F4);
+}
+
+static inline
+Signed_Index__i32 get_z_i32_from__hitbox(
+        Hitbox_AABB *p_hitbox) {
+#ifndef NDEBUG
+    if (!p_hitbox) {
+        debug_error("get_z_i32_from__hitbox, p_hitbox == 0.");
+        return 0;
+    }
+#endif
+    return get_z_i32_from__vector_3i32F4(p_hitbox->position__3i32F4);
+}
+
+static inline
+Signed_Index__i32 get_chunk_x_i32_from__hitbox(
+        Hitbox_AABB *p_hitbox) {
+#ifndef NDEBUG
+    if (!p_hitbox) {
+        debug_error("get_chunk_x_i32_from__hitbox, p_hitbox == 0.");
+        return 0;
+    }
+#endif
+    return get_chunk_x_i32_from__vector_3i32F4(p_hitbox->position__3i32F4);
+}
+
+static inline
+Signed_Index__i32 get_chunk_y_i32_from__hitbox(
+        Hitbox_AABB *p_hitbox) {
+#ifndef NDEBUG
+    if (!p_hitbox) {
+        debug_error("get_chunk_y_i32_from__hitbox, p_hitbox == 0.");
+        return 0;
+    }
+#endif
+    return get_chunk_y_i32_from__vector_3i32F4(p_hitbox->position__3i32F4);
+}
+
+static inline
+Signed_Index__i32 get_chunk_z_i32_from__hitbox(
+        Hitbox_AABB *p_hitbox) {
+#ifndef NDEBUG
+    if (!p_hitbox) {
+        debug_error("get_chunk_z_i32_from__hitbox, p_hitbox == 0.");
+        return 0;
+    }
+#endif
+    return get_chunk_z_i32_from__vector_3i32F4(p_hitbox->position__3i32F4);
+}
+
+static inline
+Vector__3i32F4 get_position_3i32F4_of__hitbox_aabb(
+        Hitbox_AABB *p_hitbox_aabb) {
+#ifndef NDEBUG
+    if (!p_hitbox_aabb) {
+        debug_error("get_position_3i32F4_of__hitbox_aabb, p_hitbox_aabb == 0.");
+        return VECTOR__3i32F4__OUT_OF_BOUNDS;
+    }
+#endif
+    return p_hitbox_aabb->position__3i32F4;
+}
+
+static inline
+Vector__3i32 get_position_3i32_of__hitbox_aabb(
+        Hitbox_AABB *p_hitbox_aabb) {
+#ifndef NDEBUG
+    if (!p_hitbox_aabb) {
+        debug_error("get_position_3i32_of__hitbox_aabb, p_hitbox_aabb == 0.");
+        return VECTOR__3i32__OUT_OF_BOUNDS;
+    }
+#endif
+    return 
+        vector_3i32F4_to__vector_3i32(
+                p_hitbox_aabb->position__3i32F4);
+}
+
+static inline
+Vector__3i32F4 get_velocity_3i32F4_of__hitbox_aabb(
+        Hitbox_AABB *p_hitbox_aabb) {
+#ifndef NDEBUG
+    if (!p_hitbox_aabb) {
+        debug_error("get_velocity_3i32F4_of__hitbox_aabb, p_hitbox_aabb == 0.");
+        return VECTOR__3i32F4__0_0_0;
+    }
+#endif
+    return p_hitbox_aabb->velocity__3i32F4;
+}
+
+static inline
+Quantity__u32 get_width_u32_of__hitbox_aabb(
+        Hitbox_AABB *p_hitbox_aabb) {
+#ifndef NDEBUG
+    if (!p_hitbox_aabb) {
+        debug_error("get_width_u32_of__hitbox_aabb, p_hitbox_aabb == 0.");
+        return 0;
+    }
+#endif
+    return p_hitbox_aabb->width__quantity_u32;
+}
+
+static inline
+Quantity__u32 get_height_u32_of__hitbox_aabb(
+        Hitbox_AABB *p_hitbox_aabb) {
+#ifndef NDEBUG
+    if (!p_hitbox_aabb) {
+        debug_error("get_height_u32_of__hitbox_aabb, p_hitbox_aabb == 0.");
+        return 0;
+    }
+#endif
+    return p_hitbox_aabb->height__quantity_u32;
+}
+
+static inline
+void set_size_of__hitbox_aabb(
+        Hitbox_AABB *p_hitbox_aabb,
+        Quantity__u32 width__quantity_u32,
+        Quantity__u32 height__quantity_u32) {
+#ifndef NDEBUG
+    if (!p_hitbox_aabb) {
+        debug_error("set_size_of__hitbox_aabb, p_hitbox_aabb == 0.");
+        return;
+    }
+#endif
+    p_hitbox_aabb->width__quantity_u32 = width__quantity_u32;
+    p_hitbox_aabb->height__quantity_u32 = height__quantity_u32;
+}
+
+static inline
+void apply_x_velocity_to__hitbox(
+        Hitbox_AABB *p_hitbox_aabb,
+        i32F4 x__velocity) {
+#ifndef NDEBUG
+    if (!p_hitbox_aabb) {
+        debug_error("apply_x_velocity_to__hitbox, p_hitbox_aabb == 0.");
+        return;
+    }
+#endif
+    p_hitbox_aabb->velocity__3i32F4.x__i32F4 += x__velocity;
+}
+
+static inline
+void apply_y_velocity_to__hitbox(
+        Hitbox_AABB *p_hitbox_aabb,
+        i32F4 y__velocity) {
+#ifndef NDEBUG
+    if (!p_hitbox_aabb) {
+        debug_error("apply_y_velocity_to__hitbox, p_hitbox_aabb == 0.");
+        return;
+    }
+#endif
+    p_hitbox_aabb->velocity__3i32F4.y__i32F4 += y__velocity;
+}
+
+static inline
+void apply_z_velocity_to__hitbox(
+        Hitbox_AABB *p_hitbox_aabb,
+        i32F4 z__velocity) {
+#ifndef NDEBUG
+    if (!p_hitbox_aabb) {
+        debug_error("apply_z_velocity_to__hitbox, p_hitbox_aabb == 0.");
+        return;
+    }
+#endif
+    p_hitbox_aabb->velocity__3i32F4.z__i32F4 += z__velocity;
+}
+
+
+///
+/// TODO: really funny stuff happens when
+///       we don't take vector as a pointer.
+///       Why?
+///
+static inline
+void apply_velocity_to__hitbox(
+        Hitbox_AABB *p_hitbox_aabb,
+        Vector__3i32F4 *vector) {
+#ifndef NDEBUG
+    if (!p_hitbox_aabb) {
+        debug_error("apply_velocity_to__hitbox, p_hitbox_aabb == 0.");
+        return;
+    }
+#endif
+    apply_x_velocity_to__hitbox(p_hitbox_aabb, vector->x__i32F4);
+    apply_y_velocity_to__hitbox(p_hitbox_aabb, vector->y__i32F4);
+    apply_z_velocity_to__hitbox(p_hitbox_aabb, vector->z__i32F4);
+}
+
+static inline
+void set_x_velocity_to__hitbox(
+        Hitbox_AABB *p_hitbox_aabb,
+        i32F4 x__velocity) {
+#ifndef NDEBUG
+    if (!p_hitbox_aabb) {
+        debug_error("set_x_velocity_to__hitbox, p_hitbox_aabb == 0.");
+        return;
+    }
+#endif
+    p_hitbox_aabb->velocity__3i32F4.x__i32F4 = x__velocity;
+}
+
+static inline
+void set_y_velocity_to__hitbox(
+        Hitbox_AABB *p_hitbox_aabb,
+        i32F4 y__velocity) {
+#ifndef NDEBUG
+    if (!p_hitbox_aabb) {
+        debug_error("set_y_velocity_to__hitbox, p_hitbox_aabb == 0.");
+        return;
+    }
+#endif
+    p_hitbox_aabb->velocity__3i32F4.y__i32F4 = y__velocity;
+}
+
+static inline
+void set_z_velocity_to__hitbox(
+        Hitbox_AABB *p_hitbox_aabb,
+        i32F4 z__velocity) {
+#ifndef NDEBUG
+    if (!p_hitbox_aabb) {
+        debug_error("set_z_velocity_to__hitbox, p_hitbox_aabb == 0.");
+        return;
+    }
+#endif
+    p_hitbox_aabb->velocity__3i32F4.z__i32F4 = z__velocity;
+}
+
+static inline
+void set_velocity_to__hitbox(
+        Hitbox_AABB *p_hitbox_aabb,
+        Vector__3i32F4 velocity) {
+#ifndef NDEBUG
+    if (!p_hitbox_aabb) {
+        debug_error("set_velocity_to__hitbox, p_hitbox_aabb == 0.");
+        return;
+    }
+#endif
+    set_x_velocity_to__hitbox(p_hitbox_aabb, velocity.x__i32F4);
+    set_y_velocity_to__hitbox(p_hitbox_aabb, velocity.y__i32F4);
+    set_z_velocity_to__hitbox(p_hitbox_aabb, velocity.z__i32F4);
+}
 
 #endif

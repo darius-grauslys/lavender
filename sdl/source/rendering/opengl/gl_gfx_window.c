@@ -15,6 +15,7 @@
 #include "rendering/opengl/gl_shader.h"
 #include "rendering/opengl/gl_shader_manager.h"
 #include "rendering/opengl/gl_shader_passthrough.h"
+#include "rendering/opengl/gl_vertex_object.h"
 #include "rendering/opengl/gl_viewport.h"
 #include "rendering/opengl/glad/glad.h"
 #include "rendering/sdl_gfx_context.h"
@@ -40,7 +41,7 @@ void GL_allocate_gfx_window(
     if (!SDL_is_texture__allocated(
                 p_PLATFORM_graphics_window
                 ->p_SDL_graphics_window__texture)) {
-        debug_error("GL_allocate_gfx_window, failed to allocate texture.");
+        debug_error("SDL::GL::GL_allocate_gfx_window, failed to allocate texture.");
         return;
     }
 
@@ -56,7 +57,7 @@ void GL_allocate_gfx_window(
                 p_PLATFORM_gfx_context, 
                 p_PLATFORM_graphics_window
                 ->p_SDL_graphics_window__texture);
-        debug_error("GL_allocate_gfx_window, failed to allocate framebuffer");
+        debug_error("SDL::GL::GL_allocate_gfx_window, failed to allocate framebuffer");
         return;
     }
 
@@ -73,13 +74,18 @@ void GL_compose_gfx_window(
         Gfx_Context *p_gfx_context,
         Graphics_Window *p_gfx_window) {
 
+    if (!is_graphics_window__enabled(p_gfx_window))
+        return;
+
     GL_Framebuffer *p_GL_framebuffer =
         (GL_Framebuffer*)p_gfx_window
         ->p_PLATFORM_gfx_window
         ->p_SDL_graphics_window__data;
 
     if (!p_GL_framebuffer) {
-        debug_error("GL_compose_gfx_window, missing framebuffer.");
+        debug_error("SDL::GL::GL_compose_gfx_window, missing framebuffer.");
+        set_graphics_window_as__disabled(p_gfx_window);
+        debug_warning("p_gfx_window disabled.");
         return;
     }
 
@@ -97,8 +103,9 @@ void GL_compose_gfx_window(
                 shader_string__passthrough);
 
     if (!p_GL_shader__passthrough) {
-        debug_warning("Did you forget to attach a chunk shader?");
-        debug_error("SDL::GL::GL_update_chunk, p_GL_chunk_texture_manager has p_GL_shader__chunk == 0.");
+        debug_error("SDL::GL::GL_compose_gfx_window, p_GL_shader__passthrough == 0.");
+        set_graphics_window_as__disabled(p_gfx_window);
+        debug_warning("p_gfx_window disabled.");
         return;
     }
 
@@ -116,8 +123,12 @@ void GL_compose_gfx_window(
                 get_uuid_of__ui_tile_map__texture_from__gfx_window(
                     p_gfx_window));
 
-    if (!p_PLATFORM_texture__ui_tilesheet)
+    if (!p_PLATFORM_texture__ui_tilesheet) {
+        debug_error("SDL::GL::GL_compose_gfx_window, p_PLATFORM_texture__ui_tilesheet == 0.");
+        set_graphics_window_as__disabled(p_gfx_window);
+        debug_warning("p_gfx_window disabled.");
         return;
+    }
 
     GL_push_framebuffer_onto__framebuffer_manager(
             p_GL_framebuffer_manager,
@@ -148,14 +159,18 @@ void GL_compose_gfx_window(
             p_GL_shader__passthrough);
 
     float width__f = 
-        (float)p_PLATFORM_texture__ui_tilesheet
-        ->width;
+        (float)(p_PLATFORM_texture__ui_tilesheet
+        ->width
+        >> UI_TILE__WIDTH_AND__HEIGHT__BIT_SHIFT);
+        ;
     float height__f = 
-        (float)p_PLATFORM_texture__ui_tilesheet
-        ->height;
+        (float)(p_PLATFORM_texture__ui_tilesheet
+        ->height
+        >> UI_TILE__WIDTH_AND__HEIGHT__BIT_SHIFT);
+        ;
 
-    float width_of__uv  = 1.0 / (width__f / 8);
-    float height_of__uv = 1.0 / (height__f / 8);
+    float width_of__uv  = 1.0 / (width__f);
+    float height_of__uv = 1.0 / (height__f);
 
     use_vertex_object(p_GL_vertex_object);
 
@@ -209,6 +224,10 @@ void GL_compose_gfx_window(
 void GL_render_gfx_window(
         Gfx_Context *p_gfx_context,
         Graphics_Window *p_gfx_window) {
+
+    if (!is_graphics_window__enabled(p_gfx_window))
+        return;
+
     PLATFORM_Gfx_Context *p_PLATFORM_gfx_context =
         get_p_PLATFORM_gfx_context_from__gfx_context(p_gfx_context);
 
@@ -220,12 +239,19 @@ void GL_render_gfx_window(
                 shader_string__passthrough);
 
     if (!p_GL_shader__passthrough) {
-        debug_error("GL_render_gfx_window, p_GL_shader == 0.");
+        debug_error("SDL::GL::GL_render_gfx_window, p_GL_shader == 0.");
+        set_graphics_window_as__disabled(p_gfx_window);
+        debug_warning("p_gfx_window disabled.");
         return;
     }
 
     PLATFORM_Graphics_Window *p_PLATFORM_graphics_window =
         p_gfx_window->p_PLATFORM_gfx_window;
+
+    use_vertex_object(
+            &GL_get_p_gfx_sub_context_from__PLATFORM_gfx_context(
+                p_PLATFORM_gfx_context)
+            ->GL_vertex_object__unit_square);
 
     use_shader_2d(p_GL_shader__passthrough);
     PLATFORM_use_texture(
@@ -245,32 +271,6 @@ void GL_render_gfx_window(
             GL_peek_viewport_stack(
                     GL_get_p_viewport_stack_from__PLATFORM_gfx_context(
                         p_PLATFORM_gfx_context));
-
-        // if (p_GL_viewport->width
-        //         < p_PLATFORM_graphics_window
-        //         ->p_SDL_graphics_window__texture
-        //         ->width) {
-        //     width_of__uv =
-        //         (float)p_GL_viewport
-        //         ->width 
-        //         / (float)p_PLATFORM_graphics_window
-        //         ->p_SDL_graphics_window__texture
-        //         ->width
-        //         ;
-        // }
-
-        // if (p_GL_viewport->height
-        //         < p_PLATFORM_graphics_window
-        //         ->p_SDL_graphics_window__texture
-        //         ->height) {
-        //     height_of__uv =
-        //         (float)p_GL_viewport
-        //         ->height 
-        //         / (float)p_PLATFORM_graphics_window
-        //         ->p_SDL_graphics_window__texture
-        //         ->height
-        //         ;
-        // }
 
         x = 
             (p_PLATFORM_graphics_window

@@ -10,6 +10,7 @@ void initialize_typer(
         i32 x, i32 y,
         Quantity__u32 width,
         Quantity__u32 height,
+        Quantity__u32 quantity_of__spacing,
         i32 x__cursor, i32 y__cursor) {
     initialize_hitbox_as__allocated(
             &p_typer->text_bounding_box, 
@@ -22,28 +23,11 @@ void initialize_typer(
                 x__cursor,
                 y__cursor, 
                 0);
+    p_typer->quantity_of__space_in__pixels_between__lines = 
+        quantity_of__spacing;
     p_typer->p_font = 0;
     p_typer->p_PLATFORM_texture__typer_target = 0;
-}
-
-void initialize_typer_with__font(
-        Typer *p_typer,
-        i32 x, i32 y,
-        Quantity__u32 width,
-        Quantity__u32 height,
-        i32 x__cursor, i32 y__cursor,
-        Font *p_font) {
-    initialize_typer(
-            p_typer, 
-            x, 
-            y, 
-            width, 
-            height, 
-            x__cursor, 
-            y__cursor);
-
-    p_typer->p_font = p_font;
-    p_typer->p_PLATFORM_texture__typer_target = 0;
+    p_typer->is_using_PLATFORM_texture_or__PLATFORM_graphics_window = true;
 }
 
 bool poll_typer_for__cursor_wrapping(
@@ -81,31 +65,8 @@ bool poll_typer_for__cursor_wrapping(
     if (is_this_hitbox__fully_inside_this_hitbox__without_velocity(
                 &font_letter_hitbox,
                 &p_typer->text_bounding_box)) {
-        // debug_info(
-        //         "good: %d, %d",
-        //         hitbox_position.x__i32F4 >> 4,
-        //         hitbox_position.y__i32F4 >> 4);
         return true;
     }
-
-    // debug_info(
-    //         "-- BAD -- %d, %d",
-    //         hitbox_position.x__i32F4 >> 4,
-    //         hitbox_position.y__i32F4 >> 4);
-    // debug_info(
-    //         "from: %d, %d",
-    //         (p_typer->text_bounding_box.position__3i32F4.x__i32F4 >> 4)
-    //         - (p_typer->text_bounding_box.width__quantity_u32 >> 1),
-    //         (p_typer->text_bounding_box.position__3i32F4.y__i32F4 >> 4)
-    //         - (p_typer->text_bounding_box.height__quantity_u32 >> 1)
-    //         );
-    // debug_abort(
-    //         "to: %d, %d",
-    //         (p_typer->text_bounding_box.position__3i32F4.x__i32F4 >> 4)
-    //         + (p_typer->text_bounding_box.width__quantity_u32 >> 1),
-    //         (p_typer->text_bounding_box.position__3i32F4.y__i32F4 >> 4)
-    //         + (p_typer->text_bounding_box.height__quantity_u32 >> 1)
-    //         );
 
     Vector__3i32 aa;
     initialize_vector_3i32_as__aa_bb_without__velocity(
@@ -115,7 +76,8 @@ bool poll_typer_for__cursor_wrapping(
 
     p_typer->cursor_position__3i32.x__i32 = 0;
     p_typer->cursor_position__3i32.y__i32 +=
-        p_typer->p_font->max_height_of__font_letter;
+        p_typer->p_font->max_height_of__font_letter
+        + p_typer->quantity_of__space_in__pixels_between__lines;
 
     hitbox_position =
         get_vector__3i32F4_using__i32(
@@ -143,7 +105,7 @@ bool poll_typer_for__cursor_wrapping(
 }
 
 void put_c_string_in__typer(
-        PLATFORM_Gfx_Context *p_PLATFORM_gfx_context,
+        Gfx_Context *p_gfx_context,
         Typer *p_typer,
         const char *c_string,
         Quantity__u32 max_length_of__c_string) {
@@ -164,9 +126,21 @@ void put_c_string_in__typer(
                 p_typer->cursor_position__3i32.x__i32 = 0;
                 return;
         }
-        PLATFORM_put_char_in__typer(
-                p_PLATFORM_gfx_context, 
+        Font_Letter *p_font_letter =
+            get_p_font_letter_from__typer(
                 p_typer, 
                 letter);
+        if (!poll_typer_for__cursor_wrapping(
+                p_typer, 
+                p_font_letter)) {
+            break;
+        }
+        PLATFORM_put_char_in__typer(
+                p_gfx_context, 
+                p_typer, 
+                letter);
+        offset_typer_by__font_letter(
+                p_typer, 
+                p_font_letter);
     } while (*(++c_string) && --max_length_of__c_string);
 }
