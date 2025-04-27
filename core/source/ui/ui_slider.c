@@ -27,9 +27,9 @@ void initialize_ui_element_as__slider(
     set_ui_element__dragged_handler(
             p_ui_slider, 
             m_ui_dragged_handler);
-    set_ui_element__render_handler(
+    set_ui_element__transformed_handler(
             p_ui_slider, 
-            m_ui_slider__render_handler__default);
+            m_ui_slider__transformed_handler__default);
 
     if (is_snapped_x_or_y__axis) {
         set_ui_element_as__snapped_x_axis(p_ui_slider);
@@ -81,18 +81,12 @@ void m_ui_slider__dragged_handler__default(
         cursor_position;
 }
 
-void m_ui_slider__render_handler__default(
+void m_ui_slider__transformed_handler__default(
         UI_Element *p_this_draggable,
-        Game *p_game,
-        Graphics_Window *p_gfx_window) {
-#warning TODO: does this logic need to be moved?
+        Hitbox_AABB *p_hitbox_aabb,
+        Game *p_game) {
     bool is_snapped_x_or_y__axis =
         is_ui_element__snapped_x_or_y_axis(p_this_draggable);
-
-    Hitbox_AABB *p_hitbox_aabb =
-        get_p_hitbox_aabb_of__ui_element(
-                get_p_hitbox_aabb_manager_from__game(p_game), 
-                p_this_draggable);
 
     if (!p_hitbox_aabb) {
         debug_error("m_ui_slider__dragged_handler__default, missing hitbox component.");
@@ -183,7 +177,7 @@ void m_ui_slider__dragged_handler__gfx_window__default(
                 get_p_hitbox_aabb_manager_from__game(p_game),
                 p_this_draggable->p_child) >> 1;
     set_positions_of__ui_elements_in__succession(
-            get_p_hitbox_aabb_manager_from__game(p_game),
+            p_game,
             p_this_draggable->p_child, 
             position_for__elements, 
             24, 

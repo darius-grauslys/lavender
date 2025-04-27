@@ -1,7 +1,9 @@
 #ifndef TYPER_H
 #define TYPER_H
 
+#include "collisions/hitbox_aabb.h"
 #include "defines_weak.h"
+#include "vectors.h"
 #include <defines.h>
 
 void initialize_typer(
@@ -43,6 +45,26 @@ void put_c_string_in__typer(
         Typer *p_typer,
         const char *c_string,
         Quantity__u32 max_length_of__c_string);
+
+static inline
+void set_typer__position(
+        Typer *p_typer,
+        Vector__3i32 position__3i32) {
+    set_hitbox__position_with__3i32(
+            &p_typer->text_bounding_box, 
+            position__3i32);
+}
+
+static inline
+void set_typer__bounding_box_size(
+        Typer *p_typer,
+        Quantity__u32 width,
+        Quantity__u32 height) {
+    set_size_of__hitbox_aabb(
+            &p_typer->text_bounding_box, 
+            width, 
+            height);
+}
 
 static inline
 void set_typer__cursor(
@@ -98,6 +120,14 @@ static inline
 bool is_typer_targetting__PLATFORM_graphics_window(
         Typer *p_typer) {
     return !p_typer->is_using_PLATFORM_texture_or__PLATFORM_graphics_window;
+}
+
+static inline
+void reset_typer_cursor(
+        Typer *p_typer) {
+    set_typer__cursor(
+            p_typer, 
+            get_vector__3i32(0, 0, 0));
 }
 
 #endif

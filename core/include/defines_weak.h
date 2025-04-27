@@ -140,6 +140,18 @@ typedef void (*m_Entity_Serialization_Handler)(
 
 typedef struct Input_t Input;
 
+#define ASCII__ESCAPE 27
+#define ASCII__BACKSPACE 8
+#define ASCII__DELETE 127
+
+/// the following is NOT ASCII, but is treated
+/// as such in the engine. This will be fine if
+/// these values are only used within the engine.
+#define ASCII_LAVENDER__UP_ARROW 128
+#define ASCII_LAVENDER__DOWN_ARROW 129
+#define ASCII_LAVENDER__LEFT_ARROW 130
+#define ASCII_LAVENDER__RIGHT_ARROW 131
+
 ///
 /// SECTION_process
 ///
@@ -338,6 +350,8 @@ enum UI_Element_Kind {
     UI_Element_Kind__Draggable,
     UI_Element_Kind__Slider,
     UI_Element_Kind__Drop_Zone,
+    UI_Element_Kind__Text,
+    UI_Element_Kind__Text_Box,
     UI_Element_Kind__Logical,
     UI_Element_Kind__Unknown
 };

@@ -114,11 +114,10 @@ void generate_ui_span_in__ui_tile_map(
         u32 y = 
             index_y__u32
             + index_y_of__ui_tile_span__u32
-            - (height_of__ui_tile_span__u32 >> 1)
             ;
         if (y >= get_height_of__ui_tile_map__wrapper(
                     ui_tile_map__wrapper)) {
-            break;
+            continue;
         }
         for (Index__u32 index_x_of__ui_tile_span__u32 = 0;
                 index_x_of__ui_tile_span__u32
@@ -127,11 +126,10 @@ void generate_ui_span_in__ui_tile_map(
             u32 x = 
                 index_x__u32
                 + index_x_of__ui_tile_span__u32
-                - (width_of__ui_tile_span__u32 >> 1)
                 ;
             if (x >= get_width_of__ui_tile_map__wrapper(
                         ui_tile_map__wrapper)) {
-                break;
+                continue;
             }
 
             UI_Tile_Raw ui_tile_raw = 

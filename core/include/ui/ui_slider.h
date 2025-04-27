@@ -26,10 +26,10 @@ void m_ui_slider__dispose_handler__default(
         UI_Element *p_this_slider,
         Game *p_game);
 
-void m_ui_slider__render_handler__default(
+void m_ui_slider__transformed_handler__default(
         UI_Element *p_this_ui_element,
-        Game *p_game,
-        Graphics_Window *p_gfx_window);
+        Hitbox_AABB *p_hitbox_aabb,
+        Game *p_game);
 
 static inline
 i32F20 get_percentage_i32F20_from__ui_slider(

@@ -48,7 +48,7 @@ void m_ui_draggable__dragged_handler__default(
         get_height_u32_of__hitbox_aabb(p_hitbox_aabb) >> 1;
 
     set_position_3i32_of__ui_element(
-            get_p_hitbox_aabb_manager_from__game(p_game),
+            p_game,
             p_this_draggable, 
             position);
 }
@@ -61,9 +61,11 @@ void m_ui_draggable__dropped_handler__default(
     }
 
     set_position_3i32_of__ui_element(
-            get_p_hitbox_aabb_manager_from__game(p_game),
+            p_game,
             p_this_draggable, 
             get_position_3i32_from__p_ui_element(
                 get_p_hitbox_aabb_manager_from__game(p_game),
                 p_this_draggable->p_parent));
+
+    set_ui_element_as__NOT_focused(p_this_draggable);
 }

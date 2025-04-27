@@ -10,7 +10,7 @@ void initialize_ui_manager(UI_Manager *p_ui_manager);
 void poll_ui_manager__update(
         UI_Manager *p_ui_manager,
         Game *p_game,
-        PLATFORM_Graphics_Window *p_PLATFORM_gfx_window);
+        Graphics_Window *p_graphics_window);
 
 void set_ui_element_priority_higher_than__this_ui_element_in__ui_manager(
         UI_Manager *p_ui_manager,
@@ -34,8 +34,8 @@ UI_Element *allocate_ui_element_from__ui_manager(
         UI_Manager *p_ui_manager);
 
 UI_Element *allocate_ui_element_from__ui_manager_as__child(
+        Game *p_game,
         UI_Manager *p_ui_manager,
-        Hitbox_AABB_Manager *p_hitbox_aabb_manager,
         UI_Element *p_parent);
 
 void allocate_many_ui_elements_from__ui_manager(

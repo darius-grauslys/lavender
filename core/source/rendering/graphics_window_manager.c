@@ -213,13 +213,6 @@ void render_graphics_window(
         Game *p_game,
         Gfx_Context *p_gfx_context,
         Graphics_Window *p_gfx_window) {
-    if (p_gfx_window->p_ui_manager) {
-        render_all_ui_elements_in__ui_manager(
-                p_gfx_window->p_ui_manager, 
-                p_game, 
-                p_gfx_window);
-    }
-
     PLATFORM_render_gfx_window(
             p_gfx_context, 
             p_gfx_window);

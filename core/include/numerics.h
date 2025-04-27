@@ -75,12 +75,42 @@ Signed_Index__i32 i32F4_to__i32F20(i32F4 x) {
 }
 
 static inline
+u8 min__u8(
+        u8 first__u8,
+        u8 second__u8) {
+    return (second__u8 > first__u8)
+        ? first__u8 
+        : second__u8
+        ;
+}
+
+static inline
+u32 min__u32(
+        u32 first__u32,
+        u32 second__u32) {
+    return (second__u32 > first__u32)
+        ? first__u32 
+        : second__u32
+        ;
+}
+
+static inline
 u8 max__u8(
         u8 first__u8,
         u8 second__u8) {
     return (first__u8 < second__u8)
         ? second__u8
         : first__u8
+        ;
+}
+
+static inline
+u32 max__u32(
+        u32 first__u32,
+        u32 second__u32) {
+    return (first__u32 < second__u32)
+        ? second__u32
+        : first__u32
         ;
 }
 
@@ -342,16 +372,6 @@ void clamp__p_i32(
         *p_value__i32 = max__i32;
         return;
     }
-}
-
-static inline
-u32 min__u32(
-        u32 first__u32,
-        u32 second__u32) {
-    return (first__u32 < second__u32)
-        ? first__u32
-        : second__u32
-        ;
 }
 
 #endif

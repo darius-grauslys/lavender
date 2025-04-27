@@ -23,13 +23,37 @@ void m_ui_element__dispose_handler__default(
         UI_Element *p_this_ui_element,
         Game *p_game);
 
+void allocate_hitbox_for__ui_element(
+        Game *p_game,
+        UI_Element *p_ui_element,
+        Quantity__u32 width_of__hitbox__u32,
+        Quantity__u32 height_of__hitbox__u32,
+        Vector__3i32 position_of__hitbox__3i32);
+
 void set_positions_of__ui_elements_in__succession(
-        Hitbox_AABB_Manager *p_hitbox_aabb_manager,
+        Game *p_game,
         UI_Element *p_ui_element__succession_collection,
         Vector__3i32 starting_position__3i32,
         i32 x__stride,
         Quantity__u32 quantity_of__elements_per_row,
         i32 y__stride);
+
+void set_position_3i32_of__ui_element(
+        Game *p_game,
+        UI_Element *p_ui_element,
+        Vector__3i32 position__3i32);
+
+void set_ui_element__size(
+        Game *p_game,
+        UI_Element *p_ui_element,
+        Quantity__u32 width, Quantity__u32 height);
+
+void set_ui_element__hitbox(
+        Game *p_game,
+        UI_Element *p_ui_element,
+        Quantity__u32 width, 
+        Quantity__u32 height,
+        Vector__3i32 position__3i32);
 
 void set_ui_element__sprite(
         UI_Element *p_ui_element,
@@ -51,19 +75,32 @@ const UI_Tile_Span *get_ui_tile_span_of__ui_element(
         Index__u32 *p_index_x__u32, 
         Index__u32 *p_index_y__u32);
 
-void set_position_3i32_of__ui_element(
-        Hitbox_AABB_Manager *p_hitbox_aabb_manager,
+void m_ui_element__compose_handler__default(
         UI_Element *p_ui_element,
-        Vector__3i32 position__3i32);
-
-void m_ui_element__render_handler_for__sprite__default(
-        UI_Element *p_this_ui_element,
         Game *p_game,
-        Graphics_Window *p_gfx_window);
+        Graphics_Window *p_graphics_window);
+
+void m_ui_element__compose_handler__default_non_recursive(
+        UI_Element *p_ui_element,
+        Game *p_game,
+        Graphics_Window *p_graphics_window);
+
+void m_ui_element__compose_handler__default_only_recursive(
+        UI_Element *p_ui_element,
+        Game *p_game,
+        Graphics_Window *p_graphics_window);
 
 bool does_ui_element_have__sprite(
         Sprite_Manager *p_sprite_manager,
         UI_Element *p_ui_element);
+
+void set_child_of__ui_element(
+        UI_Element *p_ui_element,
+        UI_Element *p_ui_element__child);
+
+void set_parent_of__ui_element(
+        UI_Element *p_ui_element,
+        UI_Element *p_ui_element__parent);
 
 static inline
 Hitbox_AABB *get_p_hitbox_aabb_of__ui_element(
@@ -242,6 +279,11 @@ bool is_ui_element__enabled(UI_Element *p_ui_element) {
 }
 
 static inline
+bool is_ui_element__focused(UI_Element *p_ui_element) {
+    return (bool)(p_ui_element->ui_flags & UI_FLAGS__BIT_IS_FOCUSED);
+}
+
+static inline
 bool is_ui_element__non_interactive(UI_Element *p_ui_element) {
     return (bool)(p_ui_element->ui_flags & UI_FLAGS__BIT_IS_NON_INTERACTIVE);
 }
@@ -264,13 +306,6 @@ bool is_ui_element__being_dragged(UI_Element *p_ui_element) {
 static inline
 bool is_ui_element__snapped_x_or_y_axis(UI_Element *p_ui_element) {
     return (bool)(p_ui_element->ui_flags & UI_FLAGS__BIT_IS_SNAPPED_X_OR_Y_AXIS);
-}
-
-static inline
-bool is_ui_element__focused(
-        UI_Element *p_ui_element) {
-    return is_ui_element__being_held(p_ui_element)
-        || is_ui_element__being_dragged(p_ui_element);
 }
 
 static inline
@@ -314,10 +349,31 @@ bool does_ui_element_have__next(
 }
 
 static inline
+void set_ui_element_as__focused(
+        UI_Element *p_ui_element) {
+    p_ui_element->ui_flags |=
+        UI_FLAGS__BIT_IS_FOCUSED;
+}
+
+static inline
+void set_ui_element_as__NOT_focused(
+        UI_Element *p_ui_element) {
+    p_ui_element->ui_flags &=
+        ~UI_FLAGS__BIT_IS_FOCUSED;
+}
+
+static inline
 void set_ui_element_as__being_dragged(
         UI_Element *p_ui_element) {
     p_ui_element->ui_flags |=
         UI_FLAGS__BIT_IS_BEING_DRAGGED;
+}
+
+static inline
+void set_ui_element_as__NOT_being_dragged(
+        UI_Element *p_ui_element) {
+    p_ui_element->ui_flags &=
+        ~UI_FLAGS__BIT_IS_BEING_DRAGGED;
 }
 
 static inline
@@ -392,12 +448,12 @@ void set_ui_element_as__disabled(
 
 ///
 /// Different from disabled.
-/// Disabled will prevent rendering.
+/// Disabled will prevent composing.
 /// Non-interactive will prevent user interaction
-/// but still allow for rendering.
+/// but still allow for composing.
 ///
 /// Use this if you want to overlay a bunch of UIs
-/// with some render-only UI (such as a background.)
+/// with some composing-only UI (such as a background.)
 ///
 static inline
 void set_ui_element_as__non_interactive(
@@ -456,48 +512,35 @@ void set_ui_element__receive_drop_handler(
 static inline
 void set_ui_element__held_handler(
         UI_Element *p_ui_element,
-        m_UI_Dragged m_ui_held_handler) {
+        m_UI_Held m_ui_held_handler) {
     p_ui_element->m_ui_held_handler =
         m_ui_held_handler;
 }
 
 static inline
-void set_ui_element__render_handler(
+void set_ui_element__typed_handler(
         UI_Element *p_ui_element,
-        m_UI_Render m_ui_render_handler) {
-    p_ui_element->m_ui_render_handler =
-        m_ui_render_handler;
+        m_UI_Typed m_ui_typed_handler) {
+    p_ui_element->m_ui_typed_handler =
+        m_ui_typed_handler;
 }
 
 static inline
-void set_ui_element__size(
-        Hitbox_AABB_Manager *p_hitbox_aabb_manager,
+void set_ui_element__transformed_handler(
         UI_Element *p_ui_element,
-        Quantity__u32 width, Quantity__u32 height) {
-    set_size_of__hitbox_aabb(
-            get_p_hitbox_aabb_of__ui_element(
-                p_hitbox_aabb_manager, 
-                p_ui_element), 
-            width, 
-            height);
+        m_UI_Transformed m_ui_transformed_handler) {
+    p_ui_element->m_ui_transformed_handler =
+        m_ui_transformed_handler;
 }
 
 static inline
-void set_ui_element__hitbox(
-        Hitbox_AABB_Manager *p_hitbox_aabb_manager,
+void set_ui_element__compose_handler(
         UI_Element *p_ui_element,
-        Quantity__u32 width, 
-        Quantity__u32 height,
-        Vector__3i32 position__3i32) {
-    set_position_3i32_of__ui_element(
-            p_hitbox_aabb_manager,
-            p_ui_element, 
-            position__3i32);
-    set_ui_element__size(
-            p_hitbox_aabb_manager,
-            p_ui_element, 
-            width, 
-            height);
+        m_UI_Compose m_ui_compose_handler) {
+    set_ui_element_as__using_ui_tile_span(
+            p_ui_element);
+    p_ui_element->m_ui_compose_handler =
+        m_ui_compose_handler;
 }
 
 static inline
@@ -537,16 +580,44 @@ bool does_ui_element_have__held_handler(
 }
 
 static inline
-m_UI_Render get_ui_element__render_handler(
+bool does_ui_element_have__typed_handler(
         UI_Element *p_ui_element) {
-    return p_ui_element
-        ->m_ui_render_handler;
+    return (bool)p_ui_element->m_ui_typed_handler;
 }
 
 static inline
-bool does_ui_element_have__render_handler(
+bool does_ui_element_have__transformed_handler(
         UI_Element *p_ui_element) {
-    return get_ui_element__render_handler(
+    return (bool)p_ui_element->m_ui_transformed_handler;
+}
+
+static inline
+m_UI_Typed get_ui_element__typed_handler(
+        UI_Element *p_ui_element) {
+    return p_ui_element
+        ->m_ui_typed_handler;
+}
+
+static inline
+m_UI_Transformed get_ui_element__transformed_handler(
+        UI_Element *p_ui_element) {
+    return p_ui_element
+        ->m_ui_transformed_handler;
+}
+
+static inline
+m_UI_Compose get_ui_element__compose_handler(
+        UI_Element *p_ui_element) {
+    return p_ui_element
+        ->m_ui_compose_handler;
+}
+
+static inline
+bool does_ui_element_have__compose_handler(
+        UI_Element *p_ui_element) {
+    return 
+        is_ui_element__using_ui_tile_span(p_ui_element)
+        && get_ui_element__compose_handler(
             p_ui_element);
 }
 

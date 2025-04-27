@@ -9,6 +9,8 @@ typedef enum UI_Element_Kind {
     UI_Element_Kind__Draggable,
     UI_Element_Kind__Slider,
     UI_Element_Kind__Drop_Zone,
+    UI_Element_Kind__Text,
+    UI_Element_Kind__Text_Box,
     UI_Element_Kind__Logical,
     UI_Element_Kind__Unknown
 } UI_Element_Kind;

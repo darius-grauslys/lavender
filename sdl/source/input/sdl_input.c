@@ -6,6 +6,7 @@
 #include "platform_defaults.h"
 #include "platform_defines.h"
 #include <SDL2/SDL_keyboard.h>
+#include <SDL2/SDL_keycode.h>
 #include <SDL2/SDL_mouse.h>
 #include <SDL2/SDL_scancode.h>
 #include <input/sdl_input.h>
@@ -29,6 +30,129 @@ typedef struct {
 } Input_Binding;
 
 Input_Binding __SDL_INPUT_BINDINGS[SDL_QUANTITY_OF__INPUTS];
+
+const char __SDL_ASCII_MAP[2][SDL_NUM_SCANCODES] = {
+        {
+        [SDL_SCANCODE_A] = 'a',
+        [SDL_SCANCODE_B] = 'b',
+        [SDL_SCANCODE_C] = 'c',
+        [SDL_SCANCODE_D] = 'd',
+        [SDL_SCANCODE_E] = 'e',
+        [SDL_SCANCODE_F] = 'f',
+        [SDL_SCANCODE_G] = 'g',
+        [SDL_SCANCODE_H] = 'h',
+        [SDL_SCANCODE_I] = 'i',
+        [SDL_SCANCODE_J] = 'j',
+        [SDL_SCANCODE_K] = 'k',
+        [SDL_SCANCODE_L] = 'l',
+        [SDL_SCANCODE_M] = 'm',
+        [SDL_SCANCODE_N] = 'n',
+        [SDL_SCANCODE_O] = 'o',
+        [SDL_SCANCODE_P] = 'p',
+        [SDL_SCANCODE_Q] = 'q',
+        [SDL_SCANCODE_R] = 'r',
+        [SDL_SCANCODE_S] = 's',
+        [SDL_SCANCODE_T] = 't',
+        [SDL_SCANCODE_U] = 'u',
+        [SDL_SCANCODE_V] = 'v',
+        [SDL_SCANCODE_W] = 'w',
+        [SDL_SCANCODE_X] = 'x',
+        [SDL_SCANCODE_Y] = 'y',
+        [SDL_SCANCODE_Z] = 'z',
+
+        [SDL_SCANCODE_1] = '1',
+        [SDL_SCANCODE_2] = '2',
+        [SDL_SCANCODE_3] = '3',
+        [SDL_SCANCODE_4] = '4',
+        [SDL_SCANCODE_5] = '5',
+        [SDL_SCANCODE_6] = '6',
+        [SDL_SCANCODE_7] = '7',
+        [SDL_SCANCODE_8] = '8',
+        [SDL_SCANCODE_9] = '9',
+        [SDL_SCANCODE_0] = '0',
+
+        [SDL_SCANCODE_RETURN] = '\n',
+        [SDL_SCANCODE_ESCAPE] = 27,
+        [SDL_SCANCODE_DELETE] = 127,
+        [SDL_SCANCODE_BACKSPACE] = '\b',
+        [SDL_SCANCODE_TAB] = '\t',
+        [SDL_SCANCODE_SPACE] = ' ',
+
+        [SDL_SCANCODE_MINUS] = '-',
+        [SDL_SCANCODE_EQUALS] = '=',
+        [SDL_SCANCODE_LEFTBRACKET] = '[',
+        [SDL_SCANCODE_RIGHTBRACKET] = ']',
+        [SDL_SCANCODE_BACKSLASH] = '\\',
+        [SDL_SCANCODE_NONUSBACKSLASH] = '\\',
+        [SDL_SCANCODE_SEMICOLON] = ';',
+        [SDL_SCANCODE_APOSTROPHE] = '\'',
+        [SDL_SCANCODE_GRAVE] = '`',
+        [SDL_SCANCODE_COMMA] = ',',
+        [SDL_SCANCODE_PERIOD] = '.',
+        [SDL_SCANCODE_SLASH] = '/',
+    },
+
+    // Shifted (index 1)
+    {
+        [SDL_SCANCODE_A] = 'A',
+        [SDL_SCANCODE_B] = 'B',
+        [SDL_SCANCODE_C] = 'C',
+        [SDL_SCANCODE_D] = 'D',
+        [SDL_SCANCODE_E] = 'E',
+        [SDL_SCANCODE_F] = 'F',
+        [SDL_SCANCODE_G] = 'G',
+        [SDL_SCANCODE_H] = 'H',
+        [SDL_SCANCODE_I] = 'I',
+        [SDL_SCANCODE_J] = 'J',
+        [SDL_SCANCODE_K] = 'K',
+        [SDL_SCANCODE_L] = 'L',
+        [SDL_SCANCODE_M] = 'M',
+        [SDL_SCANCODE_N] = 'N',
+        [SDL_SCANCODE_O] = 'O',
+        [SDL_SCANCODE_P] = 'P',
+        [SDL_SCANCODE_Q] = 'Q',
+        [SDL_SCANCODE_R] = 'R',
+        [SDL_SCANCODE_S] = 'S',
+        [SDL_SCANCODE_T] = 'T',
+        [SDL_SCANCODE_U] = 'U',
+        [SDL_SCANCODE_V] = 'V',
+        [SDL_SCANCODE_W] = 'W',
+        [SDL_SCANCODE_X] = 'X',
+        [SDL_SCANCODE_Y] = 'Y',
+        [SDL_SCANCODE_Z] = 'Z',
+
+        [SDL_SCANCODE_1] = '!',
+        [SDL_SCANCODE_2] = '@',
+        [SDL_SCANCODE_3] = '#',
+        [SDL_SCANCODE_4] = '$',
+        [SDL_SCANCODE_5] = '%',
+        [SDL_SCANCODE_6] = '^',
+        [SDL_SCANCODE_7] = '&',
+        [SDL_SCANCODE_8] = '*',
+        [SDL_SCANCODE_9] = '(',
+        [SDL_SCANCODE_0] = ')',
+
+        [SDL_SCANCODE_RETURN] = '\n',
+        [SDL_SCANCODE_ESCAPE] = 27,
+        [SDL_SCANCODE_DELETE] = 127,
+        [SDL_SCANCODE_BACKSPACE] = '\b',
+        [SDL_SCANCODE_TAB] = '\t',
+        [SDL_SCANCODE_SPACE] = ' ',
+
+        [SDL_SCANCODE_MINUS] = '_',
+        [SDL_SCANCODE_EQUALS] = '+',
+        [SDL_SCANCODE_LEFTBRACKET] = '{',
+        [SDL_SCANCODE_RIGHTBRACKET] = '}',
+        [SDL_SCANCODE_BACKSLASH] = '|',
+        [SDL_SCANCODE_NONUSBACKSLASH] = '|',
+        [SDL_SCANCODE_SEMICOLON] = ':',
+        [SDL_SCANCODE_APOSTROPHE] = '"',
+        [SDL_SCANCODE_GRAVE] = '~',
+        [SDL_SCANCODE_COMMA] = '<',
+        [SDL_SCANCODE_PERIOD] = '>',
+        [SDL_SCANCODE_SLASH] = '?',
+    }
+};
 
 void SDL_initialize_input_bindings() {
     __SDL_INPUT_BINDINGS[INPUT_CODE_NONE] = (Input_Binding){
@@ -131,7 +255,7 @@ void SDL_initialize_input_bindings() {
     };
 }
 
-void PLATFORM_poll_input(
+void SDL_poll_input__normal(
         Game *p_game,
         Input *p_input) {
     const u8 *p_keys = SDL_GetKeyboardState(0);
@@ -193,4 +317,48 @@ void PLATFORM_poll_input(
     f_SDL_process_input(
             p_game,
             p_input);
+}
+
+void SDL_poll_input__writing(
+        Game *p_game,
+        Input *p_input) {
+    const u8 *p_keys = SDL_GetKeyboardState(0);
+    SDL_Keymod sdl_mod__state = SDL_GetModState();
+
+    bool caps = 
+        (sdl_mod__state & KMOD_CAPS)
+        | (sdl_mod__state & (KMOD_LSHIFT | KMOD_RSHIFT))
+        ;
+    for (Index__u32 index_of__scan_code =
+            SDL_SCANCODE_UNKNOWN + 1;
+            index_of__scan_code
+            < SDL_NUM_SCANCODES;
+            index_of__scan_code++) {
+        char symbol = 
+            __SDL_ASCII_MAP[caps][index_of__scan_code];
+        if (p_keys[index_of__scan_code] && symbol) {
+            buffer_input_for__writing(
+                    p_input, 
+                    symbol);
+        }
+    }
+}
+
+void PLATFORM_poll_input(
+        Game *p_game,
+        Input *p_input) {
+    switch (get_input_mode_of__input(p_input)) {
+        default:
+            break;
+        case INPUT_MODE__NORMAL:
+            SDL_poll_input__normal(
+                    p_game, 
+                    p_input);
+            break;
+        case INPUT_MODE__WRITING:
+            SDL_poll_input__writing(
+                    p_game, 
+                    p_input);
+            break;
+    }
 }

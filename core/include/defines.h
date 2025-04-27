@@ -921,6 +921,11 @@ typedef struct Entity_Manager_t {
 
 typedef uint32_t Input_Code__u32;
 typedef uint32_t Input_Flags__u32;
+typedef uint8_t Input_Mode__u8;
+
+#define INPUT_MODE__NONE 0
+#define INPUT_MODE__NORMAL 0
+#define INPUT_MODE__WRITING BIT(1)
 
 typedef struct Input_t {
     Input_Flags__u32 input_flags__pressed;
@@ -934,6 +939,15 @@ typedef struct Input_t {
 
     Vector__3i32 cursor__3i32;
     Vector__3i32 cursor__old__3i32;
+    ///
+    /// NOTE: this is the written output of the player
+    /// for UI entry.
+    ///
+    char writing_buffer[
+    MAX_QUANTITY_OF__SYMBOLS_IN__INPUT_WRITING_BUFFER];
+    Index__u8 index_of__writing_buffer__read;
+    Index__u8 index_of__writing_buffer__write;
+    Input_Mode__u8 input_mode__u8;
 } Input;
 
 ///
@@ -1291,7 +1305,7 @@ typedef void (*m_UI_Dispose)(
 typedef void (*m_UI_Clicked)(
         UI_Element *p_this_ui_element,
         Game *p_game,
-        PLATFORM_Graphics_Window *p_PLATFORM_gfx_window);
+        Graphics_Window *p_gfx_window);
 typedef void (*m_UI_Dragged)(
         UI_Element *p_this_ui_element,
         Game *p_game);
@@ -1306,10 +1320,18 @@ typedef void (*m_UI_Dropped)(
 typedef void (*m_UI_Held)(
         UI_Element *p_this_ui_element,
         Game *p_game);
-typedef void (*m_UI_Render)(
+typedef void (*m_UI_Typed)(
+        UI_Element *p_this_ui_element,
+        Game *p_game,
+        unsigned char symbol);
+typedef void (*m_UI_Compose)(
         UI_Element *p_this_ui_element,
         Game *p_game,
         Graphics_Window *p_gfx_window);
+typedef void (*m_UI_Transformed)(
+        UI_Element *p_this_ui_element,
+        Hitbox_AABB *p_hitbox_aabb,
+        Game *p_game);
 
 typedef uint16_t UI_Flags__u16;
 typedef uint8_t UI_Button_Flags__u8;
@@ -1317,36 +1339,28 @@ typedef uint8_t UI_Button_Flags__u8;
 #define UI_HUD_NOTIFICATION_LIFESPAN_IN__SECONDS 4
 #define UI_HUD_MESSAGE_LIFESPAN_IN__SECONDS 20
 
-#define UI_FLAGS__BIT_SHIFT_IS_ENABLED 0
-#define UI_FLAGS__BIT_SHIFT_IS_NON_INTERACTIVE \
-    (UI_FLAGS__BIT_SHIFT_IS_ENABLED + 1)
-#define UI_FLAGS__BIT_SHIFT_IS_NEEDING_UPDATE \
-    (UI_FLAGS__BIT_SHIFT_IS_NON_INTERACTIVE + 1)
-#define UI_FLAGS__BIT_SHIFT_IS_BEING_HELD \
-    (UI_FLAGS__BIT_SHIFT_IS_NEEDING_UPDATE + 1)
-#define UI_FLAGS__BIT_SHIFT_IS_BEING_DRAGGED \
-    (UI_FLAGS__BIT_SHIFT_IS_BEING_HELD + 1)
-#define UI_FLAGS__BIT_SHIFT_IS_SNAPPED_X_OR_Y_AXIS \
-    (UI_FLAGS__BIT_SHIFT_IS_BEING_DRAGGED + 1)
-#define UI_FLAGS__BIT_SHIFT_IS_USING__SPRITE_OR_UI_TILE_SPAN \
-    (UI_FLAGS__BIT_SHIFT_IS_SNAPPED_X_OR_Y_AXIS + 1)
-
 #define UI_FLAGS__NONE 0
 
-#define UI_FLAGS__BIT_IS_ENABLED \
-    BIT(UI_FLAGS__BIT_SHIFT_IS_ENABLED)
-#define UI_FLAGS__BIT_IS_NON_INTERACTIVE \
-    BIT(UI_FLAGS__BIT_SHIFT_IS_NON_INTERACTIVE)
-#define UI_FLAGS__BIT_IS_NEEDING_UPDATE \
-    BIT(UI_FLAGS__BIT_SHIFT_IS_NEEDING_UPDATE)
-#define UI_FLAGS__BIT_IS_BEING_HELD \
-    BIT(UI_FLAGS__BIT_SHIFT_IS_BEING_HELD)
-#define UI_FLAGS__BIT_IS_BEING_DRAGGED \
-    BIT(UI_FLAGS__BIT_SHIFT_IS_BEING_DRAGGED )
-#define UI_FLAGS__BIT_IS_SNAPPED_X_OR_Y_AXIS \
-    BIT(UI_FLAGS__BIT_SHIFT_IS_SNAPPED_X_OR_Y_AXIS)
-#define UI_FLAGS__BIT_IS_USING__SPRITE_OR_UI_TILE_SPAN \
-    BIT(UI_FLAGS__BIT_SHIFT_IS_USING__SPRITE_OR_UI_TILE_SPAN)
+#define UI_FLAGS__BIT_IS_ENABLED BIT(0)
+#define UI_FLAGS__BIT_IS_FOCUSED BIT(1)
+#define UI_FLAGS__BIT_IS_NON_INTERACTIVE BIT(2)
+#define UI_FLAGS__BIT_IS_NEEDING_UPDATE BIT(3)
+#define UI_FLAGS__BIT_IS_BEING_HELD BIT(4)
+#define UI_FLAGS__BIT_IS_BEING_DRAGGED BIT(5)
+#define UI_FLAGS__BIT_IS_SNAPPED_X_OR_Y_AXIS BIT(6)
+#define UI_FLAGS__BIT_IS_USING__SPRITE_OR_UI_TILE_SPAN BIT(7)
+#define UI_FLAGS__BIT_RESERVED_0 BIT(8)
+#define UI_FLAGS__BIT_RESERVED_1 BIT(9)
+#define UI_FLAGS__BIT_RESERVED_2 BIT(10)
+#define UI_FLAGS__BIT_RESERVED_3 BIT(11)
+/// 
+/// You may change the following without
+/// encounting breaking changes with Lavender updates:
+///
+#define UI_FLAGS__BIT_CUSTOM_0 BIT(12)
+#define UI_FLAGS__BIT_CUSTOM_1 BIT(13)
+#define UI_FLAGS__BIT_CUSTOM_2 BIT(14)
+#define UI_FLAGS__BIT_CUSTOM_3 BIT(15)
 
 #define UI_BUTTON_FLAGS__NONE 0
 #define UI_BUTTON_FLAGS__BIT_SHIFT_IS_TOGGLEABLE 0
@@ -1379,7 +1393,11 @@ typedef struct UI_Element_t {
     /// DO NOT INVOKE
     m_UI_Held               m_ui_held_handler;
     /// DO NOT INVOKE
-    m_UI_Render             m_ui_render_handler;
+    m_UI_Typed              m_ui_typed_handler;
+    /// DO NOT INVOKE
+    m_UI_Transformed        m_ui_transformed_handler;
+    /// DO NOT INVOKE
+    m_UI_Compose            m_ui_compose_handler;
     /// DO NOT INVOKE, DO NOT REMOVE FROM UI_MANAGER
     /// FROM WITHIN m_ui_dispose_handler!
     /// When implementing your own, be sure to
@@ -1400,6 +1418,16 @@ typedef struct UI_Element_t {
         struct { // UI_Slider
             Vector__3i32    slider__spanning_length__3i32;
             u32             slider__distance__u32;
+        };
+        struct { // UI_Text, UI_Text_Box
+            Typer typer;
+            char *pM_char_buffer;
+            Quantity__u32 size_of__char_buffer;
+            ///
+            /// Not to be confused with typer's cursor which
+            /// is used strictly for rendering.
+            ///
+            Index__u32 index_of__cursor_in__char_buffer;
         };
     };
 

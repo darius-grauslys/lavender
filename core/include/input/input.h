@@ -2,8 +2,21 @@
 #define INPUT_H
 
 #include "platform_defaults.h"
+#include <bits/pthreadtypes.h>
 #include <vectors.h>
 #include <defines.h>
+
+void initialize_input(Input *p_input);
+
+///
+/// Get the next character made by the player
+/// via some keyboard input, be it touch, controller, or keyboard.
+///
+unsigned char poll_input_for__writing(Input *p_input);
+
+void buffer_input_for__writing(
+        Input *p_input,
+        char symbol);
 
 static void inline clear_input(Input *p_input) {
     p_input->input_flags__held = INPUT_NONE;
@@ -172,6 +185,20 @@ void consume_input(
     p_input
         ->input_flags__held &=
         ~input_flags;
+}
+
+static inline
+Input_Mode__u8 get_input_mode_of__input(
+        Input *p_input) {
+    return p_input->input_mode__u8;
+}
+
+static inline
+void set_input_mode_of__input(
+        Input *p_input,
+        Input_Mode__u8 input_mode__u8) {
+    p_input->input_mode__u8 =
+        input_mode__u8;
 }
 
 #endif
