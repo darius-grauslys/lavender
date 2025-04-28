@@ -653,9 +653,9 @@ typedef uint32_t Texture_Flags;
 
 #define TEXTURE_FLAG__IS_HIDDEN \
     BIT(TEXTURE_FLAG__BIT_SHIFT__CORE_FLAGS)
-#define TEXTURE_FLAG__IS_ALLOCATED \
-    BIT(TEXTURE_FLAG__BIT_SHIFT__CORE_FLAGS + 1)
 #define TEXTURE_FLAG__IS_READONLY \
+    BIT(TEXTURE_FLAG__BIT_SHIFT__CORE_FLAGS + 1)
+#define TEXTURE_FLAG__CORE_RESERVED_0 \
     BIT(TEXTURE_FLAG__BIT_SHIFT__CORE_FLAGS + 2)
 
 #define TEXTURE_FLAG__BIT_SHIFT__GENERAL_FLAGS \
@@ -943,8 +943,9 @@ typedef struct Input_t {
     /// NOTE: this is the written output of the player
     /// for UI entry.
     ///
-    char writing_buffer[
+    unsigned char writing_buffer[
     MAX_QUANTITY_OF__SYMBOLS_IN__INPUT_WRITING_BUFFER];
+    unsigned char last_symbol;
     Index__u8 index_of__writing_buffer__read;
     Index__u8 index_of__writing_buffer__write;
     Input_Mode__u8 input_mode__u8;
@@ -1300,7 +1301,8 @@ typedef struct UI_Tile_Map_Manager_t {
 
 typedef void (*m_UI_Dispose)(
         UI_Element *p_this_ui_element,
-        Game *p_game);
+        Game *p_game,
+        Graphics_Window *p_graphics_window);
 
 typedef void (*m_UI_Clicked)(
         UI_Element *p_this_ui_element,
@@ -1308,21 +1310,25 @@ typedef void (*m_UI_Clicked)(
         Graphics_Window *p_gfx_window);
 typedef void (*m_UI_Dragged)(
         UI_Element *p_this_ui_element,
-        Game *p_game);
+        Game *p_game,
+        Graphics_Window *p_gfx_window);
 typedef void (*m_UI_Receive_Drop)(
-        UI_Manager *p_ui_manager,
         UI_Element *p_this_ui_element,
         UI_Element *p_ui_element__dropped,
-        Game *p_game);
+        Game *p_game,
+        Graphics_Window *p_gfx_window);
 typedef void (*m_UI_Dropped)(
         UI_Element *p_this_ui_element,
-        Game *p_game);
+        Game *p_game,
+        Graphics_Window *p_gfx_window);
 typedef void (*m_UI_Held)(
         UI_Element *p_this_ui_element,
-        Game *p_game);
+        Game *p_game,
+        Graphics_Window *p_gfx_window);
 typedef void (*m_UI_Typed)(
         UI_Element *p_this_ui_element,
         Game *p_game,
+        Graphics_Window *p_gfx_window,
         unsigned char symbol);
 typedef void (*m_UI_Compose)(
         UI_Element *p_this_ui_element,
@@ -1331,7 +1337,8 @@ typedef void (*m_UI_Compose)(
 typedef void (*m_UI_Transformed)(
         UI_Element *p_this_ui_element,
         Hitbox_AABB *p_hitbox_aabb,
-        Game *p_game);
+        Game *p_game,
+        Graphics_Window *p_gfx_window);
 
 typedef uint16_t UI_Flags__u16;
 typedef uint8_t UI_Button_Flags__u8;
@@ -1381,7 +1388,6 @@ typedef struct UI_Element_Data_t {
 
 typedef struct UI_Element_t {
     Serialization_Header    _serialization_header;
-    enum UI_Element_Kind    the_kind_of_ui_element__this_is;
     /// DO NOT INVOKE
     m_UI_Clicked            m_ui_clicked_handler;
     /// DO NOT INVOKE
@@ -1405,7 +1411,6 @@ typedef struct UI_Element_t {
     m_UI_Dispose            m_ui_dispose_handler;
 
     UI_Element *p_parent,   *p_child, *p_next;
-    UI_Flags__u16            ui_flags;
 
     UI_Tile_Span            ui_tile_span;
 
@@ -1430,8 +1435,9 @@ typedef struct UI_Element_t {
             Index__u32 index_of__cursor_in__char_buffer;
         };
     };
-
-    UI_Element_Data ui_element_data;
+    UI_Flags__u16           ui_flags;
+    UI_Element_Data         ui_element_data;
+    enum UI_Element_Kind    the_kind_of_ui_element__this_is;
 } UI_Element;
 
 #define MAX_QUANTITY_OF__UI_ELEMENTS 128
@@ -1469,9 +1475,6 @@ typedef struct UI_Manager_t {
     Repeatable_Psuedo_Random randomizer;
     UI_Element *p_ui_element__focused;
     UI_Element **p_ptr_of__ui_element__latest_in_ptr_array;
-
-    PLATFORM_Graphics_Window 
-        *p_PLATFORM_graphics_window_for__ui_manager;
 } UI_Manager;
 
 typedef struct UI_Context_t UI_Context;
@@ -2138,6 +2141,7 @@ typedef struct Graphics_Window_t {
     Vector__3i32 position_of__gfx_window__maximum;
     Camera *p_camera;
     UI_Manager *p_ui_manager;
+    Sprite_Manager *p_sprite_manager;
     PLATFORM_Graphics_Window *p_PLATFORM_gfx_window;
     struct Graphics_Window_t *p_child__graphics_window;
     Identifier__u32 ui_tile_map__texture__uuid;
@@ -2157,14 +2161,14 @@ typedef struct Graphics_Window_Manager_t {
 ///
 
 typedef struct Gfx_Context_t {
-    PLATFORM_Gfx_Context *p_PLATFORM_gfx_context;
     Graphics_Window_Manager graphics_window_manager;
-    Sprite_Manager sprite_manager;
     Aliased_Texture_Manager aliased_texture_manager;
     UI_Context ui_context;
-    UI_Manager ui_manager;
     UI_Tile_Map_Manager ui_tile_map_manager;
     Font_Manager font_manager;
+    PLATFORM_Gfx_Context *p_PLATFORM_gfx_context;
+    Sprite_Manager *PM_sprite_managers[
+        MAX_QUANTITY_OF__SPRITE_MANAGERS];
 } Gfx_Context;
 
 typedef struct Game_Action_t Game_Action;
@@ -2192,9 +2196,6 @@ typedef struct Game_t {
     PLATFORM_File_System_Context *p_PLATFORM_file_system_context;
 
     Game_Action_Logic_Table game_action_logic_table;
-
-    // TODO: obselete
-    // m_Game_Action_Handler m_game_action_handler;
 
     Timer__u32 tick__timer_u32;
     Timer__u32 time__seconds__u32;

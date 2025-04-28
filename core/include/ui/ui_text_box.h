@@ -33,16 +33,19 @@ void m_ui_element__clicked_handler__text_box(
 void m_ui_element__typed_handler__text_box(
         UI_Element *p_this_ui_text_box,
         Game *p_game,
+        Graphics_Window *p_graphics_window,
         unsigned char symbol);
 
 void m_ui_element__typed_handler__text_box__numeric(
         UI_Element *p_this_ui_text_box,
         Game *p_game,
+        Graphics_Window *p_graphics_window,
         unsigned char symbol);
 
 void m_ui_element__typed_handler__text_box__alphanumeric(
         UI_Element *p_this_ui_text_box,
         Game *p_game,
+        Graphics_Window *p_graphics_window,
         unsigned char symbol);
 
 static inline

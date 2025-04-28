@@ -9,6 +9,7 @@ unsigned char poll_input_for__writing(Input *p_input) {
     char symbol = p_input->writing_buffer[
         p_input->index_of__writing_buffer__read];
     if (!symbol) return symbol;
+    p_input->last_symbol = symbol;
     p_input->writing_buffer[
         p_input->index_of__writing_buffer__read] = 0;
     p_input->index_of__writing_buffer__read = (

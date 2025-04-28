@@ -35,6 +35,7 @@ UI_Element *allocate_ui_element_from__ui_manager(
 
 UI_Element *allocate_ui_element_from__ui_manager_as__child(
         Game *p_game,
+        Graphics_Window *p_graphics_window,
         UI_Manager *p_ui_manager,
         UI_Element *p_parent);
 
@@ -55,13 +56,15 @@ UI_Element *allocate_many_ui_elements_from__ui_manager_as__recursive_children(
         );
 
 void release__ui_element_from__ui_manager(
+        Game *p_game,
+        Graphics_Window *p_graphics_window,
         UI_Manager *p_ui_manager,
-        UI_Element *p_ui_element,
-        Game *p_game);
+        UI_Element *p_ui_element);
 
 void release_all__ui_elements_from__ui_manager(
-        UI_Manager *p_ui_manager,
-        Game *p_game);
+        Game *p_game,
+        Graphics_Window *p_graphics_window,
+        UI_Manager *p_ui_manager);
 
 UI_Element *get_p_ui_element_by__uuid_from__ui_manager(
         UI_Manager *p_ui_manager,

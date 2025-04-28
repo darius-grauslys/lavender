@@ -57,6 +57,7 @@ void m_ui_element__clicked_handler__text_box(
         UI_Element *p_this_ui_element,
         Game *p_game,
         Graphics_Window *p_gfx_window) {
+    debug_info("m_ui_element__clicked_handler__text_box, clicked");
     set_input_mode_of__input(
             get_p_input_from__game(p_game), 
             INPUT_MODE__WRITING);
@@ -153,6 +154,7 @@ bool handle_special_symbols__text_box(
 void m_ui_element__typed_handler__text_box(
         UI_Element *p_this_ui_text_box,
         Game *p_game,
+        Graphics_Window *p_graphics_window,
         unsigned char symbol) {
     if (handle_special_symbols__text_box(
                 p_this_ui_text_box, 
@@ -168,6 +170,7 @@ void m_ui_element__typed_handler__text_box(
 void m_ui_element__typed_handler__text_box__numeric(
         UI_Element *p_this_ui_text_box,
         Game *p_game,
+        Graphics_Window *p_graphics_window,
         unsigned char symbol) {
     if (handle_special_symbols__text_box(
                 p_this_ui_text_box, 
@@ -185,6 +188,7 @@ void m_ui_element__typed_handler__text_box__numeric(
 void m_ui_element__typed_handler__text_box__alphanumeric(
         UI_Element *p_this_ui_text_box,
         Game *p_game,
+        Graphics_Window *p_graphics_window,
         unsigned char symbol) {
     if (handle_special_symbols__text_box(
                 p_this_ui_text_box, 

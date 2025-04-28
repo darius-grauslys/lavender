@@ -27,7 +27,8 @@ void initialize_ui_element_as__draggable(
 
 void m_ui_draggable__dragged_handler__default(
         UI_Element *p_this_draggable,
-        Game *p_game) {
+        Game *p_game,
+        Graphics_Window *p_graphics_window) {
     Vector__3i32 position =
         p_game->input.cursor__3i32;
 
@@ -49,19 +50,22 @@ void m_ui_draggable__dragged_handler__default(
 
     set_position_3i32_of__ui_element(
             p_game,
+            p_graphics_window,
             p_this_draggable, 
             position);
 }
 
 void m_ui_draggable__dropped_handler__default(
         UI_Element *p_this_draggable,
-        Game *p_game) {
+        Game *p_game,
+        Graphics_Window *p_graphics_window) {
     if (!p_this_draggable->p_parent) {
         return;
     }
 
     set_position_3i32_of__ui_element(
             p_game,
+            p_graphics_window,
             p_this_draggable, 
             get_position_3i32_from__p_ui_element(
                 get_p_hitbox_aabb_manager_from__game(p_game),

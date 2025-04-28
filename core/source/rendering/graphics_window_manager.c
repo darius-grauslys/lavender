@@ -5,8 +5,10 @@
 #include "platform.h"
 #include "rendering/gfx_context.h"
 #include "rendering/graphics_window.h"
+#include "rendering/sprite_manager.h"
 #include "serialization/hashing.h"
 #include "serialization/serialization_header.h"
+#include "ui/ui_context.h"
 #include "ui/ui_manager.h"
 #include "util/bitmap/bitmap.h"
 #include "world/camera.h"
@@ -29,17 +31,11 @@ Graphics_Window *get_p_graphics_window_by__index_from__manager(
 
 void initialize_graphics_window_manager(
         Graphics_Window_Manager *p_graphics_window_manager) {
-    for(Index__u32 index_of__graphics_window = 0;
-            index_of__graphics_window
-            < MAX_QUANTITY_OF__GRAPHICS_WINDOWS;
-            index_of__graphics_window++) {
-        Graphics_Window *p_graphics_window =
-            get_p_graphics_window_by__index_from__manager(
-                    p_graphics_window_manager, 
-                    index_of__graphics_window);
-        initialize_graphics_window(
-                p_graphics_window);
-    }
+    initialize_serialization_header__contiguous_array(
+            (Serialization_Header *)
+                p_graphics_window_manager->graphics_windows, 
+                MAX_QUANTITY_OF__GRAPHICS_WINDOWS, 
+                sizeof(Graphics_Window));
     initialize_repeatable_psuedo_random(
             &p_graphics_window_manager->randomizer,
             (u32)(u64)p_graphics_window_manager);
@@ -169,6 +165,22 @@ void release_graphics_window_from__graphics_window_manager(
     PLATFORM_release_gfx_window(
             p_gfx_context, 
             p_graphics_window);
+    UI_Manager *p_ui_manager =
+        get_p_ui_manager_from__graphics_window(
+                p_graphics_window);
+    if (p_ui_manager) {
+        release_p_ui_manager_from__ui_context(
+                get_p_ui_context_from__gfx_context(p_gfx_context), 
+                p_ui_manager);
+    }
+    Sprite_Manager *p_sprite_manager =
+        get_p_sprite_manager_from__graphics_window(
+                p_graphics_window);
+    if (p_sprite_manager) {
+        release_sprite_manager_from__gfx_context(
+                p_gfx_context,
+                p_sprite_manager);
+    }
     initialize_graphics_window(
             p_graphics_window);
 }
@@ -213,6 +225,18 @@ void render_graphics_window(
         Game *p_game,
         Gfx_Context *p_gfx_context,
         Graphics_Window *p_gfx_window) {
+    Sprite_Manager *p_sprite_manager =
+        get_p_sprite_manager_from__graphics_window(
+                p_gfx_window);
+
+    if (p_sprite_manager) {
+        render_sprites_in__sprite_manager(
+                p_gfx_context, 
+                p_sprite_manager, 
+                get_p_hitbox_aabb_manager_from__game(p_game), 
+                p_gfx_window);
+    }
+
     PLATFORM_render_gfx_window(
             p_gfx_context, 
             p_gfx_window);

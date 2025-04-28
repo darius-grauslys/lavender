@@ -6,6 +6,13 @@
 
 void initialize_gfx_context(Gfx_Context *p_gfx_context);
 
+Sprite_Manager *allocate_sprite_manager_from__gfx_context(
+        Gfx_Context *p_gfx_context);
+
+void release_sprite_manager_from__gfx_context(
+        Gfx_Context *p_gfx_context,
+        Sprite_Manager *p_sprite_manager);
+
 static inline
 PLATFORM_Gfx_Context *get_p_PLATFORM_gfx_context_from__gfx_context(
         Gfx_Context *p_gfx_context) {
@@ -28,12 +35,6 @@ static inline
 UI_Tile_Map_Manager *get_p_ui_tile_map_manager_from__gfx_context(
         Gfx_Context *p_gfx_context) {
     return &p_gfx_context->ui_tile_map_manager;
-}
-
-static inline
-Sprite_Manager *get_p_sprite_manager_from__gfx_context(
-        Gfx_Context *p_gfx_context) {
-    return &p_gfx_context->sprite_manager;
 }
 
 static inline

@@ -41,8 +41,6 @@ static inline
 void set_p_ui_element_as__focused_in__ui_manager(
         UI_Manager *p_ui_manager,
         UI_Element *p_ui_element) {
-    set_ui_element_as__focused(
-            p_ui_element);
     p_ui_manager->p_ui_element__focused =
         p_ui_element;
 }
@@ -50,6 +48,11 @@ void set_p_ui_element_as__focused_in__ui_manager(
 static inline
 void drop_ui_element_focus_for__ui_manager(
         UI_Manager *p_ui_manager) {
+    if (p_ui_manager->p_ui_element__focused) {
+        set_ui_element_as__NOT_focused(
+                p_ui_manager
+                ->p_ui_element__focused);
+    }
     p_ui_manager
         ->p_ui_element__focused = 0;
 }
@@ -227,13 +230,17 @@ UI_Element *get_highest_priority_ui_element_thats__under_the_cursor(
     return 0;
 }
 
-UI_Element *get_focus_for__ui_manager(
+UI_Element *detect_focus_in__ui_manager(
         UI_Manager *p_ui_manager, 
         Game *p_game) {
     UI_Element *p_ui_element__focused =
-        get_highest_priority_ui_element_thats__under_the_cursor(
-                p_ui_manager, 
-                p_game);
+        get_p_ui_element__focused_of__ui_manager(p_ui_manager);
+    if (!p_ui_element__focused) {
+        p_ui_element__focused =
+            get_highest_priority_ui_element_thats__under_the_cursor(
+                    p_ui_manager, 
+                    p_game);
+    }
     if (!p_ui_element__focused)
         return 0;
     set_p_ui_element_as__focused_in__ui_manager(
@@ -242,106 +249,76 @@ UI_Element *get_focus_for__ui_manager(
     return p_ui_element__focused;
 }
 
-void poll_ui_manager_for__focused_ui_element_with__cursor_holding(
-        UI_Manager *p_ui_manager,
-        Game *p_game) {
-    UI_Element *p_ui_element__focused =
-        get_highest_priority_ui_element_thats__under_the_cursor(
-                p_ui_manager, 
-                p_game);
-    p_ui_element__focused =
-        get_ui_parent_or__child_with__held_handler(p_ui_element__focused);
-    if (!p_ui_element__focused)
-        return;
-    set_p_ui_element_as__focused_in__ui_manager(
-            p_ui_manager, 
-            p_ui_element__focused);
-    set_ui_element_as__being_held(
-            p_ui_element__focused);
-}
-
-void poll_ui_manager_for__focused_ui_element_with__cursor_dragging(
-        UI_Manager *p_ui_manager,
-        Game *p_game) {
-    UI_Element *p_ui_element__focused =
-        get_highest_priority_ui_element_thats__under_the_cursor(
-                p_ui_manager, 
-                p_game);
-    p_ui_element__focused =
-        get_ui_parent_or__child_with__dragged_handler(p_ui_element__focused);
-    if (!p_ui_element__focused)
-        return;
-    set_p_ui_element_as__focused_in__ui_manager(
-            p_ui_manager, 
-            p_ui_element__focused);
-    set_ui_element_as__being_dragged(
-            p_ui_element__focused);
-}
-
 void poll_ui_manager__update_for__drag(
-        UI_Manager *p_ui_manager,
-        Game *p_game) {
-    if (!does_ui_manager_have__focused_ui_element(p_ui_manager)) {
-        poll_ui_manager_for__focused_ui_element_with__cursor_dragging(
+        Game *p_game,
+        Graphics_Window *p_graphics_window,
+        UI_Manager *p_ui_manager) {
+    UI_Element *p_ui_element__focused =
+        detect_focus_in__ui_manager(
                 p_ui_manager, 
                 p_game);
-        // Still don't have focus? quit early.
-        if (!does_ui_manager_have__focused_ui_element(p_ui_manager))
-            return;
-    }
-    if (!does_ui_element_have__dragged_handler(
-                p_ui_manager->p_ui_element__focused))
+    if (!p_ui_element__focused)
         return;
     if (is_ui_element__being_held(
-                p_ui_manager->p_ui_element__focused)) {
-        set_ui_element_as__being_dragged(p_ui_manager->p_ui_element__focused);
+                p_ui_element__focused)) {
+        set_ui_element_as__being_dragged(
+                p_ui_element__focused);
     }
-    p_ui_manager
-        ->p_ui_element__focused
+    if (!does_ui_element_have__dragged_handler(
+                p_ui_element__focused)) {
+        return;
+    }
+    p_ui_element__focused
         ->m_ui_dragged_handler(
                 p_ui_manager
                 ->p_ui_element__focused,
-                p_game);
+                p_game,
+                p_graphics_window);
 }
 
 void poll_ui_manager__update_for__held(
-        UI_Manager *p_ui_manager,
-        Game *p_game) {
-    if (!does_ui_manager_have__focused_ui_element(p_ui_manager)) {
-        poll_ui_manager_for__focused_ui_element_with__cursor_holding(
+        Game *p_game,
+        Graphics_Window *p_graphics_window,
+        UI_Manager *p_ui_manager) {
+    UI_Element *p_ui_element__focused =
+        detect_focus_in__ui_manager(
                 p_ui_manager, 
                 p_game);
-        // Still don't have focus? quit early.
-        if (!does_ui_manager_have__focused_ui_element(p_ui_manager))
-            return;
-    }
+    if (!p_ui_element__focused)
+        return;
     if (is_ui_element__being_dragged(
-                p_ui_manager->p_ui_element__focused)) {
+                p_ui_element__focused)) {
         poll_ui_manager__update_for__drag(
-                p_ui_manager,
-                p_game);
+                p_game,
+                p_graphics_window,
+                p_ui_manager);
         return;
     }
     if (!does_ui_element_have__held_handler(
-                p_ui_manager->p_ui_element__focused))
+                p_ui_element__focused)) {
         return;
-    p_ui_manager
-        ->p_ui_element__focused
+    }
+    p_ui_element__focused
         ->m_ui_held_handler(
                 p_ui_manager
                 ->p_ui_element__focused,
-                p_game);
+                p_game,
+                p_graphics_window);
 }
 
 void poll_ui_manager__update_for__drop(
-        UI_Manager *p_ui_manager,
-        Game *p_game) {
-    if (!p_ui_manager->p_ui_element__focused)
+        Game *p_game,
+        Graphics_Window *p_graphics_window,
+        UI_Manager *p_ui_manager) {
+    UI_Element *p_ui_element__focused =
+        get_p_ui_element__focused_of__ui_manager(
+                p_ui_manager);
+    if (!p_ui_element__focused)
         return;
     set_ui_element_as__dropped(
-            p_ui_manager->p_ui_element__focused);
+            p_ui_element__focused);
     if (!does_ui_element_have__dropped_handler(
-                p_ui_manager->p_ui_element__focused)) {
+                p_ui_element__focused)) {
         drop_ui_element_focus_for__ui_manager(p_ui_manager);
         return;
     }
@@ -358,26 +335,26 @@ void poll_ui_manager__update_for__drop(
     if (p_ui_element__receiving_drop) {
         p_ui_element__receiving_drop
             ->m_ui_receive_drop_handler(
-                    p_ui_manager,
                     p_ui_element__receiving_drop,
                     p_ui_manager->p_ui_element__focused,
-                    p_game);
+                    p_game,
+                    p_graphics_window);
     }
 
-    p_ui_manager
-        ->p_ui_element__focused
+    p_ui_element__focused
         ->m_ui_dropped_handler(
                 p_ui_manager
                 ->p_ui_element__focused,
-                p_game);
+                p_game,
+                p_graphics_window);
 }
 
-void poll_ui_manager__update_for__clicked(
+void poll_ui_manager__update_for__clicked_and_dropped(
         UI_Manager *p_ui_manager,
         Game *p_game,
         Graphics_Window *p_graphics_window) {
     UI_Element *p_ui_element__focused =
-        get_focus_for__ui_manager(
+        detect_focus_in__ui_manager(
                 p_ui_manager, 
                 p_game);
     p_ui_element__focused =
@@ -385,7 +362,39 @@ void poll_ui_manager__update_for__clicked(
                 p_ui_element__focused);
     if (!p_ui_element__focused)
         return;
-    p_ui_element__focused->m_ui_clicked_handler(
+    if (is_ui_element__being_dragged(
+                p_ui_element__focused)) {
+        if (!does_ui_element_have__dropped_handler(
+                    p_ui_element__focused)) {
+            return;
+        }
+        p_ui_element__focused
+            ->m_ui_dropped_handler(
+                p_ui_element__focused,
+                p_game,
+                p_graphics_window);
+        return;
+    }
+    if (!is_vector_3i32_inside__hitbox(
+                get_p_input_from__game(p_game)
+                ->cursor__3i32, 
+                get_p_hitbox_aabb_of__ui_element(
+                    get_p_hitbox_aabb_manager_from__game(p_game),
+                    p_ui_element__focused))) {
+        drop_ui_element_focus_for__ui_manager(p_ui_manager);
+        p_ui_element__focused =
+            detect_focus_in__ui_manager(
+                    p_ui_manager, 
+                    p_game);
+        if (!p_ui_element__focused)
+            return;
+    }
+    if (!does_ui_element_have__clicked_handler(
+                p_ui_element__focused)) {
+        return;
+    }
+    p_ui_element__focused
+        ->m_ui_clicked_handler(
             p_ui_element__focused,
             p_game,
             p_graphics_window);
@@ -418,6 +427,7 @@ void poll_ui_manager__update_for__input_writing(
                 p_ui_element__focused)(
                     p_ui_element__focused,
                     p_game,
+                    p_graphics_window,
                     symbol);
     }
 
@@ -428,56 +438,16 @@ void poll_ui_manager__update_for__input_writing(
     }
 }
 
-void poll_ui_manager__update_for__input_normal(
+void poll_ui_manager__update(
         UI_Manager *p_ui_manager,
         Game *p_game,
         Graphics_Window *p_graphics_window) {
     Input *p_input = &p_game->input;
 
-    bool has_ui_element__focus =
-        does_ui_manager_have__focused_ui_element(p_ui_manager);
-
-    if (is_input__click_released(p_input)) {
-        if (!has_ui_element__focus) {
-            poll_ui_manager__update_for__clicked(
-                    p_ui_manager, 
-                    p_game,
-                    p_graphics_window);
-            return;
-        }
-        poll_ui_manager__update_for__drop(
-                p_ui_manager,
-                p_game);
-        return;
-    }
-
-    if (is_input__click_held(p_input)) {
-        poll_ui_manager__update_for__held(
-                p_ui_manager, 
-                p_game);
-        return;
-    }
-    if (is_input__click_dragged(p_input)) {
-        poll_ui_manager__update_for__drag(
-                p_ui_manager, 
-                p_game);
-        return;
-    }
-}
-
-void poll_ui_manager__update(
-        UI_Manager *p_ui_manager,
-        Game *p_game,
-        Graphics_Window *p_graphics_window) {
     switch (get_input_mode_of__input(
                 get_p_input_from__game(p_game))) {
         default:
-            break;
         case INPUT_MODE__NORMAL:
-            poll_ui_manager__update_for__input_normal(
-                    p_ui_manager, 
-                    p_game, 
-                    p_graphics_window);
             break;
         case INPUT_MODE__WRITING:
             poll_ui_manager__update_for__input_writing(
@@ -485,6 +455,29 @@ void poll_ui_manager__update(
                     p_game, 
                     p_graphics_window);
             break;
+    }
+
+    if (is_input__click_released(p_input)) {
+        poll_ui_manager__update_for__clicked_and_dropped(
+                p_ui_manager, 
+                p_game,
+                p_graphics_window);
+        return;
+    }
+
+    if (is_input__click_held(p_input)) {
+        poll_ui_manager__update_for__held(
+                p_game,
+                p_graphics_window,
+                p_ui_manager);
+        return;
+    }
+    if (is_input__click_dragged(p_input)) {
+        poll_ui_manager__update_for__drag(
+                p_game,
+                p_graphics_window,
+                p_ui_manager);
+        return;
     }
 }
 
@@ -528,6 +521,7 @@ UI_Element *allocate_ui_element_from__ui_manager(
 
 UI_Element *allocate_ui_element_from__ui_manager_as__child(
         Game *p_game,
+        Graphics_Window *p_graphics_window,
         UI_Manager *p_ui_manager,
         UI_Element *p_parent) {
     UI_Element *p_child =
@@ -538,6 +532,7 @@ UI_Element *allocate_ui_element_from__ui_manager_as__child(
             p_child);
     set_position_3i32_of__ui_element(
             p_game,
+            p_graphics_window,
             p_child, 
             get_position_3i32_from__p_ui_element(
                 get_p_hitbox_aabb_manager_from__game(
@@ -622,9 +617,10 @@ UI_Element *allocate_many_ui_elements_from__ui_manager_as__recursive_children(
 }
 
 void release__ui_element_from__ui_manager(
+        Game *p_game,
+        Graphics_Window *p_graphics_window,
         UI_Manager *p_ui_manager,
-        UI_Element *p_ui_element,
-        Game *p_game) {
+        UI_Element *p_ui_element) {
 #ifndef NDEBUG
     if (!p_ui_manager) {
         debug_error("release__ui_element_from__ui_manager, p_ui_manager == 0.");
@@ -651,7 +647,8 @@ void release__ui_element_from__ui_manager(
         // invocation chain.
         p_ui_element->m_ui_dispose_handler(
                 p_ui_element,
-                p_game);
+                p_game,
+                p_graphics_window);
     }
 
     set_ui_element_as__disabled(p_ui_element);
@@ -676,15 +673,17 @@ void release__ui_element_from__ui_manager(
 }
 
 void release_all__ui_elements_from__ui_manager(
-        UI_Manager *p_ui_manager,
-        Game *p_game) {
+        Game *p_game,
+        Graphics_Window *p_graphics_window,
+        UI_Manager *p_ui_manager) {
     do {
         release__ui_element_from__ui_manager(
-                p_ui_manager, 
+                p_game, 
+                p_graphics_window,
+                p_ui_manager,
                 get_p_ui_element_by__index_from__ui_manager(
                     p_ui_manager, 
-                    0), 
-                p_game);
+                    0));
     } while(!is_ui_manager__empty(p_ui_manager));
 }
 

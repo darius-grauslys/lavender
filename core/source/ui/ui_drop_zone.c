@@ -1,6 +1,7 @@
 #include "defines.h"
 #include "defines_weak.h"
 #include "game.h"
+#include "rendering/graphics_window.h"
 #include "ui/ui_element.h"
 #include "ui/ui_manager.h"
 #include "vectors.h"
@@ -22,10 +23,21 @@ void initialize_ui_element_as__drop_zone(
 }
 
 void m_ui_drop_zone__receive_drop_handler__default(
-        UI_Manager *p_ui_manager,
         UI_Element *p_this_drop_zone,
         UI_Element *p_ui_element__dropped,
-        Game *p_game) {
+        Game *p_game,
+        Graphics_Window *p_graphics_window) {
+
+    UI_Manager *p_ui_manager =
+        get_p_ui_manager_from__graphics_window(
+                p_graphics_window);
+
+#ifndef NDEBUG
+    if (!p_ui_manager) {
+        debug_error("m_ui_drop_zone__receive_drop_handler__default, p_ui_manager == 0.");
+        return;
+    }
+#endif
 
     UI_Element *p_ui_element__parent_of__dropped =
         p_ui_element__dropped->p_parent;
@@ -43,6 +55,7 @@ void m_ui_drop_zone__receive_drop_handler__default(
             ->m_ui_dropped_handler(
                     p_ui_element__parent_of__dropped
                     ->p_child,
-                    p_game);
+                    p_game,
+                    p_graphics_window);
     }
 }

@@ -24,6 +24,7 @@
 #include "rendering/sdl_texture_manager.h"
 #include "rendering/texture.h"
 #include "rendering/sdl_texture.h"
+#include "serialization/serialization_header.h"
 #include "ui/ui_manager.h"
 #include "vectors.h"
 
@@ -38,7 +39,7 @@ void GL_allocate_gfx_window(
                     p_PLATFORM_graphics_window,
                     texture_flags);
 
-    if (!SDL_is_texture__allocated(
+    if (IS_DEALLOCATED_P(
                 p_PLATFORM_graphics_window
                 ->p_SDL_graphics_window__texture)) {
         debug_error("SDL::GL::GL_allocate_gfx_window, failed to allocate texture.");

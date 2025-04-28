@@ -67,6 +67,7 @@ typedef enum SDL_Texture_Access_Kind {
 } SDL_Texture_Access_Kind;
 
 typedef struct PLATFORM_Texture_t {
+    Serialization_Header _serialization_header;
     Texture_String SDL_texture_string;
     union {
         GL_Texture_Handle__u32 GL_texture_handle;
@@ -212,6 +213,7 @@ typedef struct PLATFORM_Sprite_t {
 typedef struct SLD_Texture_Manager_t {
     PLATFORM_Texture SDL_textures[
         MAX_QUANTITY_OF__TEXTURES];
+    Repeatable_Psuedo_Random randomizer;
 } SDL_Texture_Manager;
 
 typedef struct SDL_Sprite_Manager_t {

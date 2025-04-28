@@ -16,20 +16,24 @@ void initialize_ui_element_as__slider(
 
 void m_ui_slider__dragged_handler__default(
         UI_Element *p_this_draggable,
-        Game *p_game);
+        Game *p_game,
+        Graphics_Window *p_graphics_window);
 
 void m_ui_slider__dragged_handler__gfx_window__default(
         UI_Element *p_this_draggable,
-        Game *p_game);
+        Game *p_game,
+        Graphics_Window *p_graphics_window);
 
 void m_ui_slider__dispose_handler__default(
         UI_Element *p_this_slider,
-        Game *p_game);
+        Game *p_game,
+        Graphics_Window *p_graphics_window);
 
 void m_ui_slider__transformed_handler__default(
         UI_Element *p_this_ui_element,
         Hitbox_AABB *p_hitbox_aabb,
-        Game *p_game);
+        Game *p_game,
+        Graphics_Window *p_graphics_window);
 
 static inline
 i32F20 get_percentage_i32F20_from__ui_slider(

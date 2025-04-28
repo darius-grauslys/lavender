@@ -128,12 +128,6 @@ Global_Space_Manager *get_p_global_space_manager_from__game(Game *p_game) {
 }
 
 static inline 
-Sprite_Manager *get_p_sprite_manager_from__game(
-        Game *p_game) {
-    return &p_game->gfx_context.sprite_manager;
-}
-
-static inline 
 Aliased_Texture_Manager *get_p_aliased_texture_manager_from__game(Game *p_game) {
     return &p_game->gfx_context.aliased_texture_manager;
 }

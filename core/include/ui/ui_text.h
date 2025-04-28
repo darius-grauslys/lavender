@@ -63,11 +63,13 @@ void m_ui_element__compose_handler__text(
 void m_ui_element__transformed_handler__text(
         UI_Element *p_this_ui_element,
         Hitbox_AABB *p_hitbox_aabb,
-        Game *p_game);
+        Game *p_game,
+        Graphics_Window *p_graphics_window);
 
 void m_ui_element__dispose_handler__text(
         UI_Element *p_this_ui_element,
-        Game *p_game);
+        Game *p_game,
+        Graphics_Window *p_graphics_window);
 
 static inline
 const char *get_p_const_c_str_text_of__ui_text(

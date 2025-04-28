@@ -12,11 +12,12 @@ void initialize_ui_element_as__button(
 void m_ui_button__clicked_handler__default(
         UI_Element *p_this_button,
         Game *p_game,
-        PLATFORM_Graphics_Window *p_PLATFORM_gfx_window);
+        Graphics_Window *p_graphics_window);
 
 void m_ui_button__held_handler__default(
         UI_Element *p_this_button,
-        Game *p_game);
+        Game *p_game,
+        Graphics_Window *p_graphics_window);
 
 static inline
 bool is_ui_button__toggleable(UI_Element *p_ui_button) {

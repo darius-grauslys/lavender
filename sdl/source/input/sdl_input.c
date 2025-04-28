@@ -255,7 +255,63 @@ void SDL_initialize_input_bindings() {
     };
 }
 
-void SDL_poll_input__normal(
+i32F20 __SDL_writing_hold_timer = 0;
+i32F20 __SDL_writing_up_timer = 0;
+
+void SDL_poll_input__writing(
+        Game *p_game,
+        Input *p_input) {
+
+    const u8 *p_keys = SDL_GetKeyboardState(0);
+    SDL_Keymod sdl_mod__state = SDL_GetModState();
+
+    bool caps = 
+        (sdl_mod__state & KMOD_CAPS)
+        | (sdl_mod__state & (KMOD_LSHIFT | KMOD_RSHIFT))
+        ;
+    bool key_pressed = false;
+    for (Index__u32 index_of__scan_code =
+            SDL_SCANCODE_UNKNOWN + 1;
+            index_of__scan_code
+            < SDL_NUM_SCANCODES;
+            index_of__scan_code++) {
+        char symbol = 
+            __SDL_ASCII_MAP[caps][index_of__scan_code];
+        char symbol_caps_conjugate = 
+            __SDL_ASCII_MAP[!caps][index_of__scan_code];
+        if (p_keys[index_of__scan_code] 
+                && symbol) {
+            if (symbol !=
+                    get_last_symbol_of__input_for__writing(p_input)
+                    && symbol_caps_conjugate !=
+                    get_last_symbol_of__input_for__writing(p_input)) {
+                __SDL_writing_hold_timer = 0;
+            }
+            if (!__SDL_writing_hold_timer) {
+                buffer_input_for__writing(
+                        p_input, 
+                        symbol);
+                __SDL_writing_hold_timer = 1;
+            }
+            key_pressed = true;
+            break;
+        }
+    }
+    if (!key_pressed) {
+        __SDL_writing_hold_timer = 0;
+    } else {
+        __SDL_writing_up_timer = 0;
+    }
+    if (__SDL_writing_hold_timer){
+        if (__SDL_writing_hold_timer < (BIT(17) | BIT(12))) {
+            __SDL_writing_hold_timer += get_elapsed_time__u32F20_of__game(p_game);
+        } else {
+            __SDL_writing_hold_timer = 0;
+        }
+    }
+}
+
+void PLATFORM_poll_input(
         Game *p_game,
         Input *p_input) {
     const u8 *p_keys = SDL_GetKeyboardState(0);
@@ -279,11 +335,17 @@ void SDL_poll_input__normal(
             default:
                 continue;
             case Input_Binding_Kind__Keyboard:
-                if (p_keys[p_input_binding->sdl_scancode])
-                    p_input->input_flags__pressed |=
-                        p_input_binding->input_flag__u32
-                        ;
-                break;
+                switch (get_input_mode_of__input(p_input)) {
+                    default:
+                    case INPUT_MODE__NORMAL:
+                        if (p_keys[p_input_binding->sdl_scancode])
+                            p_input->input_flags__pressed |=
+                                p_input_binding->input_flag__u32
+                                ;
+                        break;
+                    case INPUT_MODE__WRITING:
+                        break;
+                }
             case Input_Binding_Kind__Mouse:
                 if (mouse_button_state & 
                         p_input_binding->sdl_mouse_button)
@@ -292,6 +354,16 @@ void SDL_poll_input__normal(
                         ;
                 break;
         }
+    }
+
+    switch (get_input_mode_of__input(p_input)) {
+        default:
+            break;
+        case INPUT_MODE__WRITING:
+            SDL_poll_input__writing(
+                    p_game, 
+                    p_input);
+            break;
     }
 
     p_input->input_flags__held =
@@ -317,48 +389,4 @@ void SDL_poll_input__normal(
     f_SDL_process_input(
             p_game,
             p_input);
-}
-
-void SDL_poll_input__writing(
-        Game *p_game,
-        Input *p_input) {
-    const u8 *p_keys = SDL_GetKeyboardState(0);
-    SDL_Keymod sdl_mod__state = SDL_GetModState();
-
-    bool caps = 
-        (sdl_mod__state & KMOD_CAPS)
-        | (sdl_mod__state & (KMOD_LSHIFT | KMOD_RSHIFT))
-        ;
-    for (Index__u32 index_of__scan_code =
-            SDL_SCANCODE_UNKNOWN + 1;
-            index_of__scan_code
-            < SDL_NUM_SCANCODES;
-            index_of__scan_code++) {
-        char symbol = 
-            __SDL_ASCII_MAP[caps][index_of__scan_code];
-        if (p_keys[index_of__scan_code] && symbol) {
-            buffer_input_for__writing(
-                    p_input, 
-                    symbol);
-        }
-    }
-}
-
-void PLATFORM_poll_input(
-        Game *p_game,
-        Input *p_input) {
-    switch (get_input_mode_of__input(p_input)) {
-        default:
-            break;
-        case INPUT_MODE__NORMAL:
-            SDL_poll_input__normal(
-                    p_game, 
-                    p_input);
-            break;
-        case INPUT_MODE__WRITING:
-            SDL_poll_input__writing(
-                    p_game, 
-                    p_input);
-            break;
-    }
 }

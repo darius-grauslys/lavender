@@ -181,14 +181,12 @@ void GL_link_camera_projection_to__shader(
             GL_peek_viewport_stack(
                     p_viewport_stack);
         glm_ortho_lh_no(
-                (int)((-p_viewport->width  >> 1) 
-                    / (TILE__WIDTH_AND__HEIGHT_IN__PIXELS << 1)), 
-                (int)(( p_viewport->width  >> 1) 
-                    / (TILE__WIDTH_AND__HEIGHT_IN__PIXELS << 1)),
-                (int)(( p_viewport->height >> 1) 
-                    / (TILE__WIDTH_AND__HEIGHT_IN__PIXELS << 1)),
-                (int)(( p_viewport->height >> 1) 
-                    / (TILE__WIDTH_AND__HEIGHT_IN__PIXELS << 1)), 
+                (int)0, 
+                (int)(( p_viewport->width) 
+                    >> (TILE__WIDTH_AND__HEIGHT__BIT_SHIFT+1)),
+                (int)((-p_viewport->height) 
+                    >> (TILE__WIDTH_AND__HEIGHT__BIT_SHIFT+1)),
+                (int)0, 
                 // TODO: magic numbers in no camera default projection
                 -0.25f,
                  1808.0f,

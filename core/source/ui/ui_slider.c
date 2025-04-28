@@ -44,7 +44,8 @@ void initialize_ui_element_as__slider(
 
 void m_ui_slider__dragged_handler__default(
         UI_Element *p_this_draggable,
-        Game *p_game) {
+        Game *p_game,
+        Graphics_Window *p_graphics_window) {
     Input *p_input =
         get_p_input_from__game(p_game);
     bool is_snapped_x_or_y__axis =
@@ -84,7 +85,8 @@ void m_ui_slider__dragged_handler__default(
 void m_ui_slider__transformed_handler__default(
         UI_Element *p_this_draggable,
         Hitbox_AABB *p_hitbox_aabb,
-        Game *p_game) {
+        Game *p_game,
+        Graphics_Window *p_graphics_window) {
     bool is_snapped_x_or_y__axis =
         is_ui_element__snapped_x_or_y_axis(p_this_draggable);
 
@@ -118,8 +120,9 @@ void m_ui_slider__transformed_handler__default(
 
 void m_ui_slider__dragged_handler__gfx_window__default(
         UI_Element *p_this_draggable,
-        Game *p_game) {
-    Graphics_Window *p_gfx_window =
+        Game *p_game,
+        Graphics_Window *p_graphics_window) {
+    Graphics_Window *p_gfx_window_that__slider_owns =
         get_p_graphics_window_by__uuid_from__graphics_window_manager(
                 get_p_graphics_window_manager_from__gfx_context(
                     get_p_gfx_context_from__game(p_game)),
@@ -130,7 +133,7 @@ void m_ui_slider__dragged_handler__gfx_window__default(
 
     Vector__3i32 position_for__bgSetScroll =
         get_origin_3i32_of__graphics_window(
-                p_gfx_window);
+                p_gfx_window_that__slider_owns);
 
     i32 *p_starting_distance =
         (is_snapped_x_or__y_axis)
@@ -151,7 +154,8 @@ void m_ui_slider__dragged_handler__gfx_window__default(
 
     m_ui_slider__dragged_handler__default(
             p_this_draggable, 
-            p_game);
+            p_game,
+            p_graphics_window);
 
     i32 offset = 
         get_offset_from__ui_slider_percentage(
@@ -178,6 +182,7 @@ void m_ui_slider__dragged_handler__gfx_window__default(
                 p_this_draggable->p_child) >> 1;
     set_positions_of__ui_elements_in__succession(
             p_game,
+            p_graphics_window,
             p_this_draggable->p_child, 
             position_for__elements, 
             24, 
@@ -185,6 +190,6 @@ void m_ui_slider__dragged_handler__gfx_window__default(
             28);
 
     set_position_3i32_of__graphics_window(
-            p_gfx_window, 
+            p_gfx_window_that__slider_owns, 
             position_for__bgSetScroll);
 }

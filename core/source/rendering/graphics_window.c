@@ -1,32 +1,17 @@
 #include "rendering/graphics_window.h"
 #include "defines.h"
 #include "defines_weak.h"
+#include "rendering/gfx_context.h"
 #include "serialization/serialization_header.h"
+#include "ui/ui_context.h"
 #include "ui/ui_tile_map.h"
 #include "vectors.h"
 
 void initialize_graphics_window(
         Graphics_Window *p_graphics_window) {
-    initialize_serialization_header_for__deallocated_struct(
-            (Serialization_Header *)p_graphics_window, 
-            sizeof(Graphics_Window));
-    p_graphics_window->p_PLATFORM_gfx_window = 0;
-    p_graphics_window->p_child__graphics_window = 0;
-    p_graphics_window->origin_of__gfx_window =
-        VECTOR__3i32__OUT_OF_BOUNDS;
-    p_graphics_window->position_of__gfx_window =
-        VECTOR__3i32__OUT_OF_BOUNDS;
-    p_graphics_window->position_of__gfx_window__maximum =
-        VECTOR__3i32__OUT_OF_BOUNDS;
-    p_graphics_window->position_of__gfx_window__minimum =
-        VECTOR__3i32__OUT_OF_BOUNDS;
-    p_graphics_window->priority_of__window =
-        INDEX__UNKNOWN__u8;
-    p_graphics_window->the_kind_of__window =
-        Graphics_Window_Kind__None;
-    p_graphics_window->graphics_window__flags =
-        GRAPHICS_WINDOW__FLAGS__NONE;
-    p_graphics_window->p_ui_manager = 0;
+    memset((u8*)p_graphics_window + sizeof(Serialization_Header),
+            0,
+            sizeof(Graphics_Window) - sizeof(Serialization_Header));
 }
 
 void initialize_graphics_window_as__allocated(
@@ -80,6 +65,22 @@ void set_graphics_window__ui_tile_map(
 
     p_gfx_window->ui_tile_map__wrapper =
         ui_tile_map_wrapper;
+}
+
+void allocate_ui_manager_for__graphics_window(
+        Gfx_Context *p_gfx_context,
+        Graphics_Window *p_graphics_window) {
+    p_graphics_window->p_ui_manager =
+        allocate_p_ui_manager_from__ui_context(
+                get_p_ui_context_from__gfx_context(p_gfx_context));
+}
+
+void allocate_sprite_manager_for__graphics_window(
+        Gfx_Context *p_gfx_context,
+        Graphics_Window *p_graphics_window) {
+    p_graphics_window->p_sprite_manager =
+        allocate_sprite_manager_from__gfx_context(
+                p_gfx_context);
 }
 
 

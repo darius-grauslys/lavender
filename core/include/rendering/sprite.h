@@ -34,4 +34,12 @@ bool set_sprite_as__disabled(Sprite *p_sprite) {
         ~SPRITE_FLAG__BIT_IS_ENABLED;
 }
 
+static inline
+void set_frame_index_of__sprite(
+        Sprite *p_sprite,
+        Index__u8 index_of__frame__u8) {
+    p_sprite->sprite__index_of__frame =
+        index_of__frame__u8;
+}
+
 #endif

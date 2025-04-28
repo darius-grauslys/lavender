@@ -225,16 +225,17 @@ Serialization_Header *get_next_available__random_allocation_in__contiguous_array
         Repeatable_Psuedo_Random *p_randomizer,
         Identifier__u32 *p_OUT_uuid__u32) {
     Identifier__u32 uuid__u32 =
-        (*p_OUT_uuid__u32)
-        ? get_next_available__random_branded_uuid_in__contiguous_array(
+        (is_identifier_u32__invalid(*p_OUT_uuid__u32) || !*p_OUT_uuid__u32)
+        ? get_next_available__random_uuid_in__contiguous_array(
+            p_serialization_headers, 
+            length_of__p_serialization_headers, 
+            p_randomizer)
+        : get_next_available__random_branded_uuid_in__contiguous_array(
             p_serialization_headers, 
             length_of__p_serialization_headers, 
             p_randomizer,
             *p_OUT_uuid__u32)
-        : get_next_available__random_uuid_in__contiguous_array(
-            p_serialization_headers, 
-            length_of__p_serialization_headers, 
-            p_randomizer);
+        ;
     *p_OUT_uuid__u32 = uuid__u32;
     return get_next_available__allocation_in__contiguous_array(
             p_serialization_headers, 
@@ -249,16 +250,17 @@ Serialization_Header__UUID_64
         Repeatable_Psuedo_Random *p_randomizer,
         Identifier__u64 *p_OUT_uuid__u64) {
     *p_OUT_uuid__u64 =
-        (*p_OUT_uuid__u64)
-        ? get_next_available__random_branded_uuid_in__contiguous_array__uuid_64(
+        (is_identifier_u64__invalid(*p_OUT_uuid__u64) || !*p_OUT_uuid__u64)
+        ? get_next_available__random_uuid_in__contiguous_array__uuid_64(
+            p_serialization_headers, 
+            length_of__p_serialization_headers, 
+            p_randomizer)
+        : get_next_available__random_branded_uuid_in__contiguous_array__uuid_64(
             p_serialization_headers, 
             length_of__p_serialization_headers, 
             p_randomizer,
             *p_OUT_uuid__u64)
-        : get_next_available__random_uuid_in__contiguous_array__uuid_64(
-            p_serialization_headers, 
-            length_of__p_serialization_headers, 
-            p_randomizer);
+        ;
     return get_next_available__allocation_in__contiguous_array__u64(
             p_serialization_headers, 
             length_of__p_serialization_headers,

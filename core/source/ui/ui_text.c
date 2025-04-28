@@ -228,7 +228,8 @@ void m_ui_element__compose_handler__text(
 void m_ui_element__transformed_handler__text(
         UI_Element *p_this_ui_element,
         Hitbox_AABB *p_hitbox_aabb,
-        Game *p_game) {
+        Game *p_game,
+        Graphics_Window *p_graphics_window) {
     set_typer__position(
             get_p_typer_of__ui_text(p_this_ui_element),
             get_position_3i32_of__hitbox_aabb(
@@ -242,9 +243,11 @@ void m_ui_element__transformed_handler__text(
 
 void m_ui_element__dispose_handler__text(
         UI_Element *p_this_ui_element,
-        Game *p_game) {
+        Game *p_game,
+        Graphics_Window *p_graphics_window) {
     free_pM_text_of__ui_text(p_this_ui_element);
     m_ui_element__dispose_handler__default(
             p_this_ui_element, 
-            p_game);
+            p_game,
+            p_graphics_window);
 }

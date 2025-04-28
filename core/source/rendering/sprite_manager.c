@@ -73,6 +73,8 @@ Sprite *allocate_sprite_from__sprite_manager(
         return 0;
     }
 
+    ALLOCATE_P(p_sprite, uuid__u32);
+
     p_sprite->p_PLATFORM_sprite =
         p_PLATFORM_sprite;
 
@@ -80,6 +82,8 @@ Sprite *allocate_sprite_from__sprite_manager(
         ->p_sprite_render_record__last
         ->p_sprite = p_sprite;
     p_sprite_manager->p_sprite_render_record__last++;
+
+    set_sprite_as__enabled(p_sprite);
 
     return p_sprite;
 }
@@ -226,6 +230,11 @@ void render_sprites_in__sprite_manager(
         p_sprite_manager->sprite_render_records;
 
     do {
+        if (!is_sprite__enabled(
+                    p_sprite_render_record
+                    ->p_sprite)) {
+            continue;
+        }
         PLATFORM_render_sprite(
                 p_gfx_context, 
                 p_gfx_window, 

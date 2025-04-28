@@ -21,10 +21,12 @@ void initialize_ui_element(
 
 void m_ui_element__dispose_handler__default(
         UI_Element *p_this_ui_element,
-        Game *p_game);
+        Game *p_game,
+        Graphics_Window *p_graphics_window);
 
 void allocate_hitbox_for__ui_element(
         Game *p_game,
+        Graphics_Window *p_graphics_window,
         UI_Element *p_ui_element,
         Quantity__u32 width_of__hitbox__u32,
         Quantity__u32 height_of__hitbox__u32,
@@ -32,6 +34,7 @@ void allocate_hitbox_for__ui_element(
 
 void set_positions_of__ui_elements_in__succession(
         Game *p_game,
+        Graphics_Window *p_graphics_window,
         UI_Element *p_ui_element__succession_collection,
         Vector__3i32 starting_position__3i32,
         i32 x__stride,
@@ -40,16 +43,19 @@ void set_positions_of__ui_elements_in__succession(
 
 void set_position_3i32_of__ui_element(
         Game *p_game,
+        Graphics_Window *p_graphics_window,
         UI_Element *p_ui_element,
         Vector__3i32 position__3i32);
 
 void set_ui_element__size(
         Game *p_game,
+        Graphics_Window *p_graphics_window,
         UI_Element *p_ui_element,
         Quantity__u32 width, Quantity__u32 height);
 
 void set_ui_element__hitbox(
         Game *p_game,
+        Graphics_Window *p_graphics_window,
         UI_Element *p_ui_element,
         Quantity__u32 width, 
         Quantity__u32 height,

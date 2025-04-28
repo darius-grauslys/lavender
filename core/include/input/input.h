@@ -18,7 +18,14 @@ void buffer_input_for__writing(
         Input *p_input,
         char symbol);
 
-static void inline clear_input(Input *p_input) {
+static inline
+unsigned char get_last_symbol_of__input_for__writing(
+        Input *p_input) {
+    return p_input->last_symbol;
+}
+
+static inline
+void clear_input(Input *p_input) {
     p_input->input_flags__held = INPUT_NONE;
     p_input->input_flags__pressed = INPUT_NONE;
     p_input->input_flags__released = INPUT_NONE;

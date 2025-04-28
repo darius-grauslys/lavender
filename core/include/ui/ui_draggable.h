@@ -1,5 +1,6 @@
 #ifndef UI_DRAGGABLE_H
 #define UI_DRAGGABLE_H
+#include "defines_weak.h"
 #include <defines.h>
 #include <ui/ui_element.h>
 
@@ -10,10 +11,12 @@ void initialize_ui_element_as__draggable(
 
 void m_ui_draggable__dragged_handler__default(
         UI_Element *p_this_draggable,
-        Game *p_game);
+        Game *p_game,
+        Graphics_Window *p_graphics_window);
 
 void m_ui_draggable__dropped_handler__default(
         UI_Element *p_this_draggable,
-        Game *p_game);
+        Game *p_game,
+        Graphics_Window *p_graphics_window);
 
 #endif

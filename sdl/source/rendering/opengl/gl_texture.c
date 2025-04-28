@@ -53,9 +53,6 @@ PLATFORM_Texture *GL_allocate_texture(
             );
     GLenum error = glGetError();
     if (error != GL_NO_ERROR) {
-        set_texture_flags_as__deallocated(
-                &p_PLATFORM_texture
-                ->texture_flags);
         debug_error("SDL::GL::PLATFORM_allocate_texture failed. (glGenTextures)");
         return 0;
     }
@@ -104,16 +101,9 @@ PLATFORM_Texture *GL_allocate_texture(
     // TODO: this leaks atm, check glGetError on each step, and clean up as needed.
     error = glGetError();
     if (error != GL_NO_ERROR) {
-        set_texture_flags_as__deallocated(
-                &p_PLATFORM_texture
-                ->texture_flags);
         debug_error("SDL::GL::PLATFORM_allocate_texture failed. (glTexImage2D:%x)", error);
         return 0;
     }
-
-    set_texture_flags_as__allocated(
-            &p_PLATFORM_texture
-            ->texture_flags);
 
     return p_PLATFORM_texture;
 }
@@ -200,10 +190,6 @@ PLATFORM_Texture *GL_allocate_texture_with__path(
         return 0;
     }
 
-    set_texture_flags_as__allocated(
-            &p_PLATFORM_texture
-            ->texture_flags);
-
     stbi_image_free(p_data);
 
     return p_PLATFORM_texture;
@@ -227,10 +213,6 @@ void GL_release_texture(
     glDeleteTextures(
             1,
             &p_PLATFORM_texture->GL_texture_handle);
-
-    set_texture_flags_as__deallocated(
-            &p_PLATFORM_texture
-            ->texture_flags);
 
     GLenum error = glGetError();
     if (error != GL_NO_ERROR) {

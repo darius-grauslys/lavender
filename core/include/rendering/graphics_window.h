@@ -22,6 +22,14 @@ void set_graphics_window__ui_tile_map(
         Graphics_Window *p_gfx_window,
         UI_Tile_Map__Wrapper ui_tile_map_wrapper);
 
+void allocate_ui_manager_for__graphics_window(
+        Gfx_Context *p_gfx_context,
+        Graphics_Window *p_graphics_window);
+
+void allocate_sprite_manager_for__graphics_window(
+        Gfx_Context *p_gfx_context,
+        Graphics_Window *p_graphics_window);
+
 static inline
 UI_Tile_Map__Wrapper get_ui_tile_map_from__graphics_window(
         Graphics_Window *p_graphics_window) {
@@ -73,6 +81,18 @@ UI_Manager *get_p_ui_manager_from__graphics_window(
     }
 #endif
     return p_graphics_window->p_ui_manager;
+}
+
+static inline
+Sprite_Manager *get_p_sprite_manager_from__graphics_window(
+        Graphics_Window *p_graphics_window) {
+#ifndef NDEBUG
+    if (!p_graphics_window) {
+        debug_error("get_p_sprite_manager_from__graphics_window, p_gfx_window == 0.");
+        return 0;
+    }
+#endif
+    return p_graphics_window->p_sprite_manager;
 }
 
 static inline

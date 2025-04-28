@@ -2,7 +2,6 @@
 #include "defines.h"
 #include "defines_weak.h"
 #include "rendering/gfx_context.h"
-#include "ui/handlers/ui_gfx_window__closer__default.h"
 #include "ui/ui_context.h"
 
 void register_ui_windows(Gfx_Context *p_gfx_context) {

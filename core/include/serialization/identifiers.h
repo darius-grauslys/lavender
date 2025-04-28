@@ -48,4 +48,10 @@ bool is_identifier_u32__invalid(
     return IDENTIFIER__UNKNOWN__u32 == identifier__u32;
 }
 
+static inline
+bool is_identifier_u64__invalid(
+        Identifier__u64 identifier__u64) {
+    return IDENTIFIER__UNKNOWN__u64 == identifier__u64;
+}
+
 #endif
