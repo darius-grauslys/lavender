@@ -46,4 +46,17 @@ void initialize_shader_2d_as__shader_sprite(
             shader, 
             _source_shader_sprite__vertex,
             _source_shader_sprite__fragment);
+
+    shader->location_of__general_uniform_0 =
+        glGetUniformLocation(
+                shader->handle, 
+                "spriteframe_row_col");
+    shader->location_of__general_uniform_1 = 
+        glGetUniformLocation(
+                shader->handle, 
+                "spriteframe_width_height");
+    shader->location_of__general_uniform_2 =
+        glGetUniformLocation(
+                shader->handle, 
+                "sprite_flip");
 }

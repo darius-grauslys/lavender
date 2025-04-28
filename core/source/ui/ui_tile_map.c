@@ -112,8 +112,11 @@ void generate_ui_span_in__ui_tile_map(
             < height_of__ui_tile_span__u32;
             index_y_of__ui_tile_span__u32++) {
         u32 y = 
-            index_y__u32
-            + index_y_of__ui_tile_span__u32
+            get_height_of__ui_tile_map__wrapper(
+                    ui_tile_map__wrapper)
+            - (index_y__u32
+            + index_y_of__ui_tile_span__u32)
+            - 1
             ;
         if (y >= get_height_of__ui_tile_map__wrapper(
                     ui_tile_map__wrapper)) {

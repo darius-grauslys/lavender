@@ -1,13 +1,23 @@
 #ifndef SDL_VERTEX_OBJECT_H
 #define SDL_VERTEX_OBJECT_H
 
+#include "platform_defines.h"
 #include <defines.h>
 #include <rendering/opengl/gl_defines.h>
 
-void initialize_vertex_object_as__unit_square(
-        GL_Vertex_Object *vertex_object);
+void initialize_vertex_object(
+        GL_Vertex_Object *vertex_object,
+        float width,
+        float height);
 
-void initialize_vertex_object(GL_Vertex_Object *vertex_object);
+static inline
+void initialize_vertex_object_as__unit_square(
+        GL_Vertex_Object *vertex_object) {
+    initialize_vertex_object(
+            vertex_object,
+            BIT(TILE__WIDTH_AND__HEIGHT__BIT_SHIFT), 
+            BIT(TILE__WIDTH_AND__HEIGHT__BIT_SHIFT));
+}
 
 void buffer_vertex_object(GL_Vertex_Object *vertex_object,
         uint32_t size_in_bytes, uint32_t vertex_count, float *vertices);

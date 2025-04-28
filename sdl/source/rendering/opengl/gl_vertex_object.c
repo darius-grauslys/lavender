@@ -1,21 +1,32 @@
+#include "platform_defines.h"
 #include <rendering/opengl/gl_vertex_object.h>
 
-void initialize_vertex_object_as__unit_square(
-        GL_Vertex_Object *vertex_object) {
-// void create_rect(unsigned int *vao, unsigned int *vbo, unsigned int *ebo)
+void initialize_vertex_object(
+        GL_Vertex_Object *vertex_object,
+        float width,
+        float height) {
+    width /= BIT(TILE__WIDTH_AND__HEIGHT__BIT_SHIFT);
+    height /= BIT(TILE__WIDTH_AND__HEIGHT__BIT_SHIFT);
     float rect_vertices[] = {
-        -1.0f,  1.0f,  0.0f,        0.0f, 1.0f, // top left
-         1.0f,  1.0f,  0.0f,        1.0f, 1.0f, // top right
-         1.0f, -1.0f,  0.0f,        1.0f, 0.0f, // bottom right
-        -1.0f, -1.0f,  0.0f,        0.0f, 0.0f  // bottom left
+        -width,  height,  0.0f,        0.0f, 1.0f, // top left
+         width,  height,  0.0f,        1.0f, 1.0f, // top right
+         width, -height,  0.0f,        1.0f, 0.0f, // bottom right
+        -width, -height,  0.0f,        0.0f, 0.0f  // bottom left
     };
     unsigned int rect_indices[] = { 0, 1, 2, 0, 2, 3 };
+
+    vertex_object->handle__vertex_buffer = 0;
+    vertex_object->handle__attribute_array = 0;
+    vertex_object->vertex_count = 0;
+
+    glGenVertexArrays(1, &vertex_object->handle__attribute_array);
+    glBindVertexArray(vertex_object->handle__attribute_array);
+    glGenBuffers(1, &vertex_object->handle__vertex_buffer);
+    glGenBuffers(1, &vertex_object->handle__element_buffer);
 
     uint32_t *vao = &vertex_object->handle__attribute_array;
     uint32_t *vbo = &vertex_object->handle__vertex_buffer;
     uint32_t *ebo = &vertex_object->handle__element_buffer;
-
-    initialize_vertex_object(vertex_object);
 
     buffer_vertex_object(
             vertex_object, 
@@ -43,17 +54,6 @@ void initialize_vertex_object_as__unit_square(
             (void *)(3 * sizeof(float)));
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
-}
-
-void initialize_vertex_object(GL_Vertex_Object *vertex_object) {
-    vertex_object->handle__vertex_buffer = 0;
-    vertex_object->handle__attribute_array = 0;
-    vertex_object->vertex_count = 0;
-
-    glGenVertexArrays(1, &vertex_object->handle__attribute_array);
-    glBindVertexArray(vertex_object->handle__attribute_array);
-    glGenBuffers(1, &vertex_object->handle__vertex_buffer);
-    glGenBuffers(1, &vertex_object->handle__element_buffer);
 }
 
 void buffer_vertex_object(GL_Vertex_Object *vertex_object,
@@ -113,6 +113,12 @@ void use_vertex_object(GL_Vertex_Object *vertex_object) {
     glBindVertexArray(vertex_object->handle__attribute_array);
     glBindBuffer(GL_ARRAY_BUFFER, vertex_object->handle__vertex_buffer);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vertex_object->handle__element_buffer);
+
+    GLenum error = glGetError();
+    if (error != GL_NO_ERROR) {
+        debug_error("SDL::GL::GL_use_vertex_object failed.");
+        return;
+    }
 }
 
 void GL_set_vertex_object__unit_square__UVs_within__texture_atlas(

@@ -9,11 +9,9 @@ void f_GL_initialize_sprite(
 
 void GL_initialize_sprite(
         Gfx_Context *p_gfx_context,
-        PLATFORM_Sprite *p_PLATFORM_sprite);
-
-void GL_initialize_sprite_with__this_shader(
-        GL_Sprite *p_GL_sprite,
-        GL_Shader_2D *p_GL_shader);
+        PLATFORM_Sprite *p_PLATFORM_sprite,
+        Quantity__u32 width,
+        Quantity__u32 height);
 
 void GL_release_sprite_vertext_object(
         GL_Sprite *p_GL_sprite);

@@ -181,12 +181,12 @@ void GL_link_camera_projection_to__shader(
             GL_peek_viewport_stack(
                     p_viewport_stack);
         glm_ortho_lh_no(
-                (int)0, 
-                (int)(( p_viewport->width) 
-                    >> (TILE__WIDTH_AND__HEIGHT__BIT_SHIFT+1)),
-                (int)((-p_viewport->height) 
-                    >> (TILE__WIDTH_AND__HEIGHT__BIT_SHIFT+1)),
-                (int)0, 
+                (int)0,
+                (int)(( (p_viewport->width))
+                    >> (TILE__WIDTH_AND__HEIGHT__BIT_SHIFT)),
+                (int)0,
+                (int)(( (p_viewport->height))
+                    >> (TILE__WIDTH_AND__HEIGHT__BIT_SHIFT)),
                 // TODO: magic numbers in no camera default projection
                 -0.25f,
                  1808.0f,
@@ -212,9 +212,12 @@ void GL_link_camera_translation_to__shader(
         vector_3i32F4_to__vec3(
                 p_camera->position, 
                 vec3__translation);
-        vec3__translation[0] *= -(1.0/8);
-        vec3__translation[1] *= -(1.0/8);
-        vec3__translation[2] *= -(1.0/8);
+            vec3__translation[0] *= 
+                (1.0/(BIT(TILE__WIDTH_AND__HEIGHT__BIT_SHIFT)));
+            vec3__translation[1] *= 
+                (1.0/(BIT(TILE__WIDTH_AND__HEIGHT__BIT_SHIFT)));
+            vec3__translation[2] *= 
+                -(1.0/(BIT(TILE__WIDTH_AND__HEIGHT__BIT_SHIFT)));
 
         glm_translate_make(
                 *p_translation, 
@@ -241,9 +244,9 @@ void GL_link_model_data_to__shader(
     vector_3i32F4_to__vec3(
             position, 
             vector3_cglm);
-    vector3_cglm[0] *= (1.0/8);
-    vector3_cglm[1] *= (1.0/8);
-    vector3_cglm[2] *= -(1.0/8);
+    vector3_cglm[0] *= (1.0/(BIT(TILE__WIDTH_AND__HEIGHT__BIT_SHIFT)));
+    vector3_cglm[1] *= (1.0/(BIT(TILE__WIDTH_AND__HEIGHT__BIT_SHIFT)));
+    vector3_cglm[2] *= -(1.0/(BIT(TILE__WIDTH_AND__HEIGHT__BIT_SHIFT)));
     glm_translate(
             model, 
             vector3_cglm);

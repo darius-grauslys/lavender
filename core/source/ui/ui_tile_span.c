@@ -64,11 +64,11 @@ const UI_Tile *get_ui_tile_of__ui_tile_span(
         - 1
         ;
 
-    bool is_on_top_edge =
+    bool is_on_bottom_edge =
         index_y_of__ui_tile_span__u32 == 0
         ;
 
-    bool is_on_bottom_edge =
+    bool is_on_top_edge =
         index_y_of__ui_tile_span__u32 ==
         height_of__ui_tile_span__u32
         - 1

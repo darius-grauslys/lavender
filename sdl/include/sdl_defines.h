@@ -145,11 +145,15 @@ typedef void (*f_SDL_Put_Char_In__Typer)(
 
 typedef void (*f_SDL_Allocate_Sprite)(
         Gfx_Context *p_gfx_context,
-        PLATFORM_Sprite *p_PLATFORM_sprite);
+        PLATFORM_Sprite *p_PLATFORM_sprite,
+        Quantity__u32 width,
+        Quantity__u32 height);
 
 typedef void (*f_SDL_Initialize_Sprite)(
         Gfx_Context *p_gfx_context,
-        PLATFORM_Sprite *p_PLATFORM_sprite);
+        PLATFORM_Sprite *p_PLATFORM_sprite,
+        Quantity__u32 width,
+        Quantity__u32 height);
 
 typedef void (*f_SDL_Render_Sprite)(
         Gfx_Context *p_gfx_context,
@@ -197,20 +201,20 @@ typedef void (*m_SDL_Render_Sprite)(
         Sprite *p_sprite);
 
 typedef struct PLATFORM_Sprite_t {
+    Serialization_Header _serialization_header;
     /// 
-    /// This is agnostic to render backend.
+    /// This opaque pointer is backend data.
     ///
     void *p_SDL_sprite;
-    PLATFORM_Texture *p_PLATFORM_texture;
+    PLATFORM_Texture *p_PLATFORM_texture_for__sprite_to__sample;
+    PLATFORM_Texture *p_PLATFORM_texture_of__sprite;
     Quantity__u8 quantity_of__sprite_frame__columns;
     Quantity__u8 quantity_of__sprite_frame__rows;
     float sprite_frame__width;
     float sprite_frame__height;
-    bool is_sprite__allocated;
-    bool is_sprite_with__anonymous_texture;
 } PLATFORM_Sprite;
 
-typedef struct SLD_Texture_Manager_t {
+typedef struct SDL_Texture_Manager_t {
     PLATFORM_Texture SDL_textures[
         MAX_QUANTITY_OF__TEXTURES];
     Repeatable_Psuedo_Random randomizer;
@@ -218,6 +222,7 @@ typedef struct SLD_Texture_Manager_t {
 
 typedef struct SDL_Sprite_Manager_t {
     PLATFORM_Sprite SDL_sprites[MAX_QUANTITY_OF__SPRITES];
+    Repeatable_Psuedo_Random randomizer;
 } SDL_Sprite_Manager;
 
 typedef enum {

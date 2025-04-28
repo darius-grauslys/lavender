@@ -9,36 +9,21 @@
 #include "rendering/opengl/gl_numerics.h"
 #include "rendering/opengl/gl_shader.h"
 #include "rendering/opengl/gl_shader_manager.h"
+#include "rendering/opengl/gl_shader_passthrough.h"
 #include "rendering/opengl/gl_shader_sprite.h"
 #include "rendering/opengl/gl_vertex_object.h"
 #include "rendering/opengl/gl_viewport.h"
 #include "rendering/opengl/glad/glad.h"
+#include "vectors.h"
 #include <rendering/opengl/gl_sprite.h>
 #include <rendering/opengl/gl_gfx_sub_context.h>
 #include <sdl_defines.h>
 
-void GL_initialize_sprite_with__this_shader(
-        GL_Sprite *p_GL_sprite,
-        GL_Shader_2D *p_GL_shader) {
-    p_GL_sprite
-        ->p_GL_shader = p_GL_shader;
-    initialize_vertex_object_as__unit_square(
-            &p_GL_sprite->GL_vertex_object);
-
-    p_GL_sprite->location_of__sprite_frame_row_col
-        = glGetUniformLocation(p_GL_sprite->p_GL_shader->handle, 
-                "spriteframe_row_col");
-    p_GL_sprite->location_of__sprite_frame_width_height
-        = glGetUniformLocation(p_GL_sprite->p_GL_shader->handle, 
-                "spriteframe_width_height");
-    p_GL_sprite->location_of__sprite_flip
-        = glGetUniformLocation(p_GL_sprite->p_GL_shader->handle, 
-                "sprite_flip");
-}
-
 void GL_initialize_sprite(
         Gfx_Context *p_gfx_context,
-        PLATFORM_Sprite *p_PLATFORM_sprite) {
+        PLATFORM_Sprite *p_PLATFORM_sprite,
+        Quantity__u32 width,
+        Quantity__u32 height) {
     GL_Gfx_Sub_Context *p_GL_gfx_sub_context =
         p_gfx_context
         ->p_PLATFORM_gfx_context
@@ -49,23 +34,10 @@ void GL_initialize_sprite(
         (GL_Sprite*)p_PLATFORM_sprite
         ->p_SDL_sprite
         ;
-    GL_Shader_2D *p_GL_shader =
-        GL_get_shader_from__shader_manager(
-                &p_GL_gfx_sub_context
-                ->GL_shader_manager, 
-                shader_string__sprite);
-
-    if (!p_GL_shader) {
-        debug_error("SDL::GL_initialize_sprite failed to find sprite shader.");        
-        PLATFORM_release_sprite(
-                p_gfx_context, 
-                p_PLATFORM_sprite);
-        return;
-    }
-
-    GL_initialize_sprite_with__this_shader(
-            p_GL_sprite, 
-            p_GL_shader);
+    initialize_vertex_object(
+            &p_GL_sprite->GL_vertex_object,
+            width,
+            height);
 }
 
 void GL_release_sprite_vertext_object(
@@ -104,12 +76,19 @@ void GL_render_sprite(
         p_sprite
         ->p_PLATFORM_sprite
         ;
-    GL_Sprite *p_GL_sprite =
-        (GL_Sprite*)
-        p_PLATFORM_sprite->p_SDL_sprite
-        ;
     GL_Shader_2D *p_GL_shader__sprite =
-        p_GL_sprite->p_GL_shader;
+        GL_get_shader_from__shader_manager(
+                GL_get_p_shader_manager_from__PLATFORM_gfx_context(
+                    get_p_PLATFORM_gfx_context_from__gfx_context(
+                        p_gfx_context)), 
+                shader_string__sprite);
+
+    GL_Shader_2D *p_GL_shader__passthrough=
+        GL_get_shader_from__shader_manager(
+                GL_get_p_shader_manager_from__PLATFORM_gfx_context(
+                    get_p_PLATFORM_gfx_context_from__gfx_context(
+                        p_gfx_context)), 
+                shader_string__passthrough);
 
     Camera *p_SDL_camera__active =
         p_gfx_window
@@ -124,6 +103,85 @@ void GL_render_sprite(
         GL_get_p_viewport_stack_from__PLATFORM_gfx_context(
                 p_gfx_context
                 ->p_PLATFORM_gfx_context);
+
+    GL_use_framebuffer_as__target(
+            p_GL_framebuffer);
+    GL_bind_texture_to__framebuffer(
+            p_GL_framebuffer, 
+            p_sprite
+            ->p_PLATFORM_sprite
+            ->p_PLATFORM_texture_of__sprite
+            );
+
+    use_shader_2d(
+            p_GL_shader__passthrough);
+    use_vertex_object(&p_GL_gfx_sub_context->GL_vertex_object__unit_square);
+    PLATFORM_use_texture(
+            p_gfx_context
+            ->p_PLATFORM_gfx_context,
+            p_PLATFORM_sprite
+            ->p_PLATFORM_texture_for__sprite_to__sample);
+
+    float width__f = 
+        (float)((float)p_sprite
+                ->p_PLATFORM_sprite
+                ->p_PLATFORM_texture_for__sprite_to__sample
+        ->width
+        / p_sprite
+        ->p_PLATFORM_sprite
+        ->p_PLATFORM_texture_of__sprite
+        ->width);
+        ;
+    float height__f = 
+        (float)((float)p_sprite
+                ->p_PLATFORM_sprite
+                ->p_PLATFORM_texture_for__sprite_to__sample
+        ->height
+        / p_sprite
+        ->p_PLATFORM_sprite
+        ->p_PLATFORM_texture_of__sprite
+        ->height);
+        ;
+
+    float width_of__uv  = 1.0 / (width__f);
+    float height_of__uv = 1.0 / (height__f);
+
+    Index__u8 index_of__frame__column =
+        p_sprite->sprite__index_of__frame
+        % p_sprite
+        ->p_PLATFORM_sprite
+        ->quantity_of__sprite_frame__columns;
+    Index__u8 index_of__frame__row =
+        p_sprite->sprite__index_of__frame
+        / p_sprite
+        ->p_PLATFORM_sprite
+        ->quantity_of__sprite_frame__columns;
+
+    GL_push_viewport(
+            p_GL_viewport_stack, 
+            0, 0,
+            p_sprite
+            ->p_PLATFORM_sprite
+            ->p_PLATFORM_texture_of__sprite
+            ->width,
+            p_sprite
+            ->p_PLATFORM_sprite
+            ->p_PLATFORM_texture_of__sprite
+            ->height);
+
+    glDisable(GL_DEPTH_TEST);
+    GL_render_with__shader__passthrough_using__index_sampling(
+            p_GL_shader__passthrough, 
+            index_of__frame__column,
+            index_of__frame__row,
+            width_of__uv, 
+            height_of__uv,
+            false,
+            false);
+    glEnable(GL_DEPTH_TEST);
+
+    GL_pop_viewport(p_GL_viewport_stack);
+
     GL_push_viewport(
             p_GL_viewport_stack, 
             0, 0,
@@ -151,35 +209,39 @@ void GL_render_sprite(
             ->p_PLATFORM_gfx_context,
             p_GL_shader__sprite, 
             p_SDL_camera__active, 
-            position__3i32F4, 
-            i32_to__i32F4(1));
+            position__3i32F4,
+            0b1000
+            << (TILE__WIDTH_AND__HEIGHT__BIT_SHIFT - 3));
 
-    use_vertex_object(&p_GL_sprite->GL_vertex_object);
+    use_vertex_object(
+            &((GL_Sprite*)p_PLATFORM_sprite
+            ->p_SDL_sprite)
+            ->GL_vertex_object);
     PLATFORM_use_texture(
             p_gfx_context
             ->p_PLATFORM_gfx_context,
             p_PLATFORM_sprite
-            ->p_PLATFORM_texture);
+            ->p_PLATFORM_texture_of__sprite);
     glUniform2f(
-            p_GL_sprite->location_of__sprite_frame_row_col,
-            p_sprite->sprite__index_of__frame
-            % p_PLATFORM_sprite->quantity_of__sprite_frame__columns, 
-            (u8)(p_PLATFORM_sprite->quantity_of__sprite_frame__rows-1)
-            - (u8)((p_sprite->sprite__index_of__frame
-                / p_PLATFORM_sprite->quantity_of__sprite_frame__columns)
-            ) % p_PLATFORM_sprite->quantity_of__sprite_frame__rows
+            p_GL_shader__sprite
+            ->location_of__general_uniform_0,
+            0, 0
             );
     glUniform2f(
-            p_GL_sprite->location_of__sprite_frame_width_height,
-            p_PLATFORM_sprite->sprite_frame__width, 
-            p_PLATFORM_sprite->sprite_frame__height);
+            p_GL_shader__sprite
+            ->location_of__general_uniform_1,
+            1.0, 1.0
+            );
     glUniform2f(
-            p_GL_sprite->location_of__sprite_flip,
+            p_GL_shader__sprite
+            ->location_of__general_uniform_2,
             p_sprite->direction & DIRECTION__WEST
             ? 1.0
             : 0.0, 
             0.0);
+    glDisable(GL_DEPTH_TEST);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    glEnable(GL_DEPTH_TEST);
 
     GL_pop_viewport(p_GL_viewport_stack);
     GL_unbind_framebuffer();
