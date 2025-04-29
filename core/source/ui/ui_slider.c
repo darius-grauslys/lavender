@@ -64,58 +64,69 @@ void m_ui_slider__dragged_handler__default(
 
     i32 cursor_position =
         (is_snapped_x_or_y__axis)
-        ? clamp__i32(p_input->cursor__3i32.y__i32
-            - get_y_i32_from__hitbox(p_hitbox_aabb)
-            + (get_height_u32_of__hitbox_aabb(p_hitbox_aabb) >> 1),
-            0,
-            get_height_u32_of__hitbox_aabb(p_hitbox_aabb))
-        : clamp__i32(p_input->cursor__3i32.x__i32
-            - get_x_i32_from__hitbox(p_hitbox_aabb)
-            + (get_width_u32_of__hitbox_aabb(p_hitbox_aabb) >> 1),
-            0,
-            get_width_u32_of__hitbox_aabb(
-                p_hitbox_aabb));
+        ? clamp__i32(
+                p_input->cursor__3i32.x__i32
+                - get_x_i32_from__hitbox(p_hitbox_aabb)
+                + (get_width_u32_of__hitbox_aabb(p_hitbox_aabb) >> 1),
+                0,
+                get_width_u32_of__hitbox_aabb(
+                    p_hitbox_aabb))
+        : clamp__i32(
+                -p_input->cursor__3i32.y__i32
+                + get_y_i32_from__hitbox(p_hitbox_aabb)
+                + (get_height_u32_of__hitbox_aabb(p_hitbox_aabb) >> 1),
+                0,
+                get_height_u32_of__hitbox_aabb(
+                    p_hitbox_aabb))
         ;
 
     p_this_draggable
         ->slider__distance__u32 = 
         cursor_position;
+
+    m_ui_slider__transformed_handler__default(
+            p_this_draggable, 
+            p_hitbox_aabb, 
+            p_game, 
+            p_graphics_window);
 }
 
 void m_ui_slider__transformed_handler__default(
-        UI_Element *p_this_draggable,
+        UI_Element *p_this_ui_element,
         Hitbox_AABB *p_hitbox_aabb,
         Game *p_game,
         Graphics_Window *p_graphics_window) {
-    bool is_snapped_x_or_y__axis =
-        is_ui_element__snapped_x_or_y_axis(p_this_draggable);
+    if (!does_ui_element_have__child(p_this_ui_element)) {
+        return; 
+    }
 
-    if (!p_hitbox_aabb) {
-        debug_error("m_ui_slider__dragged_handler__default, missing hitbox component.");
-        set_ui_element_as__disabled(p_this_draggable);
+    if (is_ui_element__snapped_x_or_y_axis(p_this_ui_element)) {
+        set_position_3i32_of__ui_element(
+                p_game, 
+                p_graphics_window, 
+                get_child_of__ui_element(p_this_ui_element), 
+                add_vectors__3i32(
+                    get_position_3i32_of__hitbox_aabb(p_hitbox_aabb), 
+                    get_vector__3i32(
+                        p_this_ui_element
+                        ->slider__distance__u32
+                        + (get_width_u32_of__hitbox_aabb(p_hitbox_aabb) >> 1),
+                        0, 0)));
         return;
     }
 
-    Vector__3i32 sprite_position =
-        get_position_3i32_of__hitbox_aabb(p_hitbox_aabb);
-
-    i32 cursor_position =
-        p_this_draggable
-            ->slider__distance__u32;
-
-    if (is_snapped_x_or_y__axis) {
-        sprite_position.y__i32 =
-            cursor_position
-            - get_y_i32_from__hitbox(p_hitbox_aabb)
-            - (get_height_u32_of__hitbox_aabb(p_hitbox_aabb) >> 1)
-            ;
-    } else {
-        sprite_position.x__i32 =
-            cursor_position
-            - get_x_i32_from__hitbox(p_hitbox_aabb)
-            - (get_width_u32_of__hitbox_aabb(p_hitbox_aabb) >> 1)
-            ;
-    }
+    set_position_3i32_of__ui_element(
+            p_game, 
+            p_graphics_window, 
+            get_child_of__ui_element(p_this_ui_element), 
+            subtract_vectors__3i32(
+                get_position_3i32_of__hitbox_aabb(p_hitbox_aabb), 
+                get_vector__3i32(
+                    0,
+                    p_this_ui_element
+                    ->slider__distance__u32
+                    - (get_height_u32_of__hitbox_aabb(p_hitbox_aabb) >> 1),
+                    0)));
 }
 
 void m_ui_slider__dragged_handler__gfx_window__default(
@@ -148,8 +159,8 @@ void m_ui_slider__dragged_handler__gfx_window__default(
                 p_this_draggable);
     i32 spanning_length =
         (is_snapped_x_or__y_axis)
-        ? spanning_length__3i32.y__i32
-        : spanning_length__3i32.x__i32
+        ? spanning_length__3i32.x__i32
+        : spanning_length__3i32.y__i32
         ;
 
     m_ui_slider__dragged_handler__default(
@@ -168,8 +179,6 @@ void m_ui_slider__dragged_handler__gfx_window__default(
 
     Vector__3i32 position_for__elements =
         position_for__bgSetScroll;
-    // TODO: this is -1 on nds
-    position_for__elements.x__i32 *= 1;
     position_for__elements.x__i32 += 
         (get_width_from__p_ui_element(
                 get_p_hitbox_aabb_manager_from__game(p_game),

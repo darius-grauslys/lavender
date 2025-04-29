@@ -37,16 +37,15 @@ void m_ui_draggable__dragged_handler__default(
                 get_p_hitbox_aabb_manager_from__game(p_game), 
                 GET_UUID_P(p_this_draggable));
 
+    set_ui_element_as__focused(
+            p_this_draggable);
+    set_ui_element_as__being_dragged(p_this_draggable);
+
     if (!p_hitbox_aabb) {
         debug_error("m_ui_draggable__dragged_handler__default, missing hitbox component.");
         set_ui_element_as__disabled(p_this_draggable);
         return;
     }
-
-    position.x__i32 -= 
-        get_width_u32_of__hitbox_aabb(p_hitbox_aabb) >> 1;
-    position.y__i32 -= 
-        get_height_u32_of__hitbox_aabb(p_hitbox_aabb) >> 1;
 
     set_position_3i32_of__ui_element(
             p_game,
@@ -59,6 +58,8 @@ void m_ui_draggable__dropped_handler__default(
         UI_Element *p_this_draggable,
         Game *p_game,
         Graphics_Window *p_graphics_window) {
+    set_ui_element_as__NOT_focused(p_this_draggable);
+
     if (!p_this_draggable->p_parent) {
         return;
     }
@@ -70,6 +71,4 @@ void m_ui_draggable__dropped_handler__default(
             get_position_3i32_from__p_ui_element(
                 get_p_hitbox_aabb_manager_from__game(p_game),
                 p_this_draggable->p_parent));
-
-    set_ui_element_as__NOT_focused(p_this_draggable);
 }

@@ -42,10 +42,15 @@ void initialize_ui_element(
 
     p_ui_element->ui_flags = ui_flags;
 
-    p_ui_element->m_ui_compose_handler =
-        m_ui_element__compose_handler__default;
-    p_ui_element->m_ui_dispose_handler = 
-        m_ui_element__dispose_handler__default;
+    set_ui_element__dispose_handler(
+            p_ui_element, 
+            m_ui_element__dispose_handler__default);
+    set_ui_element__compose_handler(
+            p_ui_element, 
+            m_ui_element__compose_handler__default);
+    set_ui_element__transformed_handler(
+            p_ui_element, 
+            m_ui_element__transformed_handler__default);
 }
 
 void m_ui_element__dispose_handler__default(
@@ -371,6 +376,22 @@ const UI_Tile_Span *get_ui_tile_span_of__ui_element(
     return &p_ui_element->ui_tile_span;
 }
 
+void m_ui_element__transformed_handler__default(
+        UI_Element *p_this_ui_element,
+        Hitbox_AABB *p_hitbox_aabb,
+        Game *p_game,
+        Graphics_Window *p_graphics_window) {
+    if (does_ui_element_have__child(
+                p_this_ui_element)) {
+        set_position_3i32_of__ui_element(
+                p_game, 
+                p_graphics_window, 
+                get_child_of__ui_element(p_this_ui_element), 
+                get_position_3i32_of__hitbox_aabb(
+                    p_hitbox_aabb));
+    }
+}
+
 void m_ui_element__compose_handler__default(
         UI_Element *p_ui_element,
         Game *p_game,
@@ -405,7 +426,7 @@ void m_ui_element__compose_handler__default(
     }
 
     UI_Element *p_ui_element__child =
-        get_child_of__ui_element(p_ui_element__child);
+        get_child_of__ui_element(p_ui_element);
 
     if (!does_ui_element_have__compose_handler(
                 p_ui_element__child)) {

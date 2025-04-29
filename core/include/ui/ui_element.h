@@ -96,6 +96,12 @@ void m_ui_element__compose_handler__default_only_recursive(
         Game *p_game,
         Graphics_Window *p_graphics_window);
 
+void m_ui_element__transformed_handler__default(
+        UI_Element *p_this_ui_element,
+        Hitbox_AABB *p_hitbox_aabb,
+        Game *p_game,
+        Graphics_Window *p_graphics_window);
+
 bool does_ui_element_have__sprite(
         Sprite_Manager *p_sprite_manager,
         UI_Element *p_ui_element);
@@ -339,19 +345,19 @@ bool is_ui_element__using_ui_tile_span(
 static inline
 bool does_ui_element_have__parent(
         UI_Element *p_ui_element) {
-    return (bool)p_ui_element->p_parent;
+    return p_ui_element && p_ui_element->p_parent;
 }
 
 static inline
 bool does_ui_element_have__child(
         UI_Element *p_ui_element) {
-    return (bool)p_ui_element->p_child;
+    return p_ui_element && p_ui_element->p_child;
 }
 
 static inline
 bool does_ui_element_have__next(
         UI_Element *p_ui_element) {
-    return (bool)p_ui_element->p_next;
+    return p_ui_element && p_ui_element->p_next;
 }
 
 static inline
@@ -552,49 +558,49 @@ void set_ui_element__compose_handler(
 static inline
 bool does_ui_element_have__dispose_handler(
         UI_Element *p_ui_element) {
-    return (bool)p_ui_element->m_ui_dispose_handler;
+    return p_ui_element && p_ui_element->m_ui_dispose_handler;
 }
 
 static inline
 bool does_ui_element_have__clicked_handler(
         UI_Element *p_ui_element) {
-    return (bool)p_ui_element->m_ui_clicked_handler;
+    return p_ui_element && p_ui_element->m_ui_clicked_handler;
 }
 
 static inline
 bool does_ui_element_have__dragged_handler(
         UI_Element *p_ui_element) {
-    return (bool)p_ui_element->m_ui_dragged_handler;
+    return p_ui_element && p_ui_element->m_ui_dragged_handler;
 }
 
 static inline
 bool does_ui_element_have__dropped_handler(
         UI_Element *p_ui_element) {
-    return (bool)p_ui_element->m_ui_dropped_handler;
+    return p_ui_element && p_ui_element->m_ui_dropped_handler;
 }
 
 static inline
 bool does_ui_element_have__receive_drop_handler(
         UI_Element *p_ui_element) {
-    return (bool)p_ui_element->m_ui_receive_drop_handler;
+    return p_ui_element && p_ui_element->m_ui_receive_drop_handler;
 }
 
 static inline
 bool does_ui_element_have__held_handler(
         UI_Element *p_ui_element) {
-    return (bool)p_ui_element->m_ui_held_handler;
+    return p_ui_element && p_ui_element->m_ui_held_handler;
 }
 
 static inline
 bool does_ui_element_have__typed_handler(
         UI_Element *p_ui_element) {
-    return (bool)p_ui_element->m_ui_typed_handler;
+    return p_ui_element && p_ui_element->m_ui_typed_handler;
 }
 
 static inline
 bool does_ui_element_have__transformed_handler(
         UI_Element *p_ui_element) {
-    return (bool)p_ui_element->m_ui_transformed_handler;
+    return p_ui_element && p_ui_element->m_ui_transformed_handler;
 }
 
 static inline

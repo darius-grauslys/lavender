@@ -151,20 +151,10 @@ UI_Element *get_highest_priority_ui_element_thats__under_this_ui_element(
         UI_Manager *p_ui_manager,
         Hitbox_AABB_Manager *p_hitbox_aabb_manager,
         UI_Element *p_ui_element__above) {
-    Hitbox_AABB *p_hitbox_aabb =
-        get_p_hitbox_aabb_by__uuid_u32_from__hitbox_aabb_manager(
+    Vector__3i32 vector_of__element_above__3i32 =
+        get_position_3i32_from__p_ui_element(
                 p_hitbox_aabb_manager, 
-                GET_UUID_P(p_ui_element__above));
-
-    if (p_hitbox_aabb) {
-        debug_error("get_highest_priority_ui_element_thats__under_the_cursor, ui_element lacks hitbox component.");
-        return 0;
-    }
-
-    Vector__3i32 position =
-        vector_3i32F4_to__vector_3i32(
-                p_hitbox_aabb
-                ->position__3i32F4);
+                p_ui_element__above);
     for (Index__u32 index_of__ui_element = 0;
             index_of__ui_element
             < MAX_QUANTITY_OF__UI_ELEMENTS;
@@ -179,8 +169,17 @@ UI_Element *get_highest_priority_ui_element_thats__under_this_ui_element(
             continue;
         }
 
+        Hitbox_AABB *p_hitbox_aabb =
+            get_p_hitbox_aabb_by__uuid_u32_from__hitbox_aabb_manager(
+                    p_hitbox_aabb_manager, 
+                    GET_UUID_P(p_ui_element));
+
+        if (!p_hitbox_aabb) {
+            continue;
+        }
+
         if (is_vector_3i32_inside__hitbox(
-                    position,
+                    vector_of__element_above__3i32,
                     p_hitbox_aabb)) {
             return p_ui_element;
         }
@@ -235,7 +234,8 @@ UI_Element *detect_focus_in__ui_manager(
         Game *p_game) {
     UI_Element *p_ui_element__focused =
         get_p_ui_element__focused_of__ui_manager(p_ui_manager);
-    if (!p_ui_element__focused) {
+    if (!p_ui_element__focused
+            || !is_ui_element__focused(p_ui_element__focused)) {
         p_ui_element__focused =
             get_highest_priority_ui_element_thats__under_the_cursor(
                     p_ui_manager, 
@@ -249,6 +249,32 @@ UI_Element *detect_focus_in__ui_manager(
     return p_ui_element__focused;
 }
 
+UI_Element *detect_focus__strictly_under_cursor_in__ui_manager(
+        UI_Manager *p_ui_manager, 
+        Game *p_game) {
+    UI_Element *p_ui_element__focused =
+        detect_focus_in__ui_manager(
+                p_ui_manager, 
+                p_game);
+    if (!p_ui_element__focused)
+        return 0;
+    if (!is_vector_3i32_inside__hitbox(
+                get_p_input_from__game(p_game)
+                ->cursor__3i32, 
+                get_p_hitbox_aabb_of__ui_element(
+                    get_p_hitbox_aabb_manager_from__game(p_game),
+                    p_ui_element__focused))) {
+        drop_ui_element_focus_for__ui_manager(p_ui_manager);
+        p_ui_element__focused =
+            detect_focus_in__ui_manager(
+                    p_ui_manager, 
+                    p_game);
+        if (!p_ui_element__focused)
+            return 0;
+    }
+    return p_ui_element__focused;
+}
+
 void poll_ui_manager__update_for__drag(
         Game *p_game,
         Graphics_Window *p_graphics_window,
@@ -259,14 +285,22 @@ void poll_ui_manager__update_for__drag(
                 p_game);
     if (!p_ui_element__focused)
         return;
+    if (!does_ui_element_have__dragged_handler(
+                p_ui_element__focused)) {
+        p_ui_element__focused =
+            detect_focus__strictly_under_cursor_in__ui_manager(
+                    p_ui_manager, 
+                    p_game);
+        if (!p_ui_element__focused
+                || !does_ui_element_have__dragged_handler(
+                    p_ui_element__focused)) {
+            return;
+        }
+    }
     if (is_ui_element__being_held(
                 p_ui_element__focused)) {
         set_ui_element_as__being_dragged(
                 p_ui_element__focused);
-    }
-    if (!does_ui_element_have__dragged_handler(
-                p_ui_element__focused)) {
-        return;
     }
     p_ui_element__focused
         ->m_ui_dragged_handler(
@@ -306,13 +340,11 @@ void poll_ui_manager__update_for__held(
                 p_graphics_window);
 }
 
-void poll_ui_manager__update_for__drop(
+void handle_drop_in__ui_manager(
         Game *p_game,
         Graphics_Window *p_graphics_window,
-        UI_Manager *p_ui_manager) {
-    UI_Element *p_ui_element__focused =
-        get_p_ui_element__focused_of__ui_manager(
-                p_ui_manager);
+        UI_Manager *p_ui_manager,
+        UI_Element *p_ui_element__focused) {
     if (!p_ui_element__focused)
         return;
     set_ui_element_as__dropped(
@@ -354,45 +386,25 @@ void poll_ui_manager__update_for__clicked_and_dropped(
         Game *p_game,
         Graphics_Window *p_graphics_window) {
     UI_Element *p_ui_element__focused =
-        detect_focus_in__ui_manager(
+        detect_focus__strictly_under_cursor_in__ui_manager(
                 p_ui_manager, 
                 p_game);
+    if (!p_ui_element__focused)
+        return;
+    if (is_ui_element__being_dragged(
+                p_ui_element__focused)) {
+        handle_drop_in__ui_manager(
+                p_game, 
+                p_graphics_window, 
+                p_ui_manager, 
+                p_ui_element__focused);
+        return;
+    }
     p_ui_element__focused =
         get_ui_parent_or__child_with__clicked_handler(
                 p_ui_element__focused);
     if (!p_ui_element__focused)
         return;
-    if (is_ui_element__being_dragged(
-                p_ui_element__focused)) {
-        if (!does_ui_element_have__dropped_handler(
-                    p_ui_element__focused)) {
-            return;
-        }
-        p_ui_element__focused
-            ->m_ui_dropped_handler(
-                p_ui_element__focused,
-                p_game,
-                p_graphics_window);
-        return;
-    }
-    if (!is_vector_3i32_inside__hitbox(
-                get_p_input_from__game(p_game)
-                ->cursor__3i32, 
-                get_p_hitbox_aabb_of__ui_element(
-                    get_p_hitbox_aabb_manager_from__game(p_game),
-                    p_ui_element__focused))) {
-        drop_ui_element_focus_for__ui_manager(p_ui_manager);
-        p_ui_element__focused =
-            detect_focus_in__ui_manager(
-                    p_ui_manager, 
-                    p_game);
-        if (!p_ui_element__focused)
-            return;
-    }
-    if (!does_ui_element_have__clicked_handler(
-                p_ui_element__focused)) {
-        return;
-    }
     p_ui_element__focused
         ->m_ui_clicked_handler(
             p_ui_element__focused,
@@ -774,18 +786,28 @@ void swap_ui_element__children(
         UI_Element *p_parent__two) {
 
     UI_Element *p_child__one =
-        p_parent__one->p_child;
+        (p_parent__one)
+        ? p_parent__one->p_child
+        : 0
+        ;
     UI_Element *p_child__two =
-        p_parent__two->p_child;
+        (p_parent__two)
+        ? p_parent__two->p_child
+        : 0
+        ;
 
-    set_ui_element_as__the_parent_of__this_ui_element(
-            p_ui_manager, 
-            p_parent__one, 
-            p_child__two);
-    set_ui_element_as__the_parent_of__this_ui_element(
-            p_ui_manager, 
-            p_parent__two, 
-            p_child__one);
+    if (p_parent__one) {
+        set_ui_element_as__the_parent_of__this_ui_element(
+                p_ui_manager, 
+                p_parent__one, 
+                p_child__two);
+    }
+    if (p_parent__two) {
+        set_ui_element_as__the_parent_of__this_ui_element(
+                p_ui_manager, 
+                p_parent__two, 
+                p_child__one);
+    }
 }
 
 void foreach_ui_element_in__ui_manager(
