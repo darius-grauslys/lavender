@@ -76,8 +76,8 @@ void SDL_dispose_sprite_manager(
 
 PLATFORM_Sprite *PLATFORM_allocate_sprite(
         Gfx_Context *p_gfx_context,
-        Graphics_Window *p_gfx_window,
-        PLATFORM_Texture *p_PLATFORM_texture_to__sample_by__sprite,
+        Graphics_Window *p_graphics_window,
+        Sprite *p_sprite,
         Texture_Flags texture_flags_for__sprite) {
     PLATFORM_Gfx_Context *p_PLATFORM_gfx_context =
         get_p_PLATFORM_gfx_context_from__gfx_context(p_gfx_context);
@@ -85,71 +85,43 @@ PLATFORM_Sprite *PLATFORM_allocate_sprite(
     SDL_Sprite_Manager *p_SDL_sprite_manager =
         SDL_get_p_sprite_manager_from__gfx_context(p_PLATFORM_gfx_context);
 
-    PLATFORM_Sprite *p_PLATFORM_sprite =
+    p_sprite->p_PLATFORM_sprite =
         SDL_allocate_sprite_with__sprite_manager(
                 p_SDL_sprite_manager);
 
-    SDL_initialize_sprite(
-            p_gfx_context,
-            p_PLATFORM_sprite);
-
-    if (!p_PLATFORM_sprite) {
+    if (!p_sprite->p_PLATFORM_sprite) {
         debug_error("SDL::PLATFORM_allocate_sprite, failed to allocate sprite.");
         return 0;
     }
+
+    SDL_initialize_sprite(
+            p_gfx_context,
+            p_sprite);
 
     p_PLATFORM_gfx_context
         ->SDL_gfx_sub_context__wrapper
         .f_SDL_allocate_sprite(
                 p_gfx_context,
-                p_PLATFORM_sprite,
+                p_graphics_window,
+                p_sprite,
                 get_length_of__texture_flag__width(
                     texture_flags_for__sprite),
                 get_length_of__texture_flag__height(
                     texture_flags_for__sprite));
 
-    if (!p_PLATFORM_sprite->p_SDL_sprite) {
+    if (!p_sprite->p_PLATFORM_sprite->p_SDL_sprite) {
         SDL_release_sprite_from__sprite_manager(
                 p_SDL_sprite_manager,
-                p_PLATFORM_sprite);
+                p_sprite->p_PLATFORM_sprite);
         return 0;
     }
-
-    p_PLATFORM_sprite->p_PLATFORM_texture_for__sprite_to__sample =
-        p_PLATFORM_texture_to__sample_by__sprite;
-
-    p_PLATFORM_sprite->p_PLATFORM_texture_of__sprite =
-        PLATFORM_allocate_texture(
-                get_p_PLATFORM_gfx_context_from__gfx_context(p_gfx_context), 
-                p_gfx_window->p_PLATFORM_gfx_window, 
-                texture_flags_for__sprite);
-
-    p_PLATFORM_sprite->quantity_of__sprite_frame__columns = 
-        p_PLATFORM_texture_to__sample_by__sprite
-        ->width
-        / get_length_of__texture_flag__width(texture_flags_for__sprite);
-    p_PLATFORM_sprite->quantity_of__sprite_frame__rows =
-        p_PLATFORM_texture_to__sample_by__sprite
-        ->height
-        / get_length_of__texture_flag__height(texture_flags_for__sprite);
-    p_PLATFORM_sprite->sprite_frame__width = 
-        1.0 
-        / (float)p_PLATFORM_sprite->quantity_of__sprite_frame__columns;
-    p_PLATFORM_sprite->sprite_frame__height = 
-        1.0 
-        / (float)p_PLATFORM_sprite->quantity_of__sprite_frame__rows;
     
-    return p_PLATFORM_sprite;
+    return p_sprite->p_PLATFORM_sprite;
 }
 
 void PLATFORM_release_sprite(
         Gfx_Context *p_gfx_context, 
         PLATFORM_Sprite *p_PLATFORM_sprite) {
-    PLATFORM_release_texture(
-            p_gfx_context
-            ->p_PLATFORM_gfx_context,
-            p_PLATFORM_sprite
-            ->p_PLATFORM_texture_of__sprite);
     p_gfx_context
         ->p_PLATFORM_gfx_context
         ->SDL_gfx_sub_context__wrapper

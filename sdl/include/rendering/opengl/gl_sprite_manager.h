@@ -11,7 +11,8 @@ GL_Sprite *GL_allocate_sprite_with__sprite_manager(
 
 void GL_allocate_sprite(
         Gfx_Context *p_gfx_context,
-        PLATFORM_Sprite *p_PLATFORM_sprite,
+        Graphics_Window *p_graphics_window,
+        Sprite *p_sprite,
         Quantity__u32 width,
         Quantity__u32 height);
 

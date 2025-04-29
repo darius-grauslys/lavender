@@ -6,6 +6,6 @@
 
 void SDL_initialize_sprite(
         Gfx_Context *p_gfx_context,
-        PLATFORM_Sprite *p_PLATFORM_sprite);
+        Sprite *p_sprite);
 
 #endif

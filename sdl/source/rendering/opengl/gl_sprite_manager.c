@@ -37,10 +37,12 @@ GL_Sprite *GL_allocate_sprite_with__sprite_manager(
 
 void GL_allocate_sprite(
         Gfx_Context *p_gfx_context,
-        PLATFORM_Sprite *p_PLATFORM_sprite,
+        Graphics_Window *p_graphics_window,
+        Sprite *p_sprite,
         Quantity__u32 width,
         Quantity__u32 height) {
-    p_PLATFORM_sprite
+    p_sprite
+        ->p_PLATFORM_sprite
         ->p_SDL_sprite =
         GL_allocate_sprite_with__sprite_manager(
                 &GL_get_p_gfx_sub_context_from__PLATFORM_gfx_context(
@@ -50,9 +52,14 @@ void GL_allocate_sprite(
 
     GL_initialize_sprite(
             p_gfx_context,
-            p_PLATFORM_sprite,
+            p_sprite->p_PLATFORM_sprite,
             width,
             height);
+
+    GL_update_sprite(
+            p_gfx_context,
+            p_graphics_window,
+            p_sprite);
 }
 
 void GL_release_sprite_from__sprite_manager(

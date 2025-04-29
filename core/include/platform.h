@@ -99,7 +99,7 @@ void PLATFORM_put_char_in__typer(
 PLATFORM_Sprite *PLATFORM_allocate_sprite(
         Gfx_Context *p_gfx_context,
         Graphics_Window *p_gfx_window,
-        PLATFORM_Texture *p_PLATFORM_texture_to__sample_by__sprite,
+        Sprite *p_sprite,
         Texture_Flags texture_flags_for__sprite);
 
 void PLATFORM_release_sprite(

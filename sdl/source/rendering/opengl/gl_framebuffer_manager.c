@@ -36,6 +36,12 @@ void GL_initialize_framebuffer_manager(
 
         *p_ptr_GL_framebuffer = 0;
     }
+
+    glCreateFramebuffers(
+            1,
+            &p_GL_framebuffer_manager
+            ->GL_framebuffer__post_processing
+            .GL_framebuffer_handle);
 }
 
 GL_Framebuffer *GL_allocate_framebuffer_with__framebuffer_manager(
@@ -148,7 +154,9 @@ void GL_push_framebuffer_onto__framebuffer_manager(
         - p_GL_framebuffer_manager
         ->GL_framebuffers
         ;
-    if (index >=
+    if (p_GL_framebuffer
+            != &p_GL_framebuffer_manager->GL_framebuffer__post_processing
+            && index >=
             MAX_QUANTITY_OF__FRAMEBUFFERS) {
         debug_error("GL_push_framebuffer_onto__framebuffer_manager, p_GL_framebuffer is not allocated with this manager.");
         return;

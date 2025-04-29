@@ -4,6 +4,7 @@
 #include "defines_weak.h"
 #include "platform.h"
 #include "platform_defines.h"
+#include "rendering/gfx_context.h"
 #include "rendering/sprite.h"
 #include "serialization/hashing.h"
 #include "serialization/identifiers.h"
@@ -58,18 +59,36 @@ Sprite *allocate_sprite_from__sprite_manager(
         return 0;
     }
 
+    p_sprite->p_PLATFORM_texture_for__sprite_to__sample =
+        p_PLATFORM_texture_to__sample_by__sprite;
+
+    p_sprite->p_PLATFORM_texture_of__sprite =
+        PLATFORM_allocate_texture(
+                get_p_PLATFORM_gfx_context_from__gfx_context(
+                    p_gfx_context), 
+                p_gfx_window->p_PLATFORM_gfx_window,
+                texture_flags_for__sprite);
+
+    if (!p_sprite
+            ->p_PLATFORM_texture_of__sprite) {
+        debug_error("allocate_sprite_from__sprite_manager, failed to allocate p_PLATFORM_texture_of__sprite.");
+        PLATFORM_release_sprite(
+                p_gfx_context, 
+                p_sprite->p_PLATFORM_sprite);
+        DEALLOCATE_P(p_sprite);
+        return 0;
+    }
+
     PLATFORM_Sprite *p_PLATFORM_sprite =
         PLATFORM_allocate_sprite(
                 p_gfx_context,
                 p_gfx_window,
-                p_PLATFORM_texture_to__sample_by__sprite,
+                p_sprite,
                 texture_flags_for__sprite);
 
     if (!p_PLATFORM_sprite) {
         debug_error("allocate_sprite_from__sprite_manager, failed to allocate p_PLATOFRM_sprite.");
-        initialize_serialization_header_for__deallocated_struct(
-                (Serialization_Header*)p_sprite, 
-                sizeof(Sprite));
+        DEALLOCATE_P(p_sprite);
         return 0;
     }
 

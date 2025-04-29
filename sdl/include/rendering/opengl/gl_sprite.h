@@ -16,6 +16,11 @@ void GL_initialize_sprite(
 void GL_release_sprite_vertext_object(
         GL_Sprite *p_GL_sprite);
 
+void GL_update_sprite(
+        Gfx_Context *p_gfx_context,
+        Graphics_Window *p_gfx_window,
+        Sprite *p_sprite);
+
 GL_Sprite *GL_get_p_sprite_from__sprite(
         Sprite *p_sprite);
 

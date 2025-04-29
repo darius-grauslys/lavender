@@ -145,7 +145,8 @@ typedef void (*f_SDL_Put_Char_In__Typer)(
 
 typedef void (*f_SDL_Allocate_Sprite)(
         Gfx_Context *p_gfx_context,
-        PLATFORM_Sprite *p_PLATFORM_sprite,
+        Graphics_Window *p_graphics_window,
+        Sprite *p_sprite,
         Quantity__u32 width,
         Quantity__u32 height);
 
@@ -206,12 +207,6 @@ typedef struct PLATFORM_Sprite_t {
     /// This opaque pointer is backend data.
     ///
     void *p_SDL_sprite;
-    PLATFORM_Texture *p_PLATFORM_texture_for__sprite_to__sample;
-    PLATFORM_Texture *p_PLATFORM_texture_of__sprite;
-    Quantity__u8 quantity_of__sprite_frame__columns;
-    Quantity__u8 quantity_of__sprite_frame__rows;
-    float sprite_frame__width;
-    float sprite_frame__height;
 } PLATFORM_Sprite;
 
 typedef struct SDL_Texture_Manager_t {

@@ -5,7 +5,9 @@
 
 void SDL_initialize_sprite(
         Gfx_Context *p_gfx_context,
-        PLATFORM_Sprite *p_PLATFORM_sprite) {
+        Sprite *p_sprite) {
+    PLATFORM_Sprite *p_PLATFORM_sprite =
+        p_sprite->p_PLATFORM_sprite;
     memset(((u8*)p_PLATFORM_sprite) + sizeof(Serialization_Header),
             0,
             sizeof(PLATFORM_Sprite) - sizeof(Serialization_Header));

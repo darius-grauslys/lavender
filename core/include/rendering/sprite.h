@@ -12,6 +12,14 @@ void initialize_sprite(
         Texture_Flags texture_flags_for__sprite);
 
 static inline
+void set_frame_index_of__sprite(
+        Sprite *p_sprite,
+        Index__u8 index_of__frame__u8) {
+    p_sprite->sprite__index_of__frame =
+        index_of__frame__u8;
+}
+
+static inline
 bool is_sprite__deallocated(Sprite *p_sprite) {
     return IS_DEALLOCATED_P(p_sprite);
 }
@@ -35,11 +43,21 @@ bool set_sprite_as__disabled(Sprite *p_sprite) {
 }
 
 static inline
-void set_frame_index_of__sprite(
-        Sprite *p_sprite,
-        Index__u8 index_of__frame__u8) {
-    p_sprite->sprite__index_of__frame =
-        index_of__frame__u8;
+bool is_sprite__needing_graphics_update(Sprite *p_sprite) {
+    return p_sprite->sprite_flags__u8 
+        & SPRITE_FLAG__BIT_IS_NEEDING_GRAPHICS_UPDATE;
+}
+
+static inline
+bool set_sprite_as__needing_graphics_update(Sprite *p_sprite) {
+    return p_sprite->sprite_flags__u8 |=
+        SPRITE_FLAG__BIT_IS_NEEDING_GRAPHICS_UPDATE;
+}
+
+static inline
+bool set_sprite_as__NOT_needing_graphics_update(Sprite *p_sprite) {
+    return p_sprite->sprite_flags__u8 &=
+        ~SPRITE_FLAG__BIT_IS_NEEDING_GRAPHICS_UPDATE;
 }
 
 #endif

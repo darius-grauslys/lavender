@@ -71,6 +71,7 @@ typedef struct GL_Framebuffer_t {
 #define MAX_QUANTITY_OF__FRAMEBUFFERS 64
 
 typedef struct GL_Framebuffer_Manager_t {
+    GL_Framebuffer GL_framebuffer__post_processing;
     GL_Framebuffer GL_framebuffers[MAX_QUANTITY_OF__FRAMEBUFFERS];
     GL_Framebuffer *GL_ptr_array__framebuffer_stack[
         MAX_QUANTITY_OF__FRAMEBUFFERS];

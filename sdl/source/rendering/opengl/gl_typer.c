@@ -44,13 +44,17 @@ static void GL_put_char_in__typer_for__texture(
                 letter);
 
     float width__f = 
-        (float)p_PLATFORM_texture
+        (float)p_typer
+        ->p_font
+        ->p_PLATFORM_texture_of__font
         ->width
         / p_font_letter
             ->width_of__font_letter
         ;
     float height__f = 
-        (float)p_PLATFORM_texture
+        (float)p_typer
+        ->p_font
+        ->p_PLATFORM_texture_of__font
         ->height
         / p_font_letter
             ->height_of__font_letter
@@ -70,14 +74,18 @@ static void GL_put_char_in__typer_for__texture(
             p_typer->p_font->p_PLATFORM_texture_of__font);
 
     float max_width__f = 
-        (float)p_PLATFORM_texture
+        (float)p_typer
+        ->p_font
+        ->p_PLATFORM_texture_of__font
         ->width
         / p_typer
             ->p_font
             ->max_width_of__font_letter
         ;
     float max_height__f = 
-        (float)p_PLATFORM_texture
+        (float)p_typer
+        ->p_font
+        ->p_PLATFORM_texture_of__font
         ->height
         / p_typer
             ->p_font
@@ -130,23 +138,41 @@ void GL_put_char_in__typer(
         Gfx_Context *p_gfx_context,
         Typer *p_typer,
         unsigned char letter) {
+
+    GL_Framebuffer_Manager *p_GL_framebuffer_manager =
+        GL_get_p_framebuffer_manager_from__PLATFORM_gfx_context(
+                get_p_PLATFORM_gfx_context_from__gfx_context(p_gfx_context));
+
+    GL_Framebuffer *p_GL_framebuffer;
+
     if (is_typer_targetting__PLATFORM_texture(p_typer)) {
+
+        p_GL_framebuffer =
+            &p_GL_framebuffer_manager
+            ->GL_framebuffer__post_processing;
+
+        GL_push_framebuffer_onto__framebuffer_manager(
+                p_GL_framebuffer_manager,
+                p_GL_framebuffer);
+        GL_bind_texture_to__framebuffer(
+                p_GL_framebuffer, 
+                p_typer->p_PLATFORM_texture__typer_target);
+
         GL_put_char_in__typer_for__texture(
                 p_gfx_context, 
                 p_typer->p_PLATFORM_texture__typer_target,
                 p_typer, 
                 letter);
+
+        GL_pop_framebuffer_off_of__framebuffer_manager(
+                p_GL_framebuffer_manager);
         return;
     }
 
     PLATFORM_Graphics_Window *p_PLATFORM_graphics_window =
         p_typer->p_PLATFORM_graphics_window__typer_target;
 
-    GL_Framebuffer_Manager *p_GL_framebuffer_manager =
-        GL_get_p_framebuffer_manager_from__PLATFORM_gfx_context(
-                get_p_PLATFORM_gfx_context_from__gfx_context(p_gfx_context));
-
-    GL_Framebuffer *p_GL_framebuffer =
+    p_GL_framebuffer =
         p_PLATFORM_graphics_window
         ->p_SDL_graphics_window__data;
 

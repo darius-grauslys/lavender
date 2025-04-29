@@ -457,13 +457,14 @@ typedef uint8_t Sprite_Flags;
 
 #define SPRITE_FLAGS__NONE 0
 
-#define SPRITE_FLAG__BIT_SHIFT_IS_ENABLED 0
-#define SPRITE_FLAG__BIT_IS_ENABLED BIT(\
-        SPRITE_FLAG__BIT_SHIFT_IS_ENABLED)
+#define SPRITE_FLAG__BIT_IS_ENABLED BIT(0)
+#define SPRITE_FLAG__BIT_IS_NEEDING_GRAPHICS_UPDATE BIT(1)
 
 typedef struct Sprite_t {
     Serialization_Header _serialization_header;
     PLATFORM_Sprite *p_PLATFORM_sprite;
+    PLATFORM_Texture *p_PLATFORM_texture_for__sprite_to__sample;
+    PLATFORM_Texture *p_PLATFORM_texture_of__sprite;
     Timer__u32 animation_timer__u32;
     Sprite_Animation_Kind the_kind_of_animation__this_sprite_has;
     Sprite_Kind the_kind_of__sprite;

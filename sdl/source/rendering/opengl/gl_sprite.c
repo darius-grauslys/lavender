@@ -6,6 +6,7 @@
 #include "rendering/gfx_context.h"
 #include "rendering/opengl/gl_defines.h"
 #include "rendering/opengl/gl_framebuffer.h"
+#include "rendering/opengl/gl_framebuffer_manager.h"
 #include "rendering/opengl/gl_numerics.h"
 #include "rendering/opengl/gl_shader.h"
 #include "rendering/opengl/gl_shader_manager.h"
@@ -14,6 +15,8 @@
 #include "rendering/opengl/gl_vertex_object.h"
 #include "rendering/opengl/gl_viewport.h"
 #include "rendering/opengl/glad/glad.h"
+#include "rendering/sprite.h"
+#include "types/implemented/graphics_window_kind.h"
 #include "vectors.h"
 #include <rendering/opengl/gl_sprite.h>
 #include <rendering/opengl/gl_gfx_sub_context.h>
@@ -38,6 +41,120 @@ void GL_initialize_sprite(
             &p_GL_sprite->GL_vertex_object,
             width,
             height);
+}
+
+void GL_update_sprite(
+        Gfx_Context *p_gfx_context,
+        Graphics_Window *p_gfx_window,
+        Sprite *p_sprite) {
+    GL_Gfx_Sub_Context *p_GL_gfx_sub_context =
+        GL_get_p_gfx_sub_context_from__PLATFORM_gfx_context(
+                get_p_PLATFORM_gfx_context_from__gfx_context(
+                    p_gfx_context));
+    GL_Framebuffer_Manager *p_GL_framebuffer_manager =
+        GL_get_p_framebuffer_manager_from__PLATFORM_gfx_context(
+                get_p_PLATFORM_gfx_context_from__gfx_context(p_gfx_context));
+    GL_Framebuffer *p_GL_framebuffer =
+        (GL_Framebuffer*)p_gfx_window
+        ->p_PLATFORM_gfx_window
+        ->p_SDL_graphics_window__data
+        ;
+    GL_Viewport_Stack *p_GL_viewport_stack =
+        GL_get_p_viewport_stack_from__PLATFORM_gfx_context(
+                p_gfx_context
+                ->p_PLATFORM_gfx_context);
+    GL_Shader_2D *p_GL_shader__passthrough=
+        GL_get_shader_from__shader_manager(
+                GL_get_p_shader_manager_from__PLATFORM_gfx_context(
+                    get_p_PLATFORM_gfx_context_from__gfx_context(
+                        p_gfx_context)), 
+                shader_string__passthrough);
+    GL_push_framebuffer_onto__framebuffer_manager(
+            p_GL_framebuffer_manager,
+            p_GL_framebuffer);
+    GL_bind_texture_to__framebuffer(
+            p_GL_framebuffer, 
+            p_sprite
+            ->p_PLATFORM_texture_of__sprite
+            );
+
+    use_shader_2d(
+            p_GL_shader__passthrough);
+    use_vertex_object(&p_GL_gfx_sub_context->GL_vertex_object__unit_square);
+    PLATFORM_use_texture(
+            p_gfx_context
+            ->p_PLATFORM_gfx_context,
+            p_sprite
+            ->p_PLATFORM_texture_for__sprite_to__sample);
+
+    float width__f = 
+        (float)((float)p_sprite
+                ->p_PLATFORM_texture_for__sprite_to__sample
+        ->width
+        / p_sprite
+        ->p_PLATFORM_texture_of__sprite
+        ->width);
+        ;
+    float height__f = 
+        (float)((float)p_sprite
+                ->p_PLATFORM_texture_for__sprite_to__sample
+        ->height
+        / p_sprite
+        ->p_PLATFORM_texture_of__sprite
+        ->height);
+        ;
+
+    float width_of__uv  = 1.0 / (width__f);
+    float height_of__uv = 1.0 / (height__f);
+
+    u32 quantity_of__sprite_frame__columns = 
+        p_sprite
+        ->p_PLATFORM_texture_for__sprite_to__sample
+        ->width
+        / p_sprite
+        ->p_PLATFORM_texture_of__sprite
+        ->width;
+    u32 quantity_of__sprite_frame__rows =
+        p_sprite
+        ->p_PLATFORM_texture_for__sprite_to__sample
+        ->height
+        / p_sprite
+        ->p_PLATFORM_texture_of__sprite
+        ->height;
+
+    Index__u8 index_of__frame__column =
+        p_sprite->sprite__index_of__frame
+        % quantity_of__sprite_frame__columns;
+    Index__u8 index_of__frame__row =
+        p_sprite->sprite__index_of__frame
+        / quantity_of__sprite_frame__columns;
+
+    GL_push_viewport(
+            p_GL_viewport_stack, 
+            0, 0,
+            p_sprite
+            ->p_PLATFORM_texture_of__sprite
+            ->width,
+            p_sprite
+            ->p_PLATFORM_texture_of__sprite
+            ->height);
+
+    glDisable(GL_DEPTH_TEST);
+    GL_render_with__shader__passthrough_using__index_sampling(
+            p_GL_shader__passthrough, 
+            index_of__frame__column,
+            index_of__frame__row,
+            width_of__uv, 
+            height_of__uv,
+            false,
+            false);
+    glEnable(GL_DEPTH_TEST);
+
+    GL_pop_viewport(p_GL_viewport_stack);
+    GL_pop_framebuffer_off_of__framebuffer_manager(
+            p_GL_framebuffer_manager);
+
+    set_sprite_as__NOT_needing_graphics_update(p_sprite);
 }
 
 void GL_release_sprite_vertext_object(
@@ -72,6 +189,9 @@ void GL_render_sprite(
         GL_get_p_gfx_sub_context_from__PLATFORM_gfx_context(
                 get_p_PLATFORM_gfx_context_from__gfx_context(
                     p_gfx_context));
+    GL_Framebuffer_Manager *p_GL_framebuffer_manager =
+        GL_get_p_framebuffer_manager_from__PLATFORM_gfx_context(
+                get_p_PLATFORM_gfx_context_from__gfx_context(p_gfx_context));
     PLATFORM_Sprite *p_PLATFORM_sprite =
         p_sprite
         ->p_PLATFORM_sprite
@@ -82,13 +202,6 @@ void GL_render_sprite(
                     get_p_PLATFORM_gfx_context_from__gfx_context(
                         p_gfx_context)), 
                 shader_string__sprite);
-
-    GL_Shader_2D *p_GL_shader__passthrough=
-        GL_get_shader_from__shader_manager(
-                GL_get_p_shader_manager_from__PLATFORM_gfx_context(
-                    get_p_PLATFORM_gfx_context_from__gfx_context(
-                        p_gfx_context)), 
-                shader_string__passthrough);
 
     Camera *p_SDL_camera__active =
         p_gfx_window
@@ -104,83 +217,13 @@ void GL_render_sprite(
                 p_gfx_context
                 ->p_PLATFORM_gfx_context);
 
-    GL_use_framebuffer_as__target(
-            p_GL_framebuffer);
-    GL_bind_texture_to__framebuffer(
-            p_GL_framebuffer, 
-            p_sprite
-            ->p_PLATFORM_sprite
-            ->p_PLATFORM_texture_of__sprite
-            );
-
-    use_shader_2d(
-            p_GL_shader__passthrough);
-    use_vertex_object(&p_GL_gfx_sub_context->GL_vertex_object__unit_square);
-    PLATFORM_use_texture(
-            p_gfx_context
-            ->p_PLATFORM_gfx_context,
-            p_PLATFORM_sprite
-            ->p_PLATFORM_texture_for__sprite_to__sample);
-
-    float width__f = 
-        (float)((float)p_sprite
-                ->p_PLATFORM_sprite
-                ->p_PLATFORM_texture_for__sprite_to__sample
-        ->width
-        / p_sprite
-        ->p_PLATFORM_sprite
-        ->p_PLATFORM_texture_of__sprite
-        ->width);
-        ;
-    float height__f = 
-        (float)((float)p_sprite
-                ->p_PLATFORM_sprite
-                ->p_PLATFORM_texture_for__sprite_to__sample
-        ->height
-        / p_sprite
-        ->p_PLATFORM_sprite
-        ->p_PLATFORM_texture_of__sprite
-        ->height);
-        ;
-
-    float width_of__uv  = 1.0 / (width__f);
-    float height_of__uv = 1.0 / (height__f);
-
-    Index__u8 index_of__frame__column =
-        p_sprite->sprite__index_of__frame
-        % p_sprite
-        ->p_PLATFORM_sprite
-        ->quantity_of__sprite_frame__columns;
-    Index__u8 index_of__frame__row =
-        p_sprite->sprite__index_of__frame
-        / p_sprite
-        ->p_PLATFORM_sprite
-        ->quantity_of__sprite_frame__columns;
-
-    GL_push_viewport(
-            p_GL_viewport_stack, 
-            0, 0,
-            p_sprite
-            ->p_PLATFORM_sprite
-            ->p_PLATFORM_texture_of__sprite
-            ->width,
-            p_sprite
-            ->p_PLATFORM_sprite
-            ->p_PLATFORM_texture_of__sprite
-            ->height);
-
-    glDisable(GL_DEPTH_TEST);
-    GL_render_with__shader__passthrough_using__index_sampling(
-            p_GL_shader__passthrough, 
-            index_of__frame__column,
-            index_of__frame__row,
-            width_of__uv, 
-            height_of__uv,
-            false,
-            false);
-    glEnable(GL_DEPTH_TEST);
-
-    GL_pop_viewport(p_GL_viewport_stack);
+    if (is_sprite__needing_graphics_update(
+                p_sprite)) {
+        GL_update_sprite(
+                p_gfx_context, 
+                p_gfx_window, 
+                p_sprite);
+    }
 
     GL_push_viewport(
             p_GL_viewport_stack, 
@@ -194,7 +237,8 @@ void GL_render_sprite(
             ->p_SDL_graphics_window__texture
             ->height);
 
-    GL_use_framebuffer_as__target(
+    GL_push_framebuffer_onto__framebuffer_manager(
+            p_GL_framebuffer_manager,
             p_GL_framebuffer);
     GL_bind_texture_to__framebuffer(
             p_GL_framebuffer, 
@@ -220,7 +264,7 @@ void GL_render_sprite(
     PLATFORM_use_texture(
             p_gfx_context
             ->p_PLATFORM_gfx_context,
-            p_PLATFORM_sprite
+            p_sprite
             ->p_PLATFORM_texture_of__sprite);
     glUniform2f(
             p_GL_shader__sprite
@@ -244,5 +288,6 @@ void GL_render_sprite(
     glEnable(GL_DEPTH_TEST);
 
     GL_pop_viewport(p_GL_viewport_stack);
-    GL_unbind_framebuffer();
+    GL_pop_framebuffer_off_of__framebuffer_manager(
+            p_GL_framebuffer_manager);
 }
