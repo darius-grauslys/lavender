@@ -53,13 +53,12 @@ void register_scene_into__scene_manager(
 Scene *get_p_scene_from__scene_manager(
         Scene_Manager *p_scene_manager,
         Scene_Kind the_kind_of__scene) {
-#ifndef NDEBUG
     if (the_kind_of__scene >= Scene_Kind__Unknown) {
-        debug_error("get_scene_ptr_from__scene_manager, the_kind_of__scene >= Scene_Kind__Unknown.", 
-                the_kind_of__scene);
+        if (the_kind_of__scene > Scene_Kind__Unknown) {
+            debug_error("get_p_scene_from__scene_manager, invalid scene kind received, returning null.");
+        }
         return 0;
     }
-#endif
     return &p_scene_manager->scenes[the_kind_of__scene];
 }
 
@@ -73,8 +72,8 @@ void set_active_scene_for__scene_manager(
     if (p_scene_manager->p_active_scene) {
         p_scene_manager->p_active_scene->is_active = false;
     }
+    p_scene_manager->p_active_scene = p_scene;
     if (p_scene) {
-        p_scene_manager->p_active_scene = p_scene;
         p_scene->is_active = true;
     }
 }
