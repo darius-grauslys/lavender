@@ -241,6 +241,32 @@ void m_ui_element__transformed_handler__text(
             get_height_u32_of__hitbox_aabb(p_hitbox_aabb));
 }
 
+void m_ui_element__transformed_handler__text__centered(
+        UI_Element *p_this_ui_element,
+        Hitbox_AABB *p_hitbox_aabb,
+        Game *p_game,
+        Graphics_Window *p_graphics_window) {
+    set_typer__position(
+            get_p_typer_of__ui_text(p_this_ui_element),
+            add_vectors__3i32(
+                get_position_3i32_of__hitbox_aabb(
+                p_hitbox_aabb),
+                get_vector__3i32(
+                    (get_width_u32_of__hitbox_aabb(p_hitbox_aabb) >> 1)
+                    - (p_this_ui_element->size_of__char_buffer
+                        * (p_this_ui_element->typer
+                            .p_font->max_width_of__font_letter >> 1)),
+                    -((get_height_u32_of__hitbox_aabb(p_hitbox_aabb) >> 1)
+                        - (p_this_ui_element->typer
+                            .p_font->max_height_of__font_letter >> 1)),
+                    0)));
+
+    set_typer__bounding_box_size(
+            get_p_typer_of__ui_text(p_this_ui_element),
+            get_width_u32_of__hitbox_aabb(p_hitbox_aabb), 
+            get_height_u32_of__hitbox_aabb(p_hitbox_aabb));
+}
+
 void m_ui_element__dispose_handler__text(
         UI_Element *p_this_ui_element,
         Game *p_game,
