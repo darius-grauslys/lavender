@@ -24,14 +24,14 @@ void m_ui_slider__dragged_handler__gfx_window__default(
         Game *p_game,
         Graphics_Window *p_graphics_window);
 
-void m_ui_slider__dispose_handler__default(
-        UI_Element *p_this_slider,
-        Game *p_game,
-        Graphics_Window *p_graphics_window);
-
 void m_ui_slider__transformed_handler__default(
         UI_Element *p_this_ui_element,
         Hitbox_AABB *p_hitbox_aabb,
+        Game *p_game,
+        Graphics_Window *p_graphics_window);
+
+void m_ui_slider__dispose_handler__gfx_window__default(
+        UI_Element *p_this_draggable,
         Game *p_game,
         Graphics_Window *p_graphics_window);
 
@@ -50,10 +50,10 @@ i32F20 get_percentage_i32F20_from__ui_slider(
     return i32_to__i32F20(
             p_ui_slider->slider__distance__u32)
         / (is_ui_element__snapped_x_or_y_axis(p_ui_slider)
-        ? get_height_from__p_ui_element(
+        ? get_width_from__p_ui_element(
             p_hitbox_aabb_manager, 
             p_ui_slider)
-        : get_width_from__p_ui_element(
+        : get_height_from__p_ui_element(
             p_hitbox_aabb_manager, 
             p_ui_slider)
         );

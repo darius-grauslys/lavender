@@ -6,6 +6,20 @@
 #include "ui/ui_element.h"
 #include "ui/ui_text.h"
 
+static inline
+void initialize_ui_text_box__default_handlers(
+        UI_Element *p_ui_text_box) {
+    set_ui_element__clicked_handler(
+            p_ui_text_box, 
+            m_ui_element__clicked_handler__text_box);
+    set_ui_element__compose_handler(
+            p_ui_text_box, 
+            m_ui_element__compose_handler__text_box);
+    set_ui_element__typed_handler(
+            p_ui_text_box, 
+            m_ui_element__typed_handler__text_box);
+}
+
 void initialize_ui_element_as__text_box_with__const_c_str(
         UI_Element *p_ui_text_box,
         Font *p_font,
@@ -17,15 +31,8 @@ void initialize_ui_element_as__text_box_with__const_c_str(
             p_text__const_c_str,
             size_of__text);
 
-    set_ui_element__clicked_handler(
-            p_ui_text_box, 
-            m_ui_element__clicked_handler__text_box);
-    set_ui_element__compose_handler(
-            p_ui_text_box, 
-            m_ui_element__compose_handler__text_box);
-    set_ui_element__typed_handler(
-            p_ui_text_box, 
-            m_ui_element__typed_handler__text_box);
+    initialize_ui_text_box__default_handlers(
+            p_ui_text_box);
 }
 
 ///
@@ -42,15 +49,21 @@ void initialize_ui_element_as__text_box_with__pM_c_str(
             pM_text__c_str,
             size_of__text);
 
-    set_ui_element__clicked_handler(
-            p_ui_text_box, 
-            m_ui_element__clicked_handler__text_box);
-    set_ui_element__compose_handler(
-            p_ui_text_box, 
-            m_ui_element__compose_handler__text_box);
-    set_ui_element__typed_handler(
-            p_ui_text_box, 
-            m_ui_element__typed_handler__text_box);
+    initialize_ui_text_box__default_handlers(
+            p_ui_text_box);
+}
+
+void initialize_ui_element_as__text_box_with__buffer_size(
+        UI_Element *p_ui_text_box,
+        Font *p_font,
+        Quantity__u32 size_of__text) {
+    initialize_ui_element_as__text_with__buffer_size(
+            p_ui_text_box,
+            p_font,
+            size_of__text);
+
+    initialize_ui_text_box__default_handlers(
+            p_ui_text_box);
 }
 
 void m_ui_element__clicked_handler__text_box(

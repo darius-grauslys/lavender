@@ -232,15 +232,14 @@ void GL_render_gfx_window(
     PLATFORM_Gfx_Context *p_PLATFORM_gfx_context =
         get_p_PLATFORM_gfx_context_from__gfx_context(p_gfx_context);
 
-    // TODO: make and use shader_string__ui along with it's shader.
-    GL_Shader_2D *p_GL_shader__passthrough =
+    GL_Shader_2D *p_GL_shader__graphics_window =
         GL_get_shader_from__shader_manager(
                 GL_get_p_shader_manager_from__PLATFORM_gfx_context(
                     p_PLATFORM_gfx_context),
-                shader_string__passthrough);
+                shader_string__graphics_window);
 
-    if (!p_GL_shader__passthrough) {
-        debug_error("SDL::GL::GL_render_gfx_window, p_GL_shader == 0.");
+    if (!p_GL_shader__graphics_window) {
+        debug_error("SDL::GL::GL_render_gfx_window, p_GL_shader__graphics_window == 0.");
         set_graphics_window_as__disabled(p_gfx_window);
         debug_warning("p_gfx_window disabled.");
         return;
@@ -254,7 +253,7 @@ void GL_render_gfx_window(
                 p_PLATFORM_gfx_context)
             ->GL_vertex_object__unit_square);
 
-    use_shader_2d(p_GL_shader__passthrough);
+    use_shader_2d(p_GL_shader__graphics_window);
     PLATFORM_use_texture(
             p_PLATFORM_gfx_context,
             p_PLATFORM_graphics_window
@@ -299,14 +298,16 @@ void GL_render_gfx_window(
             ;
     }
 
-    GL_render_with__shader__passthrough_using__coordinate_sampling(
-            p_GL_shader__passthrough, 
-            x,
-            y, 
-            width_of__uv, 
-            height_of__uv,
-            false,
-            false);
+    GL_link_data_to__shader_with__scale_to__viewport(
+            get_p_PLATFORM_gfx_context_from__gfx_context(
+                p_gfx_context), 
+            p_GL_shader__graphics_window, 
+            0, 
+            vector_3i32_to__vector_3i32F4(
+                get_position_3i32_of__graphics_window(
+                    p_gfx_window)));
+
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 }
 
 void GL_release_gfx_window(

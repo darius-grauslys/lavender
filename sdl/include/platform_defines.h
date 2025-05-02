@@ -7,11 +7,11 @@
 
 #ifdef _WIN32
 #ifndef PATH_SEPERATOR
-#define PATH_SEPERATOR "\\"
+#define PATH_SEPERATOR '\\'
 #endif
 #else
 #ifndef PATH_SEPERATOR
-#define PATH_SEPERATOR "/"
+#define PATH_SEPERATOR '/'
 #endif
 #endif
 

@@ -43,6 +43,9 @@ Entity *get_p_entity_from__world_using__3i32F4(
         World *p_world,
         Vector__3i32F4 position__3i32F4);
 
+void set_name_of__world(
+        World *p_world,
+        World_Name_String name_of__world);
 
 static inline
 Camera *get_p_camera_from__world(World *p_world) {

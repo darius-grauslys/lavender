@@ -1435,6 +1435,10 @@ typedef struct UI_Element_t {
             ///
             Index__u32 index_of__cursor_in__char_buffer;
         };
+        struct { // UI_Window
+            // lifetime does not exceed ui_window's.
+            Graphics_Window *p_ui_window__graphics_window;
+        };
     };
     UI_Flags__u16           ui_flags;
     UI_Element_Data         ui_element_data;
@@ -1476,6 +1480,7 @@ typedef struct UI_Manager_t {
     Repeatable_Psuedo_Random randomizer;
     UI_Element *p_ui_element__focused;
     UI_Element **p_ptr_of__ui_element__latest_in_ptr_array;
+    Index__u8 ui_manager__allocation_index;
 } UI_Manager;
 
 typedef struct UI_Context_t UI_Context;

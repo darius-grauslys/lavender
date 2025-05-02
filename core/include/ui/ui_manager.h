@@ -12,6 +12,12 @@ void poll_ui_manager__update(
         Game *p_game,
         Graphics_Window *p_graphics_window);
 
+void update_ui_manager_origin__relative_to(
+        Game *p_game,
+        UI_Manager *p_ui_manager,
+        Vector__3i32 position__old__3i32,
+        Vector__3i32 position__new__3i32);
+
 void set_ui_element_priority_higher_than__this_ui_element_in__ui_manager(
         UI_Manager *p_ui_manager,
         UI_Element *p_ui_element__higher_priority,

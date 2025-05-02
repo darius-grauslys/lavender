@@ -12,6 +12,7 @@ typedef enum UI_Element_Kind {
     UI_Element_Kind__Text,
     UI_Element_Kind__Text_Box,
     UI_Element_Kind__Logical,
+    UI_Element_Kind__Window,
     UI_Element_Kind__Unknown
 } UI_Element_Kind;
 

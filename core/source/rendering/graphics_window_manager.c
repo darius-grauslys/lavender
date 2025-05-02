@@ -10,6 +10,8 @@
 #include "serialization/serialization_header.h"
 #include "ui/ui_context.h"
 #include "ui/ui_manager.h"
+#include "ui/ui_tile_map.h"
+#include "ui/ui_tile_map_manager.h"
 #include "util/bitmap/bitmap.h"
 #include "world/camera.h"
 #include "world/world.h"
@@ -153,12 +155,15 @@ void set_graphics_window_as__parent_to__this_graphics_window(
 }
 
 void release_graphics_window_from__graphics_window_manager(
-        Gfx_Context *p_gfx_context,
+        Game *p_game,
         Graphics_Window *p_graphics_window) {
+    Gfx_Context *p_gfx_context =
+        get_p_gfx_context_from__game(p_game);
+
     if (is_graphics_window_possessing__a_child(
                 p_graphics_window)) {
         release_graphics_window_from__graphics_window_manager(
-                p_gfx_context, 
+                p_game,
                 p_graphics_window);
     }
     
@@ -170,7 +175,9 @@ void release_graphics_window_from__graphics_window_manager(
                 p_graphics_window);
     if (p_ui_manager) {
         release_p_ui_manager_from__ui_context(
+                p_game,
                 get_p_ui_context_from__gfx_context(p_gfx_context), 
+                p_graphics_window,
                 p_ui_manager);
     }
     Sprite_Manager *p_sprite_manager =
@@ -181,6 +188,16 @@ void release_graphics_window_from__graphics_window_manager(
                 p_gfx_context,
                 p_sprite_manager);
     }
+    if (is_ui_tile_map__wrapper__valid(
+                get_ui_tile_map_from__graphics_window(
+                    p_graphics_window))) {
+        release_ui_tile_map_with__ui_tile_map_manager(
+                get_p_ui_tile_map_manager_from__gfx_context(
+                    p_gfx_context), 
+                get_ui_tile_map_from__graphics_window(
+                    p_graphics_window));
+    }
+    DEALLOCATE_P(p_graphics_window);
     initialize_graphics_window(
             p_graphics_window);
 }

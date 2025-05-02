@@ -353,6 +353,7 @@ enum UI_Element_Kind {
     UI_Element_Kind__Text,
     UI_Element_Kind__Text_Box,
     UI_Element_Kind__Logical,
+    UI_Element_Kind__Window,
     UI_Element_Kind__Unknown
 };
 #endif
@@ -493,8 +494,15 @@ typedef enum Lavender_Type {
     Lavender_Type__Collision_Node,
     Lavender_Type__Global_Space,
 
-    Lavender_Type__Unknown = 0b111111 // not expecting more than 63 types.
+    Lavender_Type__Unknown = 0b111111, // not expecting more than 63 types.
 } Lavneder_Type;
+
+#define UUID_BRANDING__BIT_SHIFT__INDEX 20
+#define UUID_BRANDING__BIT_SHIFT__TYPE 26
+#define UUID_BRANDING__MASK ((Lavender_Type__Unknown << \
+            UUID_BRANDING__BIT_SHIFT__TYPE) \
+            | (0b111111 << \
+                UUID_BRANDING__BIT_SHIFT__INDEX))
 
 typedef struct Game_t Game;
 typedef struct Game_Action_t Game_Action;

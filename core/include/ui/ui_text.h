@@ -19,6 +19,11 @@ void initialize_ui_element_as__text_with__pM_c_str(
         char *pM_text__c_str,
         Quantity__u32 size_of__text);
 
+void initialize_ui_element_as__text_with__buffer_size(
+        UI_Element *p_ui_text,
+        Font *p_font,
+        Quantity__u32 size_of__text);
+
 void set_c_str_of__ui_text_with__const_c_str(
         UI_Element *p_ui_text,
         const char *p_text__const_c_str,

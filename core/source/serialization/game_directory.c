@@ -29,3 +29,17 @@ Index__u32 stat_game_data_file(
     
     return index_of__path_append;
 }
+
+void append_path(
+        IO_path p_path,
+        IO_path p_appended_path) {
+    Index__u32 length_of__path =
+        strnlen(p_path, MAX_LENGTH_OF__IO_PATH);
+    if (length_of__path >= MAX_LENGTH_OF__IO_PATH)
+        return;
+    p_path[length_of__path] = PATH_SEPERATOR;
+
+    strncpy(&p_path[length_of__path+1],
+            p_appended_path,
+            MAX_LENGTH_OF__IO_PATH - length_of__path - 1);
+}

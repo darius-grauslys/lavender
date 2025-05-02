@@ -345,6 +345,13 @@ bool PLATFORM_set_position_in__file(
         Index__u32 position_in__file_u32,
         void *p_file_handler);
 
+Quantity__u32 PLATFORM_get_directories(
+        PLATFORM_File_System_Context *p_PLATFORM_file_system_context,
+        IO_path path,
+        char *p_directory_name__buffer,
+        Quantity__u32 size_of__directory_name__buffer,
+        Quantity__u32 max_length_of__directory_name);
+
 ///
 /// SECTION_input
 ///

@@ -38,6 +38,18 @@ void set_ui_tile_map__wrapper__utilized_size(
         Quantity__u32 width__u32,
         Quantity__u32 height__u32);
 
+void fill_ui_tile_map(
+        UI_Tile_Map__Wrapper ui_tile_map__wrapper,
+        UI_Tile ui_tile);
+
+void fill_ui_tile_map_in__this_region(
+        UI_Tile_Map__Wrapper ui_tile_map__wrapper,
+        UI_Tile ui_tile,
+        Index__u32 index_x__start,
+        Index__u32 index_y__start,
+        Quantity__u32 width,
+        Quantity__u32 height);
+
 static inline
 bool is_ui_tile_map_flags__allocated(
         UI_Tile_Map__Flags ui_tile_map__flags) {

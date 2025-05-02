@@ -76,7 +76,9 @@ PLATFORM_Texture *allocate_p_PLATFORM_texture_with__alias(
                 (Serialization_Header*)p_aliased_texture_manager->aliased_textures, 
                 MAX_QUANTITY_OF__ALIASED_TEXTURES, 
                 &p_aliased_texture_manager->repeatable_psuedo_random_for__texture_uuid, 
-                Lavender_Type__Aliased_Texture);
+                GET_UUID_BRANDING(
+                    Lavender_Type__Aliased_Texture,
+                    0));
     if (!p_aliased_texture__available) {
         debug_error("allocate_p_PLATFORM_texture_with__alias, too many aliased textures are allocated.");
         return 0;
@@ -128,7 +130,9 @@ PLATFORM_Texture *load_p_PLATFORM_texture_from__path_with__alias(
                 (Serialization_Header*)p_aliased_texture_manager->aliased_textures, 
                 MAX_QUANTITY_OF__ALIASED_TEXTURES, 
                 &p_aliased_texture_manager->repeatable_psuedo_random_for__texture_uuid, 
-                Lavender_Type__Aliased_Texture);
+                GET_UUID_BRANDING(
+                    Lavender_Type__Aliased_Texture,
+                    0));
     if (!p_aliased_texture__available) {
         debug_error("load_p_PLATFORM_texture_from__path_with__alias, too many aliased textures are allocated.");
         return 0;

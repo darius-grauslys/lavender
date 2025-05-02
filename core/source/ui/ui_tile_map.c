@@ -100,6 +100,61 @@ void set_ui_tile_map__wrapper__utilized_size(
     p_ui_tile_map__wrapper->height_of__ui_tile_map = height__u32;
 }
 
+void fill_ui_tile_map(
+        UI_Tile_Map__Wrapper ui_tile_map__wrapper,
+        UI_Tile ui_tile) {
+    for (Index__u32 index_of__y = 0;
+            index_of__y
+            < ui_tile_map__wrapper.height_of__ui_tile_map;
+            index_of__y++) {
+        for (Index__u32 index_of__x = 0;
+                index_of__x
+                < ui_tile_map__wrapper.width_of__ui_tile_map;
+                index_of__x++) {
+            ui_tile_map__wrapper
+                .p_ui_tile_data[
+                index_of__x
+                    + index_of__y
+                    * ui_tile_map__wrapper
+                        .width_of__ui_tile_map] =
+                        get_ui_tile_raw_from__ui_tile(&ui_tile);
+        }
+    }
+}
+
+void fill_ui_tile_map_in__this_region(
+        UI_Tile_Map__Wrapper ui_tile_map__wrapper,
+        UI_Tile ui_tile,
+        Index__u32 index_x__start,
+        Index__u32 index_y__start,
+        Quantity__u32 width,
+        Quantity__u32 height) {
+    for (Index__u32 index_of__y = 0;
+            index_of__y < height;
+            index_of__y++) {
+        Index__u32 y = 
+            index_of__y
+            + index_y__start;
+        if (y > ui_tile_map__wrapper.height_of__ui_tile_map)
+            break;
+        for (Index__u32 index_of__x = 0;
+                index_of__x < width;
+                index_of__x++) {
+            Index__u32 x = 
+                index_of__x
+                + index_x__start;
+            if (x > ui_tile_map__wrapper.width_of__ui_tile_map)
+                break;
+            ui_tile_map__wrapper
+                .p_ui_tile_data[
+                x + y
+                * ui_tile_map__wrapper
+                    .width_of__ui_tile_map] =
+                    get_ui_tile_raw_from__ui_tile(&ui_tile);
+        }
+    }
+}
+
 void generate_ui_span_in__ui_tile_map(
         UI_Tile_Map__Wrapper ui_tile_map__wrapper,
         const UI_Tile_Span *p_ui_tile_span,

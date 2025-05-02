@@ -31,6 +31,8 @@ UI_Manager *allocate_p_ui_manager_from__ui_context(
             malloc(sizeof(UI_Manager));
 
         initialize_ui_manager(p_ui_manager);
+        p_ui_manager->ui_manager__allocation_index =
+            index_of__ui_manager;
 
         p_ui_context->pM_ui_managers[index_of__ui_manager] =
             p_ui_manager;
@@ -43,14 +45,44 @@ UI_Manager *allocate_p_ui_manager_from__ui_context(
 }
 
 void release_p_ui_manager_from__ui_context(
+        Game *p_game,
         UI_Context *p_ui_context,
+        Graphics_Window *p_graphics_window,
         UI_Manager *p_ui_manager) {
+#ifndef NDEBUG
+    if (!p_game) {
+        debug_error("release_p_ui_manager_from__ui_context, p_game == 0.");
+        return;
+    }
+    if (!p_ui_context) {
+        debug_error("release_p_ui_manager_from__ui_context, p_ui_context == 0.");
+        return;
+    }
+    if (!p_graphics_window) {
+        debug_error("release_p_ui_manager_from__ui_context, p_graphics_window == 0.");
+        return;
+    }
+    if (!p_ui_manager) {
+        debug_error("release_p_ui_manager_from__ui_context, p_ui_manager == 0.");
+        return;
+    }
+    if (p_ui_manager != get_p_ui_manager_from__graphics_window(
+                p_graphics_window)) {
+        debug_error("release_p_ui_manager_from__ui_context, p_ui_manager is not owned by this graphics window");
+        return;
+    }
+#endif
+
     for (Index__u32 index_of__ui_manager = 0;
             index_of__ui_manager
             < MAX_QUANTITY_OF__UI_MANAGERS;
             index_of__ui_manager++) {
         if (p_ui_context->pM_ui_managers[index_of__ui_manager]
                 == p_ui_manager) {
+            release_all__ui_elements_from__ui_manager(
+                    p_game, 
+                    p_graphics_window, 
+                    p_ui_manager);
             free(p_ui_context->pM_ui_managers[index_of__ui_manager]);
             p_ui_context->pM_ui_managers[index_of__ui_manager] = 0;
             return;
@@ -152,7 +184,7 @@ Graphics_Window *open_ui(
     if (!p_ui_manager) {
         debug_error("open_ui, p_ui_manager == 0.");
         release_graphics_window_from__graphics_window_manager(
-                p_gfx_context, 
+                p_game,
                 p_graphics_window);
         return false;
     }
@@ -228,9 +260,12 @@ void close_ui(
         if (is_graphics_window_with__ui_manager(
                     p_graphics_window)) {
             release_p_ui_manager_from__ui_context(
+                    p_game,
                     get_p_ui_context_from__gfx_context(
                         p_gfx_context), 
-                    p_graphics_window->p_ui_manager);
+                    p_graphics_window,
+                    get_p_ui_manager_from__graphics_window(
+                        p_graphics_window));
         }
     }
 }

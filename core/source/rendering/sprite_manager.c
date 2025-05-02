@@ -280,11 +280,5 @@ Sprite *get_p_sprite_by__uuid_from__sprite_manager(
                 MAX_QUANTITY_OF__SPRITES, 
                 uuid__u32);
 
-#ifndef NDEBUG
-    if (!p_sprite) {
-        debug_error("get_p_sprite_by__uuid_from__sprite_manager, p_sprite == 0.");
-    }
-#endif
-
     return p_sprite;
 }

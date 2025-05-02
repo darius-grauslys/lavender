@@ -20,7 +20,7 @@ void set_graphics_window_as__parent_to__this_graphics_window(
         Graphics_Window *p_graphics_window__child);
 
 void release_graphics_window_from__graphics_window_manager(
-        Gfx_Context *p_gfx_context,
+        Game *p_game,
         Graphics_Window *p_graphics_window);
 
 Graphics_Window *get_p_graphics_window_by__uuid_from__graphics_window_manager(

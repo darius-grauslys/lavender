@@ -46,7 +46,6 @@ void initialize_world(
             &p_world->repeatable_pseudo_random, 
             (u32)(u64)p_game);
 
-    // TODO: take world name in by world_parameters
     strncpy(p_world->name, "default_world", WORLD_NAME_MAX_SIZE_OF);
     p_world->length_of__world_name = strnlen(p_world->name, WORLD_NAME_MAX_SIZE_OF);
 
@@ -260,4 +259,11 @@ void m_process__deserialize_world(
             1, 
             p_serialization_request
             ->p_file_handler);
+}
+
+void set_name_of__world(
+        World *p_world,
+        World_Name_String name_of__world) {
+    strncpy(p_world->name, name_of__world, WORLD_NAME_MAX_SIZE_OF);
+    p_world->length_of__world_name = strnlen(p_world->name, WORLD_NAME_MAX_SIZE_OF);
 }

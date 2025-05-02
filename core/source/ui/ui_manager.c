@@ -275,6 +275,32 @@ UI_Element *detect_focus__strictly_under_cursor_in__ui_manager(
     return p_ui_element__focused;
 }
 
+void update_ui_manager_origin__relative_to(
+        Game *p_game,
+        UI_Manager *p_ui_manager,
+        Vector__3i32 position__old__3i32,
+        Vector__3i32 position__new__3i32) {
+    for (Index__u32 index_of__ui_element = 0;
+            index_of__ui_element
+            < MAX_QUANTITY_OF__UI_ELEMENTS;
+            index_of__ui_element++) {
+        UI_Element *p_ui_element =
+            get_p_ui_element_by__index_from__ui_manager(
+                    p_ui_manager, index_of__ui_element);
+
+        if (!p_ui_element)
+            break;
+        if (!is_ui_element__enabled(p_ui_element))
+            continue;
+
+        update_ui_element_origin__relative_to(
+                p_game,
+                p_ui_element,
+                position__old__3i32,
+                position__new__3i32);
+    }
+}
+
 void poll_ui_manager__update_for__drag(
         Game *p_game,
         Graphics_Window *p_graphics_window,
@@ -506,7 +532,9 @@ UI_Element *allocate_ui_element_from__ui_manager(
                 (Serialization_Header *)p_ui_manager->ui_elements, 
                 MAX_QUANTITY_OF__UI_ELEMENTS, 
                 &p_ui_manager->randomizer, 
-                Lavender_Type__UI_Element);
+                GET_UUID_BRANDING(
+                    Lavender_Type__UI_Element, 
+                    0b111111 & p_ui_manager->ui_manager__allocation_index));
 
 #ifndef NDEBUG
     if (!p_ui_element) {
@@ -688,7 +716,7 @@ void release_all__ui_elements_from__ui_manager(
         Game *p_game,
         Graphics_Window *p_graphics_window,
         UI_Manager *p_ui_manager) {
-    do {
+    while(!is_ui_manager__empty(p_ui_manager)) {
         release__ui_element_from__ui_manager(
                 p_game, 
                 p_graphics_window,
@@ -696,7 +724,7 @@ void release_all__ui_elements_from__ui_manager(
                 get_p_ui_element_by__index_from__ui_manager(
                     p_ui_manager, 
                     0));
-    } while(!is_ui_manager__empty(p_ui_manager));
+    }
 }
 
 Quantity__u16 get_ui_element__priority(

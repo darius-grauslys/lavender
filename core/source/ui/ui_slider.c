@@ -30,6 +30,9 @@ void initialize_ui_element_as__slider(
     set_ui_element__transformed_handler(
             p_ui_slider, 
             m_ui_slider__transformed_handler__default);
+    set_ui_element__dispose_handler(
+            p_ui_slider, 
+            m_ui_slider__dispose_handler__gfx_window__default);
 
     if (is_snapped_x_or_y__axis) {
         set_ui_element_as__snapped_x_axis(p_ui_slider);
@@ -48,7 +51,7 @@ void m_ui_slider__dragged_handler__default(
         Graphics_Window *p_graphics_window) {
     Input *p_input =
         get_p_input_from__game(p_game);
-    bool is_snapped_x_or_y__axis =
+    bool is_snapped_x_or__y_axis =
         is_ui_element__snapped_x_or_y_axis(p_this_draggable);
 
     Hitbox_AABB *p_hitbox_aabb =
@@ -63,7 +66,7 @@ void m_ui_slider__dragged_handler__default(
     }
 
     i32 cursor_position =
-        (is_snapped_x_or_y__axis)
+        (is_snapped_x_or__y_axis)
         ? clamp__i32(
                 p_input->cursor__3i32.x__i32
                 - get_x_i32_from__hitbox(p_hitbox_aabb)
@@ -83,6 +86,10 @@ void m_ui_slider__dragged_handler__default(
     p_this_draggable
         ->slider__distance__u32 = 
         cursor_position;
+
+    Vector__3i32 spanning_length__3i32 =
+        get_ui_slider__spanning_length(
+                p_this_draggable);
 
     m_ui_slider__transformed_handler__default(
             p_this_draggable, 
@@ -119,13 +126,13 @@ void m_ui_slider__transformed_handler__default(
             p_game, 
             p_graphics_window, 
             get_child_of__ui_element(p_this_ui_element), 
-            subtract_vectors__3i32(
+            add_vectors__3i32(
                 get_position_3i32_of__hitbox_aabb(p_hitbox_aabb), 
                 get_vector__3i32(
                     0,
-                    p_this_ui_element
-                    ->slider__distance__u32
-                    - (get_height_u32_of__hitbox_aabb(p_hitbox_aabb) >> 1),
+                    (get_height_u32_of__hitbox_aabb(p_hitbox_aabb) >> 1)
+                    - p_this_ui_element
+                    ->slider__distance__u32,
                     0)));
 }
 
@@ -133,72 +140,92 @@ void m_ui_slider__dragged_handler__gfx_window__default(
         UI_Element *p_this_draggable,
         Game *p_game,
         Graphics_Window *p_graphics_window) {
-    Graphics_Window *p_gfx_window_that__slider_owns =
-        get_p_graphics_window_by__uuid_from__graphics_window_manager(
-                get_p_graphics_window_manager_from__gfx_context(
-                    get_p_gfx_context_from__game(p_game)),
-                GET_UUID_P(p_this_draggable));
 
-    bool is_snapped_x_or__y_axis =
+    bool is_snapped_x_or_y__axis =
         is_ui_element__snapped_x_or_y_axis(p_this_draggable);
-
-    Vector__3i32 position_for__bgSetScroll =
-        get_origin_3i32_of__graphics_window(
-                p_gfx_window_that__slider_owns);
-
-    i32 *p_starting_distance =
-        (is_snapped_x_or__y_axis)
-        ? &position_for__bgSetScroll
-            .y__i32
-        : &position_for__bgSetScroll
-            .x__i32
-        ;
 
     Vector__3i32 spanning_length__3i32 =
         get_ui_slider__spanning_length(
                 p_this_draggable);
+
     i32 spanning_length =
-        (is_snapped_x_or__y_axis)
+        (is_snapped_x_or_y__axis)
         ? spanning_length__3i32.x__i32
         : spanning_length__3i32.y__i32
         ;
 
-    m_ui_slider__dragged_handler__default(
-            p_this_draggable, 
-            p_game,
-            p_graphics_window);
-
     i32 offset = 
         get_offset_from__ui_slider_percentage(
-                get_p_hitbox_aabb_manager_from__game(p_game),
+                get_p_hitbox_aabb_manager_from__game(
+                    p_game),
                 p_this_draggable, 
                 spanning_length);
 
-    *p_starting_distance -=
-        offset;
+    Vector__3i32 position__old__3i32 =
+        get_vector__3i32(
+                is_snapped_x_or_y__axis
+                ? offset
+                : 0,
+                is_snapped_x_or_y__axis
+                ? 0
+                : offset,
+                0);
 
-    Vector__3i32 position_for__elements =
-        position_for__bgSetScroll;
-    position_for__elements.x__i32 += 
-        (get_width_from__p_ui_element(
-                get_p_hitbox_aabb_manager_from__game(p_game),
-                p_this_draggable->p_child) >> 1)
-        + 4
-        ;
-    position_for__elements.y__i32 -= 
-        get_height_from__p_ui_element(
-                get_p_hitbox_aabb_manager_from__game(p_game),
-                p_this_draggable->p_child) >> 1;
-    set_positions_of__ui_elements_in__succession(
+    m_ui_slider__dragged_handler__default(
+            p_this_draggable, 
+            p_game, 
+            p_graphics_window);
+
+    offset = 
+        get_offset_from__ui_slider_percentage(
+                get_p_hitbox_aabb_manager_from__game(
+                    p_game),
+                p_this_draggable, 
+                spanning_length);
+
+    Vector__3i32 position__new__3i32 =
+        get_vector__3i32(
+                is_snapped_x_or_y__axis
+                ? offset
+                : 0,
+                is_snapped_x_or_y__axis
+                ? 0
+                : offset,
+                0);
+    
+    Graphics_Window *p_graphics_window__owned_by__slider =
+        get_p_graphics_window_by__uuid_from__graphics_window_manager(
+                get_p_graphics_window_manager_from__gfx_context(
+                    get_p_gfx_context_from__game(p_game)), 
+                GET_UUID_P(p_this_draggable));
+
+    set_position_3i32_of__graphics_window__relative_to(
             p_game,
-            p_graphics_window,
-            p_this_draggable->p_child, 
-            position_for__elements, 
-            24, 
-            3, 
-            28);
+            p_graphics_window__owned_by__slider, 
+            position__old__3i32,
+            position__new__3i32);
+}
 
-    set_position_3i32_of__graphics_window(
-            p_gfx_window_that__slider_owns, 
-            position_for__bgSetScroll);
+void m_ui_slider__dispose_handler__gfx_window__default(
+        UI_Element *p_this_draggable,
+        Game *p_game,
+        Graphics_Window *p_graphics_window) {
+    m_ui_element__dispose_handler__default(
+            p_this_draggable, 
+            p_game, 
+            p_graphics_window);
+
+    Graphics_Window *p_graphics_window__owned_by__this_slider =
+        get_p_graphics_window_by__uuid_from__graphics_window_manager(
+                get_p_graphics_window_manager_from__gfx_context(
+                    get_p_gfx_context_from__game(p_game)), 
+                GET_UUID_P(p_this_draggable));
+
+    if (!p_graphics_window__owned_by__this_slider) {
+        return;
+    }
+
+    release_graphics_window_from__graphics_window_manager(
+            p_game, 
+            p_graphics_window__owned_by__this_slider);
 }

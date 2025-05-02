@@ -7,6 +7,20 @@
 #include "rendering/font/typer.h"
 #include "ui/ui_element.h"
 
+static inline
+void initialize_ui_text__default_handlers(
+        UI_Element *p_ui_text) {
+    set_ui_element__compose_handler(
+            p_ui_text, 
+            m_ui_element__compose_handler__text);
+    set_ui_element__transformed_handler(
+            p_ui_text, 
+            m_ui_element__transformed_handler__text);
+    set_ui_element__dispose_handler(
+            p_ui_text, 
+            m_ui_element__dispose_handler__text);
+}
+
 void initialize_ui_element_as__text_with__const_c_str(
         UI_Element *p_ui_text,
         Font *p_font,
@@ -40,15 +54,8 @@ void initialize_ui_element_as__text_with__const_c_str(
             0, 0, 
             p_font);
 
-    set_ui_element__compose_handler(
-            p_ui_text, 
-            m_ui_element__compose_handler__text);
-    set_ui_element__transformed_handler(
-            p_ui_text, 
-            m_ui_element__transformed_handler__text);
-    set_ui_element__dispose_handler(
-            p_ui_text, 
-            m_ui_element__dispose_handler__text);
+    initialize_ui_text__default_handlers(
+            p_ui_text);
 
 #warning TODO: clamp c_str size based on config.
     p_ui_text->size_of__char_buffer = size_of__text;
@@ -87,15 +94,8 @@ void initialize_ui_element_as__text_with__pM_c_str(
             0, 0, 
             p_font);
 
-    set_ui_element__compose_handler(
-            p_ui_text, 
-            m_ui_element__compose_handler__text);
-    set_ui_element__transformed_handler(
-            p_ui_text, 
-            m_ui_element__transformed_handler__text);
-    set_ui_element__dispose_handler(
-            p_ui_text, 
-            m_ui_element__dispose_handler__text);
+    initialize_ui_text__default_handlers(
+            p_ui_text);
 
     p_ui_text->pM_char_buffer = pM_text__c_str;
 #warning TODO: clamp c_str size based on config.
@@ -104,6 +104,49 @@ void initialize_ui_element_as__text_with__pM_c_str(
         ? size_of__text
         : 0
         ;
+}
+
+void initialize_ui_element_as__text_with__buffer_size(
+        UI_Element *p_ui_text,
+        Font *p_font,
+        Quantity__u32 size_of__text) {
+    if (p_ui_text->pM_char_buffer) {
+        debug_warning("If you're trying to set the text of this element, use set_c_str__ui_text_with__...");
+        debug_error("initialize_ui_element_as__text_with__buffer_size, ui_element is not properly initialized, or is being re-initialized as ui_text!");
+        return;
+    }
+    initialize_ui_element(
+            p_ui_text, 
+            0, 
+            0, 
+            0, 
+            UI_Element_Kind__Text, 
+            p_ui_text->ui_flags);
+
+    initialize_typer_with__font(
+            get_p_typer_of__ui_text(p_ui_text), 
+            0, 0, 
+            0, 0, 
+            0, 
+            0, 0, 
+            p_font);
+
+    initialize_ui_text__default_handlers(
+            p_ui_text);
+
+    p_ui_text->pM_char_buffer = malloc(size_of__text);
+    if (!p_ui_text->pM_char_buffer) {
+        set_ui_element_as__disabled(p_ui_text);
+        p_ui_text->size_of__char_buffer = 0;
+        debug_error("initialize_ui_element_as__text_with__buffer_size, failed to allocate pM_char_buffer.");
+        return;
+    }
+
+#warning TODO: clamp c_str size based on config.
+    p_ui_text->size_of__char_buffer = size_of__text;
+    memset(p_ui_text->pM_char_buffer,
+            0,
+            size_of__text);
 }
 
 static inline
@@ -207,7 +250,26 @@ void insert_c_str_into__ui_text(
         const char *p_text__const_c_str,
         Quantity__u32 size_of__text,
         Index__u32 index_to__insert_at) {
-    debug_error("insert_c_str_into__ui_text, impl");
+    if (index_to__insert_at
+            >= p_ui_text->size_of__char_buffer) {
+        debug_error("insert_c_str_into__ui_text, index out of bounds.");
+        return;
+    }
+
+    Quantity__u32 clamp =
+        min__u32(
+                size_of__text,
+                p_ui_text->size_of__char_buffer
+                - index_to__insert_at);
+
+    strncpy(
+            p_ui_text->pM_char_buffer
+            + index_to__insert_at,
+            p_text__const_c_str,
+            clamp);
+
+    p_ui_text->index_of__cursor_in__char_buffer =
+        index_to__insert_at + clamp;
 }
 
 void m_ui_element__compose_handler__text(

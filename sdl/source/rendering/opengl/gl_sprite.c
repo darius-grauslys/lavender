@@ -247,6 +247,21 @@ void GL_render_sprite(
             ->p_SDL_graphics_window__texture
             );
 
+    if (!p_SDL_camera__active) {
+        position__3i32F4.x__i32F4 -=
+            i32_to__i32F4(
+                    p_gfx_window
+                    ->p_PLATFORM_gfx_window
+                    ->p_SDL_graphics_window__texture
+                    ->width >> 1);
+        position__3i32F4.y__i32F4 -=
+            i32_to__i32F4(
+                    p_gfx_window
+                    ->p_PLATFORM_gfx_window
+                    ->p_SDL_graphics_window__texture
+                    ->height >> 1);
+    }
+
     use_shader_2d(p_GL_shader__sprite);
     GL_link_data_to__shader(
             p_gfx_context

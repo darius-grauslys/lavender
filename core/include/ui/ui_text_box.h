@@ -20,6 +20,11 @@ void initialize_ui_element_as__text_box_with__pM_c_str(
         char *pM_text__c_str,
         Quantity__u32 size_of__text);
 
+void initialize_ui_element_as__text_box_with__buffer_size(
+        UI_Element *p_ui_text_box,
+        Font *p_font,
+        Quantity__u32 size_of__text);
+
 void m_ui_element__compose_handler__text_box(
         UI_Element *p_this_ui_element,
         Game *p_game,

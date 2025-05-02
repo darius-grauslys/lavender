@@ -9,7 +9,9 @@ UI_Manager *allocate_p_ui_manager_from__ui_context(
         UI_Context *p_ui_context);
 
 void release_p_ui_manager_from__ui_context(
+        Game *p_game,
         UI_Context *p_ui_context,
+        Graphics_Window *p_graphics_window,
         UI_Manager *p_ui_manager);
 
 void register_ui_window__loader_into__ui_context(

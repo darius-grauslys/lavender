@@ -67,9 +67,37 @@ void m_ui_element__dispose_handler__default(
                     p_graphics_window);
         }
     }
+    if (does_ui_element_have__next(
+                p_this_ui_element)) {
+        UI_Element *p_next =
+            get_next__ui_element(p_this_ui_element);
+        if (does_ui_element_have__dispose_handler(p_next)) {
+            p_next->m_ui_dispose_handler(
+                    p_next,
+                    p_game,
+                    p_graphics_window);
+        }
+    }
+    
+    p_this_ui_element->p_parent = 0;
+    p_this_ui_element->p_child = 0;
+    p_this_ui_element->p_next = 0;
+
+    Hitbox_AABB *p_hitbox_aabb =
+        get_p_hitbox_aabb_by__uuid_u32_from__hitbox_aabb_manager(
+                get_p_hitbox_aabb_manager_from__game(p_game), 
+                GET_UUID_P(p_this_ui_element));
+    if (p_hitbox_aabb) {
+        release_hitbox_aabb_from__hitbox_aabb_manager(
+                get_p_hitbox_aabb_manager_from__game(p_game), 
+                p_hitbox_aabb);
+    }
+
     Sprite_Manager *p_sprite_manager =
         get_p_sprite_manager_from__graphics_window(
                 p_graphics_window);
+    if (!p_sprite_manager)
+        return;
     if (does_ui_element_have__sprite(
                 p_sprite_manager,
                 p_this_ui_element)) {
@@ -84,11 +112,9 @@ void m_ui_element__dispose_handler__default(
                     p_sprite);
         }
     }
-    p_this_ui_element->p_parent = 0;
-    p_this_ui_element->p_child = 0;
-    p_this_ui_element->p_next = 0;
 }
 
+// TODO: remove
 void m_ui_element__dispose_handler__default_collection(
         UI_Element *p_this_ui_element,
         Game *p_game,
@@ -330,6 +356,7 @@ void set_ui_tile_span_of__ui_element(
 
 const UI_Tile_Span *get_ui_tile_span_of__ui_element(
         Hitbox_AABB_Manager *p_hitbox_aabb_manager,
+        Graphics_Window *p_graphics_window,
         UI_Element *p_ui_element,
         Quantity__u32 *p_width_in__tiles,
         Quantity__u32 *p_height_in__tiles,
@@ -365,11 +392,13 @@ const UI_Tile_Span *get_ui_tile_span_of__ui_element(
         ;
 
     *p_index_x__u32 = 
-        (get_x_i32_from__hitbox(p_hitbox_aabb)
+        ((get_x_i32_from__hitbox(p_hitbox_aabb)
+          - p_graphics_window->position_of__gfx_window.x__i32)
         >> UI_TILE__WIDTH_AND__HEIGHT__BIT_SHIFT)
         - (*p_width_in__tiles >> 1);
     *p_index_y__u32 =
-        (get_y_i32_from__hitbox(p_hitbox_aabb)
+        ((get_y_i32_from__hitbox(p_hitbox_aabb)
+          - p_graphics_window->position_of__gfx_window.y__i32)
         >> UI_TILE__WIDTH_AND__HEIGHT__BIT_SHIFT)
         - (*p_height_in__tiles >> 1);
 
@@ -405,6 +434,7 @@ void m_ui_element__compose_handler__default(
     const UI_Tile_Span *p_const_ui_tile_span =
         get_ui_tile_span_of__ui_element(
                 p_hitbox_aabb_manager,
+                p_graphics_window,
                 p_ui_element,
                 &width_of__ui_tile_span,
                 &height_of__ui_tile_span,
@@ -452,6 +482,7 @@ void m_ui_element__compose_handler__default_non_recursive(
     const UI_Tile_Span *p_const_ui_tile_span =
         get_ui_tile_span_of__ui_element(
                 p_hitbox_aabb_manager,
+                p_graphics_window,
                 p_ui_element,
                 &width_of__ui_tile_span,
                 &height_of__ui_tile_span,
@@ -521,4 +552,72 @@ void set_parent_of__ui_element(
     }
     p_ui_element->p_parent =
         p_ui_element__parent;
+}
+
+
+void update_ui_element_origin__relative_to__recursively(
+        Game *p_game,
+        UI_Element *p_ui_element,
+        Vector__3i32 position__old__3i32,
+        Vector__3i32 position__new__3i32) {
+#ifndef NDEBUG
+    if (!p_ui_element) {
+        debug_error("update_ui_element_origin__relative_to__recursively, p_ui_element == 0.");
+        return;
+    }
+#endif
+    update_ui_element_origin__relative_to(
+            p_game,
+            p_ui_element, 
+            position__old__3i32, 
+            position__new__3i32);
+    if (does_ui_element_have__child(
+                p_ui_element)) {
+        update_ui_element_origin__relative_to__recursively(
+                p_game,
+                get_child_of__ui_element(p_ui_element), 
+                position__old__3i32, 
+                position__new__3i32);
+    }
+    if (does_ui_element_have__next(
+                p_ui_element)) {
+        update_ui_element_origin__relative_to__recursively(
+                p_game,
+                get_next__ui_element(p_ui_element), 
+                position__old__3i32, 
+                position__new__3i32);
+    }
+}
+
+void update_ui_element_origin__relative_to(
+        Game *p_game,
+        UI_Element *p_ui_element,
+        Vector__3i32 position__old__3i32,
+        Vector__3i32 position__new__3i32) {
+#ifndef NDEBUG
+    if (!p_ui_element) {
+        debug_error("update_ui_element_origin__relative_to, p_ui_element == 0.");
+        return;
+    }
+#endif
+    Hitbox_AABB *p_hitbox_aabb =
+        get_p_hitbox_aabb_of__ui_element(
+                get_p_hitbox_aabb_manager_from__game(p_game), 
+                p_ui_element);
+
+    if (!p_hitbox_aabb) {
+        return;
+    }
+
+    Vector__3i32 position_final__3i32 =
+        add_vectors__3i32(
+                subtract_vectors__3i32(
+                    get_position_3i32_of__hitbox_aabb(
+                        p_hitbox_aabb),
+                    position__old__3i32),
+                position__new__3i32);
+
+    set_hitbox__position_with__3i32(
+            p_hitbox_aabb, 
+            position_final__3i32);
 }

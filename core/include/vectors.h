@@ -477,20 +477,20 @@ void add_p_vectors__3i32(
 
 static inline 
 void subtract_p_vectors__3i32F4(
-        Vector__3i32F4 *p_vector_one,
+        Vector__3i32F4 *p_vector_one__target,
         Vector__3i32F4 *p_vector_two) {
-    p_vector_one->x__i32F4 -= p_vector_two->x__i32F4;
-    p_vector_one->y__i32F4 -= p_vector_two->y__i32F4;
-    p_vector_one->z__i32F4 -= p_vector_two->z__i32F4;
+    p_vector_one__target->x__i32F4 -= p_vector_two->x__i32F4;
+    p_vector_one__target->y__i32F4 -= p_vector_two->y__i32F4;
+    p_vector_one__target->z__i32F4 -= p_vector_two->z__i32F4;
 }
 
 static inline 
 void subtract_p_vectors__3i32(
-        Vector__3i32 *p_vector_one,
+        Vector__3i32 *p_vector_one__target,
         Vector__3i32 *p_vector_two) {
-    p_vector_one->x__i32 -= p_vector_two->x__i32;
-    p_vector_one->y__i32 -= p_vector_two->y__i32;
-    p_vector_one->z__i32 -= p_vector_two->z__i32;
+    p_vector_one__target->x__i32 -= p_vector_two->x__i32;
+    p_vector_one__target->y__i32 -= p_vector_two->y__i32;
+    p_vector_one__target->z__i32 -= p_vector_two->z__i32;
 }
 
 static inline

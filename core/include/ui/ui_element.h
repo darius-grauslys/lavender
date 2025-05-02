@@ -75,6 +75,7 @@ void set_ui_tile_span_of__ui_element(
 
 const UI_Tile_Span *get_ui_tile_span_of__ui_element(
         Hitbox_AABB_Manager *p_hitbox_aabb_manager,
+        Graphics_Window *p_graphics_window,
         UI_Element *p_ui_element,
         Quantity__u32 *p_width_in__tiles,
         Quantity__u32 *p_height_in__tiles,
@@ -113,6 +114,18 @@ void set_child_of__ui_element(
 void set_parent_of__ui_element(
         UI_Element *p_ui_element,
         UI_Element *p_ui_element__parent);
+
+void update_ui_element_origin__relative_to__recursively(
+        Game *p_game,
+        UI_Element *p_ui_element,
+        Vector__3i32 position__old__3i32,
+        Vector__3i32 position__new__3i32);
+
+void update_ui_element_origin__relative_to(
+        Game *p_game,
+        UI_Element *p_ui_element,
+        Vector__3i32 position__old__3i32,
+        Vector__3i32 position__new__3i32);
 
 static inline
 Hitbox_AABB *get_p_hitbox_aabb_of__ui_element(

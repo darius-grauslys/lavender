@@ -4,11 +4,15 @@
 #include "defines_weak.h"
 #include <defines.h>
 
-#define BRAND_UUID(uuid, type)\
-    (type | (uuid & (~(Lavender_Type__Unknown << 25))))
+#define GET_UUID_BRANDING(type, index) \
+    (((type) << UUID_BRANDING__BIT_SHIFT__TYPE)\
+    | ((index) << UUID_BRANDING__BIT_SHIFT__INDEX))
 
-#define BRAND_UUID__64(uuid, type)\
-    (type | (uuid & (~((u64)Lavender_Type__Unknown << (25+32)))))
+#define BRAND_UUID(uuid, uuid__branding)\
+    (uuid__branding | (uuid & ~UUID_BRANDING__MASK))
+
+#define BRAND_UUID__64(uuid, uuid__branding)\
+    (uuid__branding | (uuid & ~(((u64)UUID_BRANDING__MASK) << 32)))
 
 #define GET_UUID(serialized_header)\
     (((Serialization_Header*)&serialized_header)->uuid)

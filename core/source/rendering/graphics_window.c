@@ -5,6 +5,7 @@
 #include "serialization/serialization_header.h"
 #include "ui/ui_context.h"
 #include "ui/ui_tile_map.h"
+#include "ui/ui_manager.h"
 #include "vectors.h"
 
 void initialize_graphics_window(
@@ -83,6 +84,60 @@ void allocate_sprite_manager_for__graphics_window(
                 p_gfx_context);
 }
 
+void set_position_3i32_of__graphics_window(
+        Game *p_game,
+        Graphics_Window *p_graphics_window,
+        Vector__3i32 position_of__gfx_window__3i32) {
+#ifndef NDEBUG
+    if (!p_graphics_window) {
+        debug_error("set_position_3i32_of__graphics_window, p_gfx_window == 0.");
+        return;
+    }
+#endif
+    if (is_graphics_window_with__ui_manager(
+                p_graphics_window)) {
+        update_ui_manager_origin__relative_to(
+                p_game,
+                get_p_ui_manager_from__graphics_window(
+                    p_graphics_window),
+                get_position_3i32_of__graphics_window(
+                    p_graphics_window),
+                position_of__gfx_window__3i32);
+    }
+    p_graphics_window->position_of__gfx_window =
+        position_of__gfx_window__3i32;
+}
+
+void set_position_3i32_of__graphics_window__relative_to(
+        Game *p_game,
+        Graphics_Window *p_graphics_window,
+        Vector__3i32 position__old__3i32,
+        Vector__3i32 position__new__3i32) {
+#ifndef NDEBUG
+    if (!p_graphics_window) {
+        debug_error("set_position_3i32_of__graphics_window, p_gfx_window == 0.");
+        return;
+    }
+#endif
+    if (is_graphics_window_with__ui_manager(
+                p_graphics_window)) {
+        update_ui_manager_origin__relative_to(
+                p_game,
+                get_p_ui_manager_from__graphics_window(
+                    p_graphics_window),
+                position__old__3i32,
+                position__new__3i32);
+    }
+    subtract_p_vectors__3i32(
+            &p_graphics_window
+            ->position_of__gfx_window, 
+            &position__old__3i32);
+
+    add_p_vectors__3i32(
+            &p_graphics_window
+            ->position_of__gfx_window, 
+            &position__new__3i32);
+}
 
 /* TODO: pulled from SDL back end, needed?
     switch (get_texture_flags__size(

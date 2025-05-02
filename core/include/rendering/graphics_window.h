@@ -30,6 +30,17 @@ void allocate_sprite_manager_for__graphics_window(
         Gfx_Context *p_gfx_context,
         Graphics_Window *p_graphics_window);
 
+void set_position_3i32_of__graphics_window(
+        Game *p_game,
+        Graphics_Window *p_graphics_window,
+        Vector__3i32 position_of__gfx_window__3i32);
+
+void set_position_3i32_of__graphics_window__relative_to(
+        Game *p_game,
+        Graphics_Window *p_graphics_window,
+        Vector__3i32 position__old__3i32,
+        Vector__3i32 position__new__3i32);
+
 static inline
 UI_Tile_Map__Wrapper get_ui_tile_map_from__graphics_window(
         Graphics_Window *p_graphics_window) {
@@ -190,20 +201,6 @@ Vector__3i32 get_position_3i32_of__graphics_window(
     }
 #endif
     return p_graphics_window->position_of__gfx_window;
-}
-
-static inline
-void set_position_3i32_of__graphics_window(
-        Graphics_Window *p_graphics_window,
-        Vector__3i32 position_of__gfx_window__3i32) {
-#ifndef NDEBUG
-    if (!p_graphics_window) {
-        debug_error("set_position_3i32_of__graphics_window, p_gfx_window == 0.");
-        return;
-    }
-#endif
-    p_graphics_window->position_of__gfx_window =
-        position_of__gfx_window__3i32;
 }
 
 static inline

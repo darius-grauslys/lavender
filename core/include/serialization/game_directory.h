@@ -17,4 +17,8 @@ Index__u32 stat_game_data_file(
 void save_game(
         Game *p_game);
 
+void append_path(
+        IO_path p_path,
+        IO_path p_appended_path);
+
 #endif

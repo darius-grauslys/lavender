@@ -181,12 +181,14 @@ void GL_link_camera_projection_to__shader(
             GL_peek_viewport_stack(
                     p_viewport_stack);
         glm_ortho_lh_no(
-                (int)0,
+                -(int)(( (p_viewport->width))
+                    >> (TILE__WIDTH_AND__HEIGHT__BIT_SHIFT + 1)),
                 (int)(( (p_viewport->width))
-                    >> (TILE__WIDTH_AND__HEIGHT__BIT_SHIFT)),
-                (int)0,
+                    >> (TILE__WIDTH_AND__HEIGHT__BIT_SHIFT + 1)),
+                -(int)(( (p_viewport->height))
+                    >> (TILE__WIDTH_AND__HEIGHT__BIT_SHIFT + 1)),
                 (int)(( (p_viewport->height))
-                    >> (TILE__WIDTH_AND__HEIGHT__BIT_SHIFT)),
+                    >> (TILE__WIDTH_AND__HEIGHT__BIT_SHIFT + 1)),
                 // TODO: magic numbers in no camera default projection
                 -0.25f,
                  1808.0f,
@@ -258,6 +260,36 @@ void GL_link_model_data_to__shader(
             (const GLfloat*)model);
 }
 
+void GL_link_model_data_to__shader_with__non_uniform_scale(
+        GL_Shader_2D *p_GL_shader,
+        Vector__3i32F4 position,
+        i32F4 scale__x,
+        i32F4 scale__y) {
+    mat4 model;
+    glm_mat4_identity(model);
+    vec3 vector3_cglm;
+    vector_3i32F4_to__vec3(
+            position, 
+            vector3_cglm);
+    vector3_cglm[0] *= (1.0/(BIT(TILE__WIDTH_AND__HEIGHT__BIT_SHIFT + 1)));
+    vector3_cglm[1] *= (1.0/(BIT(TILE__WIDTH_AND__HEIGHT__BIT_SHIFT + 1)));
+    vector3_cglm[2] *= -(1.0/(BIT(TILE__WIDTH_AND__HEIGHT__BIT_SHIFT + 1)));
+    glm_translate(
+            model, 
+            vector3_cglm);
+    vec3 vector3_cglm__scale = {
+        i32F4_to__float(scale__x),
+        i32F4_to__float(scale__y),
+        0
+    };
+    glm_scale(model, vector3_cglm__scale);
+    glUniformMatrix4fv(
+            p_GL_shader->location_of__model_mat_4_4,
+            1,
+            false,
+            (const GLfloat*)model);
+}
+
 void GL_link_data_to__shader(
         PLATFORM_Gfx_Context *p_PLATFORM_gfx_context,
         GL_Shader_2D *p_GL_shader,
@@ -283,5 +315,45 @@ void GL_link_data_to__shader(
                 p_GL_shader, 
                 position__3i32F4, 
                 scale);
+    }
+}
+
+void GL_link_data_to__shader_with__scale_to__viewport(
+        PLATFORM_Gfx_Context *p_PLATFORM_gfx_context,
+        GL_Shader_2D *p_GL_shader,
+        Camera *p_camera,
+        Vector__3i32F4 position__3i32F4) {
+    if (GL_does_shader_utilize__projection_mat_4_4(
+                p_GL_shader)) {
+        GL_link_camera_projection_to__shader(
+                p_PLATFORM_gfx_context,
+                p_GL_shader, 
+                p_camera);
+    }
+    if (GL_does_shader_utilize__translation_mat_4_4(
+                p_GL_shader)) {
+        GL_link_camera_translation_to__shader(
+                p_GL_shader, 
+                p_camera);
+    }
+    if (GL_does_shader_utilize__model_mat_4_4(
+                p_GL_shader)) {
+        GL_Viewport_Stack *p_viewport_stack =
+            GL_get_p_viewport_stack_from__PLATFORM_gfx_context(
+                    p_PLATFORM_gfx_context);
+        GL_Viewport *p_viewport =
+            GL_peek_viewport_stack(
+                    p_viewport_stack);
+        GL_link_model_data_to__shader_with__non_uniform_scale(
+                p_GL_shader, 
+                position__3i32F4, 
+                i32_to__i32F4(
+                    p_viewport->width
+                    >> (TILE__WIDTH_AND__HEIGHT__BIT_SHIFT+1)
+                    ),
+                i32_to__i32F4(
+                    p_viewport->height
+                    >> (TILE__WIDTH_AND__HEIGHT__BIT_SHIFT+1)
+                    ));
     }
 }

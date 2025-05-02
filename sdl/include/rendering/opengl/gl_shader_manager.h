@@ -6,6 +6,7 @@
 extern Shader_String__Const shader_string__passthrough;
 extern Shader_String__Const shader_string__sprite;
 extern Shader_String__Const shader_string__chunk;
+extern Shader_String__Const shader_string__graphics_window;
 
 ///
 /// Warning do not call GL_initialize_shader_manager
