@@ -6,6 +6,7 @@
 #include "rendering/gfx_context.h"
 #include "rendering/graphics_window.h"
 #include "rendering/graphics_window_manager.h"
+#include "serialization/serialization_header.h"
 #include "ui/ui_manager.h"
 
 void initialize_ui_context(UI_Context *p_ui_context) {
@@ -83,6 +84,7 @@ void release_p_ui_manager_from__ui_context(
                     p_game, 
                     p_graphics_window, 
                     p_ui_manager);
+            DEALLOCATE_P(p_ui_context->pM_ui_managers[index_of__ui_manager]);
             free(p_ui_context->pM_ui_managers[index_of__ui_manager]);
             p_ui_context->pM_ui_managers[index_of__ui_manager] = 0;
             return;

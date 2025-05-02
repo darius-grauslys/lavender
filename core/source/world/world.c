@@ -6,8 +6,10 @@
 #include "defines.h"
 #include "defines_weak.h"
 #include "entity/handlers/entity_handlers.h"
+#include "game_action/core/world/game_action__world__load_world.h"
 #include "platform.h"
 #include "platform_defines.h"
+#include "process/process_manager.h"
 #include "rendering/graphics_window.h"
 #include "serialization/serialization_request.h"
 #include "world/camera.h"
@@ -150,8 +152,35 @@ void save_world(
     debug_abort("save_world, impl");
 }
 
-void load_world(Game *p_game) {
-    debug_abort("load_world, impl");
+Process *load_world(Game *p_game) {
+    (void)get_p_latest_allocated_process_from__process_manager(
+            get_p_process_manager_from__game(p_game));
+
+    Client *p_client__local =
+        get_p_local_client_by__from__game(p_game);
+
+    if (!p_client__local) {
+        debug_error("load_world, p_client__local == 0.");
+        return 0;
+    }
+
+    if (!dispatch_game_action__world__load_world(
+                p_game, 
+                GET_UUID_P(
+                    p_client__local))) {
+        debug_error("load_world, failed to dispatch game_action__world__load_world");
+        return 0;
+    }
+
+    Process *p_process =
+        get_p_latest_allocated_process_from__process_manager(
+                get_p_process_manager_from__game(p_game));
+
+    if (!p_process) {
+        debug_error("load_world, process wasn't created.");
+        return 0;
+    }
+    return p_process;
 }
 
 Entity *get_p_entity_from__world_using__3i32F4(
@@ -264,6 +293,7 @@ void m_process__deserialize_world(
 void set_name_of__world(
         World *p_world,
         World_Name_String name_of__world) {
+    memset(p_world->name, 0, WORLD_NAME_MAX_SIZE_OF);
     strncpy(p_world->name, name_of__world, WORLD_NAME_MAX_SIZE_OF);
     p_world->length_of__world_name = strnlen(p_world->name, WORLD_NAME_MAX_SIZE_OF);
 }

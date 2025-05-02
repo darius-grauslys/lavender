@@ -40,6 +40,14 @@ void set_entity_of__client(
         Client *p_client,
         Entity *p_entity);
 
+void m_process__deserialize_client__default(
+        Process *p_this_process,
+        Game *p_game);
+
+void m_process__serialize_client__default(
+        Process *p_this_process,
+        Game *p_game);
+
 static inline
 Game_Action_Manager *get_p_game_action_manager__inbound_from__client(
         Client *p_client) {
@@ -59,6 +67,71 @@ Local_Space_Manager *get_p_local_space_manager_from__client(
         Client *p_client) {
     if (!p_client) return 0;
     return &p_client->local_space_manager;
+}
+
+static inline
+bool is_client__loading(
+        Client *p_client) {
+    return p_client && p_client->client_flags__u16
+        & CLIENT_FLAG__IS_LOADING;
+}
+
+static inline
+void set_client_as__loading(
+        Client *p_client) {
+    p_client->client_flags__u16 |=
+        CLIENT_FLAG__IS_LOADING;
+}
+
+static inline
+void set_client_as__NOT_loading(
+        Client *p_client) {
+    p_client->client_flags__u16 &=
+        ~CLIENT_FLAG__IS_LOADING;
+}
+
+static inline
+bool is_client__saving(
+        Client *p_client) {
+    return p_client && p_client->client_flags__u16
+        & CLIENT_FLAG__IS_SAVING;
+}
+
+static inline
+void set_client_as__saving(
+        Client *p_client) {
+    p_client->client_flags__u16 |=
+        CLIENT_FLAG__IS_SAVING;
+}
+
+static inline
+void set_client_as__NOT_saving(
+        Client *p_client) {
+    p_client->client_flags__u16 &=
+        ~CLIENT_FLAG__IS_SAVING;
+}
+
+static inline
+bool is_client__active(
+        Client *p_client) {
+    return p_client && p_client->client_flags__u16
+        & CLIENT_FLAG__IS_ACTIVE;
+}
+
+static inline
+void set_client_as__active(
+        Client *p_client) {
+    set_client_as__NOT_loading(p_client);
+    set_client_as__NOT_saving(p_client);
+    p_client->client_flags__u16 |=
+        CLIENT_FLAG__IS_ACTIVE;
+}
+
+static inline
+void set_client_as__inactive(
+        Client *p_client) {
+    p_client->client_flags__u16 &=
+        ~CLIENT_FLAG__IS_ACTIVE;
 }
 
 #endif

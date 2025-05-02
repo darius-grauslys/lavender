@@ -22,18 +22,14 @@ void m_process__game_action__tcp_delivery__inbound(
 
     if (!p_process) {
         debug_error("m_process__game_action__tcp_delivery__inbound, no receiver.");
-        fail_game_action_process(
-                p_game, 
-                p_this_process);
+        fail_process(p_this_process);
         return;
     }
     
     switch (get_the_kind_of__process(p_process)) {
         default:
             debug_error("m_process__game_action__tcp_delivery__inbound, invalid receiver.");
-            fail_game_action_process(
-                    p_game, 
-                    p_this_process);
+            fail_process(p_this_process);
             return;
         case Process_Kind__Serialized:
             break;
@@ -46,9 +42,7 @@ void m_process__game_action__tcp_delivery__inbound(
             || p_serialization_request->quantity_of__tcp_packets__anticipated
             <= p_game_action->ga_kind__tcp_delivery__packet_index) {
         debug_error("m_process__game_action__tcp_delivery__inbound, excessive packet.");
-        fail_game_action_process(
-                p_game, 
-                p_this_process);
+        fail_process(p_this_process);
         return;
     }
 
@@ -78,9 +72,7 @@ void m_process__game_action__tcp_delivery__inbound(
                 p_game_action->ga_kind__tcp_delivery__packet_index)] |=
         BIT(TCP_PAYLOAD_BIT(p_game_action->ga_kind__tcp_delivery__packet_index));
 
-    complete_game_action_process(
-            p_game, 
-            p_this_process);
+    complete_process(p_this_process);
 }
 
 void register_game_action__tcp_delivery(

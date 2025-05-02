@@ -1024,6 +1024,7 @@ typedef uint8_t Process_Flags__u8;
 typedef struct Process_t {
     Serialization_Header _serialization_header;
     m_Process m_process_run__handler;
+    m_Process m_process_dispose__handler;
     union {
         Process *p_enqueued_process;
         Process *p_sub_process;
@@ -1056,6 +1057,7 @@ typedef struct Process_Manager_t {
     Process *ptr_array_of__processes[PROCESS_MAX_QUANTITY_OF];
     Process **p_ptr_to__last_process_in__ptr_array_of__processes;
     Repeatable_Psuedo_Random repeatable_psuedo_random_for__process_uuid;
+    Process *p_process__latest;
     Identifier__u32 next__uuid__u32;
 } Process_Manager;
 
@@ -2034,6 +2036,20 @@ typedef struct Game_Action_t {
         /// </  TCP    >
         /// ------------
 
+        /// --------------
+        ///     World
+        /// --------------
+
+        union {
+            struct {
+                Identifier__u32 ga_kind__world__load_world__uuid_of__client__u32;
+            }; // Load_World, Load_Client
+        };
+
+        /// --------------
+        /// </  World    >
+        /// --------------
+
         /// ---------------------
         ///     Global_Space
         /// ---------------------
@@ -2088,12 +2104,20 @@ typedef struct Game_Action_Logic_Table_t {
         Game_Action_Kind__Unknown];
 } Game_Action_Logic_Table;
 
+typedef u16 Client_Flags__u16;
+
+#define CLIENT_FLAGS__NONE 0
+#define CLIENT_FLAG__IS_ACTIVE BIT(0)
+#define CLIENT_FLAG__IS_LOADING BIT(1)
+#define CLIENT_FLAG__IS_SAVING BIT(2)
+
 typedef struct Client_t {
     Serialization_Header _serialization_header;
     Game_Action_Manager game_action_manager__inbound;
     Game_Action_Manager game_action_manager__outbound;
     Local_Space_Manager local_space_manager;
     Serialized_Field s_entity_of__client;
+    Client_Flags__u16 client_flags__u16;
 } Client;
 
 #define WORLD_NAME_MAX_SIZE_OF 32
@@ -2208,7 +2232,7 @@ typedef struct Game_t {
     Timer__u32 time__nanoseconds__u32;
 
     Quantity__u32 max_quantity_of__clients;
-    Quantity__u32 quantity_of__clients;
+    Quantity__u32 index_to__next_client_in__pool;
     Client *pM_clients;
     Client **pM_ptr_array_of__clients;
     TCP_Socket_Manager *pM_tcp_socket_manager;
@@ -2216,6 +2240,9 @@ typedef struct Game_t {
     m_Game_Action_Handler m_game_action_handler__dispatch;
     m_Game_Action_Handler m_game_action_handler__receive;
     m_Game_Action_Handler m_game_action_handler__resolve;
+
+    m_Process m_process__serialize_client;
+    m_Process m_process__deserialize_client;
 
     u32F20 time_elapsed__u32F20;
     u32F20 tick_accumilator__u32F20;

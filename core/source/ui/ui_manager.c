@@ -236,6 +236,9 @@ UI_Element *detect_focus_in__ui_manager(
         get_p_ui_element__focused_of__ui_manager(p_ui_manager);
     if (!p_ui_element__focused
             || !is_ui_element__focused(p_ui_element__focused)) {
+        set_input_mode_of__input(
+                get_p_input_from__game(p_game),
+                INPUT_MODE__NORMAL);
         p_ui_element__focused =
             get_highest_priority_ui_element_thats__under_the_cursor(
                     p_ui_manager, 

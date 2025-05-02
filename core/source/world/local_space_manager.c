@@ -989,3 +989,24 @@ bool is_vector_3i32F4_within__local_space_manager(
 
     return is_bounded__x && is_bounded__y && is_bounded__z;
 }
+
+bool is_local_space_manager__loaded(
+        Game *p_game,
+        Local_Space_Manager *p_local_space_manager) {
+    Quantity__u32 quantity_of__loading_spaces = 0;
+    for (Index__u32 index_of__local_space = 0;
+            index_of__local_space
+            < VOLUME_OF__LOCAL_SPACE_MANAGER;
+            index_of__local_space++) {
+        Local_Space *p_local_space =
+            &p_local_space_manager
+            ->local_spaces[index_of__local_space];
+        Global_Space *p_global_space =
+            get_p_global_space_from__local_space(p_local_space);
+        if (!p_global_space)
+            continue;
+        if (!is_global_space__active(p_global_space))
+            quantity_of__loading_spaces++;
+    }
+    return quantity_of__loading_spaces == 0;
+}

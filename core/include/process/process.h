@@ -54,7 +54,6 @@ void complete_process(
 #endif
     p_process->the_kind_of_status__this_process_has =
         Process_Status_Kind__Complete;
-    p_process->p_process_data = 0;
 }
 
 ///
@@ -72,7 +71,6 @@ void fail_process(
 #endif
     p_process->the_kind_of_status__this_process_has =
         Process_Status_Kind__Fail;
-    p_process->p_process_data = 0;
 }
 
 static inline
@@ -136,7 +134,7 @@ bool is_process__finished(
         Process *p_process) {
 #ifndef NDEBUG
     if (!p_process) {
-        debug_abort("is_process__complete, p_process is null.");
+        debug_abort("is_process__finished, p_process is null.");
         return false;
     }
 #endif
@@ -148,6 +146,32 @@ bool is_process__finished(
         case Process_Status_Kind__Stopped:
             return true;
     }
+}
+
+static inline
+bool is_process__complete(
+        Process *p_process) {
+#ifndef NDEBUG
+    if (!p_process) {
+        debug_abort("is_process__complete, p_process is null.");
+        return false;
+    }
+#endif
+    return get_process_status(p_process)
+        == Process_Status_Kind__Complete;
+}
+
+static inline
+bool is_process__failed(
+        Process *p_process) {
+#ifndef NDEBUG
+    if (!p_process) {
+        debug_abort("is_process__failed, p_process is null.");
+        return false;
+    }
+#endif
+    return get_process_status(p_process)
+        == Process_Status_Kind__Fail;
 }
 
 static inline
@@ -217,6 +241,32 @@ bool does_process_have__run_handler(
     }
 #endif
     return p_process->m_process_run__handler;
+}
+
+static inline
+bool does_process_have__dispose_handler(
+        Process *p_process) {
+#ifndef NDEBUG
+    if (!p_process) {
+        debug_abort("does_process_have__dispose_handler, p_process is null.");
+        return false;
+    }
+#endif
+    return p_process->m_process_dispose__handler;
+}
+
+static inline
+void set_process__dispose_handler(
+        Process *p_process,
+        m_Process m_process__dispose_handler) {
+#ifndef NDEBUG
+    if (!p_process) {
+        debug_abort("set_process__dispose_handler, p_process is null.");
+        return;
+    }
+#endif
+    p_process->m_process_dispose__handler =
+        m_process__dispose_handler;
 }
 
 static inline

@@ -3,7 +3,9 @@
 #include "defines_weak.h"
 #include "game.h"
 #include "platform.h"
+#include "platform_defines.h"
 #include "serialization/game_directory.h"
+#include "serialization/identifiers.h"
 #include "vectors.h"
 #include "world/region.h"
 #include "sys/stat.h"
@@ -35,12 +37,24 @@ void append_base64_value_to__path(
     }
 }
 
+static inline
 void append_hex_value_to__path(
+        Index__u32 *p_index_of__path_append,
+        u8 hex__u4,
+        char *buffer) {
+    buffer[(*p_index_of__path_append)++] =
+        (hex__u4 < 10)
+        ? ('0' + hex__u4)
+        : ('a' + (hex__u4-10))
+        ;
+}
+
+void append_u32_as__hex_to__path(
         Index__u32 *p_index_of__path_append,
         u32 value,
         i32 beginning_index,
         char *buffer) {
-    u32 hex;
+    u32 hex__u4;
     Index__u32 index_of__hex = 0;
     for (;
             index_of__hex<(8 - beginning_index);
@@ -50,14 +64,62 @@ void append_hex_value_to__path(
     for (Index__u32 index_of__hex = 0;
             index_of__hex < beginning_index;
             index_of__hex++) {
-        hex = ((MASK(4) << 28) & value) >> 28;
-        buffer[(*p_index_of__path_append)++] =
-            (hex < 10)
-            ? ('0' + hex)
-            : ('a' + (hex-10))
-            ;
+        hex__u4 = ((MASK(4) << 28) & value) >> 28;
+        append_hex_value_to__path(
+                p_index_of__path_append, 
+                hex__u4, 
+                buffer);
         value <<= 4;
     }
+}
+
+Index__u32 stat_world_directory(
+        PLATFORM_File_System_Context *p_PLATFORM_file_system_context,
+        World *p_world,
+        IO_path p_path) {
+    Index__u32 index_of__path_append = 0;
+
+    PLATFORM_append_base_directory_to__path(
+            p_PLATFORM_file_system_context,
+            p_path, 
+            &index_of__path_append);
+
+    append_path(
+            p_path, 
+            "save");
+    index_of__path_append += sizeof("save");
+
+    PLATFORM_Directory *p_dir = 0;
+    if (!(p_dir = PLATFORM_opendir(p_path))) {
+        if (PLATFORM_mkdir(p_path, 0777)) {
+            return 0;
+        }
+    } else {
+        PLATFORM_closedir(p_dir);
+    }
+
+    p_path[index_of__path_append++] = PATH_SEPERATOR;
+    if (index_of__path_append + WORLD_NAME_MAX_SIZE_OF
+            >= MAX_LENGTH_OF__IO_PATH) {
+        debug_error("stat_world_directory, path too long.");
+        return 0;
+    }
+    strncpy(&p_path[index_of__path_append], 
+            p_world->name,
+            WORLD_NAME_MAX_SIZE_OF);
+
+    index_of__path_append += 
+        p_world->length_of__world_name;
+
+    if (!(p_dir = PLATFORM_opendir(p_path))) {
+        if (PLATFORM_mkdir(p_path, 0777)) {
+            return 0;
+        }
+    } else {
+        PLATFORM_closedir(p_dir);
+    }
+
+    return index_of__path_append;
 }
 
 Index__u32 stat_chunk_directory(
@@ -111,19 +173,19 @@ Index__u32 stat_chunk_directory(
         get_region_that__this_global_space_is_in(
                 p_global_space);
 
-    append_hex_value_to__path(
+    append_u32_as__hex_to__path(
             &index_of__path_append, 
             region_vector__3i32.x__i32, 
             8,
             buffer);
     buffer[index_of__path_append++] = '_';
-    append_hex_value_to__path(
+    append_u32_as__hex_to__path(
             &index_of__path_append, 
             region_vector__3i32.y__i32, 
             8,
             buffer);
     buffer[index_of__path_append++] = '_';
-    append_hex_value_to__path(
+    append_u32_as__hex_to__path(
             &index_of__path_append, 
             region_vector__3i32.z__i32, 
             8,
@@ -172,19 +234,19 @@ Index__u32 stat_chunk_directory(
         buffer[index_of__path_append++] = PATH_SEPERATOR;
         buffer[index_of__path_append++] = 'c';
         buffer[index_of__path_append++] = '_';
-        append_hex_value_to__path(
+        append_u32_as__hex_to__path(
                 &index_of__path_append, 
                 chunk_vector_descend__3i32.x__i32, 
                 2,
                 buffer);
         buffer[index_of__path_append++] = '_';
-        append_hex_value_to__path(
+        append_u32_as__hex_to__path(
                 &index_of__path_append, 
                 chunk_vector_descend__3i32.y__i32, 
                 2,
                 buffer);
         buffer[index_of__path_append++] = '_';
-        append_hex_value_to__path(
+        append_u32_as__hex_to__path(
                 &index_of__path_append, 
                 chunk_vector_descend__3i32.z__i32, 
                 2,
@@ -206,19 +268,19 @@ Index__u32 stat_chunk_directory(
     buffer[index_of__path_append++] = PATH_SEPERATOR;
     buffer[index_of__path_append++] = 'c';
     buffer[index_of__path_append++] = '_';
-    append_hex_value_to__path(
+    append_u32_as__hex_to__path(
             &index_of__path_append, 
             chunk_vector__3i32.x__i32, 
             2,
             buffer);
     buffer[index_of__path_append++] = '_';
-    append_hex_value_to__path(
+    append_u32_as__hex_to__path(
             &index_of__path_append, 
             chunk_vector__3i32.y__i32, 
             2,
             buffer);
     buffer[index_of__path_append++] = '_';
-    append_hex_value_to__path(
+    append_u32_as__hex_to__path(
             &index_of__path_append, 
             chunk_vector__3i32.z__i32, 
             2,
@@ -348,4 +410,67 @@ Index__u32 stat_chunk_file__inventories(
             p_global_space,
             buffer,
             'i');
+}
+
+Index__u32 stat_client_file(
+        PLATFORM_File_System_Context *p_PLATFORM_file_system_context,
+        World *p_world,
+        IO_path p_path,
+        Identifier__u32 uuid_of__client,
+        Index__u32 *p_OUT_index_of__path_to__file_base_directory) {
+    *p_OUT_index_of__path_to__file_base_directory = 0;
+    if (is_identifier_u32__invalid(
+                uuid_of__client)) {
+        debug_error("stat_client_file, invalid client uuid.");
+        return 0;
+    }
+    Index__u32 index_of__path_append = 
+        stat_world_directory(
+                p_PLATFORM_file_system_context, 
+                p_world, 
+                p_path);
+    if (!index_of__path_append) {
+        debug_error("stat_client_file, failed to find file of client.");
+        return 0;
+    }
+
+    Identifier__u32 uuid_of__client__processed = 
+        uuid_of__client;
+    Identifier__u32 uuid_of__client__processed_mask = 
+        (Identifier__u32)-1;
+    do {
+        Quantity__u8 prefix_of__uuid__u4 = 
+            0b1111
+            & uuid_of__client__processed;
+        p_path[index_of__path_append++] = PATH_SEPERATOR;
+        append_hex_value_to__path(
+                &index_of__path_append, 
+                prefix_of__uuid__u4, 
+                p_path);
+        PLATFORM_Directory *p_dir;
+        if (!(p_dir = PLATFORM_opendir(p_path))) {
+            if (PLATFORM_mkdir(p_path, 0777)) {
+                return 0;
+            }
+        } else {
+            PLATFORM_closedir(p_dir);
+        }
+        uuid_of__client__processed_mask >>= 4;
+        uuid_of__client__processed >>= 4;
+    } while (uuid_of__client__processed_mask > MASK(4));
+
+    *p_OUT_index_of__path_to__file_base_directory =
+        index_of__path_append;
+
+    p_path[index_of__path_append++] = PATH_SEPERATOR;
+    append_hex_value_to__path(
+            &index_of__path_append, 
+            uuid_of__client__processed, 
+            p_path);
+
+    if (PLATFORM_access(p_path, IO_Access_Kind__File)) {
+        return false;
+    }
+
+    return index_of__path_append;
 }

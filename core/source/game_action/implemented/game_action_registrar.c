@@ -9,6 +9,8 @@
 #include "game_action/core/global_space/game_action__global_space__store.h"
 #include "game_action/core/global_space/game_action__global_space__request.h"
 #include "game_action/core/global_space/game_action__global_space__resolve.h"
+#include "game_action/core/world/game_action__world__load_client.h"
+#include "game_action/core/world/game_action__world__load_world.h"
 
 void register_game_actions__offline(
         Game_Action_Logic_Table *p_game_action_logic_table) {
@@ -17,6 +19,10 @@ void register_game_actions__offline(
     register_game_action__global_space__resolve(
             p_game_action_logic_table);
     register_game_action__global_space__request_for__offline(
+            p_game_action_logic_table);
+    register_game_action__world__load_client(
+            p_game_action_logic_table);
+    register_game_action__world__load_world(
             p_game_action_logic_table);
     debug_warning("register_game_actions__offline, impl.");
 }
@@ -65,6 +71,10 @@ void register_game_actions__server(
     register_game_action__global_space__resolve(
             p_game_action_logic_table);
     register_game_action__global_space__request_for__server(
+            p_game_action_logic_table);
+    register_game_action__world__load_client(
+            p_game_action_logic_table);
+    register_game_action__world__load_world(
             p_game_action_logic_table);
     debug_warning("register_game_actions__server, impl.");
 }

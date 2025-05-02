@@ -9,6 +9,7 @@ void initialize_process_manager(
         Process_Manager *p_process_manager);
 
 void release_process_from__process_manager(
+        Game *p_game,
         Process_Manager *p_process_manager,
         Process *p_process);
 
@@ -53,6 +54,15 @@ Process *get_p_process_by__uuid(
             (Serialization_Header*)p_process_manager->processes, 
             PROCESS_MAX_QUANTITY_OF, 
             uuid__u32);
+}
+
+static inline
+Process *get_p_latest_allocated_process_from__process_manager(
+        Process_Manager *p_process_manager) {
+    Process *p_process =
+        p_process_manager->p_process__latest;
+    p_process_manager->p_process__latest = 0;
+    return p_process;
 }
 
 #endif

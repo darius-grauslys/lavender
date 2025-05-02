@@ -2,6 +2,7 @@
 #include "defines.h"
 #include "defines_weak.h"
 #include "game_action/game_action_logic_entry.h"
+#include "process/game_action_process.h"
 #include "process/process_manager.h"
 
 void initialize_game_action_logic_table(
@@ -32,7 +33,9 @@ Process *dispatch_game_action_process(
         return 0;
     }
     
-    p_process->p_process_data = p_game_action;
+    initialize_process_as__game_action_process(
+            p_process,
+            p_game_action);
 
     return p_process;
 }

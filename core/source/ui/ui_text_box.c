@@ -132,6 +132,8 @@ bool handle_special_symbols__text_box(
         Game *p_game,
         unsigned char symbol) {
     switch (symbol) {
+        case ASCII__CARRIAGE_RETURN:
+        case ASCII__LINE_FEED:
         case ASCII__ESCAPE:
             set_ui_element_as__NOT_focused(p_this_ui_text_box);
             break;

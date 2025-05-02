@@ -25,6 +25,18 @@ Index__u32 stat_world_header_file(
         World *p_world,
         char *buffer);
 
+Index__u32 stat_world_directory(
+        PLATFORM_File_System_Context *p_PLATFORM_file_system_context,
+        World *p_world,
+        IO_path p_path);
+
+Index__u32 stat_client_file(
+        PLATFORM_File_System_Context *p_PLATFORM_file_system_context,
+        World *p_world,
+        IO_path p_path,
+        Identifier__u32 uuid_of__client,
+        Index__u32 *p_OUT_index_of__path_to__file_base_directory);
+
 // Index__u32 stat_chunk_file__entities(
 //         Game *p_game,
 //         Chunk_Manager__Chunk_Map_Node *p_chunk_map_node,

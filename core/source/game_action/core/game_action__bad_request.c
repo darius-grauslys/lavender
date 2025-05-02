@@ -26,18 +26,14 @@ void m_process__game_action__bad_request__inbound(
                 ->uuid_of__game_action__responding_to);
     
     if (!p_game_action__responding_to) {
-        complete_game_action_process(
-                p_game, 
-                p_this_process);
+        complete_process(p_this_process);
         return;
     }
 
     set_game_action_as__bad_request(
             p_game_action__responding_to);
 
-    complete_game_action_process(
-            p_game, 
-            p_this_process);
+    complete_process(p_this_process);
 }
 
 void register_game_action__bad_request(

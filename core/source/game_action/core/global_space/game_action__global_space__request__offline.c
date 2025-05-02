@@ -20,9 +20,7 @@ void m_process__game_action__global_space__request__outbound_offline(
     Vector__3i32 gsv__3i32 =
         p_game_action
         ->ga_kind__global_space__request__gsv_3i32;
-    complete_game_action_process(
-            p_game,
-            p_this_process);
+    complete_process(p_this_process);
 
     Global_Space *p_global_space =
         get_p_global_space_from__global_space_manager(
@@ -31,7 +29,7 @@ void m_process__game_action__global_space__request__outbound_offline(
 
     if (!p_global_space) {
         debug_error("m_process__game_action__global_space__request__outbound_offline, failed to find p_global_space.");
-        fail_game_action_process(p_game, p_this_process);
+        fail_process(p_this_process);
         return;
     }
 

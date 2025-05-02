@@ -44,9 +44,7 @@ void m_process__game_action__global_space__resolve(
 
     if (!p_global_space) {
         debug_error("m_process__game_action__global_space__resolve, p_global_space == 0.");
-        fail_game_action_process(
-                p_game, 
-                p_this_process);
+        fail_process(p_this_process);
         return;
     }
 
@@ -64,9 +62,7 @@ void m_process__game_action__global_space__resolve(
 
     if (!p_chunk) {
         debug_error("m_process__game_action__global_space__resolve, p_chunk == 0.");
-        fail_game_action_process(
-                p_game,
-                p_this_process);
+        fail_process(p_this_process);
         drop_global_space_within__global_space_manager(
                 p_game,
                 gsv__3i32);
@@ -86,9 +82,7 @@ void m_process__game_action__global_space__resolve(
         drop_global_space_within__global_space_manager(
                 p_game,
                 gsv__3i32);
-        fail_game_action_process(
-                p_game, 
-                p_this_process);
+        fail_process(p_this_process);
         return;
     }
 
@@ -110,9 +104,7 @@ void m_process__game_action__global_space__resolve(
 
         if (!p_process) {
             debug_error("m_process__game_action__global_space__resolve, failed to dispatch deserialization process.");
-            fail_game_action_process(
-                    p_game, 
-                    p_this_process);
+            fail_process(p_this_process);
             return;
         }
         enqueue_process(
@@ -130,9 +122,7 @@ void m_process__game_action__global_space__resolve(
                 ->chunk_data,
                 0,
                 sizeof(Chunk_Data));
-        complete_game_action_process(
-                p_game,
-                p_this_process);
+        complete_process(p_this_process);
         return;
     }
     f_chunk_generator(
@@ -140,9 +130,7 @@ void m_process__game_action__global_space__resolve(
             p_global_space);
     set_global_space_as__NOT_constructing(
             p_global_space);
-    complete_game_action_process(
-            p_game,
-            p_this_process);
+    complete_process(p_this_process);
 }
 
 void register_game_action__global_space__resolve(

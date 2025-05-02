@@ -34,9 +34,7 @@ void m_process__game_action__tcp_connect__inbound(
 
     if (!p_PLATFORM_tcp_socket) {
         debug_error("m_process__game_action__tcp_connect__inbound__init, p_PLATFORM_tcp_socket == 0.");
-        fail_game_action_process(
-                p_game, 
-                p_this_process);
+        fail_process(p_this_process);
         return;
     }
 
@@ -87,9 +85,7 @@ void m_process__game_action__tcp_connect__inbound(
     dispatch_game_action__connect__accept(
             p_game, 
             p_client__new);
-    complete_game_action_process(
-            p_game, 
-            p_this_process);
+    complete_process(p_this_process);
     return;
 reject:
     debug_info("game_action__tcp_connect: reject");
@@ -104,9 +100,7 @@ reject:
             sizeof(ga_reject));
     reject_pending_connection(
             get_p_tcp_socket_manager_from__game(p_game));
-    fail_game_action_process(
-            p_game, 
-            p_this_process);
+    fail_process(p_this_process);
 }
 
 void register_game_action__tcp_connect(

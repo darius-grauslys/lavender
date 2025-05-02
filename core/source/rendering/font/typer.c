@@ -142,5 +142,6 @@ void put_c_string_in__typer(
         offset_typer_by__font_letter(
                 p_typer, 
                 p_font_letter);
-    } while (*(++c_string) && --max_length_of__c_string);
+    } while (--max_length_of__c_string
+            && *(++c_string));
 }

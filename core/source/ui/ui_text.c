@@ -45,6 +45,9 @@ void initialize_ui_element_as__text_with__const_c_str(
         debug_error("initialize_ui_element_as__text_with__const_c_str, failed to allocate pM_char_buffer.");
         return;
     }
+    memset(p_ui_text->pM_char_buffer,
+            0,
+            size_of__text);
 
     initialize_typer_with__font(
             get_p_typer_of__ui_text(p_ui_text), 
@@ -170,6 +173,9 @@ void set_c_str_of__ui_text_with__const_c_str(
         return;
     }
     p_ui_text->size_of__char_buffer = size_of__text;
+    memset(p_ui_text->pM_char_buffer,
+            0,
+            size_of__text);
 }
 
 void set_c_str_of__ui_text_with__pM_c_str(
@@ -195,6 +201,9 @@ void buffer_c_str_of__ui_text(
     }
     p_ui_text->pM_char_buffer = malloc(size_of__text); 
     p_ui_text->size_of__char_buffer = size_of__text;
+    memset(p_ui_text->pM_char_buffer,
+            0,
+            size_of__text);
 }
 
 void clear_c_str_of__ui_text(

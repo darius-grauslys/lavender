@@ -1,6 +1,7 @@
 #include "client.h"
 #include "defines.h"
 #include "defines_weak.h"
+#include "game_action/core/world/game_action__world__load_client.h"
 #include "game_action/game_action.h"
 #include "game_action/game_action_logic_table.h"
 #include "game_action/implemented/game_action_registrar.h"
@@ -11,6 +12,7 @@
 #include "platform.h"
 #include "platform_defaults.h"
 #include "platform_defines.h"
+#include "process/filesystem_process.h"
 #include "process/process_manager.h"
 #include "rendering/aliased_texture_manager.h"
 #include "rendering/gfx_context.h"
@@ -23,6 +25,7 @@
 #include "sort/sort_list/sort_list_manager.h"
 #include "vectors.h"
 #include "world/local_space_manager.h"
+#include "world/serialization/world_directory.h"
 #include <game.h>
 #include <entity/entity.h>
 #include <entity/entity_manager.h>
@@ -114,6 +117,13 @@ void initialize_game(
             get_p_game_action_logic_table_from__game(p_game));
     register_game_actions__offline(
             get_p_game_action_logic_table_from__game(p_game));
+
+    set_dispatch_handler_process_for__load_client(
+            p_game, 
+            m_process__deserialize_client__default);
+    set_dispatch_handler_process_for__save_client(
+            p_game, 
+            m_process__serialize_client__default);
 }
 
 void allocate_client_pool_for__game(
@@ -147,12 +157,7 @@ void allocate_client_pool_for__game(
     p_game->pM_ptr_array_of__clients[0] =
         &p_game->pM_clients[0];
 
-    p_game->quantity_of__clients = 1;
-}
-
-void release_clients_from__game(
-        Game *p_game) {
-    debug_error("release_clients_from__game, impl.");
+    p_game->index_to__next_client_in__pool = 1;
 }
 
 void begin_multiplayer_for__game(
@@ -214,6 +219,10 @@ Client *allocate_client_from__game(
         debug_error("allocate_client_from__game, failed to allocate p_client.");
         return 0;
     }
+    if (!IS_DEALLOCATED_P(p_client)) {
+        debug_error("allocate_client_from__game, client already allocated.");
+        return 0;
+    }
 
     initialize_client(
             p_client, 
@@ -221,9 +230,9 @@ Client *allocate_client_from__game(
             VECTOR__3i32__0_0_0);
 
     p_game->pM_ptr_array_of__clients[
-        p_game->quantity_of__clients] = p_client;
+        p_game->index_to__next_client_in__pool] = p_client;
 
-    p_game->quantity_of__clients++;
+    p_game->index_to__next_client_in__pool++;
 
     return p_client;
 }
@@ -249,7 +258,186 @@ Client *get_p_client_by__uuid_from__game(
 void release_client_from__game(
         Game *p_game,
         Client *p_client) {
-    debug_abort("release_client_from__game, impl.");
+    DEALLOCATE_P(p_client);
+    for (Index__u32 index_of__client = 0;
+            index_of__client<p_game->index_to__next_client_in__pool;
+            index_of__client++) {
+        Client *p_client__comparing =
+            get_p_client_by__index_from__game(
+                    p_game, 
+                    index_of__client);
+        if (p_client
+                != p_client__comparing) {
+            continue;
+        }
+
+        p_game->index_to__next_client_in__pool--;
+        p_game->pM_ptr_array_of__clients[index_of__client] =
+            p_game->pM_ptr_array_of__clients[p_game->index_to__next_client_in__pool];
+        p_game->pM_ptr_array_of__clients[p_game->index_to__next_client_in__pool] = 0;
+    }
+}
+
+Process *dispatch_handler_process_to__load_client(
+        Game *p_game,
+        IO_path path_to__client_file,
+        Identifier__u32 uuid_of__client__u32) {
+    if (!p_game->m_process__deserialize_client) {
+        debug_error("dispatch_handler_process_to__load_client, missing handler process.");
+        return 0;
+    }
+
+    Client *p_client =
+        get_p_client_by__uuid_from__game(
+                p_game, 
+                uuid_of__client__u32);
+
+    if (!p_client) {
+        p_client =
+            allocate_client_from__game(
+                    p_game, 
+                    uuid_of__client__u32);
+
+        if (!p_client) {
+            debug_error("dispatch_handler_process_to__load_client, failed to allocate client.");
+            return 0;
+        }
+    }
+
+    Process *p_process =
+        run_process(
+            get_p_process_manager_from__game(p_game), 
+            p_game->m_process__deserialize_client, 
+            PROCESS_FLAG__IS_CRITICAL);
+
+    if (!initialize_process_as__filesystem_process__open_file(
+                p_game, 
+                p_process, 
+                path_to__client_file, 
+                "rb", 
+                p_client,
+                true)) {
+        debug_error("dispatch_handler_process_to__load_client, failed to run process.");
+        release_client_from__game(
+                p_game, 
+                p_client);
+        return 0;
+    }
+
+    return p_process;
+}
+
+Process *dispatch_handler_process_to__save_client(
+        Game *p_game,
+        IO_path path_to__client_file,
+        Client *p_client) {
+    if (!p_game->m_process__serialize_client) {
+        debug_error("dispatch_handler_process_to__save_client, missing handler process.");
+        return 0;
+    }
+
+    Process *p_process =
+        run_process(
+            get_p_process_manager_from__game(p_game), 
+            p_game->m_process__serialize_client, 
+            PROCESS_FLAG__IS_CRITICAL);
+
+    if (!initialize_process_as__filesystem_process__open_file(
+                p_game, 
+                p_process, 
+                path_to__client_file, 
+                "wb", 
+                p_client,
+                true)) {
+        debug_error("dispatch_handler_process_to__save_client, failed to run process.");
+        return 0;
+    }
+
+    return p_process;
+}
+
+Process *load_client(
+        Game *p_game,
+        Identifier__u32 uuid_of__client__u32) {
+    // TODO: can we do better than this:
+    // perhaps get last process made from client?
+    // then we set the ptr to 0 each time a dispatch occurs.
+    (void)get_p_latest_allocated_process_from__process_manager(
+            get_p_process_manager_from__game(p_game));
+
+    if (!dispatch_game_action__world__load_client(
+            p_game, 
+            uuid_of__client__u32)) {
+        debug_error("load_client, failed to dispatch game_action__world__load_client.");
+        return 0;
+    }
+
+    Process *p_process =
+        get_p_latest_allocated_process_from__process_manager(
+                get_p_process_manager_from__game(p_game));
+    
+    if (!p_process) {
+        debug_error("load_client, process wasn't created.");
+        return 0;
+    }
+
+    return p_process;
+}
+
+void save_all__clients(
+        Game *p_game) {
+    for (Index__u32 index_of__client = 0;
+            index_of__client
+            < p_game->index_to__next_client_in__pool;
+            index_of__client++) {
+        Client *p_client =
+            get_p_client_by__index_from__game(
+                    p_game, 
+                    index_of__client);
+
+        save_client(
+                p_game, 
+                p_client);
+    }
+}
+
+Process *save_client(
+        Game *p_game,
+        Client *p_client) {
+
+    IO_path path_to__client;
+    memset(path_to__client,
+            0,
+            sizeof(path_to__client));
+
+    Index__u32 index_of__path_to__base_directory = 0;
+    Index__u32 index_of__path =
+        stat_client_file(
+                get_p_PLATFORM_file_system_context_from__game(p_game), 
+                get_p_world_from__game(p_game), 
+                path_to__client, 
+                GET_UUID_P(p_client),
+                &index_of__path_to__base_directory);
+
+    if (!index_of__path_to__base_directory) {
+        debug_error("save_client, could not find path to client file.");
+        return 0;
+    }
+
+    Process *p_process =
+        dispatch_handler_process_to__save_client(
+                p_game, 
+                path_to__client, 
+                p_client);
+    
+    if (!p_process) {
+        debug_error("save_client, process wasn't created.");
+        return 0;
+    }
+
+    set_client_as__saving(p_client);
+
+    return p_process;
 }
 
 ///

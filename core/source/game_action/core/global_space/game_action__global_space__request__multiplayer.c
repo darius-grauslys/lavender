@@ -12,6 +12,8 @@
 #include "multiplayer/tcp_socket.h"
 #include "multiplayer/tcp_socket_manager.h"
 #include "platform.h"
+#include "process/process.h"
+#include "process/tcp_game_action_process.h"
 #include "serialization/serialization_header.h"
 #include "timer.h"
 #include "vectors.h"
@@ -48,9 +50,7 @@ void m_process__game_action__global_space__request__outbound_server(
                 p_game_action, 
                 0);
         debug_error("m_process__game_action__global_space__request__outbound_server, failed to find global_space.");
-        fail_game_action_process(
-                p_game, 
-                p_this_process);
+        fail_process(p_this_process);
         return;
     }
 
@@ -68,18 +68,14 @@ void m_process__game_action__global_space__request__outbound_server(
                 p_game_action, 
                 0);
         debug_error("m_process__game_action__global_space__request__outbound_server, global_space is already being constructed`.");
-        fail_game_action_process(
-                p_game, 
-                p_this_process);
+        fail_process(p_this_process);
         return;
     }
 
     hold_global_space(p_global_space);
     set_global_space_as__constructing(p_global_space);
 
-    complete_game_action_process(
-            p_game, 
-            p_this_process);
+    complete_process(p_this_process);
     dispatch_game_action__global_space__resolve(
             p_game, 
             p_game_action->ga_kind__global_space__request__gsv_3i32);
@@ -119,9 +115,7 @@ void m_process__game_action__global_space__request__inbound_server(
                 p_game_action, 
                 0);
         debug_error("m_process__game_action__global_space__request__inbound_server, failed to find global_space.");
-        fail_game_action_process(
-                p_game, 
-                p_this_process);
+        fail_process(p_this_process);
         return;
     }
 
@@ -132,9 +126,7 @@ void m_process__game_action__global_space__request__inbound_server(
                 p_game_action, 
                 1);
         debug_error("m_process__game_action__global_space__request__inbound_server, global space is deconstructing.");
-        fail_game_action_process(
-                p_game, 
-                p_this_process);
+        fail_process(p_this_process);
         return;
     }
 
@@ -157,16 +149,12 @@ void m_process__game_action__global_space__request__inbound_server(
             return;
         default:
             debug_error("m_process__game_action__global_space__request__inbound_server, failed to send packets.");
-            fail_game_action_process(
-                    p_game, 
-                    p_this_process);
+            fail_process(p_this_process);
             return;
     }
 
     debug_info("m_process__game_action__global_space__request__inbound_server, finished.");
-    complete_game_action_process(
-            p_game, 
-            p_this_process);
+    complete_process(p_this_process);
 }
 
 void m_process__game_action__global_space__request__inbound_server__init(
@@ -209,9 +197,7 @@ void m_process__game_action__global_space__request__outbound_client(
                 p_game, 
                 *p_gsv__3i32);
 
-        fail_game_action_process_for__tcp(
-                p_game, 
-                p_this_process);
+        fail_process(p_this_process);
         return;
     }
 
@@ -228,15 +214,11 @@ void m_process__game_action__global_space__request__outbound_client(
                 return;
             }
             debug_error("m_process__game_action__global_space__request__outbound_client, reception timeout.");
-            fail_game_action_process_for__tcp(
-                    p_game, 
-                    p_this_process);
+            fail_process(p_this_process);
             return;
         default:
             debug_error("m_process__game_action__global_space__request__outbound_client, reception failed.");
-            fail_game_action_process_for__tcp(
-                    p_game, 
-                    p_this_process);
+            fail_process(p_this_process);
             return;
     }
 
@@ -254,9 +236,7 @@ void m_process__game_action__global_space__request__outbound_client(
 
     if (!p_global_space) {
         debug_error("m_process__game_action__global_space__request__outbound_client, p_global_space == 0.");
-        fail_game_action_process_for__tcp(
-                p_game, 
-                p_this_process);
+        fail_process(p_this_process);
         return;
     }
 
@@ -266,9 +246,7 @@ void m_process__game_action__global_space__request__outbound_client(
     drop_global_space_within__global_space_manager(
             p_game,
             *p_gsv__3i32);
-    complete_game_action_process_for__tcp(
-            p_game, 
-            p_this_process);
+    complete_process(p_this_process);
     debug_info("m_process__game_action__global_space__request__outbound_client, finished.");
 }
 
@@ -293,9 +271,7 @@ void m_process__game_action__global_space__request__outbound_client__init(
 
     if (!p_global_space) {
         debug_error("m_process__game_action__global_space__request__outbound_client__init, p_global_space == 0.");
-        fail_game_action_process(
-                p_game, 
-                p_this_process);
+        fail_process(p_this_process);
         return;
     }
 
@@ -312,9 +288,7 @@ void m_process__game_action__global_space__request__outbound_client__init(
         drop_global_space_within__global_space_manager(
                 p_game, 
                 *p_gsv__3i32);
-        fail_game_action_process(
-                p_game, 
-                p_this_process);
+        fail_process(p_this_process);
         return;
     }
 
@@ -329,9 +303,7 @@ void m_process__game_action__global_space__request__outbound_client__init(
                 p_game, 
                 *p_gsv__3i32);
         debug_error("m_process__game_action__global_space__request__outbound_client__init, failed to allocate collision_node.");
-        fail_game_action_process(
-                p_game, 
-                p_this_process);
+        fail_process(p_this_process);
         return;
     }
 
@@ -349,9 +321,7 @@ void m_process__game_action__global_space__request__outbound_client__init(
                 p_game, 
                 *p_gsv__3i32);
         debug_error("m_process__game_action__global_space__request__outbound_client__init, failed to set process as tcp receiver.");
-        fail_game_action_process(
-                p_game, 
-                p_this_process);
+        fail_process(p_this_process);
         return;
     }
 

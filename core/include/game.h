@@ -55,9 +55,53 @@ Client *allocate_client_from__game(
         Game *p_game,
         Identifier__u32 uuid__u32);
 
+void release_client_from__game(
+        Game *p_game,
+        Client *p_client);
+
 Client *get_p_client_by__uuid_from__game(
         Game *p_game,
         Identifier__u32 uuid__u32);
+
+Process *dispatch_handler_process_to__load_client(
+        Game *p_game,
+        IO_path path_to__client_file,
+        Identifier__u32 uuid_of__client__u32);
+
+Process *dispatch_handler_process_to__save_client(
+        Game *p_game,
+        IO_path path_to__client_file,
+        Client *p_client);
+
+Process *load_client(
+        Game *p_game,
+        Identifier__u32 uuid_of__client__u32);
+
+///
+/// This will spawn a couple of processes.
+/// It's recommended that the world settles with regards to
+/// IO before serializing clients.
+///
+void save_all__clients(
+        Game *p_game);
+
+Process *save_client(
+        Game *p_game,
+        Client *p_client);
+
+static inline
+void set_dispatch_handler_process_for__load_client(
+        Game *p_game,
+        m_Process m_process) {
+    p_game->m_process__deserialize_client = m_process;
+}
+
+static inline
+void set_dispatch_handler_process_for__save_client(
+        Game *p_game,
+        m_Process m_process) {
+    p_game->m_process__serialize_client = m_process;
+}
 
 static inline
 Client *get_p_local_client_by__from__game(
@@ -225,7 +269,7 @@ Input *get_p_input_from__game(Game *p_game) {
 static inline
 Quantity__u32 get_quantity_of__clients_connect_to__game(
         Game *p_game) {
-    return p_game->quantity_of__clients;
+    return p_game->index_to__next_client_in__pool - 1;
 }
 
 static inline
@@ -239,10 +283,10 @@ Client *get_p_client_by__index_from__game(
         return 0;
     }
     if (index_of__client
-            >= get_quantity_of__clients_connect_to__game(p_game)) {
+            >= p_game->index_to__next_client_in__pool) {
         debug_error("get_p_client_by__index_from__game, index out of bounds: %d/%d",
                 index_of__client,
-                get_quantity_of__clients_connect_to__game(p_game));
+                p_game->index_to__next_client_in__pool);
         return 0; 
     }
 #endif

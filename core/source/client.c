@@ -1,4 +1,6 @@
 #include "client.h"
+#include "collisions/hitbox_aabb.h"
+#include "collisions/hitbox_aabb_manager.h"
 #include "defines.h"
 #include "defines_weak.h"
 #include "game.h"
@@ -8,6 +10,7 @@
 #include "game_action/game_action_manager.h"
 #include "multiplayer/tcp_socket.h"
 #include "multiplayer/tcp_socket_manager.h"
+#include "platform.h"
 #include "process/process.h"
 #include "process/process_manager.h"
 #include "serialization/hashing.h"
@@ -280,3 +283,107 @@ bool dispatch_game_action_for__client(
     return true;
 }
 
+void m_process__deserialize_client__default(
+        Process *p_this_process,
+        Game *p_game) {
+    Serialization_Request *p_serialization_request =
+        (Serialization_Request*)p_this_process->p_process_data;
+    Client *p_client =
+        (Client*)p_serialization_request->p_data;
+
+    Hitbox_AABB *p_hitbox_aabb =
+        allocate_hitbox_aabb_from__hitbox_aabb_manager(
+                get_p_hitbox_aabb_manager_from__game(
+                    p_game), 
+                GET_UUID_P(p_client));
+
+    if (!p_hitbox_aabb) {
+        debug_error("m_process__deserialize_client__default, failed to allocate p_hitbox_aabb for client.");
+        fail_process(p_this_process);
+        return;
+    }
+
+    Quantity__u32 expected_length_of__read = 0;
+    Quantity__u32 length_of__read = 
+        (expected_length_of__read = 
+            sizeof(
+                Hitbox_AABB));
+
+    PLATFORM_Read_File_Error error = 
+        PLATFORM_Read_File_Error__None;
+    if (p_serialization_request->p_file_handler) {
+        PLATFORM_read_file(
+                get_p_PLATFORM_file_system_context_from__game(p_game), 
+                (u8 *)p_hitbox_aabb, 
+                &length_of__read, 
+                1, 
+                p_serialization_request->p_file_handler);
+    } else {
+        length_of__read = 0;    
+    }
+
+    if (length_of__read != expected_length_of__read) {
+        // Assume that this is the first time the player is being loaded
+        set_hitbox__position_with__3i32(
+                p_hitbox_aabb, 
+                VECTOR__3i32__0_0_0);
+        error = 0;
+    }
+
+    if (error) {
+        debug_error("m_process__deserialize_client__default, read file error: %d",
+                error);
+        fail_process(p_this_process);
+        return;
+    }
+
+    set_client_as__active(p_client);
+    complete_process(p_this_process);
+}
+
+void m_process__serialize_client__default(
+        Process *p_this_process,
+        Game *p_game) {
+    Serialization_Request *p_serialization_request =
+        (Serialization_Request*)p_this_process->p_process_data;
+    Client *p_client =
+        (Client*)p_serialization_request->p_data;
+
+    Hitbox_AABB *p_hitbox_aabb =
+        get_p_hitbox_aabb_by__uuid_u32_from__hitbox_aabb_manager(
+                get_p_hitbox_aabb_manager_from__game(p_game), 
+                GET_UUID_P(p_client));
+
+    if (!p_hitbox_aabb) {
+        debug_error("m_process__serialize_client__default, client lacks hitbox component.");
+        release_client_from__game(
+                p_game,
+                p_client);
+        fail_process(p_this_process);
+        return;
+    }
+
+    PLATFORM_Write_File_Error error =
+        PLATFORM_write_file(
+                get_p_PLATFORM_file_system_context_from__game(p_game), 
+                (u8*)p_hitbox_aabb, 
+                sizeof(Hitbox_AABB), 
+                1, 
+                p_serialization_request->p_file_handler);
+
+    if (error) {
+        debug_error("m_process__serialize_client__default, write error: %d",
+                error);
+        release_client_from__game(
+                p_game,
+                p_client);
+        fail_process(p_this_process);
+        return;
+    }
+
+    release_client_from__game(
+            p_game,
+            p_client);
+    complete_process(p_this_process);
+    return;
+}

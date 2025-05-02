@@ -37,7 +37,7 @@ void save_world(
 ///
 /// Only call this from the main menu.
 ///
-void load_world(Game *p_game);
+Process *load_world(Game *p_game);
 
 Entity *get_p_entity_from__world_using__3i32F4(
         World *p_world,

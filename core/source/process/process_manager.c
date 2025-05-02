@@ -139,6 +139,7 @@ bool add_process_to__active_processes_in__process_manager(
 }
 
 void release_process_from__process_manager(
+        Game *p_game,
         Process_Manager *p_process_manager,
         Process *p_process) {
 #ifndef NDEBUG
@@ -152,6 +153,11 @@ void release_process_from__process_manager(
     remove_process_from__active_processes_in__process_manager(
             p_process_manager, 
             p_process);
+    if (does_process_have__dispose_handler(p_process)) {
+        p_process->m_process_dispose__handler(
+                p_process,
+                p_game);
+    }
     initialize_process_as__empty_process(p_process);
 }
 
@@ -223,6 +229,7 @@ void swap_p_ptr_process_with__last_active_process_in__process_manager(
 Quantity__u32 poll_process_manager(
         Process_Manager *p_process_manager,
         Game *p_game) {
+    p_process_manager->p_process__latest = 0;
     for (Index__u32 index_of__process = 0;
             index_of__process < PROCESS_MAX_QUANTITY_OF;
             index_of__process++) {
@@ -262,6 +269,7 @@ Quantity__u32 poll_process_manager(
                         p_process->p_enqueued_process);
             }
             release_process_from__process_manager(
+                    p_game,
                     p_process_manager, 
                     p_process);
             continue;
@@ -302,6 +310,9 @@ Process *run_process_with__uuid(
             m_process, 
             0,
             process_flags__u8);
+
+    p_process_manager->p_process__latest =
+        p_process;
 
     return p_process;
 }

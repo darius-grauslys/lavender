@@ -24,6 +24,10 @@ Local_Space *get_p_local_space_from__local_space_manager(
         Local_Space_Manager *p_local_space_manager,
         Chunk_Vector__3i32 chunk_vector__3i32);
 
+bool is_local_space_manager__loaded(
+        Game *p_game,
+        Local_Space_Manager *p_local_space_manager);
+
 static inline
 Local_Space *get_p_local_space_by__3i32F4_from__local_space_manager(
         Local_Space_Manager *p_local_space_manager,

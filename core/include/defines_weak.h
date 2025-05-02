@@ -140,6 +140,8 @@ typedef void (*m_Entity_Serialization_Handler)(
 
 typedef struct Input_t Input;
 
+#define ASCII__CARRIAGE_RETURN 13
+#define ASCII__LINE_FEED 10
 #define ASCII__ESCAPE 27
 #define ASCII__BACKSPACE 8
 #define ASCII__DELETE 127

@@ -117,6 +117,8 @@ bool set_global_space_as__constructing(
 static inline
 bool set_global_space_as__NOT_constructing(
         Global_Space *p_global_space) {
+    set_global_space_as__NOT_awaiting_construction(
+            p_global_space);
     return p_global_space->global_space_flags__u8 &=
         ~GLOBAL_SPACE_FLAG__IS_CONSTRUCTING
         ;
@@ -142,6 +144,8 @@ bool set_global_space_as__deconstructing(
 static inline
 bool set_global_space_as__NOT_deconstructing(
         Global_Space *p_global_space) {
+    set_global_space_as__NOT_awaiting_deconstruction(
+            p_global_space);
     return p_global_space->global_space_flags__u8 &=
         ~GLOBAL_SPACE_FLAG__IS_DECONSTRUCTING
         ;
@@ -176,7 +180,10 @@ bool is_global_space__active(
         Global_Space *p_global_space) {
     return p_global_space
         && !is_global_space__constructing(p_global_space)
-        && !is_global_space__deconstructing(p_global_space);
+        && !is_global_space__awaiting_construction(p_global_space)
+        && !is_global_space__deconstructing(p_global_space)
+        && !is_global_space__awaiting_deconstruction(p_global_space)
+        ;
 }
 
 static inline

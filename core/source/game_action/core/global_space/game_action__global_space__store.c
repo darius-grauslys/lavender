@@ -25,9 +25,7 @@ void m_process__game_action__global_space__store(
     
     if (!p_global_space) {
         debug_error("m_process__game_action__global_space__store, p_global_space == 0.");
-        fail_game_action_process(
-                p_game, 
-                p_this_process);
+        fail_process(p_this_process);
         return;
     }
 
