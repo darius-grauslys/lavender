@@ -298,14 +298,16 @@ void GL_render_gfx_window(
             ;
     }
 
-    GL_link_data_to__shader_with__scale_to__viewport(
+    GL_link_data_to__shader_with__scale(
             get_p_PLATFORM_gfx_context_from__gfx_context(
                 p_gfx_context), 
             p_GL_shader__graphics_window, 
             0, 
             vector_3i32_to__vector_3i32F4(
                 get_position_3i32_of__graphics_window(
-                    p_gfx_window)));
+                    p_gfx_window)),
+            CAMERA_FULCRUM__WIDTH,
+            CAMERA_FULCRUM__HEIGHT);
 
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 }

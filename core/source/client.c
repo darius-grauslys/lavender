@@ -380,10 +380,7 @@ void m_process__serialize_client__default(
         fail_process(p_this_process);
         return;
     }
-
-    release_client_from__game(
-            p_game,
-            p_client);
+    
     complete_process(p_this_process);
     return;
 }

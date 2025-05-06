@@ -6,6 +6,7 @@
 #include "rendering/gfx_context.h"
 #include "rendering/graphics_window.h"
 #include "rendering/sprite_manager.h"
+#include "rendering/texture.h"
 #include "serialization/hashing.h"
 #include "serialization/serialization_header.h"
 #include "ui/ui_context.h"
@@ -70,6 +71,13 @@ Graphics_Window *allocate_graphics_window_with__uuid_from__graphics_window_manag
         DEALLOCATE_P(p_graphics_window__available);
         return 0;
     }
+
+    p_graphics_window__available
+        ->width_of__graphics_window__u32 =
+        get_length_of__texture_flag__width(texture_flags_for__gfx_window);
+    p_graphics_window__available
+        ->height_of__graphics_window__u32 =
+        get_length_of__texture_flag__height(texture_flags_for__gfx_window);
 
     p_graphics_window__available
         ->p_PLATFORM_gfx_window = 
@@ -246,11 +254,18 @@ void render_graphics_window(
         get_p_sprite_manager_from__graphics_window(
                 p_gfx_window);
 
+    if (p_gfx_window->p_camera
+            && p_gfx_window->p_camera->m_camera_handler) {
+        p_gfx_window->p_camera->m_camera_handler(
+                p_gfx_window->p_camera,
+                p_game,
+                p_gfx_window);
+    }
+
     if (p_sprite_manager) {
         render_sprites_in__sprite_manager(
-                p_gfx_context, 
+                p_game,
                 p_sprite_manager, 
-                get_p_hitbox_aabb_manager_from__game(p_game), 
                 p_gfx_window);
     }
 

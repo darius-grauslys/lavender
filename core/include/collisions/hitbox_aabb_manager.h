@@ -24,10 +24,9 @@ static inline
 Hitbox_AABB *get_p_hitbox_aabb_by__entity_from__hitbox_aabb_manager(
         Hitbox_AABB_Manager *p_hitbox_aabb_manager,
         Entity *p_entity) {
-    return (Hitbox_AABB*)dehash_identitier_u32_in__contigious_array(
-            (Serialization_Header*)p_hitbox_aabb_manager->hitboxes, 
-            MAX_QUANTITY_OF__HITBOX_AABB, 
-            p_entity->_serialization_header.uuid);
+    return get_p_hitbox_aabb_by__uuid_u32_from__hitbox_aabb_manager(
+            p_hitbox_aabb_manager, 
+            GET_UUID_P(p_entity));
 }
 
 #endif

@@ -25,13 +25,15 @@ void GL_process_input(
             p_GL_viewport->y
             + p_GL_viewport->height);
 
-    p_input->cursor__3i32.x__i32 -=
-        p_GL_viewport->x;
-    p_input->cursor__3i32.y__i32 -=
-        p_GL_viewport->y;
     p_input->cursor__3i32.y__i32 =
         p_GL_viewport->height
-        - p_input->cursor__3i32.y__i32;
+        - (p_input->cursor__3i32.y__i32
+                - p_GL_viewport->y);
+    p_input->cursor__3i32.x__i32 -=
+        p_GL_viewport->x
+        + (p_GL_viewport->width>>1);
+    p_input->cursor__3i32.y__i32 -=
+        (p_GL_viewport->height>>1);
 
     float x = (float)p_input->cursor__3i32.x__i32
         / (float)p_GL_viewport->width;

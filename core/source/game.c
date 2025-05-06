@@ -314,7 +314,7 @@ Process *dispatch_handler_process_to__load_client(
                 p_game, 
                 p_process, 
                 path_to__client_file, 
-                "rb", 
+                "w+b",  // TODO: only read mode, cache client data into single file
                 p_client,
                 true)) {
         debug_error("dispatch_handler_process_to__load_client, failed to run process.");

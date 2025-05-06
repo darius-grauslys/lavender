@@ -11,12 +11,12 @@ void initialize_inventory(
 void initialize_inventory_as__empty(
         Inventory *p_inventory);
 
-void serialize_inventory(
+PLATFORM_Write_File_Error serialize_inventory(
         PLATFORM_File_System_Context *p_PLATFORM_file_system_context,
         Serialization_Request *p_serialization_request,
         Inventory *p_inventory);
 
-void deserialize_inventory(
+PLATFORM_Read_File_Error deserialize_inventory(
         PLATFORM_File_System_Context *p_PLATFORM_file_system_context,
         Item_Manager *p_item_manager,
         Serialization_Request *p_serialization_request,

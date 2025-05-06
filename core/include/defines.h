@@ -3,9 +3,6 @@
 
 #include "platform.h"
 #include "platform_defaults.h"
-#include "types/implemented/chunk_generator_kind.h"
-#include "types/implemented/entity_kind.h"
-#include "types/implemented/sprite_animation_kind.h"
 #include "util/bitmap/bitmap.h"
 #include <stdbool.h>
 #include <stdint.h>
@@ -63,51 +60,6 @@ typedef int32_t     i32F20;
 
 typedef uint32_t     u32F20;
 
-#define I32F4_MAX ((uint32_t)BIT(31)-1)
-#define I32F4_MIN BIT(31)
-
-/// 
-/// Vector__3i32F4 is a 3-tuple of 32 bit FIXED POINT
-/// fractional integers with 4 bits of percision.
-///
-/// To get a whole number, use ENTITY_CHUNK_LOCAL_SPACE__BIT_MASK
-/// and shift the result to the right by ENTITY_VELOCITY_FRACTIONAL__BIT_SIZE.
-///
-typedef struct Vector__3i32F4_t {
-    i32F4 x__i32F4, y__i32F4, z__i32F4;
-} Vector__3i32F4;
-
-typedef struct Vector__3i32F20_t {
-    i32F20 x__i32F20, y__i32F20, z__i32F20;
-} Vector__3i32F20;
-
-///
-/// Mainly used for acceleration
-///
-typedef struct Vector__3i16F8_t {
-    i16F8 x__i16F8, y__i16F8, z__i16F8;
-} Vector__3i16F8;
-
-
-typedef int32_t Signed_Index__i32;
-typedef int16_t Signed_Index__i16;
-typedef int8_t  Signed_Index__i8;
-
-///
-/// Has three int32_t components.
-///
-typedef struct Vector__3i32_t {
-    Signed_Index__i32 x__i32, 
-                      y__i32, 
-                      z__i32;
-} Vector__3i32;
-
-// TODO: remove
-typedef struct Vector__3i32_t Chunk_Vector__3i32;
-
-typedef struct Vector__3i32_t Global_Space_Vector__3i32;
-typedef struct Vector__3i32_t Tile_Vector__3i32;
-
 typedef uint32_t Psuedo_Random_Seed__u32;
 typedef int32_t Psuedo_Random__i32;
 typedef uint32_t Psuedo_Random__u32;
@@ -116,19 +68,6 @@ typedef struct Repeatable_Psuedo_Random_t {
     Psuedo_Random_Seed__u32 seed__initial;
     Psuedo_Random_Seed__u32 seed__current_random;
 } Repeatable_Psuedo_Random;
-
-typedef struct Timer__u32_t {
-    uint32_t remaining__u32;
-    uint32_t start__u32;
-} Timer__u32;
-typedef struct Timer__u16_t {
-    uint16_t remaining__u16;
-    uint16_t start__u16;
-} Timer__u16;
-typedef struct Timer__u8_t {
-    uint8_t remaining__u8;
-    uint8_t start__u8;
-} Timer__u8;
 
 typedef struct Date_Time_t {
     union {
@@ -442,16 +381,24 @@ typedef struct Collision_Node_Pool_t {
 /// SECTION_rendering
 ///
 
-typedef uint8_t Sprite_Animation_Flags__u4;
+typedef uint8_t Sprite_Animation_Flags__u3;
 
 #define SPRITE_ANIMATION_FLAGS__NONE 0
-#define SPRITE_ANIMATION_FLAG__IS_LOOPING BIT(0)
+#define SPRITE_ANIMATION_FLAG__IS_NOT_LOOPING BIT(0)
+#define SPRITE_ANIMATION_FLAG__IS_OFFSET_BY__DIRECTION BIT(1)
 
 typedef struct Sprite_Animation_t {
-    Quantity__u8                sprite_animation__initial_frame__u6         :7;
-    Quantity__u8                sprite_animation__quantity_of__frames__u5   :5;
-    Sprite_Animation_Flags__u4  sprite_animation__flags__u4                 :4;
+    Quantity__u8                sprite_animation__initial_frame__u8;
+    Quantity__u8                sprite_animation__quantity_of__frames__u8;
+    Quantity__u8                sprite_animation__ticks_per__frame__u5  :5;
+    Sprite_Animation_Flags__u3  sprite_animation__flags__u3;
 } Sprite_Animation;
+
+typedef struct Sprite_Animation_Group_t {
+    Quantity__u8 quantity_of__columns_in__sprite_animation_group__u4    :4;
+    Quantity__u8 quantity_of__rows_in__sprite_animation_group__u4       :4;
+    Quantity__u8 quantity_of__groups_for__sprite_animation_group__u8;
+} Sprite_Animation_Group;
 
 typedef uint8_t Sprite_Flags;
 
@@ -459,19 +406,25 @@ typedef uint8_t Sprite_Flags;
 
 #define SPRITE_FLAG__BIT_IS_ENABLED BIT(0)
 #define SPRITE_FLAG__BIT_IS_NEEDING_GRAPHICS_UPDATE BIT(1)
+#define SPRITE_FLAG__BIT_IS_FLIPPED_X BIT(2)
+#define SPRITE_FLAG__BIT_IS_FLIPPED_Y BIT(3)
 
 typedef struct Sprite_t {
     Serialization_Header _serialization_header;
     PLATFORM_Sprite *p_PLATFORM_sprite;
     PLATFORM_Texture *p_PLATFORM_texture_for__sprite_to__sample;
     PLATFORM_Texture *p_PLATFORM_texture_of__sprite;
-    Timer__u32 animation_timer__u32;
+    Timer__u8 animation_timer__u8;
+    Sprite_Animation animation;
+    Sprite_Animation_Group animation_group;
+    Index__u16 index_of__sprite_frame;
+    Index__u16 index_of__sprite_frame__final;
     Sprite_Animation_Kind the_kind_of_animation__this_sprite_has;
+    Index__u8 index_of__sprite_animation_sub_group__u8;
     Sprite_Kind the_kind_of__sprite;
-    Index__u8 sprite__index_of__frame;
-    Direction__u8 direction;
-    Direction__u8 direction__requested;
     Sprite_Flags sprite_flags__u8;
+    Direction__u8 direction__old__u8;
+    Direction__u8 direction__delta__u8;
 } Sprite;
 
 typedef struct Sprite_Render_Record_t {
@@ -483,7 +436,10 @@ typedef struct Sprite_Manager_t {
     Sprite sprites[MAX_QUANTITY_OF__SPRITES];
     Sprite_Render_Record sprite_render_records[
         MAX_QUANTITY_OF__SPRITES];
-    Sprite_Animation sprite_animations[Sprite_Animation_Kind__Unknown];
+    Sprite_Animation sprite_animations[
+        Sprite_Animation_Kind__Unknown];
+    Sprite_Animation_Group sprite_animation_groups[
+        Sprite_Animation_Group_Kind__Unknown];
     Sprite_Render_Record *p_sprite_render_record__last;
 } Sprite_Manager;
 
@@ -773,10 +729,16 @@ typedef struct Typer_t {
 /// SECTION_inventory
 ///
 
-typedef struct Item_t Item;
+#include "types/implemented/item_data.h"
+#ifndef DEFINE_ITEM_DATA
+typedef struct Item_Data_t {
+
+} Item_Data;
+#endif
 
 typedef struct Item_t {
     enum Item_Kind      the_kind_of_item__this_item_is;
+    Item_Data           item_data;
 } Item;
 
 typedef struct Item_Manager_t {
@@ -859,8 +821,6 @@ typedef struct Inventory_Manager_t {
 
 typedef struct Entity_t Entity;
 
-typedef uint8_t Entity_Flags__u8;
-
 #define ENTITY_FLAG__NONE 0
 #define ENTITY_FLAG__IS_ENABLED     BIT(0)
 #define ENTITY_FLAG__IS_NOT_UPDATING_POSITION \
@@ -874,14 +834,75 @@ typedef uint8_t Entity_Flags__u8;
 #define ENTITY_FLAG__IS_HIDDEN \
     NEXT_BIT(ENTITY_FLAG__IS_UNLOADED)
 
-#include "types/implemented/entity_data.h"
+///
+/// These flags are NOT reliable indicators of entities
+/// having these components during runtime.
+/// These flags are ONLY used for IO purposes, and
+/// you are encouraged to make your own for the serialization
+/// of essential components.
+///
+#define ENTITY_FLAG__IS_WITH_HITBOX__SERIALIZATION \
+    NEXT_BIT(ENTITY_FLAG__IS_HIDDEN)
+#define ENTITY_FLAG__IS_WITH_INVENTORY__SERIALIZATION \
+    NEXT_BIT(ENTITY_FLAG__IS_WITH_HITBOX__SERIALIZATION)
+
+#define ENTITY_FLAG__RESERVED_0 \
+    NEXT_BIT(ENTITY_FLAG__IS_WITH_INVENTORY__SERIALIZATION)
+#define ENTITY_FLAG__RESERVED_1 \
+    NEXT_BIT(ENTITY_FLAG__RESERVED_0)
+#define ENTITY_FLAG__RESERVED_2 \
+    NEXT_BIT(ENTITY_FLAG__RESERVED_1)
+#define ENTITY_FLAG__RESERVED_3 \
+    NEXT_BIT(ENTITY_FLAG__RESERVED_2)
+#define ENTITY_FLAG__RESERVED_4 \
+    NEXT_BIT(ENTITY_FLAG__RESERVED_3)
+#define ENTITY_FLAG__RESERVED_5 \
+    NEXT_BIT(ENTITY_FLAG__RESERVED_4)
+#define ENTITY_FLAG__RESERVED_6 \
+    NEXT_BIT(ENTITY_FLAG__RESERVED_5)
+#define ENTITY_FLAG__RESERVED_7 \
+    NEXT_BIT(ENTITY_FLAG__RESERVED_6)
+#define ENTITY_FLAG__CUSTOM_0 \
+    NEXT_BIT(ENTITY_FLAG__RESERVED_7)
+#define ENTITY_FLAG__CUSTOM_1 \
+    NEXT_BIT(ENTITY_FLAG__CUSTOM_0)
+#define ENTITY_FLAG__CUSTOM_2 \
+    NEXT_BIT(ENTITY_FLAG__CUSTOM_1)
+#define ENTITY_FLAG__CUSTOM_3 \
+    NEXT_BIT(ENTITY_FLAG__CUSTOM_2)
+#define ENTITY_FLAG__CUSTOM_4 \
+    NEXT_BIT(ENTITY_FLAG__CUSTOM_3)
+#define ENTITY_FLAG__CUSTOM_5 \
+    NEXT_BIT(ENTITY_FLAG__CUSTOM_4)
+#define ENTITY_FLAG__CUSTOM_6 \
+    NEXT_BIT(ENTITY_FLAG__CUSTOM_5)
+#define ENTITY_FLAG__CUSTOM_7 \
+    NEXT_BIT(ENTITY_FLAG__CUSTOM_6)
+#define ENTITY_FLAG__CUSTOM_8 \
+    NEXT_BIT(ENTITY_FLAG__CUSTOM_7)
+#define ENTITY_FLAG__CUSTOM_9 \
+    NEXT_BIT(ENTITY_FLAG__CUSTOM_8)
+#define ENTITY_FLAG__CUSTOM_10 \
+    NEXT_BIT(ENTITY_FLAG__CUSTOM_9)
+#define ENTITY_FLAG__CUSTOM_11 \
+    NEXT_BIT(ENTITY_FLAG__CUSTOM_10)
+#define ENTITY_FLAG__CUSTOM_12 \
+    NEXT_BIT(ENTITY_FLAG__CUSTOM_11)
+#define ENTITY_FLAG__CUSTOM_13 \
+    NEXT_BIT(ENTITY_FLAG__CUSTOM_12)
+#define ENTITY_FLAG__CUSTOM_14 \
+    NEXT_BIT(ENTITY_FLAG__CUSTOM_13)
+#define ENTITY_FLAG__CUSTOM_15 \
+    NEXT_BIT(ENTITY_FLAG__CUSTOM_14)
+
+#include <types/implemented/entity_data.h>
 #ifndef DEFINE_ENTITY_DATA
 typedef struct Entity_Data_t {
     Entity_Kind the_kind_of__entity;
 } Entity_Data;
 #endif
 
-#include "types/implemented/entity_functions.h"
+#include <types/implemented/entity_functions.h>
 #ifndef DEFINE_ENTITY_FUNCTIONS
 typedef struct Entity_Functions_t {
     m_Entity_Handler                m_entity_dispose_handler;
@@ -897,23 +918,21 @@ typedef struct Entity_t {
     ///
     Serialization_Header            _serialization_header;
     Entity_Data                     entity_data;
-    Entity_Flags__u8                entity_flags;
-    const Entity_Functions          *p_const_entity_functions;
+    Entity_Functions                entity_functions;
 } Entity;
 
 typedef void (*f_Entity_Initializer)(
         Game *p_game,
         World *p_world,
-        Entity *p_entity,
-        Vector__3i32F4 position__3i32F4);
+        Entity *p_entity);
 
 typedef struct Entity_Manager_t {
     Entity entities[MAX_QUANTITY_OF__ENTITIES];
     Entity *ptr_array_of__entities[MAX_QUANTITY_OF__ENTITIES];
     Entity_Functions entity_functions[Entity_Kind__Unknown];
-    f_Entity_Initializer F_entity_initializer_table[Entity_Kind__Unknown];
     Repeatable_Psuedo_Random randomizer;
     Entity **p_ptr_entity__next_in_ptr_array;
+    f_Entity_Initializer f_entity_initializer;
 } Entity_Manager;
 
 ///
@@ -1516,16 +1535,17 @@ typedef struct UI_Context_t {
 
 typedef void (*m_Camera_Handler)(
         Camera *p_this_camera,
-        World *p_world);
+        Game *p_game,
+        Graphics_Window *p_graphics_window);
 
 typedef struct Camera_t {
     Vector__3i32F4 position;
     m_Camera_Handler m_camera_handler;
-    void *p_camera_data;
     Quantity__u32 width_of__fulcrum;
     Quantity__u32 height_of__fulcrum;
     i32F20 z_near;
     i32F20 z_far;
+    Identifier__u32 uuid_of__target__u32;
 } Camera;
 
 #define PATH_VECTORS_MAX_QUANTITY_OF 6
@@ -1773,20 +1793,6 @@ typedef struct Tile_Render_Result_t {
     Tile_Wall_Adjacency_Code__u16 wall_adjacency;
 } Tile_Render_Result;
 
-#define TILE_RENDER__WALL_ADJACENCY__BIT_SHIFT_VFLIP 5
-#define TILE_RENDER__WALL_ADJACENCY__BIT_VFLIP \
-    BIT(TILE_RENDER__WALL_ADJACENCY__BIT_SHIFT_VFLIP)
-
-#define TILE_RENDER__WALL_ADJACENCY__EAST  0b00010001
-#define TILE_RENDER__WALL_ADJACENCY__WEST  0b00110001
-#define TILE_RENDER__WALL_ADJACENCY__NORTH 0b00000100
-#define TILE_RENDER__WALL_ADJACENCY__SOUTH 0b00001000
-
-#define TILE_RENDER__WALL_ADJACENCY__COVER_MASK \
-    MASK(2) 
-#define TILE_RENDER__WALL_ADJACENCY__SPRITE_COVER_MASK \
-    MASK(4)
-
 typedef struct Chunk_t Chunk;
 typedef struct Chunk_Data_t Chunk_Data;
 
@@ -1825,7 +1831,7 @@ typedef uint8_t Chunk_Flags;
 #define CHUNK_FLAG__IS_VISUALLY_UPDATED BIT(4)
 
 typedef struct Chunk_Data_t {
-    Tile tiles[CHUNK__WIDTH * CHUNK__HEIGHT * CHUNK__DEPTH];
+    Tile tiles[CHUNK__QUANTITY_OF__TILES];
 } Chunk_Data;
 
 typedef struct Chunk_t {
@@ -1835,7 +1841,7 @@ typedef struct Chunk_t {
     Serialization_Header__UUID_64    _serialization_header;
     Chunk_Flags chunk_flags;
     union {
-        Tile tiles[CHUNK__WIDTH * CHUNK__HEIGHT * CHUNK__DEPTH];
+        Tile tiles[CHUNK__QUANTITY_OF__TILES];
         Chunk_Data chunk_data;
     };
 } Chunk;
@@ -2169,6 +2175,8 @@ typedef struct Graphics_Window_t {
     Vector__3i32 position_of__gfx_window;
     Vector__3i32 position_of__gfx_window__minimum;
     Vector__3i32 position_of__gfx_window__maximum;
+    Quantity__u32 width_of__graphics_window__u32;
+    Quantity__u32 height_of__graphics_window__u32;
     Camera *p_camera;
     UI_Manager *p_ui_manager;
     Sprite_Manager *p_sprite_manager;

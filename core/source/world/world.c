@@ -5,7 +5,6 @@
 #include "collisions/hitbox_aabb_manager.h"
 #include "defines.h"
 #include "defines_weak.h"
-#include "entity/handlers/entity_handlers.h"
 #include "game_action/core/world/game_action__world__load_world.h"
 #include "platform.h"
 #include "platform_defines.h"
@@ -83,16 +82,9 @@ void manage_world(
                     p_game, 
                     index_of__client);
 
-        if (!is_p_serialized_field__linked(
-                    &p_client->s_entity_of__client)) {
+        if (!p_gfx_window->p_camera) {
             continue;
         }
-
-        Hitbox_AABB *p_hitbox_aabb = 
-            get_p_hitbox_aabb_by__entity_from__hitbox_aabb_manager(
-                    get_p_hitbox_aabb_manager_from__world(
-                        p_world), 
-                    p_client->s_entity_of__client.p_serialized_field__entity);
 
         poll_local_space_for__scrolling(
                 get_p_local_space_manager_from__client(p_client), 
@@ -100,7 +92,8 @@ void manage_world(
                 get_p_global_space_manager_from__world(
                     get_p_world_from__game(p_game)), 
                 vector_3i32F4_to__chunk_vector_3i32(
-                    p_hitbox_aabb->position__3i32F4));
+                    p_gfx_window->p_camera
+                    ->position));
     }
 }
 
@@ -118,13 +111,13 @@ void manage_world__entities(Game *p_game) {
             get_p_entity_by__index_from__entity_manager(
                     p_entity_manager, 
                     index_of__entity);
-        if (!is_entity__allocated(p_entity)
-                || !is_entity__enabled(p_entity)) {
+        if (!is_entity__allocated(p_entity))
+            break;
+        if (!is_entity__enabled(p_entity))
             continue;
-        }
 
-        if (p_entity->p_const_entity_functions->m_entity_update_handler) {
-            p_entity->p_const_entity_functions->m_entity_update_handler(
+        if (p_entity->entity_functions.m_entity_update_handler) {
+            p_entity->entity_functions.m_entity_update_handler(
                     p_entity,
                     p_game,
                     p_world);

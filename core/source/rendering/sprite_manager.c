@@ -2,6 +2,7 @@
 #include "collisions/hitbox_aabb_manager.h"
 #include "defines.h"
 #include "defines_weak.h"
+#include "game.h"
 #include "platform.h"
 #include "platform_defines.h"
 #include "rendering/gfx_context.h"
@@ -204,9 +205,8 @@ void f_sort_swap__sprite_render_record(
 }
 
 void render_sprites_in__sprite_manager(
-        Gfx_Context *p_gfx_context,
+        Game *p_game,
         Sprite_Manager *p_sprite_manager,
-        Hitbox_AABB_Manager *p_hitbox_aabb_manager,
         Graphics_Window *p_gfx_window) {
     Sprite_Render_Record *p_sprite_render_record = 
         p_sprite_manager->sprite_render_records;
@@ -220,9 +220,12 @@ void render_sprites_in__sprite_manager(
                     ->p_sprite)) {
             continue;
         }
+        poll_sprite_animation(
+                p_game,
+                p_sprite_render_record->p_sprite);
         Hitbox_AABB *p_hitbox_aabb =
             get_p_hitbox_aabb_by__uuid_u32_from__hitbox_aabb_manager(
-                    p_hitbox_aabb_manager, 
+                    get_p_hitbox_aabb_manager_from__game(p_game), 
                     GET_UUID_P(p_sprite_render_record
                         ->p_sprite));
         if (!p_hitbox_aabb) {
@@ -255,7 +258,7 @@ void render_sprites_in__sprite_manager(
             continue;
         }
         PLATFORM_render_sprite(
-                p_gfx_context, 
+                get_p_gfx_context_from__game(p_game), 
                 p_gfx_window, 
                 p_sprite_render_record->p_sprite, 
                 p_sprite_render_record->position__3i32F4);

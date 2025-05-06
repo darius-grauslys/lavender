@@ -107,4 +107,10 @@ Repeatable_Psuedo_Random *get_p_repeatable_psuedo_random_from__world(
     return &p_world->repeatable_pseudo_random;
 }
 
+static inline
+Graphics_Window *get_p_graphics_window_from__world(
+        World *p_world) {
+    return p_world->p_graphics_window_for__world;
+}
+
 #endif

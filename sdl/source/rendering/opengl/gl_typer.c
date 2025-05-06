@@ -105,12 +105,14 @@ static void GL_put_char_in__typer_for__texture(
             p_GL_viewport_stack, 
             get_x_i32_from__hitbox(
                 &p_typer->text_bounding_box)
+            + (p_PLATFORM_texture->width >> 1)
             + p_typer->cursor_position__3i32.x__i32
             + p_font_letter->x__offset_of__font_letter
             - (get_width_u32_of__hitbox_aabb(
                     &p_typer->text_bounding_box) >> 1),
             get_y_i32_from__hitbox(
                 &p_typer->text_bounding_box)
+            + (p_PLATFORM_texture->height >> 1)
             - p_typer->cursor_position__3i32.y__i32
             - p_font_letter->y__offset_of__font_letter
             - p_typer->p_font->max_height_of__font_letter

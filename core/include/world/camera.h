@@ -7,7 +7,13 @@
 
 void m_camera_handler__default(
         Camera *p_camera,
-        World *p_world);
+        Game *p_game,
+        Graphics_Window *p_graphics_window);
+
+void m_camera_handler__follow__default(
+        Camera *p_this_camera,
+        Game *p_game,
+        Graphics_Window *p_graphics_window);
 
 void initialize_camera(
         Camera *p_camera,
@@ -34,13 +40,9 @@ void initialize_camera_as__inactive(
             0);
 }
 
-static inline
-void set_position_of__camera_to__hitbox(
-        Camera *p_camera, 
-        Hitbox_AABB *p_hitbox) {
-    p_camera->position =
-        p_hitbox->position__3i32F4;
-}
+void set_camera_to__follow(
+        Camera *p_camera,
+        Identifier__u32 uuid_of__target__u32);
 
 static inline
 Vector__3i32 get_position_3i32_of__camera(

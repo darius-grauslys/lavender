@@ -91,8 +91,7 @@
 //#define CHUNK__WIDTH__AND_HEIGHT__BIT_SHIFT 3
 #endif
 #ifndef CHUNK__DEPTH__BIT_SHIFT
-//#define CHUNK__DEPTH__BIT_SHIFT (\
-        CHUNK__WIDTH__AND_HEIGHT__BIT_SHIFT << 1)
+//#define CHUNK__DEPTH__BIT_SHIFT 1
 #endif
 
 #ifndef CHUNK__WIDTH

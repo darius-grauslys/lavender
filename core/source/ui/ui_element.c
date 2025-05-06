@@ -393,12 +393,14 @@ const UI_Tile_Span *get_ui_tile_span_of__ui_element(
 
     *p_index_x__u32 = 
         ((get_x_i32_from__hitbox(p_hitbox_aabb)
-          - p_graphics_window->position_of__gfx_window.x__i32)
+          - p_graphics_window->position_of__gfx_window.x__i32
+          + (p_graphics_window->width_of__graphics_window__u32 >> 1))
         >> UI_TILE__WIDTH_AND__HEIGHT__BIT_SHIFT)
         - (*p_width_in__tiles >> 1);
     *p_index_y__u32 =
         ((get_y_i32_from__hitbox(p_hitbox_aabb)
-          - p_graphics_window->position_of__gfx_window.y__i32)
+          - p_graphics_window->position_of__gfx_window.y__i32
+          + (p_graphics_window->height_of__graphics_window__u32 >> 1))
         >> UI_TILE__WIDTH_AND__HEIGHT__BIT_SHIFT)
         - (*p_height_in__tiles >> 1);
 

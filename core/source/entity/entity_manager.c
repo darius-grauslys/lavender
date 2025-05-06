@@ -8,23 +8,19 @@
 #include "serialization/serialization_header.h"
 #include "serialization/serialized_field.h"
 #include "timer.h"
+#include "types/implemented/entity_functions.h"
 #include "types/implemented/entity_kind.h"
 #include <entity/entity_manager.h>
 #include <entity/entity.h>
 #include <debug/debug.h>
 
-static inline
-f_Entity_Initializer get_f_entity_initializer_by__kind_from__entity_manager(
-        Entity_Manager *p_entity_manager, 
-        Entity_Kind the_kind_of__entity) {
-#ifndef NDEBUG
-    if (the_kind_of__entity >= Entity_Kind__Unknown) {
-        debug_error("get_f_entity_initializer_by__kind_from__entity_manager, the_kind_of__entity >= Entity_Kind__Unknown.");
-        return 0;
-    }
-#endif
-    return p_entity_manager->F_entity_initializer_table[
-        the_kind_of__entity];
+void f_entity_initializer__default(
+        Game *p_game,
+        World *p_world,
+        Entity *p_entity) {
+    memset((u8*)(p_entity) + sizeof(Serialization_Header),
+            0,
+            sizeof(Entity) - sizeof(Serialization_Header));
 }
 
 void initialize_entity_manager(Entity_Manager *p_entity_manager) {
@@ -48,14 +44,16 @@ void initialize_entity_manager(Entity_Manager *p_entity_manager) {
     p_entity_manager->p_ptr_entity__next_in_ptr_array =
         p_entity_manager->ptr_array_of__entities;
 
+    p_entity_manager->f_entity_initializer =
+        f_entity_initializer__default;
+
     register_entities(p_entity_manager);
 }
 
 void register_entity_into__entity_manager(
         Entity_Manager *p_entity_manager,
         Entity_Kind the_kind_of__entity,
-        Entity_Functions entity_functions,
-        f_Entity_Initializer f_entity_initializer) {
+        Entity_Functions entity_functions) {
 #ifndef NDEBUG
     if (!p_entity_manager) {
         debug_error("register_f_entity_initializer_into__entity_manager, p_entity_manager == 0.");
@@ -67,18 +65,68 @@ void register_entity_into__entity_manager(
     }
 #endif
 
-    p_entity_manager->F_entity_initializer_table[
-        the_kind_of__entity] = f_entity_initializer;
     p_entity_manager->entity_functions[
         the_kind_of__entity] = entity_functions;
+}
+
+///
+/// Create a new entity instance within the entity_manager object pool.
+/// Return nullptr (0) if fails to get new entity.
+///
+Entity *allocate_entity_with__this_uuid_in__entity_manager(
+        Game *p_game,
+        World *p_world,
+        Entity_Manager *p_entity_manager,
+        enum Entity_Kind kind_of_entity,
+        Identifier__u32 uuid__u32) {
+    Entity *p_entity =
+        (Entity*)allocate_serialization_header_with__this_uuid(
+                (Serialization_Header*)p_entity_manager->entities, 
+                MAX_QUANTITY_OF__ENTITIES,
+                uuid__u32);
+    
+    if (!p_entity) {
+        debug_error("allocate__entity, failed to allocate new entity.");
+        debug_warning("Is the entity limit reached?");
+        return 0;
+    }
+
+    if (p_entity_manager->f_entity_initializer) {
+        p_entity_manager->f_entity_initializer(
+                p_game,
+                p_world,
+                p_entity);
+    }
+
+    Entity_Functions *p_entity_functions =
+        &p_entity_manager->entity_functions[
+        kind_of_entity];
+
+    for (Index__u32 index_of__function_pointer = 0;
+            index_of__function_pointer
+            < sizeof(Entity_Functions) / sizeof(void*);
+            index_of__function_pointer++) {
+        void *p_function_ptr =
+            ((void**)p_entity_functions)[index_of__function_pointer];
+        if (!p_function_ptr)
+            continue;
+        ((void**)&p_entity->entity_functions)[index_of__function_pointer] =
+            p_function_ptr;
+    }
+
+    set_entity_as__enabled(p_entity);
+    *p_entity_manager->p_ptr_entity__next_in_ptr_array =
+        p_entity;
+    p_entity_manager->p_ptr_entity__next_in_ptr_array++;
+    
+    return p_entity;
 }
 
 Entity *allocate_entity_in__entity_manager(
         Game *p_game,
         World *p_world,
         Entity_Manager *p_entity_manager,
-        enum Entity_Kind kind_of_entity,
-        Vector__3i32F4 position__3i32F4) {
+        enum Entity_Kind kind_of_entity) {
     Entity *p_entity =
         (Entity*)allocate_serialization_header_with__uuid_branding(
                 (Serialization_Header*)p_entity_manager->entities, 
@@ -92,17 +140,27 @@ Entity *allocate_entity_in__entity_manager(
         return 0;
     }
 
-    f_Entity_Initializer f_entity_initializer =
-        get_f_entity_initializer_by__kind_from__entity_manager(
-                p_entity_manager, 
-                kind_of_entity);
-
-    if (f_entity_initializer) {
-        f_entity_initializer(
+    if (p_entity_manager->f_entity_initializer) {
+        p_entity_manager->f_entity_initializer(
                 p_game,
                 p_world,
-                p_entity,
-                position__3i32F4);
+                p_entity);
+    }
+
+    Entity_Functions *p_entity_functions =
+        &p_entity_manager->entity_functions[
+        kind_of_entity];
+
+    for (Index__u32 index_of__function_pointer = 0;
+            index_of__function_pointer
+            < sizeof(Entity_Functions) / sizeof(void*);
+            index_of__function_pointer++) {
+        void *p_function_ptr =
+            ((void**)p_entity_functions)[index_of__function_pointer];
+        if (!p_function_ptr)
+            continue;
+        ((void**)&p_entity->entity_functions)[index_of__function_pointer] =
+            p_function_ptr;
     }
 
     set_entity_as__enabled(p_entity);
@@ -118,8 +176,8 @@ void release_entity_from__entity_manager(
         World *p_world,
         Entity_Manager *p_entity_manager, 
         Entity *p_entity) {
-    if (p_entity->p_const_entity_functions->m_entity_dispose_handler) {
-        p_entity->p_const_entity_functions->m_entity_dispose_handler(
+    if (p_entity->entity_functions.m_entity_dispose_handler) {
+        p_entity->entity_functions.m_entity_dispose_handler(
                 p_entity,
                 p_game,
                 p_world);

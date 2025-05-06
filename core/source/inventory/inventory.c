@@ -49,7 +49,7 @@ void initialize_inventory_as__empty(
             p_inventory);
 }
 
-void serialize_inventory(
+PLATFORM_Write_File_Error serialize_inventory(
         PLATFORM_File_System_Context *p_PLATFORM_file_system_context,
         Serialization_Request *p_serialization_request,
         Inventory *p_inventory) {
@@ -72,7 +72,7 @@ void serialize_inventory(
             p_file_handler);
     if (error) {
         debug_error("serialize_inventory, error: %d", error);
-        return;
+        return error;
     }
 
     for (Index__u32 index_of__item_stack = 0;
@@ -114,9 +114,11 @@ void serialize_inventory(
             p_PLATFORM_file_system_context,
             position_at__end_of__file, 
             p_file_handler);
+
+    return error;
 }
 
-void deserialize_inventory(
+PLATFORM_Read_File_Error deserialize_inventory(
         PLATFORM_File_System_Context *p_PLATFORM_file_system_context,
         Item_Manager *p_item_manager,
         Serialization_Request *p_serialization_request,
@@ -139,15 +141,7 @@ void deserialize_inventory(
                 p_file_handler);
     if (error) {
         debug_error("deserialize_inventory, failed error: %d", error);
-        return;
-    }
-
-    if (length_of__read
-            != sizeof(quantity_of__serialized_item_stacks)) {
-        debug_error("deserialize_inventory, bad read length: %d/%d", 
-                length_of__read,
-                sizeof(quantity_of__serialized_item_stacks));
-        return;
+        return error;
     }
 
     for (Index__u8 index_of__item_stack = 0;
@@ -163,6 +157,8 @@ void deserialize_inventory(
                 p_serialization_request, 
                 p_item_stack);
     }
+
+    return error;
 }
 
 Item_Stack *get_p_item_stack_from__inventory_by__index(

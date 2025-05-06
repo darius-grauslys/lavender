@@ -61,14 +61,61 @@ typedef uint8_t Identifier__u8;
 
 typedef int32_t     Fractional_with__4bit__i32;
 
-typedef struct Vector__3i32F4_t Vector__3i32F4;
-typedef struct Vector__3i32_t Vector__3i32;
+#define I32F4_MAX ((uint32_t)BIT(31)-1)
+#define I32F4_MIN BIT(31)
+
+/// 
+/// Vector__3i32F4 is a 3-tuple of 32 bit FIXED POINT
+/// fractional integers with 4 bits of percision.
+///
+/// To get a whole number, use ENTITY_CHUNK_LOCAL_SPACE__BIT_MASK
+/// and shift the result to the right by ENTITY_VELOCITY_FRACTIONAL__BIT_SIZE.
+///
+typedef struct Vector__3i32F4_t {
+    i32F4 x__i32F4, y__i32F4, z__i32F4;
+} Vector__3i32F4;
+
+typedef struct Vector__3i32F20_t {
+    i32F20 x__i32F20, y__i32F20, z__i32F20;
+} Vector__3i32F20;
+
+///
+/// Mainly used for acceleration
+///
+typedef struct Vector__3i16F8_t {
+    i16F8 x__i16F8, y__i16F8, z__i16F8;
+} Vector__3i16F8;
+
 typedef struct Vector__3i32_t Chunk_Vector__3i32;
 typedef struct Vector__3i32_t Tile_Vector__3i32;
+typedef struct Vector__3i32_t Global_Space_Vector__3i32;
 
-typedef struct Timer__u32_t Timer__u32;
-typedef struct Timer__u16_t Timer__u16;
-typedef struct Timer__u8_t Timer__u8;
+typedef int32_t Signed_Index__i32;
+typedef int16_t Signed_Index__i16;
+typedef int8_t  Signed_Index__i8;
+
+///
+/// Has three int32_t components.
+///
+typedef struct Vector__3i32_t {
+    Signed_Index__i32 x__i32, 
+                      y__i32, 
+                      z__i32;
+} Vector__3i32;
+
+
+typedef struct Timer__u32_t {
+    uint32_t remaining__u32;
+    uint32_t start__u32;
+} Timer__u32;
+typedef struct Timer__u16_t {
+    uint16_t remaining__u16;
+    uint16_t start__u16;
+} Timer__u16;
+typedef struct Timer__u8_t {
+    uint8_t remaining__u8;
+    uint8_t start__u8;
+} Timer__u8;
 
 typedef struct Date_Time_t Date_Time;
 
@@ -115,6 +162,8 @@ typedef enum Entity_Kind {
 } Entity_Kind;
 #endif
 
+typedef uint32_t Entity_Flags__u32;
+
 typedef struct Entity_t Entity;
 typedef struct Game_t Game;
 typedef struct World_t World;
@@ -127,7 +176,36 @@ typedef void (*m_Entity_Handler)(
 typedef struct PLATFORM_File_System_Context_t PLATFORM_File_System_Context;
 typedef struct Serialization_Request_t Serialization_Request;
 
-typedef void (*m_Entity_Serialization_Handler)(
+typedef enum PLATFORM_Open_File_Error {
+    PLATFORM_Open_File_Error__None = 0,
+    PLATFORM_Open_File_Error__Invalid_Path = 1,
+    PLATFORM_Open_File_Error__File_Not_Found = 2,
+    PLATFORM_Open_File_Error__Unknown,
+} PLATFORM_Open_File_Error;
+
+typedef enum PLATFORM_Write_File_Error {
+    PLATFORM_Write_File_Error__None = 0,
+    PLATFORM_Write_File_Error__Max_Size_Reached = 1,
+    PLATFORM_Write_File_Error__System_Busy,
+    PLATFORM_Write_File_Error__Unknown
+} PLATFORM_Write_File_Error;
+
+typedef enum PLATFORM_Read_File_Error {
+    PLATFORM_Read_File_Error__None = 0,
+    PLATFORM_Read_File_Error__End_Of_File = 1,
+    PLATFORM_Read_File_Error__System_Busy,
+    PLATFORM_Read_File_Error__Unknown
+} PLATFORM_Read_File_Error;
+
+
+typedef PLATFORM_Write_File_Error (*m_Entity_Serialization_Handler)(
+        Entity *p_entity_self, 
+        Game *p_game,
+        PLATFORM_File_System_Context *p_PLATFORM_file_system_context,
+        World *p_world,
+        Serialization_Request *p_serialization_request);
+
+typedef PLATFORM_Read_File_Error (*m_Entity_Deserialization_Handler)(
         Entity *p_entity_self, 
         Game *p_game,
         PLATFORM_File_System_Context *p_PLATFORM_file_system_context,
@@ -190,7 +268,7 @@ typedef struct Item_Stack_t Item_Stack;
 typedef struct Inventory_t Inventory;
 
 #include <types/implemented/item_kind.h>
-#ifndef DEIFNE_ITEM_KIND
+#ifndef DEFINE_ITEM_KIND
 typedef enum Item_Kind {
     Item_Kind__None = 0,
     Item_Kind__Unknown
@@ -242,10 +320,18 @@ typedef enum Graphics_Window_Kind {
 
 #include <types/implemented/sprite_animation_kind.h>
 #ifndef DEFINE_SPRITE_ANIMATION_KIND
-enum Sprite_Animation_Kind {
+typdef enum Sprite_Animation_Kind {
     Sprite_Animation_Kind__None,
     Sprite_Animation_Kind__Unknown
-};
+} Sprite_Animation_Kind;
+#endif
+
+#include <types/implemented/sprite_animation_group_kind.h>
+#ifndef DEFINE_SPRITE_ANIMATION_GROUP_KIND
+typedef enum Sprite_Animation_Group_Kind {
+    Sprite_Animation_Group_Kind__None,
+    Sprite_Animation_Group_Kind__Unknown
+} Sprite_Animation_Group_Kind;
 #endif
 
 #include <types/implemented/sprite_kind.h>

@@ -189,9 +189,9 @@ void GL_compose_chunk(
                         index_y
                         );
                 width =
-                    1.0f / (int)tilesheet__width_in__tiles;
+                    (1.0f / (int)tilesheet__width_in__tiles) - 0.00005f;
                 height =
-                    1.0f / (int)tilesheet__height_in__tiles;
+                    (1.0f / (int)tilesheet__height_in__tiles) - 0.00005f;
                 glUniform2f(
                         p_GL_shader__chunk
                             ->location_of__general_uniform_1,

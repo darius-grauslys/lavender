@@ -47,11 +47,13 @@ void GL_link_data_to__shader(
         Vector__3i32F4 position__3i32F4,
         i32F4 scale);
 
-void GL_link_data_to__shader_with__scale_to__viewport(
+void GL_link_data_to__shader_with__scale(
         PLATFORM_Gfx_Context *p_PLATFORM_gfx_context,
         GL_Shader_2D *p_GL_shader,
         Camera *p_camera,
-        Vector__3i32F4 position__3i32F4);
+        Vector__3i32F4 position__3i32F4,
+        i32F4 scale__x,
+        i32F4 scale__y);
 
 static inline
 bool GL_is_shader__allocated(

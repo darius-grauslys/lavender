@@ -269,7 +269,7 @@ Input *get_p_input_from__game(Game *p_game) {
 static inline
 Quantity__u32 get_quantity_of__clients_connect_to__game(
         Game *p_game) {
-    return p_game->index_to__next_client_in__pool - 1;
+    return p_game->index_to__next_client_in__pool;
 }
 
 static inline

@@ -2,6 +2,7 @@
 #include "client.h"
 #include "collisions/collision_node.h"
 #include "collisions/collision_node_pool.h"
+#include "collisions/hitbox_aabb_manager.h"
 #include "defines.h"
 #include "defines_weak.h"
 #include "entity/entity_manager.h"
@@ -117,11 +118,7 @@ void m_process__deserialize_entities_in__global_space(
                 p_game, 
                 get_p_world_from__game(p_game),
                 get_p_entity_manager_from__game(p_game),
-                Entity_Kind__None,
-                chunk_vector_3i32_to__vector_3i32F4(
-                    get_center_of__local_space_manager(
-                        get_p_local_space_manager_from__client(
-                            get_p_local_client_by__from__game(p_game)))));
+                Entity_Kind__None);
 
     deserialize_entity(
             p_game, 

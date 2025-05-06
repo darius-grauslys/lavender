@@ -18,9 +18,9 @@ void main()\n\
 {\n\
     gl_Position = (projection * translation * model) * (vec4(position, 1));\n\
     TexCoord = vec2(tileframe_width_height.x * \n\
-            (abs(tile_flip.x-uv.x) + tileframe_row_col.x),\n\
+            (abs(tile_flip.x-uv.x) + tileframe_row_col.x) + 0.0005f,\n\
             tileframe_width_height.y * \n\
-            (abs(tile_flip.y-uv.y) + tileframe_row_col.y));\n\
+            (abs(tile_flip.y-uv.y) + tileframe_row_col.y) + 0.001f);\n\
 }";
 
 const char *_source_shader_chunk__fragment = " \n\

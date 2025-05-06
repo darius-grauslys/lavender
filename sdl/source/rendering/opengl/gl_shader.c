@@ -174,24 +174,18 @@ void GL_link_camera_projection_to__shader(
                  i32F20_to__float(p_camera->z_far),
                  *p_projection);
     } else {
-        GL_Viewport_Stack *p_viewport_stack =
-            GL_get_p_viewport_stack_from__PLATFORM_gfx_context(
-                    p_PLATFORM_gfx_context);
-        GL_Viewport *p_viewport =
-            GL_peek_viewport_stack(
-                    p_viewport_stack);
         glm_ortho_lh_no(
-                -(int)(( (p_viewport->width))
+                -(int)( CAMERA_FULCRUM__WIDTH
                     >> (TILE__WIDTH_AND__HEIGHT__BIT_SHIFT + 1)),
-                (int)(( (p_viewport->width))
+                (int)( CAMERA_FULCRUM__WIDTH
                     >> (TILE__WIDTH_AND__HEIGHT__BIT_SHIFT + 1)),
-                -(int)(( (p_viewport->height))
+                -(int)( CAMERA_FULCRUM__HEIGHT
                     >> (TILE__WIDTH_AND__HEIGHT__BIT_SHIFT + 1)),
-                (int)(( (p_viewport->height))
+                (int)( CAMERA_FULCRUM__HEIGHT
                     >> (TILE__WIDTH_AND__HEIGHT__BIT_SHIFT + 1)),
                 // TODO: magic numbers in no camera default projection
-                -0.25f,
-                 1808.0f,
+                -8.0f,
+                 8.0f,
                  *p_projection);
     }
 
@@ -215,9 +209,9 @@ void GL_link_camera_translation_to__shader(
                 p_camera->position, 
                 vec3__translation);
             vec3__translation[0] *= 
-                (1.0/(BIT(TILE__WIDTH_AND__HEIGHT__BIT_SHIFT)));
+                -(1.0/(BIT(TILE__WIDTH_AND__HEIGHT__BIT_SHIFT)));
             vec3__translation[1] *= 
-                (1.0/(BIT(TILE__WIDTH_AND__HEIGHT__BIT_SHIFT)));
+                -(1.0/(BIT(TILE__WIDTH_AND__HEIGHT__BIT_SHIFT)));
             vec3__translation[2] *= 
                 -(1.0/(BIT(TILE__WIDTH_AND__HEIGHT__BIT_SHIFT)));
 
@@ -271,17 +265,17 @@ void GL_link_model_data_to__shader_with__non_uniform_scale(
     vector_3i32F4_to__vec3(
             position, 
             vector3_cglm);
-    vector3_cglm[0] *= (1.0/(BIT(TILE__WIDTH_AND__HEIGHT__BIT_SHIFT + 1)));
-    vector3_cglm[1] *= (1.0/(BIT(TILE__WIDTH_AND__HEIGHT__BIT_SHIFT + 1)));
-    vector3_cglm[2] *= -(1.0/(BIT(TILE__WIDTH_AND__HEIGHT__BIT_SHIFT + 1)));
-    glm_translate(
-            model, 
-            vector3_cglm);
+    vector3_cglm[0] *= (1.0/(BIT(TILE__WIDTH_AND__HEIGHT__BIT_SHIFT)));
+    vector3_cglm[1] *= (1.0/(BIT(TILE__WIDTH_AND__HEIGHT__BIT_SHIFT)));
+    vector3_cglm[2] *= -(1.0/(BIT(TILE__WIDTH_AND__HEIGHT__BIT_SHIFT)));
     vec3 vector3_cglm__scale = {
         i32F4_to__float(scale__x),
         i32F4_to__float(scale__y),
-        0
+        1
     };
+    glm_translate(
+            model, 
+            vector3_cglm);
     glm_scale(model, vector3_cglm__scale);
     glUniformMatrix4fv(
             p_GL_shader->location_of__model_mat_4_4,
@@ -318,11 +312,13 @@ void GL_link_data_to__shader(
     }
 }
 
-void GL_link_data_to__shader_with__scale_to__viewport(
+void GL_link_data_to__shader_with__scale(
         PLATFORM_Gfx_Context *p_PLATFORM_gfx_context,
         GL_Shader_2D *p_GL_shader,
         Camera *p_camera,
-        Vector__3i32F4 position__3i32F4) {
+        Vector__3i32F4 position__3i32F4,
+        i32F4 scale__x,
+        i32F4 scale__y) {
     if (GL_does_shader_utilize__projection_mat_4_4(
                 p_GL_shader)) {
         GL_link_camera_projection_to__shader(
@@ -338,22 +334,10 @@ void GL_link_data_to__shader_with__scale_to__viewport(
     }
     if (GL_does_shader_utilize__model_mat_4_4(
                 p_GL_shader)) {
-        GL_Viewport_Stack *p_viewport_stack =
-            GL_get_p_viewport_stack_from__PLATFORM_gfx_context(
-                    p_PLATFORM_gfx_context);
-        GL_Viewport *p_viewport =
-            GL_peek_viewport_stack(
-                    p_viewport_stack);
         GL_link_model_data_to__shader_with__non_uniform_scale(
                 p_GL_shader, 
                 position__3i32F4, 
-                i32_to__i32F4(
-                    p_viewport->width
-                    >> (TILE__WIDTH_AND__HEIGHT__BIT_SHIFT+1)
-                    ),
-                i32_to__i32F4(
-                    p_viewport->height
-                    >> (TILE__WIDTH_AND__HEIGHT__BIT_SHIFT+1)
-                    ));
+                scale__x,
+                scale__y);
     }
 }

@@ -78,6 +78,17 @@ void GL_update_sprite(
             ->p_PLATFORM_texture_of__sprite
             );
 
+    float clear_color[4];
+    glGetFloatv(GL_COLOR_CLEAR_VALUE, clear_color);
+
+    glClearColor(1.0, 0.0, 1.0, 0.0);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClearColor(
+            clear_color[0],
+            clear_color[1],
+            clear_color[2],
+            clear_color[3]);
+
     use_shader_2d(
             p_GL_shader__passthrough);
     use_vertex_object(&p_GL_gfx_sub_context->GL_vertex_object__unit_square);
@@ -122,11 +133,47 @@ void GL_update_sprite(
         ->p_PLATFORM_texture_of__sprite
         ->height;
 
+    Index__u16 sprite__index_of__frame = 0;
+    if (p_sprite->animation_group
+            .quantity_of__columns_in__sprite_animation_group__u4
+            != 0) {
+        Index__u16 sprite__index_of__frame__x =
+            (p_sprite->index_of__sprite_frame
+             % p_sprite->animation_group
+             .quantity_of__columns_in__sprite_animation_group__u4)
+            + (p_sprite->animation_group
+                    .quantity_of__columns_in__sprite_animation_group__u4
+                    * p_sprite->index_of__sprite_animation_sub_group__u8)
+            ;
+        Index__u16 sprite__index_of__frame__y =
+            (p_sprite->index_of__sprite_frame
+             / p_sprite->animation_group
+             .quantity_of__columns_in__sprite_animation_group__u4)
+            ;
+
+        sprite__index_of__frame =
+            (sprite__index_of__frame__x
+            % quantity_of__sprite_frame__columns)
+            + (p_sprite->animation_group
+                    .quantity_of__rows_in__sprite_animation_group__u4
+                * quantity_of__sprite_frame__columns
+                    * (sprite__index_of__frame__x
+                        / (p_sprite->animation_group
+                            .quantity_of__rows_in__sprite_animation_group__u4
+                            * quantity_of__sprite_frame__columns)))
+            + (quantity_of__sprite_frame__columns
+                    * sprite__index_of__frame__y)
+            ;
+    } else {
+        sprite__index_of__frame =
+            p_sprite->index_of__sprite_frame;
+    }
+
     Index__u8 index_of__frame__column =
-        p_sprite->sprite__index_of__frame
+        sprite__index_of__frame
         % quantity_of__sprite_frame__columns;
     Index__u8 index_of__frame__row =
-        p_sprite->sprite__index_of__frame
+        sprite__index_of__frame
         / quantity_of__sprite_frame__columns;
 
     GL_push_viewport(
@@ -247,21 +294,6 @@ void GL_render_sprite(
             ->p_SDL_graphics_window__texture
             );
 
-    if (!p_SDL_camera__active) {
-        position__3i32F4.x__i32F4 -=
-            i32_to__i32F4(
-                    p_gfx_window
-                    ->p_PLATFORM_gfx_window
-                    ->p_SDL_graphics_window__texture
-                    ->width >> 1);
-        position__3i32F4.y__i32F4 -=
-            i32_to__i32F4(
-                    p_gfx_window
-                    ->p_PLATFORM_gfx_window
-                    ->p_SDL_graphics_window__texture
-                    ->height >> 1);
-    }
-
     use_shader_2d(p_GL_shader__sprite);
     GL_link_data_to__shader(
             p_gfx_context
@@ -294,10 +326,8 @@ void GL_render_sprite(
     glUniform2f(
             p_GL_shader__sprite
             ->location_of__general_uniform_2,
-            p_sprite->direction & DIRECTION__WEST
-            ? 1.0
-            : 0.0, 
-            0.0);
+            is_sprite__flipped_x(p_sprite),
+            is_sprite__flipped_y(p_sprite));
     glDisable(GL_DEPTH_TEST);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     glEnable(GL_DEPTH_TEST);

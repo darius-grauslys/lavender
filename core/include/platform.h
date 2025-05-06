@@ -278,27 +278,6 @@ void PLATFORM_append_base_directory_to__path(
         char *p_c_str_path,
         Index__u32 *p_index_of__path_end);
 
-typedef enum PLATFORM_Open_File_Error {
-    PLATFORM_Open_File_Error__None = 0,
-    PLATFORM_Open_File_Error__Invalid_Path = 1,
-    PLATFORM_Open_File_Error__File_Not_Found = 2,
-    PLATFORM_Open_File_Error__Unknown,
-} PLATFORM_Open_File_Error;
-
-typedef enum PLATFORM_Write_File_Error {
-    PLATFORM_Write_File_Error__None = 0,
-    PLATFORM_Write_File_Error__Max_Size_Reached = 1,
-    PLATFORM_Write_File_Error__System_Busy,
-    PLATFORM_Write_File_Error__Unknown
-} PLATFORM_Write_File_Error;
-
-typedef enum PLATFORM_Read_File_Error {
-    PLATFORM_Read_File_Error__None = 0,
-    PLATFORM_Read_File_Error__End_Of_File = 1,
-    PLATFORM_Read_File_Error__System_Busy,
-    PLATFORM_Read_File_Error__Unknown
-} PLATFORM_Read_File_Error;
-
 Quantity__u32 PLATFORM_get_quantity_of__active_serialization_requests(
         PLATFORM_File_System_Context *p_PLATFORM_file_system_context);
 

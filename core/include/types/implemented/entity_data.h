@@ -6,7 +6,8 @@
 #define DEFINE_ENTITY_DATA
 
 typedef struct Entity_Data_t {
-    Entity_Kind the_kind_of__entity;
+    Entity_Flags__u32               entity_flags;
+    Entity_Kind                     the_kind_of__entity;
 } Entity_Data;
 
 #endif

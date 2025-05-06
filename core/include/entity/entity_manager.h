@@ -11,11 +11,26 @@
 
 void initialize_entity_manager(Entity_Manager *p_entity_manager);
 
+void f_entity_initializer__default(
+        Game *p_game,
+        World *p_world,
+        Entity *p_entity);
+
 void register_entity_into__entity_manager(
         Entity_Manager *p_entity_manager,
         Entity_Kind the_kind_of__entity,
-        Entity_Functions entity_functions,
-        f_Entity_Initializer f_entity_initializer);
+        Entity_Functions entity_functions);
+
+///
+/// Create a new entity instance within the entity_manager object pool.
+/// Return nullptr (0) if fails to get new entity.
+///
+Entity *allocate_entity_with__this_uuid_in__entity_manager(
+        Game *p_game,
+        World *p_world,
+        Entity_Manager *p_entity_manager,
+        enum Entity_Kind kind_of_entity,
+        Identifier__u32 uuid__u32);
 
 ///
 /// Create a new entity instance within the entity_manager object pool.
@@ -25,8 +40,7 @@ Entity *allocate_entity_in__entity_manager(
         Game *p_game,
         World *p_world,
         Entity_Manager *p_entity_manager,
-        enum Entity_Kind kind_of_entity,
-        Vector__3i32F4 position);
+        enum Entity_Kind kind_of_entity);
 
 ///
 /// Release entity from the entity_manager object pool.
@@ -36,6 +50,14 @@ void release_entity_from__entity_manager(
         World *p_world,
         Entity_Manager *p_manager, 
         Entity *p_entity);
+
+static inline
+void set_entity_initializer_in__entity_manager(
+        Entity_Manager *p_entity_manager,
+        f_Entity_Initializer f_entity_initializer) {
+    p_entity_manager->f_entity_initializer =
+        f_entity_initializer;
+}
 
 static inline
 Entity *get_p_entity_by__uuid_from__entity_manager(
@@ -58,8 +80,8 @@ void set_entity_functions(
         return;
     }
 #endif
-    p_entity->p_const_entity_functions =
-        &p_entity_manager->entity_functions[
+    p_entity->entity_functions =
+        p_entity_manager->entity_functions[
             get_kind_of__entity(p_entity)];
 }
 

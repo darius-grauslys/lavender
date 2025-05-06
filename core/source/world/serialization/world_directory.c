@@ -430,7 +430,7 @@ Index__u32 stat_client_file(
                 p_world, 
                 p_path);
     if (!index_of__path_append) {
-        debug_error("stat_client_file, failed to find file of client.");
+        debug_error("stat_client_file, failed to find file of world.");
         return 0;
     }
 
