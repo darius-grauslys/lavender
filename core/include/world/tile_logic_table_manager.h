@@ -31,6 +31,7 @@ bool poll__is_tile__unpassable(
         & TILE_FLAGS__BIT_IS_UNPASSABLE;
 }
 
+static inline
 bool poll__is_tile__sight_blocking(
         Tile_Logic_Table_Manager *p_tile_logic_table_manager,
         Tile *p_tile) {

@@ -101,7 +101,9 @@ void PLATFORM_release_serialization_request(
     }
 #endif
 
-    p_serialization_request->p_data = 0;
+    memset(p_serialization_request,
+            0,
+            sizeof(Serialization_Request));
     set_serialization_request_as__inactive(
             p_serialization_request);
 }

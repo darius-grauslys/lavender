@@ -14,6 +14,7 @@
 #include "process/process_manager.h"
 #include "serialization/serialization_header.h"
 #include "process/process.h"
+#include "process/filesystem_process.h"
 #include "vectors.h"
 #include "world/chunk.h"
 #include "entity/entity.h"
@@ -73,12 +74,6 @@ void m_process__serialize_entities_in__global_space(
         ->uuid_of__hitbox__u32
         ;
 
-    remove_entry_from__collision_node(
-            get_p_collision_node_pool_from__world(
-                get_p_world_from__game(p_game)), 
-            p_collision_node, 
-            uuid__u32);
-
     Entity *p_entity =
         get_p_entity_by__uuid_from__entity_manager(
                 get_p_entity_manager_from__world(
@@ -93,6 +88,12 @@ void m_process__serialize_entities_in__global_space(
     serialize_entity(
             p_game,
             p_serialization_request, 
+            p_entity);
+
+    release_entity_from__entity_manager(
+            p_game, 
+            get_p_world_from__game(p_game), 
+            get_p_entity_manager_from__game(p_game), 
             p_entity);
 }
 
@@ -376,15 +377,6 @@ void m_process__serialize_global_space(
             // We only reach this point if the subprocess has finished.
             p_this_process->process_sub_state__u8 =
                 IO_Global_Space_State__Containers;
-            p_process = run_process(
-                    get_p_process_manager_from__game(p_game), 
-                    m_process__serialize_entities_in__global_space, 
-                    PROCESS_FLAGS__NONE);
-            if (!p_process) {
-                debug_error("m_process__serialize_global_space, failed to allocate process for m_process__serialize_entities_in__global_space.");
-                fail_process(p_this_process);
-                break;
-            }
 
             // TODO: in the future for multithreading, we will want to
             //       perform this write before running the process.
@@ -404,6 +396,18 @@ void m_process__serialize_global_space(
                     1, 
                     p_serialization_request
                     ->p_file_handler);
+            if (!quantity_of__entries)
+                break;
+
+            p_process = run_process(
+                    get_p_process_manager_from__game(p_game), 
+                    m_process__serialize_entities_in__global_space, 
+                    PROCESS_FLAGS__NONE);
+            if (!p_process) {
+                debug_error("m_process__serialize_global_space, failed to allocate process for m_process__serialize_entities_in__global_space.");
+                fail_process(p_this_process);
+                break;
+            }
 
             p_process->p_process_data =
                 p_this_process->p_process_data;
@@ -502,15 +506,6 @@ void m_process__deserialize_global_space(
             // We only reach this point if the subprocess has finished.
             p_this_process->process_sub_state__u8 =
                 IO_Global_Space_State__Containers;
-            p_process = run_process(
-                    get_p_process_manager_from__game(p_game), 
-                    m_process__deserialize_entities_in__global_space, 
-                    PROCESS_FLAGS__NONE);
-            if (!p_process) {
-                debug_error("m_process__deserialize_global_space, failed to allocate process for m_process__deserialize_entities_in__global_space.");
-                fail_process(p_this_process);
-                break;
-            }
 
             Quantity__u32 quantity_of__entities = 0;
             Quantity__u32 quantity_of__bytes_to_read = sizeof(quantity_of__entities);
@@ -528,8 +523,21 @@ void m_process__deserialize_global_space(
                 return;
             }
 
+            if (!quantity_of__entities)
+                break;
+
             p_serialization_request->quantity_of__file_contents =
                 quantity_of__entities;
+
+            p_process = run_process(
+                    get_p_process_manager_from__game(p_game), 
+                    m_process__deserialize_entities_in__global_space, 
+                    PROCESS_FLAGS__NONE);
+            if (!p_process) {
+                debug_error("m_process__deserialize_global_space, failed to allocate process for m_process__deserialize_entities_in__global_space.");
+                fail_process(p_this_process);
+                break;
+            }
 
             p_process->p_process_data =
                 p_this_process->p_process_data;
@@ -576,17 +584,6 @@ void m_process__deserialize_global_space(
 Process *dispatch_process__deserialize_global_space(
         Game *p_game,
         Global_Space *p_global_space) {
-    Serialization_Request *p_serialization_request =
-        PLATFORM_allocate_serialization_request(
-                get_p_PLATFORM_file_system_context_from__game(p_game));
-
-    if (!p_serialization_request) {
-        debug_error("dispatch_process__deserialize_global_space, failed to allocate p_serialization_request.");
-        return 0;
-    }
-
-    p_serialization_request->p_data =
-        p_global_space;
 
     IO_path path_to__chunk_file;
     stat_chunk_file__tiles(
@@ -595,32 +592,29 @@ Process *dispatch_process__deserialize_global_space(
             p_global_space, 
             path_to__chunk_file);
 
-    PLATFORM_Open_File_Error error =
-        PLATFORM_open_file(
-                get_p_PLATFORM_file_system_context_from__game(p_game),
-                path_to__chunk_file,
-                "rb",
-                p_serialization_request);
-
-    if (error) {
-        path_to__chunk_file[MAX_LENGTH_OF__IO_PATH-1] = 0;
-        PLATFORM_release_serialization_request(
-                get_p_PLATFORM_file_system_context_from__game(p_game), 
-                p_serialization_request);
-        debug_error("dispatch_process__deserialize_global_space, failed to open(%d) global_space file: %s",
-                error,
-                path_to__chunk_file);
-        return 0;
-    }
-
     Process *p_process = 
         run_process(
                 get_p_process_manager_from__game(p_game), 
                 m_process__deserialize_global_space, 
                 PROCESS_FLAGS__NONE);
 
-    p_process->p_process_data =
-        p_serialization_request;
+    if (!p_process) {
+        debug_error("dispatch_process__deserialize_global_space, failed to allocate p_process.");
+        return 0;
+    }
+
+    if (!initialize_process_as__filesystem_process__open_file(
+            p_game, 
+            p_process, 
+            path_to__chunk_file, 
+            "rb", 
+            p_global_space, 
+            true)) {
+
+        debug_error("dispatch_process__deserialize_global_space, error in opening file.");
+        fail_process(p_process);
+        return p_process;
+    }
 
     set_global_space_as__constructing(
             p_global_space);

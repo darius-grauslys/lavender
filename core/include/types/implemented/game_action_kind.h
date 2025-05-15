@@ -23,8 +23,9 @@ typedef enum Game_Action_Kind {
     Game_Action_Kind__Entity__Spawn,
     Game_Action_Kind__Entity__Set_Flag,
     Game_Action_Kind__Entity__Action,
-    Game_Action_Kind__Hitbox__Set_Position,
-    Game_Action_Kind__Hitbox__Apply_Velocity,
+    Game_Action_Kind__Sprite,
+    Game_Action_Kind__Hitbox,
+    Game_Action_Kind__Input,
     Game_Action_Kind__Custom,
 
     ///

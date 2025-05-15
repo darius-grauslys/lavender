@@ -212,8 +212,7 @@ UI_Element *get_highest_priority_ui_element_thats__under_the_cursor(
 
         Hitbox_AABB *p_hitbox_aabb =
             get_p_hitbox_aabb_by__uuid_u32_from__hitbox_aabb_manager(
-                    get_p_hitbox_aabb_manager_from__world(
-                        get_p_world_from__game(p_game)), 
+                    get_p_hitbox_aabb_manager_from__game(p_game),
                     GET_UUID_P(p_ui_element));
 
         if (!p_hitbox_aabb)
@@ -387,8 +386,7 @@ void handle_drop_in__ui_manager(
     UI_Element *p_ui_element__receiving_drop =
         get_highest_priority_ui_element_thats__under_this_ui_element(
             p_ui_manager,
-            get_p_hitbox_aabb_manager_from__world(
-                get_p_world_from__game(p_game)),
+            get_p_hitbox_aabb_manager_from__game(p_game),
             p_ui_manager->p_ui_element__focused);
     p_ui_element__receiving_drop =
         get_ui_parent_or__child_with__receive_drop_handler(

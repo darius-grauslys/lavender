@@ -1,11 +1,14 @@
 #include "client.h"
 #include "collisions/collision_node.h"
 #include "collisions/collision_node_pool.h"
+#include "collisions/collision_resolver_aabb.h"
 #include "collisions/hitbox_aabb.h"
 #include "collisions/hitbox_aabb_manager.h"
 #include "defines.h"
 #include "defines_weak.h"
 #include "game_action/core/world/game_action__world__load_world.h"
+#include "inventory/inventory_manager.h"
+#include "inventory/item_manager.h"
 #include "platform.h"
 #include "platform_defines.h"
 #include "process/process_manager.h"
@@ -52,8 +55,6 @@ void initialize_world(
 
     initialize_chunk_generator_table(
             get_p_chunk_generation_table_from__world(p_world));
-    initialize_hitbox_aabb_manager(
-            get_p_hitbox_aabb_manager_from__world(p_world));
     initialize_entity_manager(&p_world->entity_manager);
 
     initialize_collision_node_pool(
@@ -63,15 +64,38 @@ void initialize_world(
 
     initialize_global_space_manager(
             get_p_global_space_manager_from__world(p_world));
+    initialize_inventory_manager(
+            get_p_inventory_manager_from__world(p_world));
+    initialize_item_manager(
+            get_p_item_manager_from__world(p_world));
+    register_core_items_into__item_manager(
+            get_p_item_manager_from__game(p_game));
+
+    set_f_hitbox_aabb_tile_touch_handler_of__world(
+            p_world, 
+            f_hitbox_aabb_tile_touch_handler__default);
+    set_f_hitbox_aabb_collision_handler_of__world(
+            p_world, 
+            f_hitbox_aabb_collision_handler__default);
 }
 
 void manage_world(
         Game *p_game,
         Graphics_Window *p_gfx_window) {
-    manage_world__entities(p_game);
-
     World *p_world = 
         get_p_world_from__game(p_game);
+
+    poll_collision_resolver_aabb(
+            p_game, 
+            get_p_hitbox_aabb_manager_from__game(p_game), 
+            p_world->f_hitbox_aabb_collision_handler, 
+            p_world->f_hitbox_aabb_tile_touch_handler);
+
+    poll_hitbox_manager_for__movement(
+            p_game,
+            get_p_hitbox_aabb_manager_from__game(p_game));
+
+    manage_world__entities(p_game);
 
     for (Index__u32 index_of__client = 0;
             index_of__client
@@ -99,9 +123,9 @@ void manage_world(
 
 void manage_world__entities(Game *p_game) {
     World *p_world =
-        &p_game->world;
+        get_p_world_from__game(p_game);
     Entity_Manager *p_entity_manager =
-        &p_game->world.entity_manager;
+        get_p_entity_manager_from__world(p_world);
 
     for (Index__u32 index_of__entity = 0;
             index_of__entity 
@@ -177,6 +201,7 @@ Process *load_world(Game *p_game) {
 }
 
 Entity *get_p_entity_from__world_using__3i32F4(
+        Game *p_game,
         World *p_world,
         Vector__3i32F4 position__3i32F4) {
     Global_Space *p_global_space =
@@ -191,7 +216,7 @@ Entity *get_p_entity_from__world_using__3i32F4(
 
     Hitbox_AABB *p_hitbox_aabb =
         get_p_hitbox_aabb_at__vector_3i32F4_from__collision_node(
-                get_p_hitbox_aabb_manager_from__world(p_world),
+                get_p_hitbox_aabb_manager_from__game(p_game),
                 p_collision_node, 
                 position__3i32F4);
 
@@ -223,20 +248,20 @@ void m_process__serialize_world(
 
     // TODO: verify the read lengths for errors.
     length_of__read = sizeof(
-            p_game->world.repeatable_pseudo_random.seed__initial);
+            p_world->repeatable_pseudo_random.seed__initial);
     PLATFORM_write_file(
             get_p_PLATFORM_file_system_context_from__game(p_game), 
-            (u8*)&p_game->world.repeatable_pseudo_random.seed__initial, 
+            (u8*)&p_world->repeatable_pseudo_random.seed__initial, 
             length_of__read, 
             1, 
             p_serialization_request
             ->p_file_handler);
 
     length_of__read = sizeof(
-            p_game->world.repeatable_pseudo_random.seed__current_random);
+            p_world->repeatable_pseudo_random.seed__current_random);
     PLATFORM_write_file(
             get_p_PLATFORM_file_system_context_from__game(p_game), 
-            (u8*)&p_game->world.repeatable_pseudo_random.seed__current_random, 
+            (u8*)&p_world->repeatable_pseudo_random.seed__current_random, 
             length_of__read, 
             1, 
             p_serialization_request
@@ -263,20 +288,20 @@ void m_process__deserialize_world(
 
     // TODO: verify the read lengths for errors.
     length_of__read = sizeof(
-            p_game->world.repeatable_pseudo_random.seed__initial);
+            p_world->repeatable_pseudo_random.seed__initial);
     PLATFORM_read_file(
             get_p_PLATFORM_file_system_context_from__game(p_game), 
-            (u8*)&p_game->world.repeatable_pseudo_random.seed__initial, 
+            (u8*)&p_world->repeatable_pseudo_random.seed__initial, 
             &length_of__read, 
             1, 
             p_serialization_request
             ->p_file_handler);
 
     length_of__read = sizeof(
-            p_game->world.repeatable_pseudo_random.seed__current_random);
+            p_world->repeatable_pseudo_random.seed__current_random);
     PLATFORM_read_file(
             get_p_PLATFORM_file_system_context_from__game(p_game), 
-            (u8*)&p_game->world.repeatable_pseudo_random.seed__current_random, 
+            (u8*)&p_world->repeatable_pseudo_random.seed__current_random, 
             &length_of__read, 
             1, 
             p_serialization_request

@@ -40,6 +40,7 @@ void save_world(
 Process *load_world(Game *p_game);
 
 Entity *get_p_entity_from__world_using__3i32F4(
+        Game *p_game,
         World *p_world,
         Vector__3i32F4 position__3i32F4);
 
@@ -84,12 +85,6 @@ Global_Space_Manager *get_p_global_space_manager_from__world(
 }
 
 static inline
-Hitbox_AABB_Manager *get_p_hitbox_aabb_manager_from__world(
-        World *p_world) {
-    return &p_world->hitbox_aabb_manager;
-}
-
-static inline
 Collision_Node_Pool *get_p_collision_node_pool_from__world(
         World *p_world) {
     return &p_world->collision_node_pool;
@@ -111,6 +106,22 @@ static inline
 Graphics_Window *get_p_graphics_window_from__world(
         World *p_world) {
     return p_world->p_graphics_window_for__world;
+}
+
+static inline
+void set_f_hitbox_aabb_tile_touch_handler_of__world(
+        World *p_world,
+        f_Hitbox_AABB_Tile_Touch_Handler f_hitbox_aabb_tile_touch_handler) {
+    p_world->f_hitbox_aabb_tile_touch_handler =
+        f_hitbox_aabb_tile_touch_handler;
+}
+
+static inline
+void set_f_hitbox_aabb_collision_handler_of__world(
+        World *p_world,
+        f_Hitbox_AABB_Collision_Handler f_hitbox_aabb_collision_handler) {
+    p_world->f_hitbox_aabb_collision_handler =
+        f_hitbox_aabb_collision_handler;
 }
 
 #endif

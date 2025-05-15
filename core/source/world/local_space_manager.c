@@ -823,36 +823,6 @@ void move_local_space_manager(
 Local_Space *get_p_local_space_from__local_space_manager(
         Local_Space_Manager *p_local_space_manager,
         Chunk_Vector__3i32 chunk_vector__3i32) {
-#ifndef NDEBUG
-    if (chunk_vector__3i32.x__i32
-            < (p_local_space_manager
-                ->center_of__local_space_manager__3i32.x__i32
-                - (LOCAL_SPACE_MANAGER__WIDTH>>1))) {
-        debug_error("get_p_local_space_by__3i32F4_from__local_space_manager, position out of bounds.");
-        return 0;
-    }
-    if (chunk_vector__3i32.x__i32
-            > (p_local_space_manager
-                ->center_of__local_space_manager__3i32.x__i32
-                + (LOCAL_SPACE_MANAGER__WIDTH>>1))) {
-        debug_error("get_p_local_space_by__3i32F4_from__local_space_manager, position out of bonuds.");
-        return 0;
-    }
-    if (chunk_vector__3i32.y__i32
-            < (p_local_space_manager
-                ->center_of__local_space_manager__3i32.y__i32
-                - (LOCAL_SPACE_MANAGER__HEIGHT>>1))) {
-        debug_error("get_p_local_space_by__3i32F4_from__local_space_manager, position out of bonuds.");
-        return 0;
-    }
-    if (chunk_vector__3i32.y__i32
-            > (p_local_space_manager
-                ->center_of__local_space_manager__3i32.y__i32
-                + (LOCAL_SPACE_MANAGER__HEIGHT>>1))) {
-        debug_error("get_p_local_space_by__3i32F4_from__local_space_manager, position out of bonuds.");
-        return 0;
-    }
-#endif
 
     i32 x_delta__i32 = 
         chunk_vector__3i32.x__i32
@@ -872,17 +842,42 @@ Local_Space *get_p_local_space_from__local_space_manager(
 
     Local_Space *p_local_space =
         p_local_space_manager->p_local_space__south_west;
-    while (x_delta__i32--) {
-        move_p_ptr_local_space__east(&p_local_space);
+    while (x_delta__i32) {
+        if (x_delta__i32 > 0) {
+            move_p_ptr_local_space__east(&p_local_space);
+            x_delta__i32--;
+        } else {
+            move_p_ptr_local_space__west(&p_local_space);
+            x_delta__i32++;
+        }
     }
-    while (y_delta__i32--) {
-        move_p_ptr_local_space__north(&p_local_space);
+    while (y_delta__i32) {
+        if (y_delta__i32 > 0) {
+            move_p_ptr_local_space__north(&p_local_space);
+            y_delta__i32--;
+        } else {
+            move_p_ptr_local_space__south(&p_local_space);
+            y_delta__i32++;
+        }
     }
-    while (z_delta__i32--) {
-        move_p_ptr_local_space__upwards(&p_local_space);
+    while (z_delta__i32) {
+        if (z_delta__i32 > 0) {
+            move_p_ptr_local_space__upwards(&p_local_space);
+            z_delta__i32--;
+        } else {
+            move_p_ptr_local_space__downwards(&p_local_space);
+            z_delta__i32++;
+        }
     }
 
-    return p_local_space;
+    return
+        (is_vectors_3i32__equal(
+                p_local_space
+                ->global_space__vector__3i32, 
+                chunk_vector__3i32))
+        ? p_local_space
+        : 0
+        ;
 }
 
 Tile *get_p_tile_by__3i32F4_from__local_space_manager(

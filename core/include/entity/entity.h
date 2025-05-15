@@ -9,6 +9,11 @@ void initialize_entity(
         Entity *p_entity, 
         enum Entity_Kind kind_of_entity);
 
+void m_entity_dispose_handler__default(
+        Entity *p_this_entity,
+        Game *p_game,
+        World *p_world);
+
 PLATFORM_Write_File_Error serialize_entity(
         Game *p_game,
         Serialization_Request *p_serialized_request,
@@ -18,6 +23,20 @@ PLATFORM_Read_File_Error deserialize_entity(
         Game *p_game,
         Serialization_Request *p_serialized_request,
         Entity *p_entity);
+
+PLATFORM_Write_File_Error m_entity_serialization_handler__default(
+        Entity *p_entity_self, 
+        Game *p_game,
+        PLATFORM_File_System_Context *p_PLATFORM_file_system_context,
+        World *p_world,
+        Serialization_Request *p_serialization_request);
+
+PLATFORM_Read_File_Error m_entity_deserialization_handler__default(
+        Entity *p_this_entity, 
+        Game *p_game,
+        PLATFORM_File_System_Context *p_PLATFORM_file_system_context,
+        World *p_world,
+        Serialization_Request *p_serialization_request);
 
 static inline
 bool is_entity__allocated(

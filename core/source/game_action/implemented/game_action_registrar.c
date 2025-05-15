@@ -1,5 +1,6 @@
 #include "game_action/implemented/game_action_registrar.h"
 #include "game_action/core/game_action__bad_request.h"
+#include "game_action/core/hitbox/game_action__hitbox.h"
 #include "game_action/core/tcp/game_action__tcp_begin_connect.h"
 #include "game_action/core/tcp/game_action__tcp_connect.h"
 #include "game_action/core/tcp/game_action__tcp_connect__accept.h"
@@ -24,6 +25,9 @@ void register_game_actions__offline(
             p_game_action_logic_table);
     register_game_action__world__load_world(
             p_game_action_logic_table);
+
+    register_game_action__hitbox_for__offline(
+            p_game_action_logic_table);
     debug_warning("register_game_actions__offline, impl.");
 }
 
@@ -46,6 +50,9 @@ void register_game_actions__client(
     register_game_action__global_space__resolve(
             p_game_action_logic_table);
     register_game_action__global_space__request_for__client(
+            p_game_action_logic_table);
+
+    register_game_action__hitbox_for__client(
             p_game_action_logic_table);
     debug_warning("register_game_actions__client, impl.");
 }
@@ -75,6 +82,9 @@ void register_game_actions__server(
     register_game_action__world__load_client(
             p_game_action_logic_table);
     register_game_action__world__load_world(
+            p_game_action_logic_table);
+
+    register_game_action__hitbox_for__server(
             p_game_action_logic_table);
     debug_warning("register_game_actions__server, impl.");
 }

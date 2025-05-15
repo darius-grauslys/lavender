@@ -24,6 +24,7 @@
 #include "serialization/serialization_header.h"
 #include "sort/sort_list/sort_list_manager.h"
 #include "vectors.h"
+#include "world/chunk_vectors.h"
 #include "world/local_space_manager.h"
 #include "world/serialization/world_directory.h"
 #include <game.h>
@@ -78,12 +79,8 @@ void initialize_game(
             get_p_process_manager_from__game(p_game));
     initialize_sort_list_manager(
             get_p_sort_list_manager_from__game(p_game));
-    initialize_inventory_manager(
-            get_p_inventory_manager_from__game(p_game));
-    initialize_item_manager(
-            get_p_item_manager_from__game(p_game));
-    register_core_items_into__item_manager(
-            get_p_item_manager_from__game(p_game));
+    initialize_hitbox_aabb_manager(
+            get_p_hitbox_aabb_manager_from__game(p_game));
 
     initialize_aliased_texture_manager(
             get_p_aliased_texture_manager_from__game(p_game));
@@ -158,6 +155,47 @@ void allocate_client_pool_for__game(
         &p_game->pM_clients[0];
 
     p_game->index_to__next_client_in__pool = 1;
+}
+
+Local_Space_Manager *get_p_local_space_manager_thats__closest_to__this_position(
+        Game *p_game,
+        Vector__3i32 vector__3i32) {
+#warning TODO: this needs optimization
+    // TODO: this process should be done via KD-Tree, as the current O(N)
+    // approach will not work for large number of clients.
+    Global_Space_Vector__3i32 gsv =
+        vector_3i32_to__chunk_vector_3i32(vector__3i32);
+
+    u32 manhattan_distance__closest = (u32)-1;
+    Local_Space_Manager *p_local_space_manager__closest;
+
+    for (Index__u32 index_of__client = 0;
+            index_of__client < p_game->index_to__next_client_in__pool
+            && index_of__client < MAX_QUANTITY_OF__CLIENTS;
+            index_of__client++) {
+        Client *p_client = get_p_client_by__index_from__game(
+                p_game, 
+                index_of__client);
+        if (!p_client)
+            break;
+
+        Local_Space_Manager *p_local_space_manager =
+            get_p_local_space_manager_from__client(p_client);
+
+        u32 manhattan_distance =
+            get_manhattan_distance__of_vector_3i32_as__u32(
+                    gsv, 
+                    get_center_of__local_space_manager(
+                        p_local_space_manager));
+
+        if (manhattan_distance
+                < manhattan_distance__closest) {
+            manhattan_distance__closest = manhattan_distance;
+            p_local_space_manager__closest = p_local_space_manager;
+        }
+    }
+
+    return p_local_space_manager__closest;
 }
 
 void begin_multiplayer_for__game(
@@ -725,4 +763,15 @@ bool m_game_action_handler__resolve__multiplayer(
     return release_game_action_from__client(
             p_client,
             p_game_action);
+}
+
+void allocate_world_for__game(
+        Game *p_game) {
+    if (get_p_world_from__game(p_game)) {
+        debug_error("allocate_world_for__game, pM_world != 0 (already allocated.)");
+        return;
+    }
+
+    p_game->pM_world =
+        malloc(sizeof(World));
 }

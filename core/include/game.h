@@ -73,6 +73,9 @@ Process *dispatch_handler_process_to__save_client(
         IO_path path_to__client_file,
         Client *p_client);
 
+void allocate_world_for__game(
+        Game *p_game);
+
 Process *load_client(
         Game *p_game,
         Identifier__u32 uuid_of__client__u32);
@@ -88,6 +91,10 @@ void save_all__clients(
 Process *save_client(
         Game *p_game,
         Client *p_client);
+
+Local_Space_Manager *get_p_local_space_manager_thats__closest_to__this_position(
+        Game *p_game,
+        Vector__3i32 vector__3i32);
 
 static inline
 void set_dispatch_handler_process_for__load_client(
@@ -156,13 +163,12 @@ void clear_log__system(Game *p_game) {
 
 static inline 
 World *get_p_world_from__game(Game *p_game) {
-    return &p_game->world;
+    return p_game->pM_world;
 }
 
 static inline
 Hitbox_AABB_Manager *get_p_hitbox_aabb_manager_from__game(Game *p_game) {
-    return get_p_hitbox_aabb_manager_from__world(
-            get_p_world_from__game(p_game));
+    return &p_game->hitbox_aabb_manager;
 }
 
 static inline 
@@ -210,7 +216,8 @@ Scene_Manager *get_p_scene_manager_from__game(Game *p_game) {
 
 static inline 
 Entity_Manager *get_p_entity_manager_from__game(Game *p_game) {
-    return get_p_entity_manager_from__world(&p_game->world);
+    return get_p_entity_manager_from__world(
+            get_p_world_from__game(p_game));
 }
 
 static inline
@@ -357,6 +364,12 @@ static inline
 u32F20 get_elapsed_ticks__u32F20_of__game(
         Game *p_game) {
     return p_game->tick_accumilator__u32F20 >> 15;
+}
+
+static inline
+bool is_world_allocated_for__game(
+        Game *p_game) {
+    return p_game->pM_world;
 }
 
 #endif

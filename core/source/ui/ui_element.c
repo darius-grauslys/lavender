@@ -89,6 +89,7 @@ void m_ui_element__dispose_handler__default(
                 GET_UUID_P(p_this_ui_element));
     if (p_hitbox_aabb) {
         release_hitbox_aabb_from__hitbox_aabb_manager(
+                p_game,
                 get_p_hitbox_aabb_manager_from__game(p_game), 
                 p_hitbox_aabb);
     }

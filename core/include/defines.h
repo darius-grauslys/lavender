@@ -328,10 +328,21 @@ typedef void (*f_Hitbox_AABB_Collision_Handler)(
         Hitbox_AABB *p_hitbox_aabb__colliding,
         Hitbox_AABB *p_hitbox_aabb__collided);
 
+typedef void (*f_Hitbox_AABB_Tile_Touch_Handler)(
+        Game *p_game,
+        World *p_world,
+        Hitbox_AABB *p_hitbox_aabb,
+        Tile *p_tile,
+        Signed_Index__i32 x__i32,
+        Signed_Index__i32 y__i32);
+
 #define MAX_QUANTITY_OF__HITBOX_AABB 256
 
 typedef struct Hitbox_AABB_Manager_t {
     Hitbox_AABB hitboxes[MAX_QUANTITY_OF__HITBOX_AABB];
+    Hitbox_AABB *ptr_array_of__active_hitboxes[
+        MAX_QUANTITY_OF__HITBOX_AABB];
+    Index__u32 index_of__next_hitbox_aabb_in__ptr_array;
 } Hitbox_AABB_Manager;
 
 /// When checking the distance between two collisions along each axis
@@ -2083,6 +2094,38 @@ typedef struct Game_Action_t {
         /// ---------------------
         /// </   Global_Space   >
         /// ---------------------
+
+        /// ---------------------
+        ///     Hitbox_AABB
+        /// ---------------------
+
+        union {
+            struct {
+                Identifier__u32 
+                    ga_kind__hitbox__uuid_of__target; 
+                Vector__3i32F4 
+                    ga_kind__hitbox__position__3i32F4;
+                Vector__3i32F4 
+                    ga_kind__hitbox__velocity__3i32F4;
+            }; // Hitbox__Set_Position
+        }; // Hitbox_AABB
+
+        /// ---------------------
+        /// </   Hitbox_AABB   >
+        /// ---------------------
+        /// ---------------------
+        /// <       Input      >
+        /// ---------------------
+
+        union {
+            struct {
+                Input ga_kind__input__input;
+            }; // Input
+        };
+
+        /// ---------------------
+        /// </      Input      >
+        /// ---------------------
     };
 } Game_Action;
 
@@ -2137,7 +2180,6 @@ typedef struct World_t {
     Global_Space_Manager global_space_manager;
     Collision_Node_Pool collision_node_pool;
     Chunk_Pool chunk_pool;
-    Hitbox_AABB_Manager hitbox_aabb_manager;
 
     Structure_Manager structure_manager;
     Tile_Logic_Table_Manager tile_logic_table_manager;
@@ -2148,9 +2190,13 @@ typedef struct World_t {
     Item_Manager        item_manager;
 
     Camera camera;
+    World_Name_String name;
+
+    f_Hitbox_AABB_Tile_Touch_Handler f_hitbox_aabb_tile_touch_handler;
+    f_Hitbox_AABB_Collision_Handler  f_hitbox_aabb_collision_handler;
+
     Graphics_Window *p_graphics_window_for__world;
 
-    World_Name_String name;
     Quantity__u8 length_of__world_name;
 } World;
 
@@ -2218,8 +2264,9 @@ typedef bool (*m_Game_Action_Handler)(
 typedef struct Game_t {
     Input input;
     Scene_Manager scene_manager;
+    Hitbox_AABB_Manager hitbox_aabb_manager;
 
-    World world;
+    World *pM_world;
 
     Process_Manager process_manager;
     Sort_List_Manager sort_list_manager;

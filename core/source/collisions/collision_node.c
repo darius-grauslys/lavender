@@ -5,6 +5,7 @@
 #include "defines.h"
 #include "defines_weak.h"
 #include "entity/entity_manager.h"
+#include "game.h"
 #include "serialization/serialization_header.h"
 #include "world/world.h"
 
@@ -61,14 +62,15 @@ void remove_entry_from__collision_node(
         Identifier__u32 uuid__u32) {
     Collision_Node_Entry *p_collision_node_entry =
         p_collision_node->p_linked_list__collision_node_entries__tail;
-    Collision_Node_Entry *p_collision_node_entry__parent = 0;
+    Collision_Node_Entry *p_collision_node_entry__parent = 
+        p_collision_node_entry;
 
     while (p_collision_node_entry) {
-        p_collision_node_entry__parent =
-            p_collision_node_entry;
         if (uuid__u32 == p_collision_node_entry->uuid_of__hitbox__u32) {
             break;
         }
+        p_collision_node_entry__parent =
+            p_collision_node_entry;
         p_collision_node_entry =
             p_collision_node_entry->p_previous_entry;
     }
@@ -78,8 +80,15 @@ void remove_entry_from__collision_node(
         return;
     }
 
-    p_collision_node_entry__parent->p_previous_entry =
-        p_collision_node_entry->p_previous_entry;
+    if (p_collision_node_entry
+            == p_collision_node_entry__parent) {
+        p_collision_node
+            ->p_linked_list__collision_node_entries__tail =
+            p_collision_node_entry->p_previous_entry;
+    } else {
+        p_collision_node_entry__parent->p_previous_entry =
+            p_collision_node_entry->p_previous_entry;
+    }
 
     release_collision_node_entry_from__collision_node_pool(
             p_collision_node_pool, 
@@ -143,11 +152,13 @@ void poll_for__collisions_within_this__collision_node(
     while (p_collision_node_entry) {
         Hitbox_AABB *p_hitbox_aabb__other =
             get_p_hitbox_aabb_by__uuid_u32_from__hitbox_aabb_manager(
-                    get_p_hitbox_aabb_manager_from__world(p_world), 
+                    get_p_hitbox_aabb_manager_from__game(p_game), 
                     p_collision_node_entry->uuid_of__hitbox__u32);
 
-        if (p_hitbox_aabb__other &&
-                is_hitbox__colliding(
+        if (p_hitbox_aabb__other 
+                && p_hitbox_aabb__other
+                != p_hitbox_aabb
+                && is_hitbox__colliding(
                     p_hitbox_aabb, 
                     p_hitbox_aabb__other)) {
             f_hitbox_collision_handler(
@@ -156,6 +167,9 @@ void poll_for__collisions_within_this__collision_node(
                     p_hitbox_aabb,
                     p_hitbox_aabb__other);
         }
+
+        p_collision_node_entry =
+            p_collision_node_entry->p_previous_entry;
     }
 }
 
@@ -189,6 +203,7 @@ Entity *iterate_entities_in__collision_node_entry(
     *p_ptr_collision_node__entry =
         p_collision_node_entry
         ->p_previous_entry;
+    *p_ptr_entity = p_entity;
 
     return p_entity;
 }

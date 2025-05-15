@@ -21,6 +21,12 @@ void f_entity_initializer__default(
     memset((u8*)(p_entity) + sizeof(Serialization_Header),
             0,
             sizeof(Entity) - sizeof(Serialization_Header));
+    p_entity->entity_functions.m_entity_dispose_handler =
+        m_entity_dispose_handler__default;
+    p_entity->entity_functions.m_entity_deserialize_handler =
+        m_entity_deserialization_handler__default;
+    p_entity->entity_functions.m_entity_serialize_handler =
+        m_entity_serialization_handler__default;
 }
 
 void initialize_entity_manager(Entity_Manager *p_entity_manager) {
@@ -69,6 +75,27 @@ void register_entity_into__entity_manager(
         the_kind_of__entity] = entity_functions;
 }
 
+void sanitize_entity_functions(
+        Entity_Manager *p_entity_manager,
+        Entity *p_entity) {
+
+    Entity_Functions *p_entity_functions =
+        &p_entity_manager->entity_functions[
+        p_entity->entity_data.the_kind_of__entity];
+
+    for (Index__u32 index_of__function_pointer = 0;
+            index_of__function_pointer
+            < sizeof(Entity_Functions) / sizeof(void*);
+            index_of__function_pointer++) {
+        void *p_function_ptr =
+            ((void**)p_entity_functions)[index_of__function_pointer];
+        if (!p_function_ptr)
+            continue;
+        ((void**)&p_entity->entity_functions)[index_of__function_pointer] =
+            p_function_ptr;
+    }
+}
+
 ///
 /// Create a new entity instance within the entity_manager object pool.
 /// Return nullptr (0) if fails to get new entity.
@@ -98,21 +125,12 @@ Entity *allocate_entity_with__this_uuid_in__entity_manager(
                 p_entity);
     }
 
-    Entity_Functions *p_entity_functions =
-        &p_entity_manager->entity_functions[
-        kind_of_entity];
+    p_entity->entity_data.the_kind_of__entity =
+        kind_of_entity;
 
-    for (Index__u32 index_of__function_pointer = 0;
-            index_of__function_pointer
-            < sizeof(Entity_Functions) / sizeof(void*);
-            index_of__function_pointer++) {
-        void *p_function_ptr =
-            ((void**)p_entity_functions)[index_of__function_pointer];
-        if (!p_function_ptr)
-            continue;
-        ((void**)&p_entity->entity_functions)[index_of__function_pointer] =
-            p_function_ptr;
-    }
+    sanitize_entity_functions(
+            p_entity_manager, 
+            p_entity);
 
     set_entity_as__enabled(p_entity);
     *p_entity_manager->p_ptr_entity__next_in_ptr_array =
@@ -147,21 +165,12 @@ Entity *allocate_entity_in__entity_manager(
                 p_entity);
     }
 
-    Entity_Functions *p_entity_functions =
-        &p_entity_manager->entity_functions[
-        kind_of_entity];
+    p_entity->entity_data.the_kind_of__entity =
+        kind_of_entity;
 
-    for (Index__u32 index_of__function_pointer = 0;
-            index_of__function_pointer
-            < sizeof(Entity_Functions) / sizeof(void*);
-            index_of__function_pointer++) {
-        void *p_function_ptr =
-            ((void**)p_entity_functions)[index_of__function_pointer];
-        if (!p_function_ptr)
-            continue;
-        ((void**)&p_entity->entity_functions)[index_of__function_pointer] =
-            p_function_ptr;
-    }
+    sanitize_entity_functions(
+            p_entity_manager, 
+            p_entity);
 
     set_entity_as__enabled(p_entity);
     *p_entity_manager->p_ptr_entity__next_in_ptr_array =

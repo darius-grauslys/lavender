@@ -96,6 +96,9 @@ void get_tile_logic_record_for__this_tile(
         Tile_Logic_Table_Manager *p_tile_logic_table_manager,
         Tile_Logic_Record *p_tile_logic_record,
         Tile *p_tile) {
+    memset(p_tile_logic_record,
+            0,
+            sizeof(Tile_Logic_Record));
     for (Index__u32 index_of__tile_logic_table = 0;
             index_of__tile_logic_table 
             < MAX_QUANTITY_OF__TILE_LOGIC_TABLES;

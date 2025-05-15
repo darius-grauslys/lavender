@@ -11,6 +11,42 @@
 #include "world/local_space_manager.h"
 #include "inventory/inventory_manager.h"
 #include "inventory/inventory.h"
+#include "rendering/sprite_manager.h"
+#include "rendering/graphics_window.h"
+#include "world/world.h"
+
+void m_entity_dispose_handler__default(
+        Entity *p_this_entity,
+        Game *p_game,
+        World *p_world) {
+    Sprite *p_sprite =
+        get_p_sprite_by__uuid_from__sprite_manager(
+                get_p_sprite_manager_from__graphics_window(
+                    get_p_graphics_window_from__world(
+                        p_world)), 
+                GET_UUID_P(p_this_entity));
+    if (p_sprite) {
+        release_sprite_from__sprite_manager(
+                get_p_gfx_context_from__game(p_game), 
+                get_p_sprite_manager_from__graphics_window(
+                    get_p_graphics_window_from__world(
+                        p_world)), 
+                p_sprite);
+    }
+
+    Hitbox_AABB *p_hitbox_aabb =
+        get_p_hitbox_aabb_by__entity_from__hitbox_aabb_manager(
+                get_p_hitbox_aabb_manager_from__game(p_game), 
+                p_this_entity);
+
+    if (p_hitbox_aabb) {
+        release_hitbox_aabb_from__hitbox_aabb_manager(
+                p_game,
+                get_p_hitbox_aabb_manager_from__game(
+                    p_game), 
+                p_hitbox_aabb);
+    }
+}
 
 void initialize_entity(
         Entity *p_entity, 
@@ -20,6 +56,8 @@ void initialize_entity(
             &p_entity->_serialization_header,
             p_entity->_serialization_header.uuid,
             sizeof(Entity));
+    p_entity->entity_functions.m_entity_dispose_handler =
+        m_entity_dispose_handler__default;
 }
 
 PLATFORM_Write_File_Error serialize_entity(
@@ -82,48 +120,10 @@ PLATFORM_Read_File_Error deserialize_entity(
         return error;
     }
 
-    if (is_entity__serialized_with__hitbox(p_entity)) {
-        Hitbox_AABB *p_hitbox_aabb =
-            allocate_hitbox_aabb_from__hitbox_aabb_manager(
-                    get_p_hitbox_aabb_manager_from__game(p_game), 
-                    GET_UUID_P(p_entity));
-
-        quantity_of__bytes_read =
-            sizeof(Hitbox_AABB);
-
-        error =
-            PLATFORM_read_file(
-                    get_p_PLATFORM_file_system_context_from__game(p_game), 
-                    (u8 *)p_hitbox_aabb, 
-                    &quantity_of__bytes_read, 
-                    1, 
-                    p_serialization_request->p_file_handler);
-
-        if (error) {
-            debug_error("deserialize_entity, failed to read hitbox.");
-            return error;
-        }
-    }
-
-    if (is_entity__serialized_with__inventory(p_entity)) {
-        Inventory *p_inventory =
-            allocate_p_inventory_using__this_uuid_in__inventory_manager(
-                    get_p_inventory_manager_from__game(
-                        p_game), 
-                    GET_UUID_P(p_entity));
-
-        error =
-            deserialize_inventory(
-                    get_p_PLATFORM_file_system_context_from__game(p_game), 
-                    get_p_item_manager_from__game(p_game), 
-                    p_serialization_request, 
-                    p_inventory);
-
-        if (error) {
-            debug_error("deserialize_entity, failed to read inventory.");
-            return error;
-        }
-    }
+    sanitize_entity_functions(
+            get_p_entity_manager_from__game(
+                p_game), 
+            p_entity);
 
     if (p_entity
             ->entity_functions
@@ -175,16 +175,27 @@ PLATFORM_Write_File_Error m_entity_serialization_handler__default(
     PLATFORM_Write_File_Error error =
         PLATFORM_write_file(
                 get_p_PLATFORM_file_system_context_from__game(p_game), 
+                (u8*)p_entity_self, 
+                sizeof(Serialization_Header), 
+                1, 
+                p_serialization_request->p_file_handler);
+
+    if (error) {
+        debug_error("m_entity_serialization_handler__default, IO failed on entity header: %d", error);
+        return error;
+    }
+
+    error =
+        PLATFORM_write_file(
+                get_p_PLATFORM_file_system_context_from__game(p_game), 
                 (u8*)&p_entity_self->entity_data, 
                 sizeof(Entity_Data), 
                 1, 
                 p_serialization_request->p_file_handler);
 
-    switch (error) {
-        case PLATFORM_Write_File_Error__None:
-            break;
-        default:
-            return error;
+    if (error) {
+        debug_error("m_entity_serialization_handler__default, IO failed on entity data: %d", error);
+        return error;
     }
 
     if (p_hitbox_aabb) {
@@ -196,11 +207,9 @@ PLATFORM_Write_File_Error m_entity_serialization_handler__default(
                     1, 
                     p_serialization_request->p_file_handler);
 
-        switch (error) {
-            case PLATFORM_Write_File_Error__None:
-                break;
-            default:
-                return error;
+        if (error) {
+            debug_error("m_entity_serialization_handler__default, IO failed on hitbox: %d", error);
+            return error;
         }
     }
 
@@ -211,41 +220,31 @@ PLATFORM_Write_File_Error m_entity_serialization_handler__default(
                         p_game), 
                     p_serialization_request, 
                     p_inventory);
+        if (error) {
+            debug_error("m_entity_serialization_handler__default, IO failed on inventory: %d", error);
+            return error;
+        }
     }
 
     return error;
 }
 
 PLATFORM_Read_File_Error m_entity_deserialization_handler__default(
-        Entity *p_entity_self, 
+        Entity *p_this_entity, 
         Game *p_game,
         PLATFORM_File_System_Context *p_PLATFORM_file_system_context,
         World *p_world,
         Serialization_Request *p_serialization_request) {
-    Quantity__u32 quantity_of__bytes_read =
-        sizeof(Serialization_Header) + sizeof(Entity_Data);
+    Quantity__u32 quantity_of__bytes_read = 0;
+    PLATFORM_Read_File_Error error = 0;
 
-    PLATFORM_Read_File_Error error =
-        PLATFORM_read_file(
-                get_p_PLATFORM_file_system_context_from__game(p_game), 
-                (u8*)&p_entity_self->entity_data, 
-                &quantity_of__bytes_read, 
-                1, 
-                p_serialization_request->p_file_handler);
-
-    if (error) {
-        debug_error("m_entity_deserialization_handler__default, IO error on entity data: %d",
-                error);
-        return error;
-    }
-
-    if (p_entity_self->entity_data.entity_flags
+    if (p_this_entity->entity_data.entity_flags
             & ENTITY_FLAG__IS_WITH_HITBOX__SERIALIZATION) {
         Hitbox_AABB *p_hitbox_aabb =
             allocate_hitbox_aabb_from__hitbox_aabb_manager(
                     get_p_hitbox_aabb_manager_from__game(
                         p_game), 
-                    GET_UUID_P(p_entity_self));
+                    GET_UUID_P(p_this_entity));
 
         if (!p_hitbox_aabb) {
             debug_error("m_entity_deserialization_handler__default, failed to allocate hitbox for entity.");
@@ -268,12 +267,12 @@ PLATFORM_Read_File_Error m_entity_deserialization_handler__default(
         }
     }
 
-    if (p_entity_self->entity_data.entity_flags
+    if (p_this_entity->entity_data.entity_flags
             & ENTITY_FLAG__IS_WITH_INVENTORY__SERIALIZATION) {
         Inventory *p_inventory =
             allocate_p_inventory_using__this_uuid_in__inventory_manager(
                     get_p_inventory_manager_from__game(p_game), 
-                    GET_UUID_P(p_entity_self));
+                    GET_UUID_P(p_this_entity));
 
         if (!p_inventory) {
             debug_error("m_entity_deserialization_handler__default, failed to allocate inventory for entity.");
@@ -295,5 +294,6 @@ PLATFORM_Read_File_Error m_entity_deserialization_handler__default(
         }
     }
 
+    set_entity_as__enabled(p_this_entity);
     return PLATFORM_Read_File_Error__None;
 }

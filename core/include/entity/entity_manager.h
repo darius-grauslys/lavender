@@ -22,6 +22,15 @@ void register_entity_into__entity_manager(
         Entity_Functions entity_functions);
 
 ///
+/// Ensure that the entity has the proper functions
+/// for it's type. This is called whenever an entity
+/// is allocated, or deserialized.
+///
+void sanitize_entity_functions(
+        Entity_Manager *p_entity_manager,
+        Entity *p_entity);
+
+///
 /// Create a new entity instance within the entity_manager object pool.
 /// Return nullptr (0) if fails to get new entity.
 ///

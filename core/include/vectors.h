@@ -147,6 +147,16 @@ void initialize_3i32_vector(
         vector->z__i32 = 0;
 }
 
+static inline
+Quantity__u32 get_manhattan_distance__of_vector_3i32_as__u32(
+        Vector__3i32 vector_one__3i32,
+        Vector__3i32 vector_two__3i32) {
+    return
+        (abs(vector_one__3i32.x__i32 - vector_two__3i32.x__i32)
+         + abs(vector_one__3i32.y__i32 - vector_two__3i32.y__i32)
+         + abs(vector_one__3i32.z__i32 - vector_two__3i32.z__i32));
+}
+
 static inline 
 bool is_vectors_3i32F4__equal(
         Vector__3i32F4 vector_1,
