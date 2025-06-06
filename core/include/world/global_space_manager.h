@@ -23,6 +23,10 @@ Global_Space *get_p_global_space_from__global_space_manager(
         Global_Space_Manager *p_global_space_manager,
         Chunk_Vector__3i32 local_space_vector__3i32);
 
+Tile *get_p_tile_from__global_space_manager(
+        Global_Space_Manager *p_global_space_manager,
+        Tile_Vector__3i32 tile_vector__3i32);
+
 Global_Space *hold_global_space_within__global_space_manager(
         Game *p_game,
         Chunk_Vector__3i32 local_space_vector__3i32);

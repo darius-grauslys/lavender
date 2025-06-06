@@ -5,11 +5,15 @@
 #include "defines_weak.h"
 #include "game_action/game_action.h"
 #include "game_action/game_action_logic_entry.h"
+#include "types/implemented/game_action_kind.h"
 
 static inline
 Game_Action_Logic_Entry *get_p_game_action_logic_entry_by__game_action_kind(
         Game_Action_Logic_Table *p_game_action_logic_table,
         Game_Action_Kind the_kind_of__game_action) {
+    if (the_kind_of__game_action >= Game_Action_Kind__Unknown) {
+        return 0;
+    }
     return &p_game_action_logic_table->game_action_logic_entries[
         the_kind_of__game_action];
 }

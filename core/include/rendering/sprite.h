@@ -8,8 +8,7 @@
 #include <defines.h>
 
 void initialize_sprite(
-        Sprite *sprite,
-        Texture_Flags texture_flags_for__sprite);
+        Sprite *sprite);
 
 bool poll_sprite_animation(
         Game *p_game,
@@ -21,6 +20,16 @@ void set_sprite_animation(
         Sprite_Animation_Kind the_kind_of__sprite_animation,
         Sprite_Animation sprite_animation,
         Sprite_Animation_Group sprite_animation_group);
+
+static inline
+Direction__u8 get_cached_direction_of__sprite(
+        Sprite *p_sprite) {
+    return
+        (p_sprite->direction__delta__u8)
+        ? p_sprite->direction__delta__u8
+        : p_sprite->direction__old__u8
+        ;
+}
 
 static inline
 bool is_sprite__deallocated(Sprite *p_sprite) {

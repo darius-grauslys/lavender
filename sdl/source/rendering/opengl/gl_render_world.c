@@ -6,6 +6,7 @@
 #include "rendering/gfx_context.h"
 #include "rendering/opengl/gl_defines.h"
 #include "rendering/opengl/gl_framebuffer.h"
+#include "rendering/opengl/gl_framebuffer_manager.h"
 #include "rendering/opengl/gl_gfx_sub_context.h"
 #include "rendering/opengl/gl_shader.h"
 #include "rendering/opengl/gl_shader_manager.h"
@@ -79,6 +80,10 @@ void GL_compose_chunk(
                     >> 3)
                 & MASK(CHUNK__DEPTH__BIT_SHIFT));
 
+    GL_Framebuffer_Manager *p_GL_framebuffer_manager =
+        GL_get_p_framebuffer_manager_from__PLATFORM_gfx_context(
+                p_PLATFORM_gfx_context);
+
     for (Index__u8 index_of__y_tile = 0;
             index_of__y_tile < CHUNK__HEIGHT;
             index_of__y_tile++) {
@@ -114,7 +119,8 @@ void GL_compose_chunk(
                     (GL_Framebuffer*)p_gfx_window
                     ->p_PLATFORM_gfx_window
                     ->p_SDL_graphics_window__data;
-                GL_use_framebuffer_as__target(
+                GL_push_framebuffer_onto__framebuffer_manager(
+                        p_GL_framebuffer_manager, 
                         p_GL_framebuffer);
                 GL_bind_texture_to__framebuffer(
                         p_GL_framebuffer, 
@@ -212,7 +218,8 @@ void GL_compose_chunk(
                 GL_pop_viewport(
                         p_GL_viewport_stack);
 
-                GL_unbind_framebuffer();
+                GL_pop_framebuffer_off_of__framebuffer_manager(
+                        p_GL_framebuffer_manager);
             }
             // break;
         }
@@ -238,6 +245,12 @@ void GL_compose_world(
     glGetFloatv(GL_COLOR_CLEAR_VALUE, clear_color);
 
     glClearColor(1.0f, 0.0f, 1.0f, 0.0f);
+
+    GL_Framebuffer_Manager *p_GL_framebuffer_manager =
+        GL_get_p_framebuffer_manager_from__PLATFORM_gfx_context(
+                get_p_PLATFORM_gfx_context_from__gfx_context(
+                    p_gfx_context));
+
     for (Index__u32 index_of__gfx_window = 0;
             index_of__gfx_window
             < quantity_of__gfx_windows;
@@ -249,7 +262,8 @@ void GL_compose_world(
             (GL_Framebuffer*)p_gfx_window
             ->p_PLATFORM_gfx_window
             ->p_SDL_graphics_window__data;
-        GL_use_framebuffer_as__target(
+        GL_push_framebuffer_onto__framebuffer_manager(
+                p_GL_framebuffer_manager,
                 p_GL_framebuffer);
         GL_bind_texture_to__framebuffer(
                 p_GL_framebuffer, 
@@ -257,6 +271,8 @@ void GL_compose_world(
                 ->p_PLATFORM_gfx_window
                 ->p_SDL_graphics_window__texture);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        GL_pop_framebuffer_off_of__framebuffer_manager(
+                p_GL_framebuffer_manager);
     }
     glClearColor(
             clear_color[0],

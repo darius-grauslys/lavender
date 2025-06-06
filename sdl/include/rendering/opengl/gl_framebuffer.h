@@ -15,11 +15,6 @@ void GL_bind_texture_to__framebuffer(
         GL_Framebuffer *p_GL_framebuffer,
         PLATFORM_Texture *p_PLATFORM_texture);
 
-void GL_use_framebuffer_as__target(
-        GL_Framebuffer *p_GL_framebuffer);
-
-void GL_unbind_framebuffer(void);
-
 static inline
 bool GL_is_framebuffer_allocated(
         GL_Framebuffer *p_GL_framebuffer) {

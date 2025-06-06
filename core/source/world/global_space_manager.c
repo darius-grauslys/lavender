@@ -15,8 +15,11 @@
 #include "serialization/serialized_field.h"
 #include "vectors.h"
 #include "world/chunk_pool.h"
+#include "world/chunk.h"
 #include "world/global_space.h"
 #include "world/world.h"
+#include "world/chunk_vectors.h"
+#include "world/tile_vectors.h"
 
 #define BIT_MASK__GLOBAL_SPACE__0_XY__u24 0b101010101010101010101010
 #define BIT_MASK__GLOBAL_SPACE__1_XY__u24 0b010101010101010101010101
@@ -240,4 +243,28 @@ void drop_global_space_within__global_space_manager(
         debug_error("drop_global_space_within__global_space_manager, failed to dispatch process.");
         return;
     }
+}
+
+Tile *get_p_tile_from__global_space_manager(
+        Global_Space_Manager *p_global_space_manager,
+        Tile_Vector__3i32 tile_vector__3i32) {
+    Chunk_Vector__3i32 gsv__3i32 =
+        tile_vector_3i32_to__chunk_vector_3i32(
+                tile_vector__3i32);
+
+    Global_Space *p_global_space =
+        get_p_global_space_from__global_space_manager(
+                p_global_space_manager, 
+                gsv__3i32);
+
+    if (!p_global_space)
+        return 0;
+
+    if (!is_global_space__active(p_global_space))
+        return 0;
+
+    return get_p_tile_from__chunk(
+            get_p_chunk_from__global_space(p_global_space), 
+            tile_vector_3i32_to__local_tile_vector_3u8(
+                tile_vector__3i32));
 }

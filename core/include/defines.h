@@ -398,7 +398,15 @@ typedef uint8_t Sprite_Animation_Flags__u3;
 #define SPRITE_ANIMATION_FLAG__IS_NOT_LOOPING BIT(0)
 #define SPRITE_ANIMATION_FLAG__IS_OFFSET_BY__DIRECTION BIT(1)
 
+///
+/// Returns true if sprite now needs gfx update
+///
+typedef Index__u16 (*m_Sprite_Direction_Animation_Offset_Handler)(
+        Sprite *p_this_sprite);
+
 typedef struct Sprite_Animation_t {
+    m_Sprite_Direction_Animation_Offset_Handler 
+        m_sprite_direction_animation_offset_handler;
     Quantity__u8                sprite_animation__initial_frame__u8;
     Quantity__u8                sprite_animation__quantity_of__frames__u8;
     Quantity__u8                sprite_animation__ticks_per__frame__u5  :5;
@@ -1758,7 +1766,7 @@ typedef struct Tile_Logic_Record_Data_t {
 
 typedef struct Tile_Logic_Record_t {
     Tile_Logic_Record_Data      tile_logic_record_data;
-    Tile_Logic_Flags__u8        tile_logic_flags__u8;
+    Tile_Logic_Flags__u16        tile_logic_flags__u8;
 } Tile_Logic_Record;
 
 ///

@@ -74,16 +74,3 @@ void GL_initialize_framebuffer(
     }
 }
 
-void GL_use_framebuffer_as__target(
-        GL_Framebuffer *p_GL_framebuffer) {
-    glBindFramebuffer(
-            GL_FRAMEBUFFER,
-            p_GL_framebuffer
-            ->GL_framebuffer_handle);
-}
-
-void GL_unbind_framebuffer(void) {
-    glBindFramebuffer(
-            GL_FRAMEBUFFER,
-            0);
-}

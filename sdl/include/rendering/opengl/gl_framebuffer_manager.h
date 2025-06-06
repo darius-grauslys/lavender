@@ -32,9 +32,6 @@ void GL_pop_framebuffer_off_of__framebuffer_manager(
 GL_Framebuffer *GL_peek_framebuffer_stack_of__framebuffer_manager(
         GL_Framebuffer_Manager *p_GL_framebuffer_manager);
 
-void GL_use_framebuffer_thats__top_of_stack_in__framebuffer_manage(
-        GL_Framebuffer_Manager *p_GL_framebuffer_manager);
-
 void GL_dispose_framebuffer_manager(
         PLATFORM_Gfx_Context *p_PLATFORM_gfx_context,
         GL_Framebuffer_Manager *p_GL_framebuffer_manager);

@@ -65,6 +65,12 @@ Item_Manager *get_p_item_manager_from__world(World *p_world) {
 
 static inline 
 Entity_Manager *get_p_entity_manager_from__world(World *p_world) {
+#ifndef NDEBUG
+    if (!p_world) {
+        debug_error("get_p_entity_manager_from__world, p_world == 0.");
+        return 0;
+    }
+#endif
     return &p_world->entity_manager;
 }
 

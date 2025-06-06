@@ -509,6 +509,13 @@ typedef struct Chunk_t Chunk;
 typedef struct Chunk_Manager__Chunk_Map_Node_t Chunk_Manager__Chunk_Map_Node;
 typedef struct Tile_t Tile;
 
+typedef uint8_t Tile_Slope_Flags__u4;
+
+#define TILE_SLOPE_FLAG__NORTH  BIT(0)
+#define TILE_SLOPE_FLAG__EAST   BIT(1)
+#define TILE_SLOPE_FLAG__SOUTH  BIT(2)
+#define TILE_SLOPE_FLAG__WEST   BIT(3)
+
 // TODO: add tile flags as a implemented/type
 typedef uint8_t Tile_Flags__u8;
 
@@ -531,11 +538,26 @@ typedef uint8_t Tile_Flags__u8;
 #define TILE_FLAGS__BIT_GENERAL_PURPOSE_DATA_BIT \
     BIT(TILE_FLAGS__BIT_SHIFT_GENERAL_PURPOSE_DATA_BIT)
 
-typedef uint8_t Tile_Logic_Flags__u8;
+typedef uint16_t Tile_Logic_Flags__u16;
 
 #define TILE_LOGIC_FLAGS__NONE 0
 #define TILE_LOGIC_FLAG__IS_UNPASSABLE BIT(0)
 #define TILE_LOGIC_FLAG__IS_SIGHT_BLOCKING BIT(1)
+#define TILE_LOGIC_FLAG__RESERVED_0 BIT(2)
+#define TILE_LOGIC_FLAG__RESERVED_1 BIT(3)
+#define TILE_LOGIC_FLAG__RESERVED_2 BIT(4)
+#define TILE_LOGIC_FLAG__RESERVED_3 BIT(5)
+#define TILE_LOGIC_FLAG__RESERVED_4 BIT(6)
+#define TILE_LOGIC_FLAG__RESERVED_5 BIT(7)
+
+#define TILE_LOGIC_FLAG__CUSTOM_0 BIT(8)
+#define TILE_LOGIC_FLAG__CUSTOM_1 BIT(9)
+#define TILE_LOGIC_FLAG__CUSTOM_2 BIT(10)
+#define TILE_LOGIC_FLAG__CUSTOM_3 BIT(11)
+#define TILE_LOGIC_FLAG__CUSTOM_4 BIT(12)
+#define TILE_LOGIC_FLAG__CUSTOM_5 BIT(13)
+#define TILE_LOGIC_FLAG__CUSTOM_6 BIT(14)
+#define TILE_LOGIC_FLAG__CUSTOM_7 BIT(15)
 
 typedef struct Tile_Render_Kernel_Result_t Tile_Render_Kernel_Result;
 

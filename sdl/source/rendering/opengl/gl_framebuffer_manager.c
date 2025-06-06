@@ -176,9 +176,11 @@ void GL_push_framebuffer_onto__framebuffer_manager(
             p_GL_framebuffer
             ;
 
-    GL_use_framebuffer_as__target(
+    glBindFramebuffer(
+            GL_FRAMEBUFFER,
             GL_peek_framebuffer_stack_of__framebuffer_manager(
-                p_GL_framebuffer_manager));
+                p_GL_framebuffer_manager)
+            ->GL_framebuffer_handle);
 }
 
 void GL_pop_framebuffer_off_of__framebuffer_manager(
@@ -202,9 +204,11 @@ void GL_pop_framebuffer_off_of__framebuffer_manager(
                 GL_FRAMEBUFFER,
                 0);
     } else {
-        GL_use_framebuffer_as__target(
+        glBindFramebuffer(
+                GL_FRAMEBUFFER,
                 GL_peek_framebuffer_stack_of__framebuffer_manager(
-                    p_GL_framebuffer_manager));
+                    p_GL_framebuffer_manager)
+                ->GL_framebuffer_handle);
     }
 }
 
@@ -221,23 +225,6 @@ GL_Framebuffer *GL_peek_framebuffer_stack_of__framebuffer_manager(
             p_GL_framebuffer_manager, 
             *GL_get_p_index_of__framebuffer_on__stack(
                 p_GL_framebuffer_manager) - 1);
-}
-
-void GL_use_framebuffer_thats__top_of_stack_in__framebuffer_manage(
-        GL_Framebuffer_Manager *p_GL_framebuffer_manager) {
-    GL_Framebuffer *p_GL_framebuffer =
-        GL_peek_framebuffer_stack_of__framebuffer_manager(
-                p_GL_framebuffer_manager);
-
-    if (!p_GL_framebuffer) {
-        glBindFramebuffer(
-                GL_FRAMEBUFFER,
-                0);
-        return;
-    }
-
-    GL_use_framebuffer_as__target(
-            p_GL_framebuffer);
 }
 
 void GL_dispose_framebuffer_manager(

@@ -106,6 +106,11 @@ Entity *allocate_entity_with__this_uuid_in__entity_manager(
         Entity_Manager *p_entity_manager,
         enum Entity_Kind kind_of_entity,
         Identifier__u32 uuid__u32) {
+    // TODO: do better on this condition check.
+    if (!p_entity_manager || !p_entity_manager->entities->_serialization_header.size_of__struct) {
+        debug_error("allocate_entity_with__this_uuid_in__entity_manager, p_entity_manager is not initialized.");
+        return 0;
+    }
     Entity *p_entity =
         (Entity*)allocate_serialization_header_with__this_uuid(
                 (Serialization_Header*)p_entity_manager->entities, 

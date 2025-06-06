@@ -347,6 +347,7 @@ void PLATFORM_poll_input(
                     case INPUT_MODE__WRITING:
                         break;
                 }
+                break;
             case Input_Binding_Kind__Mouse:
                 if (mouse_button_state & 
                         p_input_binding->sdl_mouse_button)

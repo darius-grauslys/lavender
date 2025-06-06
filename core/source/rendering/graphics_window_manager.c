@@ -87,6 +87,9 @@ Graphics_Window *allocate_graphics_window_with__uuid_from__graphics_window_manag
         ->graphics_window__flags =
         texture_flags_for__gfx_window;
 
+    set_graphics_window_as__enabled(
+            p_graphics_window__available);
+
     return p_graphics_window__available;
 }
 

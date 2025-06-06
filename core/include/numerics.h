@@ -115,6 +115,16 @@ u32 max__u32(
 }
 
 static inline
+i32 max__i32(
+        i32 first__i32,
+        i32 second__i32) {
+    return (first__i32 < second__i32)
+        ? second__i32
+        : first__i32
+        ;
+}
+
+static inline
 u8 add_u8__clamped(
         u8 first__u8,
         u8 second__u8,
