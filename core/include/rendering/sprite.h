@@ -7,29 +7,13 @@
 #include "serialization/serialization_header.h"
 #include <defines.h>
 
-void initialize_sprite(
-        Sprite *sprite);
+void m_sprite_animation_handler__default(
+        Sprite *p_this_sprite,
+        Game *p_game);
 
-bool poll_sprite_animation(
+void poll_sprite_for__animation(
         Game *p_game,
         Sprite *p_sprite);
-
-void set_sprite_animation(
-        Game *p_game,
-        Sprite *p_sprite,
-        Sprite_Animation_Kind the_kind_of__sprite_animation,
-        Sprite_Animation sprite_animation,
-        Sprite_Animation_Group sprite_animation_group);
-
-static inline
-Direction__u8 get_cached_direction_of__sprite(
-        Sprite *p_sprite) {
-    return
-        (p_sprite->direction__delta__u8)
-        ? p_sprite->direction__delta__u8
-        : p_sprite->direction__old__u8
-        ;
-}
 
 static inline
 bool is_sprite__deallocated(Sprite *p_sprite) {

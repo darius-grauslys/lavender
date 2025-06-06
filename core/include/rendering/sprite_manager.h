@@ -107,23 +107,4 @@ Sprite_Animation_Group get_sprite_animation_group_from__sprite_manager(
         the_kind_of__sprite_animation_group];
 }
 
-static inline
-void set_sprite_animation_with__sprite_manager(
-        Game *p_game,
-        Sprite_Manager *p_sprite_manager,
-        Sprite *p_sprite,
-        Sprite_Animation_Kind the_kind_of__sprite_animation,
-        Sprite_Animation_Group_Kind the_kind_of__sprite_animation_group) {
-    set_sprite_animation(
-            p_game,
-            p_sprite,
-            the_kind_of__sprite_animation,
-            get_sprite_animation_from__sprite_manager(
-                p_sprite_manager, 
-                the_kind_of__sprite_animation),
-            get_sprite_animation_group_from__sprite_manager(
-                p_sprite_manager, 
-                the_kind_of__sprite_animation_group));
-}
-
 #endif

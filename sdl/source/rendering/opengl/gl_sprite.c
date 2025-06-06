@@ -134,40 +134,41 @@ void GL_update_sprite(
         ->height;
 
     Index__u16 sprite__index_of__frame = 0;
-    if (p_sprite->animation_group
-            .quantity_of__columns_in__sprite_animation_group__u4
-            != 0) {
-        Index__u16 sprite__index_of__frame__x =
-            (p_sprite->index_of__sprite_frame
-             % p_sprite->animation_group
-             .quantity_of__columns_in__sprite_animation_group__u4)
-            + (p_sprite->animation_group
-                    .quantity_of__columns_in__sprite_animation_group__u4
-                    * p_sprite->index_of__sprite_animation_sub_group__u8)
-            ;
-        Index__u16 sprite__index_of__frame__y =
-            (p_sprite->index_of__sprite_frame
-             / p_sprite->animation_group
-             .quantity_of__columns_in__sprite_animation_group__u4)
-            ;
+    // TODO: add Texture type, and re-implement animation groups.
+    // if (p_sprite->animation_group
+    //         .quantity_of__columns_in__sprite_animation_group__u4
+    //         != 0) {
+    //     Index__u16 sprite__index_of__frame__x =
+    //         (p_sprite->index_of__sprite_frame
+    //          % p_sprite->animation_group
+    //          .quantity_of__columns_in__sprite_animation_group__u4)
+    //         + (p_sprite->animation_group
+    //                 .quantity_of__columns_in__sprite_animation_group__u4
+    //                 * p_sprite->index_of__sprite_animation_sub_group__u8)
+    //         ;
+    //     Index__u16 sprite__index_of__frame__y =
+    //         (p_sprite->index_of__sprite_frame
+    //          / p_sprite->animation_group
+    //          .quantity_of__columns_in__sprite_animation_group__u4)
+    //         ;
 
-        sprite__index_of__frame =
-            (sprite__index_of__frame__x
-            % quantity_of__sprite_frame__columns)
-            + (p_sprite->animation_group
-                    .quantity_of__rows_in__sprite_animation_group__u4
-                * quantity_of__sprite_frame__columns
-                    * (sprite__index_of__frame__x
-                        / (p_sprite->animation_group
-                            .quantity_of__rows_in__sprite_animation_group__u4
-                            * quantity_of__sprite_frame__columns)))
-            + (quantity_of__sprite_frame__columns
-                    * sprite__index_of__frame__y)
-            ;
-    } else {
+    //     sprite__index_of__frame =
+    //         (sprite__index_of__frame__x
+    //         % quantity_of__sprite_frame__columns)
+    //         + (p_sprite->animation_group
+    //                 .quantity_of__rows_in__sprite_animation_group__u4
+    //             * quantity_of__sprite_frame__columns
+    //                 * (sprite__index_of__frame__x
+    //                     / (p_sprite->animation_group
+    //                         .quantity_of__rows_in__sprite_animation_group__u4
+    //                         * quantity_of__sprite_frame__columns)))
+    //         + (quantity_of__sprite_frame__columns
+    //                 * sprite__index_of__frame__y)
+    //         ;
+    // } else {
         sprite__index_of__frame =
             p_sprite->index_of__sprite_frame;
-    }
+    // }
 
     Index__u8 index_of__frame__column =
         sprite__index_of__frame

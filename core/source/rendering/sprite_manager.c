@@ -220,7 +220,7 @@ void render_sprites_in__sprite_manager(
                     ->p_sprite)) {
             continue;
         }
-        poll_sprite_animation(
+        poll_sprite_for__animation(
                 p_game,
                 p_sprite_render_record->p_sprite);
         Hitbox_AABB *p_hitbox_aabb =

@@ -401,12 +401,13 @@ typedef uint8_t Sprite_Animation_Flags__u3;
 ///
 /// Returns true if sprite now needs gfx update
 ///
-typedef Index__u16 (*m_Sprite_Direction_Animation_Offset_Handler)(
-        Sprite *p_this_sprite);
+typedef void (*m_Sprite_Animation_Handler)(
+        Sprite *p_this_sprite,
+        Game *p_game);
 
 typedef struct Sprite_Animation_t {
-    m_Sprite_Direction_Animation_Offset_Handler 
-        m_sprite_direction_animation_offset_handler;
+    Sprite_Animation_Kind the_kind_of_animation__this_sprite_has;
+    Timer__u8 animation_timer__u8;
     Quantity__u8                sprite_animation__initial_frame__u8;
     Quantity__u8                sprite_animation__quantity_of__frames__u8;
     Quantity__u8                sprite_animation__ticks_per__frame__u5  :5;
@@ -433,13 +434,9 @@ typedef struct Sprite_t {
     PLATFORM_Sprite *p_PLATFORM_sprite;
     PLATFORM_Texture *p_PLATFORM_texture_for__sprite_to__sample;
     PLATFORM_Texture *p_PLATFORM_texture_of__sprite;
-    Timer__u8 animation_timer__u8;
+    m_Sprite_Animation_Handler m_sprite_animation_handler;
     Sprite_Animation animation;
-    Sprite_Animation_Group animation_group;
     Index__u16 index_of__sprite_frame;
-    Index__u16 index_of__sprite_frame__final;
-    Sprite_Animation_Kind the_kind_of_animation__this_sprite_has;
-    Index__u8 index_of__sprite_animation_sub_group__u8;
     Sprite_Kind the_kind_of__sprite;
     Sprite_Flags sprite_flags__u8;
     Direction__u8 direction__old__u8;
