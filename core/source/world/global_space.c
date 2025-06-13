@@ -334,6 +334,9 @@ void m_process__serialize_global_space(
         PLATFORM_release_serialization_request(
                 get_p_PLATFORM_file_system_context_from__game(p_game), 
                 p_serialization_request);
+        debug_error("m_process__serialize_global_space [%p], p_global_space is deallocated. ser req: %p",
+                p_this_process,
+                p_serialization_request);
         fail_process(p_this_process);
         return;
     }
@@ -367,6 +370,12 @@ void m_process__serialize_global_space(
                 set_entity_as__disabled(p_entity);
             }
 
+            debug_info__verbose("m_process__SERialize_global_space [%p], dispatch m_process__serialize_chunk: (%d,%d,%d), ser_req: %p",
+                    p_this_process,
+                    p_global_space->chunk_vector__3i32.x__i32,
+                    p_global_space->chunk_vector__3i32.y__i32,
+                    p_global_space->chunk_vector__3i32.z__i32,
+                    p_serialization_request);
             p_process->p_process_data =
                 p_this_process->p_process_data;
             enqueue_process(
@@ -396,8 +405,15 @@ void m_process__serialize_global_space(
                     1, 
                     p_serialization_request
                     ->p_file_handler);
-            if (!quantity_of__entries)
+            if (!quantity_of__entries) {
+                debug_info__verbose("m_process__SERialize_global_space [%p], SKIP entity serialization: (%d,%d,%d), ser_req: %p",
+                        p_this_process,
+                        p_global_space->chunk_vector__3i32.x__i32,
+                        p_global_space->chunk_vector__3i32.y__i32,
+                        p_global_space->chunk_vector__3i32.z__i32,
+                        p_serialization_request);
                 break;
+            }
 
             p_process = run_process(
                     get_p_process_manager_from__game(p_game), 
@@ -408,6 +424,13 @@ void m_process__serialize_global_space(
                 fail_process(p_this_process);
                 break;
             }
+
+            debug_info__verbose("m_process__SERialize_global_space [%p], dispatch m_process__serialize_entities_in__global_space: (%d,%d,%d), ser_req: %p",
+                    p_this_process,
+                    p_global_space->chunk_vector__3i32.x__i32,
+                    p_global_space->chunk_vector__3i32.y__i32,
+                    p_global_space->chunk_vector__3i32.z__i32,
+                    p_serialization_request);
 
             p_process->p_process_data =
                 p_this_process->p_process_data;
@@ -441,12 +464,6 @@ void m_process__serialize_global_space(
             */
         case IO_Global_Space_State__Finished:
             // We only reach this point if the subprocess has finished.
-            PLATFORM_close_file(
-                    get_p_PLATFORM_file_system_context_from__game(p_game), 
-                    p_serialization_request);
-            PLATFORM_release_serialization_request(
-                    get_p_PLATFORM_file_system_context_from__game(p_game), 
-                    p_serialization_request);
             if (!is_global_space__awaiting_construction(p_global_space)) {
                 release_global_space(
                         get_p_world_from__game(p_game),
@@ -467,6 +484,11 @@ void m_process__deserialize_global_space(
         (Serialization_Request*)p_this_process->p_process_data;
     Global_Space *p_global_space = 
         (Global_Space*)p_serialization_request->p_data;
+    if (!p_global_space) {
+        debug_error("m_process__deserialize_global_space, p_global_space == 0.");
+        fail_process(p_this_process);
+        return;
+    }
     if (IS_DEALLOCATED_P(p_global_space)) {
         PLATFORM_close_file(
                 get_p_PLATFORM_file_system_context_from__game(p_game), 
@@ -474,12 +496,14 @@ void m_process__deserialize_global_space(
         PLATFORM_release_serialization_request(
                 get_p_PLATFORM_file_system_context_from__game(p_game), 
                 p_serialization_request);
+        debug_error("m_process__deserialize_global_space [%p], p_global_space is deallocated.",
+                p_this_process);
         fail_process(p_this_process);
         return;
     }
     switch (p_this_process->process_sub_state__u8) {
         default:
-            debug_error("m_process__serialize_global_space, bad state(%d).",
+            debug_error("m_process__deserialize_global_space, bad state(%d).",
                     p_this_process->process_sub_state__u8);
             fail_process(p_this_process);
             break;
@@ -498,6 +522,12 @@ void m_process__deserialize_global_space(
 
             p_process->p_process_data =
                 p_this_process->p_process_data;
+            debug_info__verbose("m_process__deserialize_global_space [%p], dispatch m_process__deserialize_chunk: (%d,%d,%d), ser_req: %p",
+                    p_this_process,
+                    p_global_space->chunk_vector__3i32.x__i32,
+                    p_global_space->chunk_vector__3i32.y__i32,
+                    p_global_space->chunk_vector__3i32.z__i32,
+                    p_serialization_request);
             enqueue_process(
                     p_this_process, 
                     p_process);
@@ -523,8 +553,15 @@ void m_process__deserialize_global_space(
                 return;
             }
 
-            if (!quantity_of__entities)
+            if (!quantity_of__entities) {
+                debug_info__verbose("m_process__deserialize_global_space [%p], SKIP entity deserialization: (%d,%d,%d), ser_req: %p",
+                        p_this_process,
+                        p_global_space->chunk_vector__3i32.x__i32,
+                        p_global_space->chunk_vector__3i32.y__i32,
+                        p_global_space->chunk_vector__3i32.z__i32,
+                        p_serialization_request);
                 break;
+            }
 
             p_serialization_request->quantity_of__file_contents =
                 quantity_of__entities;
@@ -539,6 +576,12 @@ void m_process__deserialize_global_space(
                 break;
             }
 
+            debug_info__verbose("m_process__deserialize_global_space [%p], dispatch m_process__deserialize_entities_in__global_space: (%d,%d,%d), ser_req: %p",
+                    p_this_process,
+                    p_global_space->chunk_vector__3i32.x__i32,
+                    p_global_space->chunk_vector__3i32.y__i32,
+                    p_global_space->chunk_vector__3i32.z__i32,
+                    p_serialization_request);
             p_process->p_process_data =
                 p_this_process->p_process_data;
             enqueue_process(
@@ -570,12 +613,6 @@ void m_process__deserialize_global_space(
             // We only reach this point if the subprocess has finished.
             set_global_space_as__NOT_constructing(
                     p_global_space);
-            PLATFORM_close_file(
-                    get_p_PLATFORM_file_system_context_from__game(p_game), 
-                    p_serialization_request);
-            PLATFORM_release_serialization_request(
-                    get_p_PLATFORM_file_system_context_from__game(p_game), 
-                    p_serialization_request);
             complete_process(p_this_process);
             break;
     }
@@ -622,3 +659,43 @@ Process *dispatch_process__deserialize_global_space(
     return p_process;
 }
 
+Process *dispatch_process__serialize_global_space(
+        Game *p_game,
+        Global_Space *p_global_space) {
+
+    IO_path path_to__chunk_file;
+    stat_chunk_file__tiles(
+            get_p_PLATFORM_file_system_context_from__game(p_game), 
+            get_p_world_from__game(p_game), 
+            p_global_space, 
+            path_to__chunk_file);
+
+    Process *p_process = 
+        run_process(
+                get_p_process_manager_from__game(p_game), 
+                m_process__serialize_global_space, 
+                PROCESS_FLAGS__NONE);
+
+    if (!p_process) {
+        debug_error("dispatch_process__serialize_global_space, failed to allocate p_process.");
+        return 0;
+    }
+
+    if (!initialize_process_as__filesystem_process__open_file(
+            p_game, 
+            p_process, 
+            path_to__chunk_file, 
+            "wb", 
+            p_global_space, 
+            true)) {
+
+        debug_error("dispatch_process__deserialize_global_space, error in opening file.");
+        fail_process(p_process);
+        return p_process;
+    }
+
+    set_global_space_as__deconstructing(
+            p_global_space);
+
+    return p_process;
+}

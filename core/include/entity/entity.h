@@ -41,7 +41,8 @@ PLATFORM_Read_File_Error m_entity_deserialization_handler__default(
 static inline
 bool is_entity__allocated(
         Entity *p_entity) {
-    return !is_serialized_struct__deallocated(
+    return p_entity
+        && !is_serialized_struct__deallocated(
             &p_entity->_serialization_header);
 }
 

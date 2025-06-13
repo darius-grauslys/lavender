@@ -23,10 +23,6 @@ bool poll_world_for__scrolling(
         World *p_world,
         Graphics_Window *p_gfx_window);
 
-void teleport_player(
-        Game *p_game,
-        Vector__3i32F4 position__3i32F4);
-
 ///
 /// Only call this when leaving the world and returning to main menu.
 ///

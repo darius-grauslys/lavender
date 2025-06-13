@@ -245,6 +245,7 @@ void render_sprites_in__sprite_manager(
             p_sprite_manager->sprite_render_records, 
             p_sprite_manager->p_sprite_render_record__last
             - p_sprite_manager->sprite_render_records, 
+            sizeof(Sprite_Render_Record),
             f_sort_heuristic__sprite_render_record,
             f_sort_swap__sprite_render_record);
 

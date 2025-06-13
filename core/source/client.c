@@ -1,4 +1,5 @@
 #include "client.h"
+#include "collisions/collision_node.h"
 #include "collisions/hitbox_aabb.h"
 #include "collisions/hitbox_aabb_manager.h"
 #include "defines.h"
@@ -16,7 +17,11 @@
 #include "serialization/hashing.h"
 #include "serialization/serialization_header.h"
 #include "serialization/serialized_field.h"
+#include "world/chunk_vectors.h"
+#include "world/global_space_manager.h"
+#include "world/local_space.h"
 #include "world/local_space_manager.h"
+#include "world/world.h"
 
 static inline
 Serialized_Field *get_ps_entity_of__client(
@@ -46,6 +51,121 @@ void initialize_client(
 
     initialize_serialized_field_as__unassigned(
             get_ps_entity_of__client(p_client));
+}
+
+void m_process__teleport_client(
+        Process *p_this_process,
+        Game *p_game) {
+    Local_Space *p_local_space =
+        (Local_Space*)p_this_process->p_process_data;
+
+    if (!p_local_space) {
+        debug_warning("note, the following error results in the client hitbox being removed from world space:");
+        debug_error("m_process__teleport_client, p_local_space == 0.");
+        fail_process(p_this_process);
+        return;
+    }
+
+    if (!is_local_space__active(p_local_space)) {
+        return;
+    }
+
+    Client *p_client = 
+        get_p_client_by__uuid_from__game(
+                p_game, 
+                p_this_process->process_valueA__i32);
+
+    if (!p_client) {
+        debug_warning("note, the following error results in the client hitbox being removed from world space:");
+        debug_error("m_process__teleport_client, p_client == 0.");
+        fail_process(p_this_process);
+        return;
+    }
+
+    Hitbox_AABB *p_hitbox_of__client =
+        get_p_hitbox_aabb_by__uuid_u32_from__hitbox_aabb_manager(
+                get_p_hitbox_aabb_manager_from__game(p_game), 
+                GET_UUID_P(p_client));
+
+    if (!p_hitbox_of__client) {
+        debug_warning("note, the following error results in the client hitbox being removed from world space:");
+        debug_error("m_process__teleport_client, p_hitbox_of__client == 0.");
+        fail_process(p_this_process);
+        return;
+    }
+
+    bool success =
+        add_entry_to__collision_node(
+            get_p_collision_node_pool_from__world(
+                get_p_world_from__game(p_game)), 
+            get_p_collision_node_from__local_space(p_local_space), 
+            p_hitbox_of__client);
+
+    if (success) {
+        complete_process(p_this_process);
+        return;
+    }
+
+    debug_warning("note, the following error results in the client hitbox being removed from world space:");
+    debug_error("m_process__teleport_client, failed adding client hitbox as collision record.");
+    fail_process(p_this_process);
+}
+
+void teleport_client(
+        Game *p_game,
+        Client *p_client,
+        Vector__3i32F4 position__3i32F4) {
+    Hitbox_AABB *p_hitbox_of__client =
+        get_p_hitbox_aabb_by__uuid_u32_from__hitbox_aabb_manager(
+                get_p_hitbox_aabb_manager_from__game(p_game), 
+                GET_UUID_P(p_client));
+    
+    if (p_hitbox_of__client) {
+        Local_Space *p_local_space =
+            get_p_local_space_by__3i32F4_from__local_space_manager(
+                    get_p_local_space_manager_from__client(p_client), 
+                    get_position_3i32F4_of__hitbox_aabb(p_hitbox_of__client));
+        if (p_local_space) {
+            remove_entry_from__collision_node(
+                    get_p_collision_node_pool_from__world(
+                        get_p_world_from__game(p_game)),
+                    get_p_collision_node_from__local_space(p_local_space), 
+                    GET_UUID_P(p_hitbox_of__client));
+        } else {
+            debug_error("teleport_client, p_hitbox_of__client not found in local space.");
+        }
+        set_hitbox__position_with__3i32F4(
+                p_hitbox_of__client, 
+                position__3i32F4);
+    }
+    set_center_of__local_space_manager(
+            get_p_local_space_manager_from__client(
+                p_client), 
+            p_game, 
+            vector_3i32F4_to__chunk_vector_3i32(
+                position__3i32F4));
+
+    Local_Space *p_local_space =
+        get_p_local_space_by__3i32F4_from__local_space_manager(
+                get_p_local_space_manager_from__client(p_client), 
+                position__3i32F4);
+
+    if (!p_local_space) {
+        debug_warning("note, the following error results in the client hitbox being removed from world space:");
+        debug_error("teleport_client, failed to get destination p_local_space for client.");
+        return;
+    }
+
+    Process *p_process =
+        run_process(
+                get_p_process_manager_from__game(p_game), 
+                m_process__teleport_client, 
+                PROCESS_FLAG__IS_CRITICAL);
+
+    p_process->p_process_data =
+        p_local_space;
+    p_process->process_valueA__i32 =
+        GET_UUID_P(p_client);
 }
 
 bool release_game_action_from__client(

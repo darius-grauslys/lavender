@@ -11,9 +11,7 @@
 #include <sys/select.h>
 #include <sys/socket.h>
 #include <sys/fcntl.h>
-#include <netinet/in.h>
 #include <errno.h>
-#include <unistd.h>
 
 static inline
 PLATFORM_TCP_Socket *get_p_PLATFORM_tcp_socket_by__index_from__context(
@@ -37,32 +35,23 @@ void SDL_initialize_PLATFORM_tcp_context(
             sizeof(PLATFORM_TCP_Context));
 }
 
-PLATFORM_TCP_Context *PLATFORM_tcp_begin(
-        Game *p_game) {
-    PLATFORM_TCP_Context *pM_PLATFORM_tcp_context =
-        malloc(sizeof(PLATFORM_TCP_Context));
-    if (!pM_PLATFORM_tcp_context) {
-        debug_error("SDL::PLATFORM_tcp_being, failed to allocate pM_PLATFORM_tcp_context.");
-        return 0;
-    }
-    SDL_initialize_PLATFORM_tcp_context(
-            pM_PLATFORM_tcp_context);
+// PLATFORM_TCP_Context *PLATFORM_tcp_begin(
+//         Game *p_game) {
+//
+//         IMPLEMENTATION is found in respective:
+//         ./multiplayer/unix
+//         ./multiplayer/win64
+//         ./multiplayer/[OS]
+// }
 
-    return pM_PLATFORM_tcp_context;
-}
-
-void PLATFORM_tcp_end(
-        Game *p_game) {
-    if (!p_game->pM_tcp_socket_manager)
-        return;
-
-    PLATFORM_TCP_Context *p_PLATFORM_tcp_context =
-        get_p_PLATFORM_tcp_context_from__game(p_game);
-
-    p_game->pM_tcp_socket_manager->p_PLATFORM_tcp_context = 0;
-
-    free(p_PLATFORM_tcp_context);
-}
+// void PLATFORM_tcp_end(
+//         Game *p_game) {
+//
+//         IMPLEMENTATION is found in respective:
+//         ./multiplayer/unix
+//         ./multiplayer/win64
+//         ./multiplayer/[OS]
+// }
 
 PLATFORM_TCP_Socket *SDL_allocate_PLATFORM_TCP_Socket_from__context(
         PLATFORM_TCP_Context *p_PLATFORM_tcp_context) {
@@ -91,10 +80,10 @@ PLATFORM_TCP_Socket *SDL_allocate_PLATFORM_TCP_Socket_from__context(
         return 0;
     }
 
-    u32 socket_handle =
-        socket(PF_INET, SOCK_STREAM, 0);
-
-    if (socket_handle == (u32)-1) {
+    u32 socket_handle;
+    if (SDL_tcp_open_socket(
+                PF_INET, SOCK_STREAM, 0,
+                &socket_handle)) {
         debug_error("SDL_allocate_PLATFORM_TCP_Socket_from__context, failed to acquire socket.");
         return 0;
     }
@@ -143,7 +132,9 @@ PLATFORM_TCP_Socket *PLATFORM_tcp_connect(
                 F_SETFL,
                 flags | O_NONBLOCK) == -1) {
         debug_error("SDL::PLATFORM_tcp_connect, failed to set non-blocking mode.");
-        if (close(p_PLATFORM_tcp_socket->socket_handle)) {
+        if (PLATFORM_tcp_close_socket(
+                    p_PLATFORM_tcp_context,
+                    p_PLATFORM_tcp_socket)) {
             debug_error("SDL::PLATFORM_tcp_connect, failed to close socket.");
             return 0;
         }
@@ -214,7 +205,9 @@ PLATFORM_TCP_Socket *PLATFORM_tcp_server(
                 F_SETFL,
                 flags | O_NONBLOCK) == -1) {
         debug_error("SDL::PLATFORM_tcp_server, failed to set non-blocking mode.");
-        if (close(p_PLATFORM_tcp_socket->socket_handle)) {
+        if (PLATFORM_tcp_close_socket(
+                    p_PLATFORM_tcp_context,
+                    p_PLATFORM_tcp_socket)) {
             debug_error("SDL::PLATFORM_tcp_server, failed to close socket.");
             return 0;
         }
@@ -241,22 +234,6 @@ PLATFORM_TCP_Socket *PLATFORM_tcp_server(
     debug_info("SDL::PLATFORM_tcp_server, listening...");
 
     return p_PLATFORM_tcp_socket;
-}
-
-///
-/// Returns true if the socket was closed.
-///
-bool PLATFORM_tcp_close_socket(
-        PLATFORM_TCP_Context *p_PLATFORM_tcp_context,
-        PLATFORM_TCP_Socket *p_PLATFORM_tcp_socket) {
-    if (close(p_PLATFORM_tcp_socket->socket_handle)) {
-        debug_error("SDL::PLATFORM_tcp_close_socket, failed to close socket.");
-        return false;
-    }
-    SDL_initialize_PLATFORM_tcp_socket_as__inactive(
-            p_PLATFORM_tcp_socket);
-
-    return true;
 }
 
 ///
@@ -288,7 +265,8 @@ PLATFORM_TCP_Socket *PLATFORM_tcp_poll_accept(
                 p_PLATFORM_tcp_context);
 
     if (!p_PLATFORM_tcp_socket__pending_connection) {
-        close(socket_handle__new_connection);
+        SDL_tcp_close_socket(
+                socket_handle__new_connection);
         debug_error("SDL::PLATFORM_tcp_poll_accept, cannot accept new connections.");
         return 0;
     }
@@ -320,12 +298,12 @@ PLATFORM_TCP_Socket *PLATFORM_tcp_poll_accept(
                 F_SETFL,
                 flags | O_NONBLOCK) == -1) {
         debug_error("SDL::PLATFORM_tcp_connect, failed to set non-blocking mode.");
-        if (close(p_PLATFORM_tcp_socket__pending_connection->socket_handle)) {
+        if (PLATFORM_tcp_close_socket(
+                    p_PLATFORM_tcp_context,
+                    p_PLATFORM_tcp_socket__pending_connection)) {
             debug_error("SDL::PLATFORM_tcp_connect, failed to close socket.");
             return 0;
         }
-        SDL_initialize_PLATFORM_tcp_socket_as__inactive(
-                p_PLATFORM_tcp_socket__pending_connection);
         return 0;
     }
 

@@ -108,6 +108,7 @@ typedef struct Ray__3i32F20_t {
     Degree__u9 angle_of__ray;
 } Ray__3i32F20;
 
+#define INDEX__UNKNOWN__u64 (uint64_t)(-1)
 #define INDEX__UNKNOWN__u32 (uint32_t)(-1)
 #define INDEX__UNKNOWN__u16 (uint16_t)(-1)
 #define INDEX__UNKNOWN__u8 (uint8_t)(-1)
@@ -1164,7 +1165,7 @@ typedef Signed_Quantity__i32 (*f_Sort_Heuristic)(
 /// This is not supported by the process_manager, use it
 /// if you need the results in a single frame.
 ///
-typedef Signed_Quantity__i32 (*f_Sort_Heuristic__Void)(
+typedef Signed_Quantity__i32 (*f_Sort_Heuristic__i32)(
         void *p_one,
         void *p_two);
 

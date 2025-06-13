@@ -37,6 +37,13 @@ void m_process__serialize_chunk(
     Global_Space *p_global_space = 
         p_serialization_request->p_data;
 
+    if (!p_global_space) {
+        debug_error("m_process__serialize_chunk [%p], p_global_space == 0.",
+                p_this_process);
+        fail_process(p_this_process);
+        return;
+    }
+
     Chunk *p_chunk = get_p_chunk_from__global_space(p_global_space);
 
     if (!p_chunk) {
@@ -116,6 +123,9 @@ void m_process__deserialize_chunk(
         fail_process(p_this_process);
         return;
     }
+
+    debug_info__verbose("m_process__deserialize_chunk, finish: %p",
+            p_serialization_request);
 
     set_chunk_as__active(p_chunk);
     complete_process(p_this_process);

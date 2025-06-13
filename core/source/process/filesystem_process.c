@@ -11,6 +11,10 @@ void m_process__dispose_handler__filesystem__default(
     Serialization_Request *p_serialization_request =
         (Serialization_Request*)p_this_process->p_process_data;
 
+    debug_info__verbose("m_process__dispose_handler__filesystem__default [%p] ser req: %p",
+            p_this_process,
+            p_serialization_request);
+
     if (!p_serialization_request)
         return;
 

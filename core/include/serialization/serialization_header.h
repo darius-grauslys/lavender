@@ -5,14 +5,14 @@
 #include <defines.h>
 
 #define GET_UUID_BRANDING(type, index) \
-    (((type) << UUID_BRANDING__BIT_SHIFT__TYPE)\
-    | ((index) << UUID_BRANDING__BIT_SHIFT__INDEX))
+    (u32)(((u32)(type) << UUID_BRANDING__BIT_SHIFT__TYPE)\
+    | (u32)((u32)(index) << UUID_BRANDING__BIT_SHIFT__INDEX))
 
 #define BRAND_UUID(uuid, uuid__branding)\
-    (uuid__branding | (uuid & ~UUID_BRANDING__MASK))
+    (uuid__branding | ((u32)(uuid) & ~UUID_BRANDING__MASK))
 
 #define BRAND_UUID__64(uuid, uuid__branding)\
-    (uuid__branding | (uuid & ~(((u64)UUID_BRANDING__MASK) << 32)))
+    (uuid__branding | ((u64)(uuid) & ~(((u64)UUID_BRANDING__MASK) << 32)))
 
 #define GET_UUID(serialized_header)\
     (((Serialization_Header*)&serialized_header)->uuid)

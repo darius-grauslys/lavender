@@ -533,6 +533,36 @@ i32F20 get_distance_squared_of__vector_3i32F20(
 }
 
 static inline
+bool get_distance_squared_of__vector_3i32__no_overflow(
+        Vector__3i32 vector__3i32,
+        u32 *p_out__u64) {
+    if (UINT32_MAX - vector__3i32.x__i32 < vector__3i32.x__i32)
+        return true;
+    if (UINT32_MAX - vector__3i32.y__i32 < vector__3i32.y__i32)
+        return true;
+    if (UINT32_MAX - vector__3i32.z__i32 < vector__3i32.z__i32)
+        return true;
+    u32 x2 = vector__3i32.x__i32 * vector__3i32.x__i32;
+    u32 y2 = vector__3i32.y__i32 * vector__3i32.y__i32;
+    u32 z2 = vector__3i32.z__i32 * vector__3i32.z__i32;
+    u32 result;
+    if (add_u32__no_overflow(
+            x2, 
+            y2, 
+            &result)) {
+        return true;
+    }
+    if (add_u32__no_overflow(
+            z2, 
+            result, 
+            &result)) {
+        return true;
+    }
+    *p_out__u64 = result;
+    return false;
+}
+
+static inline
 i32F4 get_distance_hamming_of__vectors_3i32(
         Vector__3i32 vector__one__3i32,
         Vector__3i32 vector__two__3i32) {

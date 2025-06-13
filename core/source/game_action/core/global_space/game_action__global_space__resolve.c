@@ -42,8 +42,13 @@ void m_process__game_action__global_space__resolve(
                 p_global_space_manager, 
                 gsv__3i32);
 
+    debug_info__verbose("m_process__game_action__global_space__resolve, resolve: (%d,%d,%d)",
+            gsv__3i32.x__i32,
+            gsv__3i32.y__i32,
+            gsv__3i32.z__i32);
+
     if (!p_global_space) {
-        debug_error("m_process__game_action__global_space__resolve, p_global_space == 0.");
+        debug_error("m_process__game_action__global_space__resolve, p_global_space == 0");
         fail_process(p_this_process);
         return;
     }
@@ -51,6 +56,11 @@ void m_process__game_action__global_space__resolve(
     if (get_p_chunk_from__global_space(p_global_space)) {
         /// assume that this process is being run after
         /// being dequeued from the deserialization process.
+        debug_info__verbose("m_process__game_action__global_space__resolve, COMPLETE: (%d,%d,%d)",
+                gsv__3i32.x__i32,
+                gsv__3i32.y__i32,
+                gsv__3i32.z__i32);
+
         complete_process(p_this_process);
         return;
     }

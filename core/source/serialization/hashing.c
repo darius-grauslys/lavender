@@ -122,6 +122,10 @@ Serialization_Header *dehash_identitier_u32_in__contigious_array(
                 length_of__p_serialization_headers,
                 identifier__u32,
                 INDEX__UNKNOWN__u32);
+    if (is_index_u32__out_of_bounds(index__initial__u32)) {
+        debug_error("dehash_identitier_u64_in__contigious_array, identifier not present.");
+        return 0;
+    }
     Index__u32 index__u32 = index__initial__u32;
     do {
         if (is_identifier_u32_matching__serialization_header(
@@ -156,6 +160,10 @@ Serialization_Header__UUID_64 *dehash_identitier_u64_in__contigious_array(
                 length_of__p_serialization_headers,
                 identifier__u64,
                 INDEX__UNKNOWN__u32);
+    if (is_index_u32__out_of_bounds(index__initial__u32)) {
+        debug_error("dehash_identitier_u64_in__contigious_array, identifier not present.");
+        return 0;
+    }
     Index__u32 index__u32 = index__initial__u32;
     do {
         if (is_identifier_u64_matching__serialization_header(

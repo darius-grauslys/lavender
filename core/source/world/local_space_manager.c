@@ -314,7 +314,10 @@ void set_center_of__local_space_manager(
         Local_Space_Manager *p_local_space_manager,
         Game *p_game,
         Global_Space_Vector__3i32 center_of__local_space_manager__3i32) {
-    if (is_vectors_3i32__equal(
+    if (!is_vectors_3i32__out_of_bounds(
+                p_local_space_manager
+                ->center_of__local_space_manager__3i32)
+            && is_vectors_3i32__equal(
                 p_local_space_manager
                 ->center_of__local_space_manager__3i32, 
                 center_of__local_space_manager__3i32)) {
@@ -322,7 +325,11 @@ void set_center_of__local_space_manager(
     }
     
     Global_Space_Vector__3i32 distance_manhattan__3i32 =
-        subtract_vectors__3i32(
+        (is_vectors_3i32__out_of_bounds(
+                p_local_space_manager
+                ->center_of__local_space_manager__3i32))
+        ? VECTOR__3i32__OUT_OF_BOUNDS
+        : subtract_vectors__3i32(
                 center_of__local_space_manager__3i32,
                 p_local_space_manager
                 ->center_of__local_space_manager__3i32);

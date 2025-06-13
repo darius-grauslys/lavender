@@ -3,6 +3,22 @@
 
 #include "defines.h"
 #include <defines_weak.h>
+#include <stdint.h>
+
+///
+/// R shift on negative numbers is compiler specific
+/// on implementation, this is to keep things consistent.
+///
+#define ARITHMETRIC_R_SHIFT(x, n)\
+    (((x)>=0) ? (x) >> (n) : -((-(x)) >> (n)))
+
+///
+/// L shift on negative numbers is undefined behavior.
+/// This is an explicit arithmetric definition for
+/// L shift on negatives.
+///
+#define ARITHMETRIC_L_SHIFT(x, n)\
+    ((i32)((u32)(x) << (n)))
 
 static const u8 MAX__U8     = ((u8)-1);
 static const u16 MAX__U16   = ((u16)-1);
@@ -46,32 +62,44 @@ bool is_quantity_u32__out_of_bounds(
 
 static inline 
 i32F4 i32_to__i32F4(Signed_Index__i32 x) {
-    return x << FRACTIONAL_PERCISION_4__BIT_SIZE;
+    return ARITHMETRIC_L_SHIFT(
+            x, 
+            FRACTIONAL_PERCISION_4__BIT_SIZE);
 }
 
 static inline 
 Signed_Index__i32 i32F4_to__i32(i32F4 x) {
-    return x >> FRACTIONAL_PERCISION_4__BIT_SIZE;
+    return ARITHMETRIC_R_SHIFT(
+            x, 
+            FRACTIONAL_PERCISION_4__BIT_SIZE);
 }
 
 static inline 
 i32F20 i32_to__i32F20(Signed_Index__i32 x) {
-    return x << FRACTIONAL_PERCISION_20__BIT_SIZE;
+    return ARITHMETRIC_L_SHIFT(
+            x, 
+            FRACTIONAL_PERCISION_20__BIT_SIZE);
 }
 
 static inline 
 Signed_Index__i32 i32F20_to__i32(i32F20 x) {
-    return x >> FRACTIONAL_PERCISION_20__BIT_SIZE;
+    return ARITHMETRIC_R_SHIFT(
+            x,
+            FRACTIONAL_PERCISION_20__BIT_SIZE);
 }
 
 static inline 
 Signed_Index__i32 i32F20_to__i32F4(i32F20 x) {
-    return x >> FRACTIONAL_PERCISION_16__BIT_SIZE;
+    return ARITHMETRIC_R_SHIFT(
+            x,
+            FRACTIONAL_PERCISION_16__BIT_SIZE);
 }
 
 static inline 
 Signed_Index__i32 i32F4_to__i32F20(i32F4 x) {
-    return x << FRACTIONAL_PERCISION_16__BIT_SIZE;
+    return ARITHMETRIC_L_SHIFT(
+            x, 
+            FRACTIONAL_PERCISION_16__BIT_SIZE);
 }
 
 static inline
@@ -236,6 +264,77 @@ u32 subtract_u32__no_overflow(
     if (first__u32 < second__u32)
         return 0;
     return first__u32 - second__u32;
+}
+
+static inline
+u8 delta_u8__no_overflow(
+        u8 first__u8,
+        u8 second__u8) {
+    if (first__u8 < second__u8)
+        return second__u8 - first__u8;
+    return first__u8 - second__u8;
+}
+
+static inline
+u16 delta_u16__no_overflow(
+        u16 first__u16,
+        u16 second__u16) {
+    if (first__u16 < second__u16)
+        return second__u16 - first__u16;
+    return first__u16 - second__u16;
+}
+
+static inline
+u32 delta_u32__no_overflow(
+        u32 first__u32,
+        u32 second__u32) {
+    if (first__u32 < second__u32)
+        return second__u32 - first__u32;
+    return first__u32 - second__u32;
+}
+
+static inline
+bool add_u8__no_overflow(
+        u8 first__u8,
+        u8 second__u8,
+        u8 *p_out__u8) {
+    if (UINT8_MAX - first__u8 < second__u8)
+        return true;
+    *p_out__u8 = first__u8 + second__u8;
+    return false;
+}
+
+static inline
+bool add_u16__no_overflow(
+        u16 first__u16,
+        u16 second__u16,
+        u16 *p_out__u16) {
+    if (UINT16_MAX - first__u16 < second__u16)
+        return true;
+    *p_out__u16 = first__u16 + second__u16;
+    return false;
+}
+
+static inline
+bool add_u32__no_overflow(
+        u32 first__u32,
+        u32 second__u32,
+        u32 *p_out__u32) {
+    if (UINT32_MAX - first__u32 < second__u32)
+        return true;
+    *p_out__u32 = first__u32 + second__u32;
+    return false;
+}
+
+static inline
+bool add_u64__no_overflow(
+        u64 first__u64,
+        u64 second__u64,
+        u64 *p_out__u64) {
+    if (UINT64_MAX - first__u64 < second__u64)
+        return true;
+    *p_out__u64 = first__u64 + second__u64;
+    return false;
 }
 
 static inline

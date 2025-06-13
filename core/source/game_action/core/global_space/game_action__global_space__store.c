@@ -6,6 +6,7 @@
 #include "game_action/game_action_logic_entry.h"
 #include "game_action/game_action_logic_table.h"
 #include "process/game_action_process.h"
+#include "process/process.h"
 #include "world/chunk_pool.h"
 #include "world/global_space.h"
 #include "world/global_space_manager.h"
@@ -24,63 +25,36 @@ void m_process__game_action__global_space__store(
                 p_game_action->ga_kind__global_space__store__gsv__3i32);
     
     if (!p_global_space) {
-        debug_error("m_process__game_action__global_space__store, p_global_space == 0.");
+        debug_error("m_process__game_action__global_space__store [%p], p_global_space == 0.",
+                p_this_process);
         fail_process(p_this_process);
         return;
     }
 
-    Serialization_Request *p_serialization_request =
-        PLATFORM_allocate_serialization_request(
-                get_p_PLATFORM_file_system_context_from__game(p_game));
+    debug_info__verbose("m_process__game_action__global_space__store [%p], (%d,%d,%d)",
+            p_this_process,
+            p_global_space->chunk_vector__3i32.x__i32,
+            p_global_space->chunk_vector__3i32.y__i32,
+            p_global_space->chunk_vector__3i32.z__i32);
 
-    if (!p_serialization_request) {
-        debug_error("m_process__game_action__global_space__store, failed to allocate p_serialization_request.");
-        fail_process(p_this_process);
-        return;
-    }
-
-    p_serialization_request->p_data =
-        p_global_space;
-
-    IO_path path_to__chunk_file;
+    IO_path path;
     stat_chunk_file__tiles(
             get_p_PLATFORM_file_system_context_from__game(p_game), 
             get_p_world_from__game(p_game), 
             p_global_space, 
-            path_to__chunk_file);
+            path);
+    Process *p_process =
+        dispatch_process__serialize_global_space(
+                p_game,
+                p_global_space);
 
-    PLATFORM_Open_File_Error error =
-        PLATFORM_open_file(
-                get_p_PLATFORM_file_system_context_from__game(p_game),
-                path_to__chunk_file,
-                "wb",
-                p_serialization_request);
-
-    if (error) {
-        PLATFORM_release_serialization_request(
-                get_p_PLATFORM_file_system_context_from__game(p_game), 
-                p_serialization_request);
-        path_to__chunk_file[MAX_LENGTH_OF__IO_PATH-1] = 0;
-        debug_error("m_process__game_action__global_space__store, failed to open(%d) global_space file: %s",
-                error,
-                path_to__chunk_file);
+    if (!p_process) {
+        debug_error("m_process__game_action__global_space__store, failed to dispatch deserialization process.");
         fail_process(p_this_process);
         return;
     }
 
-    p_this_process->p_process_data =
-        p_serialization_request;
-
-    p_this_process->m_process_run__handler =
-                m_process__serialize_global_space;
-
-    resolve_game_action(
-            p_game,
-            p_game_action->uuid_of__client__u32,
-            p_game_action);
-
-    set_global_space_as__deconstructing(
-            p_global_space);
+    complete_process(p_this_process);
 }
 
 void register_game_action__global_space__store(

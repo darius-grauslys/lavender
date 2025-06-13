@@ -5,7 +5,6 @@
 #include "platform_defaults.h"
 #include <defines.h>
 #include <SDL2/SDL_render.h>
-#include <netinet/in.h>
 #include <platform_defines.h>
 
 #define TO_STRING(x) #x
@@ -291,10 +290,7 @@ typedef struct PLATFORM_File_System_Context_t {
     Quantity__u32 size_of__path_to__base_directory;
 } PLATFORM_File_System_Context;
 
-typedef struct PLATFORM_TCP_Socket_t {
-    struct sockaddr_in addr_in;
-    u32 socket_handle;
-} PLATFORM_TCP_Socket;
+#include "multiplayer/sdl_tcp_defines.h"
 
 typedef struct PLATFORM_TCP_Context_t {
     PLATFORM_TCP_Socket PLATFORM_tcp_sockets[

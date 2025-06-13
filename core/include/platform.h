@@ -394,7 +394,7 @@ PLATFORM_TCP_Socket *PLATFORM_tcp_server(
         Index__u16 port);
 
 ///
-/// Returns true if the socket was closed.
+/// Returns true if the any errors were encountered.
 ///
 bool PLATFORM_tcp_close_socket(
         PLATFORM_TCP_Context *p_PLATFORM_tcp_context,

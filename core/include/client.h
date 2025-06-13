@@ -20,6 +20,11 @@ bool dispatch_game_action_for__client(
         TCP_Socket_Manager *p_tcp_socket_manager,
         Game_Action *p_game_action);
 
+void teleport_client(
+        Game *p_game,
+        Client *p_client,
+        Vector__3i32F4 position__3i32F4);
+
 ///
 /// Logcially handle an inbound allocated game_action.
 ///

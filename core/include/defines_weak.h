@@ -14,10 +14,11 @@
 
 #define _STRING(x) #x
 #define STRING(x) _STRING(x)
-#define BIT(n) (1 << (n))
+#define BIT(n) ((1U) << (n))
+#define BIT__u64(n) ((1U) << ((u64)(n)))
 #define NEXT_BIT(symbol) (symbol << 1)
 #define MASK(n) ((u32)BIT(n) - 1)
-
+#define MASK__u64(n) ((u64)(BIT__u64(n) - 1))
 
 typedef int32_t     i32;
 typedef int16_t     i16;
@@ -609,7 +610,7 @@ typedef enum Lavender_Type {
 
 #define UUID_BRANDING__BIT_SHIFT__INDEX 20
 #define UUID_BRANDING__BIT_SHIFT__TYPE 26
-#define UUID_BRANDING__MASK ((Lavender_Type__Unknown << \
+#define UUID_BRANDING__MASK (((u32)(Lavender_Type__Unknown) << \
             UUID_BRANDING__BIT_SHIFT__TYPE) \
             | (0b111111 << \
                 UUID_BRANDING__BIT_SHIFT__INDEX))

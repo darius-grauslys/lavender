@@ -20,6 +20,10 @@ Process *dispatch_process__deserialize_global_space(
         Game *p_game,
         Global_Space *p_global_space);
 
+Process *dispatch_process__serialize_global_space(
+        Game *p_game,
+        Global_Space *p_global_space);
+
 static inline
 void hold_global_space(
         Global_Space *p_global_space) {

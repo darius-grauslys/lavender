@@ -110,6 +110,19 @@ void manage_world(
             continue;
         }
 
+        // TODO: this is being invoked twice a frame
+        // now... we need to do better.
+        //
+        // Being properly invoked in graphics_window_manager.c
+        //
+        // but we need to hackily invoke here now too
+        if (p_gfx_window->p_camera->m_camera_handler) {
+            p_gfx_window->p_camera->m_camera_handler(
+                    p_gfx_window->p_camera,
+                    p_game,
+                    p_gfx_window);
+        }
+
         poll_local_space_for__scrolling(
                 get_p_local_space_manager_from__client(p_client), 
                 p_game, 
@@ -155,12 +168,6 @@ bool poll_world_for__scrolling(
         Graphics_Window *p_gfx_window) {
     debug_abort("poll_world_for__scrolling, impl");
     return false;
-}
-
-void teleport_player(
-        Game *p_game,
-        Vector__3i32F4 position__3i32F4) {
-    debug_abort("teleport_player, impl");
 }
 
 void save_world(
