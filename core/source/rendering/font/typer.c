@@ -1,9 +1,10 @@
+#include "rendering/font/typer.h"
 #include "collisions/hitbox_aabb.h"
 #include "defines.h"
 #include "defines_weak.h"
 #include "platform.h"
+#include "rendering/texture.h"
 #include "vectors.h"
-#include <rendering/font/typer.h>
 
 void initialize_typer(
         Typer *p_typer,
@@ -26,7 +27,7 @@ void initialize_typer(
     p_typer->quantity_of__space_in__pixels_between__lines = 
         quantity_of__spacing;
     p_typer->p_font = 0;
-    p_typer->p_PLATFORM_texture__typer_target = 0;
+    initialize_texture(p_typer->texture_of__typer_target);
     p_typer->is_using_PLATFORM_texture_or__PLATFORM_graphics_window = true;
 }
 

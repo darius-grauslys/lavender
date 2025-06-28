@@ -68,7 +68,8 @@ bool is_local_space__active(Local_Space *p_local_space) {
     return is_local_space__allocated(
             p_local_space)
         && is_global_space__active(
-                get_p_global_space_from__local_space(p_local_space));
+                get_p_global_space_from__local_space(
+                    p_local_space));
 }
 
 #endif

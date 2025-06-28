@@ -12,6 +12,14 @@ bool is_sprite_animation__NOT_looping(
 }
 
 static inline
+bool is_sprite_animation__looping(
+        Sprite_Animation *p_sprite_animation) {
+    return !(p_sprite_animation->sprite_animation__flags__u3
+        & SPRITE_ANIMATION_FLAG__IS_NOT_LOOPING)
+        ;
+}
+
+static inline
 void set_sprite_animation_as__looping(
         Sprite_Animation *p_sprite_animation) {
     p_sprite_animation->sprite_animation__flags__u3 &=

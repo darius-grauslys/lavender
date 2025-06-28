@@ -18,6 +18,10 @@ void SDL_release_texture_from__texture_manager(
         SDL_Texture_Manager *p_SDL_texture_manager,
         PLATFORM_Texture *p_PLATFORM_texture);
 
+void SDL_release_texture(
+        PLATFORM_Gfx_Context *p_PLATFORM_gfx_context,
+        PLATFORM_Texture *p_PLATFORM_texture);
+
 void SDL_dispose_texture_manager(
         SDL_Texture_Manager *p_SDL_texture_manager);
 

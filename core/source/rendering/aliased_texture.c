@@ -1,10 +1,12 @@
 #include "rendering/aliased_texture.h"
 #include "defines.h"
+#include "rendering/texture.h"
 #include "serialization/serialization_header.h"
 
 void initialize_aliased_texture(
         Aliased_Texture *p_aliased_texture) {
-    p_aliased_texture->P_PLATFORM_texture = 0;
+    initialize_texture(
+            p_aliased_texture->texture);
     memset(p_aliased_texture
             ->name_of__texture__c_str,
             0,

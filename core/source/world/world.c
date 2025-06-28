@@ -101,6 +101,7 @@ void manage_world(
             index_of__client
             < get_quantity_of__clients_connect_to__game(p_game);
             index_of__client++) {
+#warning TODO: this must do local_space_manager scrolling based off of client HITBOX, and not the local camera, of which in multiplayer, the server will lack and even if it didn't, it would need one camera per player...
         Client *p_client = 
             get_p_client_by__index_from__game(
                     p_game, 

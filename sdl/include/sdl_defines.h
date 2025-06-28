@@ -79,7 +79,7 @@ typedef struct PLATFORM_Texture_t {
 } PLATFORM_Texture;
 
 typedef struct PLATFORM_Graphics_Window_t {
-    PLATFORM_Texture *p_SDL_graphics_window__texture;
+    Texture SDL_graphics_window__texture;
     void *p_SDL_graphics_window__data;
     bool is_allocated;
 } PLATFORM_Graphics_Window;
@@ -178,7 +178,7 @@ typedef void (*f_SDL_Compose_World)(
         Gfx_Context *p_gfx_context,
         Graphics_Window **p_ptr_array_of__gfx_windows,
         Local_Space_Manager *p_local_space_manager,
-        PLATFORM_Texture **p_ptr_array_of__PLATFORM_textures,
+        Texture *array_of__textures,
         Quantity__u32 quantity_of__gfx_windows,
         f_Tile_Render_Kernel f_tile_render_kernel);
 
@@ -281,7 +281,8 @@ typedef struct PLATFORM_Audio_Context_t {
 
 } PLATFORM_Audio_Context;
 
-#define MAX_QUANTITY_OF__SERIALIZATION_REQUESTS 256
+#define MAX_QUANTITY_OF__SERIALIZATION_REQUESTS \
+    PROCESS_MAX_QUANTITY_OF
 
 typedef struct PLATFORM_File_System_Context_t {
     Serialization_Request SDL_serialization_requests[

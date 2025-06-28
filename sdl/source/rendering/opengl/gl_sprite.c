@@ -75,7 +75,8 @@ void GL_update_sprite(
     GL_bind_texture_to__framebuffer(
             p_GL_framebuffer, 
             p_sprite
-            ->p_PLATFORM_texture_of__sprite
+            ->texture_of__sprite
+            .p_PLATFORM_texture
             );
 
     float clear_color[4];
@@ -96,79 +97,50 @@ void GL_update_sprite(
             p_gfx_context
             ->p_PLATFORM_gfx_context,
             p_sprite
-            ->p_PLATFORM_texture_for__sprite_to__sample);
+            ->texture_for__sprite_to__sample);
 
-    float width__f = 
+    float width_of__uv = 
         (float)((float)p_sprite
-                ->p_PLATFORM_texture_for__sprite_to__sample
+                ->texture_of__sprite
+                .p_PLATFORM_texture
         ->width
         / p_sprite
-        ->p_PLATFORM_texture_of__sprite
+        ->texture_for__sprite_to__sample
+        .p_PLATFORM_texture
         ->width);
         ;
-    float height__f = 
+    float height_of__uv = 
         (float)((float)p_sprite
-                ->p_PLATFORM_texture_for__sprite_to__sample
+                ->texture_of__sprite
+                .p_PLATFORM_texture
         ->height
         / p_sprite
-        ->p_PLATFORM_texture_of__sprite
+        ->texture_for__sprite_to__sample
+        .p_PLATFORM_texture
         ->height);
         ;
 
-    float width_of__uv  = 1.0 / (width__f);
-    float height_of__uv = 1.0 / (height__f);
-
     u32 quantity_of__sprite_frame__columns = 
         p_sprite
-        ->p_PLATFORM_texture_for__sprite_to__sample
+        ->texture_for__sprite_to__sample
+        .p_PLATFORM_texture
         ->width
         / p_sprite
-        ->p_PLATFORM_texture_of__sprite
+        ->texture_of__sprite
+        .p_PLATFORM_texture
         ->width;
     u32 quantity_of__sprite_frame__rows =
         p_sprite
-        ->p_PLATFORM_texture_for__sprite_to__sample
+        ->texture_for__sprite_to__sample
+        .p_PLATFORM_texture
         ->height
         / p_sprite
-        ->p_PLATFORM_texture_of__sprite
+        ->texture_of__sprite
+        .p_PLATFORM_texture
         ->height;
 
-    Index__u16 sprite__index_of__frame = 0;
-    // TODO: add Texture type, and re-implement animation groups.
-    // if (p_sprite->animation_group
-    //         .quantity_of__columns_in__sprite_animation_group__u4
-    //         != 0) {
-    //     Index__u16 sprite__index_of__frame__x =
-    //         (p_sprite->index_of__sprite_frame
-    //          % p_sprite->animation_group
-    //          .quantity_of__columns_in__sprite_animation_group__u4)
-    //         + (p_sprite->animation_group
-    //                 .quantity_of__columns_in__sprite_animation_group__u4
-    //                 * p_sprite->index_of__sprite_animation_sub_group__u8)
-    //         ;
-    //     Index__u16 sprite__index_of__frame__y =
-    //         (p_sprite->index_of__sprite_frame
-    //          / p_sprite->animation_group
-    //          .quantity_of__columns_in__sprite_animation_group__u4)
-    //         ;
-
-    //     sprite__index_of__frame =
-    //         (sprite__index_of__frame__x
-    //         % quantity_of__sprite_frame__columns)
-    //         + (p_sprite->animation_group
-    //                 .quantity_of__rows_in__sprite_animation_group__u4
-    //             * quantity_of__sprite_frame__columns
-    //                 * (sprite__index_of__frame__x
-    //                     / (p_sprite->animation_group
-    //                         .quantity_of__rows_in__sprite_animation_group__u4
-    //                         * quantity_of__sprite_frame__columns)))
-    //         + (quantity_of__sprite_frame__columns
-    //                 * sprite__index_of__frame__y)
-    //         ;
-    // } else {
-        sprite__index_of__frame =
-            p_sprite->index_of__sprite_frame;
-    // }
+    Index__u16 sprite__index_of__frame =
+        p_sprite->index_of__sprite_frame;
 
     Index__u8 index_of__frame__column =
         sprite__index_of__frame
@@ -181,10 +153,12 @@ void GL_update_sprite(
             p_GL_viewport_stack, 
             0, 0,
             p_sprite
-            ->p_PLATFORM_texture_of__sprite
+            ->texture_of__sprite
+            .p_PLATFORM_texture
             ->width,
             p_sprite
-            ->p_PLATFORM_texture_of__sprite
+            ->texture_of__sprite
+            .p_PLATFORM_texture
             ->height);
 
     glDisable(GL_DEPTH_TEST);
@@ -278,11 +252,13 @@ void GL_render_sprite(
             0, 0,
             p_gfx_window
             ->p_PLATFORM_gfx_window
-            ->p_SDL_graphics_window__texture
+            ->SDL_graphics_window__texture
+            .p_PLATFORM_texture
             ->width,
             p_gfx_window
             ->p_PLATFORM_gfx_window
-            ->p_SDL_graphics_window__texture
+            ->SDL_graphics_window__texture
+            .p_PLATFORM_texture
             ->height);
 
     GL_push_framebuffer_onto__framebuffer_manager(
@@ -292,7 +268,8 @@ void GL_render_sprite(
             p_GL_framebuffer, 
             p_gfx_window
             ->p_PLATFORM_gfx_window
-            ->p_SDL_graphics_window__texture
+            ->SDL_graphics_window__texture
+            .p_PLATFORM_texture
             );
 
     use_shader_2d(p_GL_shader__sprite);
@@ -313,7 +290,7 @@ void GL_render_sprite(
             p_gfx_context
             ->p_PLATFORM_gfx_context,
             p_sprite
-            ->p_PLATFORM_texture_of__sprite);
+            ->texture_of__sprite);
     glUniform2f(
             p_GL_shader__sprite
             ->location_of__general_uniform_0,

@@ -37,7 +37,7 @@ Sprite *allocate_sprite_from__sprite_manager(
         Sprite_Manager *p_sprite_manager,
         Graphics_Window *p_gfx_window,
         Identifier__u32 uuid__u32,
-        PLATFORM_Texture *p_PLATFORM_texture_to__sample_by__sprite,
+        Texture texture_to__sample_by__sprite,
         Texture_Flags texture_flags_for__sprite) {
 #ifndef NDEBUG
     if (!p_sprite_manager) {
@@ -60,18 +60,15 @@ Sprite *allocate_sprite_from__sprite_manager(
         return 0;
     }
 
-    p_sprite->p_PLATFORM_texture_for__sprite_to__sample =
-        p_PLATFORM_texture_to__sample_by__sprite;
+    p_sprite->texture_for__sprite_to__sample =
+        texture_to__sample_by__sprite;
 
-    p_sprite->p_PLATFORM_texture_of__sprite =
-        PLATFORM_allocate_texture(
+    if (PLATFORM_allocate_texture(
                 get_p_PLATFORM_gfx_context_from__gfx_context(
                     p_gfx_context), 
                 p_gfx_window->p_PLATFORM_gfx_window,
-                texture_flags_for__sprite);
-
-    if (!p_sprite
-            ->p_PLATFORM_texture_of__sprite) {
+                texture_flags_for__sprite,
+                &p_sprite->texture_of__sprite)) {
         debug_error("allocate_sprite_from__sprite_manager, failed to allocate p_PLATFORM_texture_of__sprite.");
         PLATFORM_release_sprite(
                 p_gfx_context, 
@@ -89,6 +86,10 @@ Sprite *allocate_sprite_from__sprite_manager(
 
     if (!p_PLATFORM_sprite) {
         debug_error("allocate_sprite_from__sprite_manager, failed to allocate p_PLATOFRM_sprite.");
+        PLATFORM_release_texture(
+                get_p_PLATFORM_gfx_context_from__gfx_context(
+                    p_gfx_context), 
+                p_sprite->texture_of__sprite);
         DEALLOCATE_P(p_sprite);
         return 0;
     }
@@ -222,7 +223,8 @@ void render_sprites_in__sprite_manager(
         }
         poll_sprite_for__animation(
                 p_game,
-                p_sprite_render_record->p_sprite);
+                p_sprite_render_record->p_sprite,
+                p_sprite_manager);
         Hitbox_AABB *p_hitbox_aabb =
             get_p_hitbox_aabb_by__uuid_u32_from__hitbox_aabb_manager(
                     get_p_hitbox_aabb_manager_from__game(p_game), 

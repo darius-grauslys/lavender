@@ -46,7 +46,8 @@ static void GL_put_char_in__typer_for__texture(
     float width__f = 
         (float)p_typer
         ->p_font
-        ->p_PLATFORM_texture_of__font
+        ->texture_of__font
+        .p_PLATFORM_texture
         ->width
         / p_font_letter
             ->width_of__font_letter
@@ -54,7 +55,8 @@ static void GL_put_char_in__typer_for__texture(
     float height__f = 
         (float)p_typer
         ->p_font
-        ->p_PLATFORM_texture_of__font
+        ->texture_of__font
+        .p_PLATFORM_texture
         ->height
         / p_font_letter
             ->height_of__font_letter
@@ -71,12 +73,13 @@ static void GL_put_char_in__typer_for__texture(
             ->GL_vertex_object__unit_square);
 
     GL_use_texture(
-            p_typer->p_font->p_PLATFORM_texture_of__font);
+            p_typer->p_font->texture_of__font.p_PLATFORM_texture);
 
     float max_width__f = 
         (float)p_typer
         ->p_font
-        ->p_PLATFORM_texture_of__font
+        ->texture_of__font
+        .p_PLATFORM_texture
         ->width
         / p_typer
             ->p_font
@@ -85,7 +88,8 @@ static void GL_put_char_in__typer_for__texture(
     float max_height__f = 
         (float)p_typer
         ->p_font
-        ->p_PLATFORM_texture_of__font
+        ->texture_of__font
+        .p_PLATFORM_texture
         ->height
         / p_typer
             ->p_font
@@ -158,11 +162,13 @@ void GL_put_char_in__typer(
                 p_GL_framebuffer);
         GL_bind_texture_to__framebuffer(
                 p_GL_framebuffer, 
-                p_typer->p_PLATFORM_texture__typer_target);
+                p_typer->texture_of__typer_target
+                .p_PLATFORM_texture);
 
         GL_put_char_in__typer_for__texture(
                 p_gfx_context, 
-                p_typer->p_PLATFORM_texture__typer_target,
+                p_typer->texture_of__typer_target
+                .p_PLATFORM_texture,
                 p_typer, 
                 letter);
 
@@ -184,13 +190,15 @@ void GL_put_char_in__typer(
     GL_bind_texture_to__framebuffer(
             p_GL_framebuffer, 
             p_PLATFORM_graphics_window
-            ->p_SDL_graphics_window__texture);
+            ->SDL_graphics_window__texture
+            .p_PLATFORM_texture);
 
     GL_put_char_in__typer_for__texture(
             p_gfx_context, 
             p_typer
             ->p_PLATFORM_graphics_window__typer_target
-            ->p_SDL_graphics_window__texture,
+            ->SDL_graphics_window__texture
+            .p_PLATFORM_texture,
             p_typer, 
             letter);
 

@@ -343,6 +343,7 @@ typedef enum Sprite_Kind {
 } Sprite_Kind;
 #endif
 
+typedef struct Texture_t Texture;
 typedef struct Sprite_t Sprite;
 typedef struct Sprite_Allocation_Specification_t 
                Sprite_Allocation_Specification;

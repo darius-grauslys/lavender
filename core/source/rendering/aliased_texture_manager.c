@@ -60,14 +60,18 @@ Aliased_Texture *get_p_aliased_texture_thats__available_from__manager(
 ///
 /// WARNING: You do not own the returned texture.
 ///
-PLATFORM_Texture *allocate_p_PLATFORM_texture_with__alias(
+bool allocate_texture_with__alias(
         PLATFORM_Gfx_Context *p_PLATFORM_gfx_context,
         PLATFORM_Graphics_Window *p_PLATFORM_gfx_window,
         Aliased_Texture_Manager *p_aliased_texture_manager,
         Texture_Name__c_str name_of__texture__c_str,
-        Texture_Flags texture_flags) {
+        Texture_Flags texture_flags,
+        Texture *p_OUT_texture) {
+    Texture __tmp_texture;
+    if (!p_OUT_texture)
+        p_OUT_texture = &__tmp_texture;
     if (!name_of__texture__c_str[0]) {
-        debug_error("allocate_p_PLATFORM_texture_with__alias, alias cannot be empty.");
+        debug_error("allocate_texture_with__alias, alias cannot be empty.");
         return 0;
     }
 
@@ -80,27 +84,25 @@ PLATFORM_Texture *allocate_p_PLATFORM_texture_with__alias(
                     Lavender_Type__Aliased_Texture,
                     0));
     if (!p_aliased_texture__available) {
-        debug_error("allocate_p_PLATFORM_texture_with__alias, too many aliased textures are allocated.");
-        return 0;
+        debug_error("allocate_texture_with__alias, too many aliased textures are allocated.");
+        return true;
     }
 
-    PLATFORM_Texture *P_PLATFORM_texture =
-        PLATFORM_allocate_texture(
+    if (PLATFORM_allocate_texture(
                 p_PLATFORM_gfx_context, 
                 p_PLATFORM_gfx_window,
-                texture_flags);
-
-    if (!P_PLATFORM_texture) {
-        debug_error("allocate_p_PLATFORM_texture_with__alias, failed to allocate texture.");
-        return 0;
+                texture_flags,
+                p_OUT_texture)) {
+        debug_error("allocate_texture_with__alias, failed to allocate texture.");
+        return true;
     }
 
     set_c_str_of__aliased_texture(
             p_aliased_texture__available, 
             name_of__texture__c_str);
-    give_PLATFORM_texture_to__aliased_texture(
+    give_texture_to__aliased_texture(
             p_aliased_texture__available, 
-            P_PLATFORM_texture);
+            p_OUT_texture);
     initialize_serialization_header(
             (Serialization_Header*)p_aliased_texture__available, 
             get_next_available__random_uuid_in__contiguous_array(
@@ -110,19 +112,23 @@ PLATFORM_Texture *allocate_p_PLATFORM_texture_with__alias(
                 &p_aliased_texture_manager
                     ->repeatable_psuedo_random_for__texture_uuid), 
             sizeof(Aliased_Texture));
-    return P_PLATFORM_texture;
+    return false;
 }
 
-PLATFORM_Texture *load_p_PLATFORM_texture_from__path_with__alias(
+bool load_texture_from__path_with__alias(
         PLATFORM_Gfx_Context *p_PLATFORM_gfx_context,
         PLATFORM_Graphics_Window *p_PLATFORM_gfx_window,
         Aliased_Texture_Manager *p_aliased_texture_manager,
         Texture_Name__c_str name_of__texture__c_str,
         Texture_Flags texture_flags,
-        const char *c_str__path) {
+        const char *c_str__path,
+        Texture *p_OUT_texture) {
+    Texture __tmp_texture;
+    if (!p_OUT_texture)
+        p_OUT_texture = &__tmp_texture;
     if (!name_of__texture__c_str[0]) {
-        debug_error("load_p_PLATFORM_texture_from__path_with__alias, alias cannot be empty.");
-        return 0;
+        debug_error("load_texture_from__path_with__alias, alias cannot be empty.");
+        return true;
     }
 
     Aliased_Texture *p_aliased_texture__available =
@@ -134,8 +140,8 @@ PLATFORM_Texture *load_p_PLATFORM_texture_from__path_with__alias(
                     Lavender_Type__Aliased_Texture,
                     0));
     if (!p_aliased_texture__available) {
-        debug_error("load_p_PLATFORM_texture_from__path_with__alias, too many aliased textures are allocated.");
-        return 0;
+        debug_error("load_texture_from__path_with__alias, too many aliased textures are allocated.");
+        return true;
     }
 
     IO_path full_path;
@@ -146,8 +152,8 @@ PLATFORM_Texture *load_p_PLATFORM_texture_from__path_with__alias(
         PLATFORM_get_base_directory(full_path);
     if (MAX_LENGTH_OF__IO_PATH 
             <= length_of__base_directory) {
-        debug_error("load_p_PLATFORM_texture_from__path_with__alias, game directory exceeds MAX_LENGTH_OF__IO_PATH.");
-        return 0;
+        debug_error("load_texture_from__path_with__alias, game directory exceeds MAX_LENGTH_OF__IO_PATH.");
+        return true;
     }
     full_path[length_of__base_directory++] = '/';
     memcpy(&full_path[length_of__base_directory],
@@ -155,25 +161,23 @@ PLATFORM_Texture *load_p_PLATFORM_texture_from__path_with__alias(
             MAX_LENGTH_OF__IO_PATH
             - length_of__base_directory);
 
-    PLATFORM_Texture *P_PLATFORM_texture =
-        PLATFORM_allocate_texture_with__path(
+    if (PLATFORM_allocate_texture_with__path(
                 p_PLATFORM_gfx_context,
                 p_PLATFORM_gfx_window,
                 texture_flags,
-                full_path);
-
-    if (!P_PLATFORM_texture) {
-        debug_error("load_p_PLATFORM_texture_from__path_with__alias, failed to allocate texture.");
-        return 0;
+                full_path,
+                p_OUT_texture)) {
+        debug_error("load_texture_from__path_with__alias, failed to allocate texture.");
+        return true;
     }
 
     set_c_str_of__aliased_texture(
             p_aliased_texture__available, 
             name_of__texture__c_str);
-    give_PLATFORM_texture_to__aliased_texture(
+    give_texture_to__aliased_texture(
             p_aliased_texture__available, 
-            P_PLATFORM_texture);
-    return P_PLATFORM_texture;
+            p_OUT_texture);
+    return false;
 }
 
 static inline
@@ -228,9 +232,10 @@ Identifier__u32 get_uuid_of__aliased_texture(
     return GET_UUID_P(p_aliased_texture__matching);
 }
 
-PLATFORM_Texture *get_p_PLATFORM_texture_by__alias(
+bool get_texture_by__alias(
         Aliased_Texture_Manager *p_aliased_texture_manager,
-        Texture_Name__c_str name_of__texture__c_str) {
+        Texture_Name__c_str name_of__texture__c_str,
+        Texture *p_OUT_texture) {
     Aliased_Texture *p_aliased_texture__matching =
         get_p_aliased_texture_by__alias(
                 p_aliased_texture_manager, 
@@ -243,11 +248,13 @@ PLATFORM_Texture *get_p_PLATFORM_texture_by__alias(
                 name_of__texture__c_str,
                 MAX_LENGTH_OF__TEXTURE_NAME);
         name_of__texture__copied__c_str[MAX_LENGTH_OF__TEXTURE_NAME] = 0;
-        debug_error("get_p_PLATFORM_texture_by__alias, failed to find texture for given name: %s", name_of__texture__copied__c_str);
+        debug_error("get_texture_by__alias, failed to find texture for given name: %s", name_of__texture__copied__c_str);
+        return true;
     }
 
-    return get_p_PLATFORM_texture_from__aliased_texture(
+    *p_OUT_texture = get_texture_from__aliased_texture(
             p_aliased_texture__matching);
+    return false;
 }
 
 static inline
@@ -264,21 +271,24 @@ Aliased_Texture *get_p_aliased_texture_by__uuid(
     return p_aliased_texture;
 }
 
-PLATFORM_Texture *get_p_PLATFORM_texture_by__uuid(
+bool get_texture_by__uuid(
         Aliased_Texture_Manager *p_aliased_texture_manager,
-        Identifier__u32 uuid__u32) {
+        Identifier__u32 uuid__u32,
+        Texture *p_OUT_texture) {
     Aliased_Texture *p_aliased_texture =
         get_p_aliased_texture_by__uuid(
                 p_aliased_texture_manager, 
                 uuid__u32);
 
     if (!p_aliased_texture) {
-        debug_error("get_p_PLATFORM_texture_by__uuid, failed to find texture.");
-        return 0;
+        debug_error("get_texture_by__uuid, failed to find texture.");
+        return true;
     }
 
-    return get_p_PLATFORM_texture_from__aliased_texture(
+    *p_OUT_texture =
+        get_texture_from__aliased_texture(
             p_aliased_texture);
+    return false;
 }
 
 void release_all_aliased_textures(
@@ -294,7 +304,7 @@ void release_all_aliased_textures(
                     index_of__aliased_texture);
         PLATFORM_release_texture(
                 p_PLATFORM_gfx_context, 
-                p_aliased_texture->P_PLATFORM_texture);
+                p_aliased_texture->texture);
         initialize_aliased_texture(p_aliased_texture);
     }
 }
@@ -315,7 +325,7 @@ void release_aliased_texture_by__uuid(
 
     PLATFORM_release_texture(
             p_PLATFORM_gfx_context, 
-            p_aliased_texture->P_PLATFORM_texture);
+            p_aliased_texture->texture);
     initialize_aliased_texture(p_aliased_texture);
 }
 
@@ -335,6 +345,6 @@ void release_aliased_texture_by__alias(
 
     PLATFORM_release_texture(
             p_PLATFORM_gfx_context, 
-            p_aliased_texture->P_PLATFORM_texture);
+            p_aliased_texture->texture);
     initialize_aliased_texture(p_aliased_texture);
 }

@@ -1,4 +1,5 @@
 #include "defines.h"
+#include "rendering/texture.h"
 #include <rendering/font/font.h>
 #include <rendering/font/font_letter.h>
 
@@ -41,7 +42,7 @@ Font_Letter *get_p_font_letter_by__index_from__font(
 void initialize_font(Font *p_font) {
     p_font->max_width_of__font_letter = 0;
     p_font->max_height_of__font_letter = 0;
-    p_font->p_PLATFORM_texture_of__font = 0;
+    initialize_texture(p_font->texture_of__font);
     p_font->font_flags = FONT_FLAGS__NONE;
     for (Index__u32 index_of__font_letter = 0;
             index_of__font_letter

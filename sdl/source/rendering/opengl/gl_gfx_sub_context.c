@@ -2,6 +2,7 @@
 #include "defines_weak.h"
 #include "game.h"
 #include <world/camera.h>
+#include "rendering/opengl/gl_chunk_texture_manager.h"
 #include "rendering/opengl/gl_defines.h"
 #include "rendering/opengl/gl_framebuffer_manager.h"
 #include "rendering/opengl/gl_numerics.h"
@@ -48,6 +49,9 @@ void GL_initialize_gfx_sub_context(
             p_PLATFORM_gfx_context->height_of__sdl_window);
     GL_initialize_framebuffer_manager(
             GL_get_p_framebuffer_manager_from__gfx_sub_context(
+                p_GL_gfx_sub_context));
+    GL_initialize_chunk_texture_manager(
+            GL_get_p_chunk_texture_manager_from__gfx_sub_context(
                 p_GL_gfx_sub_context));
 
     SDL_register_window_event(

@@ -2,11 +2,8 @@
 #include "client.h"
 #include "defines.h"
 #include "defines_weak.h"
-#include "numerics.h"
 #include "platform_defaults.h"
-#include "platform_defines.h"
 #include "rendering/gfx_context.h"
-#include "rendering/opengl/gl_chunk_texture_manager.h"
 #include "rendering/opengl/gl_defines.h"
 #include "rendering/opengl/gl_framebuffer.h"
 #include "rendering/opengl/gl_framebuffer_manager.h"
@@ -28,7 +25,7 @@ void GL_compose_chunk(
         Gfx_Context *p_gfx_context,
         Graphics_Window **p_ptr_array_of__gfx_windows,
         Local_Space *p_local_space,
-        Texture *array_of__textures,
+        PLATFORM_Texture **p_ptr_array_of__PLATFORM_textures,
         Quantity__u32 quantity_of__gfx_windows,
         f_Tile_Render_Kernel f_tile_render_kernel) {
     PLATFORM_Gfx_Context *p_PLATFORM_gfx_context =
@@ -78,11 +75,10 @@ void GL_compose_chunk(
         p_ptr_array_of__gfx_windows[0]
         ->p_camera;
 
-    i32 index_of__z_tile = (ARITHMETRIC_R_SHIFT(
-            i32F4_to__i32(p_camera->position.z__i32F4),
-            TILE__WIDTH_AND__HEIGHT__BIT_SHIFT)
-            + ((p_camera->position.z__i32F4 < 0) ? -1 : 0))
-            & MASK(CHUNK__DEPTH__BIT_SHIFT);
+    Index__u8 index_of__z_tile =
+        (u32)((p_camera->position.z__i32F4 
+                    >> 3)
+                & MASK(CHUNK__DEPTH__BIT_SHIFT));
 
     GL_Framebuffer_Manager *p_GL_framebuffer_manager =
         GL_get_p_framebuffer_manager_from__PLATFORM_gfx_context(
@@ -130,8 +126,7 @@ void GL_compose_chunk(
                         p_GL_framebuffer, 
                         p_gfx_window
                         ->p_PLATFORM_gfx_window
-                        ->SDL_graphics_window__texture
-                        .p_PLATFORM_texture);
+                        ->p_SDL_graphics_window__texture);
 
                 GL_push_viewport(
                         p_GL_viewport_stack, 
@@ -139,13 +134,11 @@ void GL_compose_chunk(
                         0, 
                         p_gfx_window
                         ->p_PLATFORM_gfx_window
-                        ->SDL_graphics_window__texture
-                        .p_PLATFORM_texture
+                        ->p_SDL_graphics_window__texture
                         ->width, 
                         p_gfx_window
                         ->p_PLATFORM_gfx_window
-                        ->SDL_graphics_window__texture
-                        .p_PLATFORM_texture
+                        ->p_SDL_graphics_window__texture
                         ->height);
 
                 Tile_Vector__3i32 tile_vector__3i32 =
@@ -168,7 +161,7 @@ void GL_compose_chunk(
                 
                 PLATFORM_use_texture(
                         p_PLATFORM_gfx_context, 
-                        array_of__textures[
+                        p_ptr_array_of__PLATFORM_textures[
                             index_of__gfx_window]);
 
                 float index_x, index_y;
@@ -176,17 +169,13 @@ void GL_compose_chunk(
                 float flip_x, flip_y;
 
                 Quantity__u32 tilesheet__width_in__tiles =
-                    array_of__textures[
-                    index_of__gfx_window]
-                        .p_PLATFORM_texture
-                        ->width
+                    p_ptr_array_of__PLATFORM_textures[
+                    index_of__gfx_window]->width
                         / TILE__WIDTH_AND__HEIGHT_IN__PIXELS;
 
                 Quantity__u32 tilesheet__height_in__tiles =
-                    array_of__textures[
-                    index_of__gfx_window]
-                        .p_PLATFORM_texture
-                        ->height
+                    p_ptr_array_of__PLATFORM_textures[
+                    index_of__gfx_window]->height
                         / TILE__WIDTH_AND__HEIGHT_IN__PIXELS;
 
                 index_x =
@@ -242,7 +231,7 @@ void GL_compose_world(
         Gfx_Context *p_gfx_context,
         Graphics_Window **p_ptr_array_of__gfx_windows,
         Local_Space_Manager *p_local_space_manager,
-        Texture *array_of__textures,
+        PLATFORM_Texture **p_ptr_array_of__PLATFORM_textures,
         Quantity__u32 quantity_of__gfx_windows,
         f_Tile_Render_Kernel f_tile_render_kernel) {
 
@@ -280,8 +269,7 @@ void GL_compose_world(
                 p_GL_framebuffer, 
                 p_gfx_window
                 ->p_PLATFORM_gfx_window
-                ->SDL_graphics_window__texture
-                .p_PLATFORM_texture);
+                ->p_SDL_graphics_window__texture);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         GL_pop_framebuffer_off_of__framebuffer_manager(
                 p_GL_framebuffer_manager);
@@ -302,42 +290,26 @@ void GL_compose_world(
                 x 
                 < GFX_CONTEXT__RENDERING_WIDTH__IN_CHUNKS;
                 x++) {
-            if (!is_local_space__active(
-                        p_local_space__current)) {
-                goto next_local_space;
-            }
-            Texture textures[GL_MAX_QUANTITY_OF__CHUNK_TEXTURES];
-            if (GL_poll_textures_for__chunk_in__chunk_texture_manager(
-                        p_gfx_context, 
-                        p_ptr_array_of__gfx_windows, 
-                        GL_get_p_chunk_texture_manager_from__PLATFORM_gfx_context(0),
-                        p_local_space__current, 
-                        textures)) {
-                // TODO: error handle here.
-                continue;
-            }
-            if (is_global_space__dirty(
-                        get_p_global_space_from__local_space(
-                            p_local_space__current))) {
-                set_global_space_as__NOT_dirty(
-                        get_p_global_space_from__local_space(
-                            p_local_space__current));
-                GL_compose_chunk(
-                        p_gfx_context, 
-                        p_ptr_array_of__gfx_windows, 
-                        p_local_space__current_sub, 
-                        array_of__textures, 
-                        quantity_of__gfx_windows, 
-                        f_tile_render_kernel);
-            }
+#warning TODO: TODO: why does this segfault
+            // TODO: this causes seg fault
+            // if (!is_local_space__active(
+            //             p_local_space__current)) {
+            //     continue;
+            // }
+            GL_compose_chunk(
+                    p_gfx_context, 
+                    p_ptr_array_of__gfx_windows, 
+                    p_local_space__current_sub, 
+                    p_ptr_array_of__PLATFORM_textures, 
+                    quantity_of__gfx_windows, 
+                    f_tile_render_kernel);
 
-#warning TODO: must render the chunk texture here
-
-next_local_space:
             p_local_space__current_sub =
                 p_local_space__current_sub->p_local_space__east;
+            // break;
         }
         p_local_space__current =
             p_local_space__current->p_local_space__south;
+        // break;
     }
 }

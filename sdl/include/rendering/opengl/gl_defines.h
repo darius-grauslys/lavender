@@ -1,7 +1,9 @@
 #ifndef GL_DEFINES_H
 #define GL_DEFINES_H
 
+#include "defines_weak.h"
 #include "platform_defaults.h"
+#include "rendering/gfx_context.h"
 #include "rendering/opengl/glad/glad.h"
 #include <cglm/types.h>
 #include <defines.h>
@@ -78,6 +80,22 @@ typedef struct GL_Framebuffer_Manager_t {
     Index__u32 index_of__framebuffer_on__stack;
 } GL_Framebuffer_Manager;
 
+#ifndef GL_MAX_QUANTITY_OF__CHUNK_TEXTURES
+#define GL_MAX_QUANTITY_OF__CHUNK_TEXTURES 1
+#endif
+
+typedef struct GL_Chunk_Texture_Entry_t {
+    Texture chunk_textures[GL_MAX_QUANTITY_OF__CHUNK_TEXTURES];
+    Identifier__u64 uuid_of__chunk__u64;
+} GL_Chunk_Texture_Entry;
+
+typedef struct GL_Chunk_Texture_Manager_t {
+    GL_Chunk_Texture_Entry GL_chunk_textures_entries[
+        LOCAL_SPACE_MANAGER__WIDTH
+            * LOCAL_SPACE_MANAGER__HEIGHT];
+    Texture_Flags texture_flags_for__chunks;
+} GL_Chunk_Texture_Manager;
+
 typedef struct GL_Sprite_t {
     GL_Vertex_Object GL_vertex_object;
     GL_Shader_2D *p_GL_shader;
@@ -90,23 +108,6 @@ typedef struct GL_Sprite_t {
 typedef struct GL_Sprite_Manager_t {
     GL_Sprite GL_sprites[MAX_QUANTITY_OF__SPRITES];
 } GL_Sprite_Manager;
-
-typedef struct GL_Chunk_Texture_t {
-    PLATFORM_Texture *p_GL_chunk_texture;
-    PLATFORM_Texture *p_GL_chunk_texture__sprite_cover;
-    const Chunk *p_chunk_owner;
-} GL_Chunk_Texture;
-
-#define MAX_QUANTITY_OF__CHUNK_TEXTURES\
-    CHUNK_MANAGER__QUANTITY_OF_CHUNKS
-
-typedef struct GL_Chunk_Texture_Manager_t {
-    GL_Chunk_Texture GL_chunk_textures[VOLUME_OF__LOCAL_SPACE_MANAGER];
-    GL_Framebuffer *p_GL_framebuffer__chunk_rendering;
-    PLATFORM_Texture *p_PLATFORM_texture_of__tilesheet_cover;
-    PLATFORM_Texture *p_PLATFORM_texture_of__tilesheet_ground;
-    GL_Shader_2D *p_GL_chunk_shader;
-} GL_Chunk_Texture_Manager;
 
 typedef struct GL_Gfx_Sub_Context_t {
     UI_Tile_Map_Manager GL_ui_tile_map_manager;
@@ -188,6 +189,14 @@ GL_Chunk_Texture_Manager *GL_get_p_chunk_texture_manager_from__PLATFORM_gfx_cont
         .p_SDL_gfx_sub_context)
         ->GL_chunk_texture_manager
         ;
+}
+
+static inline
+GL_Chunk_Texture_Manager *GL_get_p_chunk_texture_manager_from__gfx_context(
+        Gfx_Context *p_gfx_context) {
+    return GL_get_p_chunk_texture_manager_from__PLATFORM_gfx_context(
+            get_p_PLATFORM_gfx_context_from__gfx_context(
+                p_gfx_context));
 }
 
 static inline

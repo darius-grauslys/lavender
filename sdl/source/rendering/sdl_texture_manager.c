@@ -42,6 +42,19 @@ void SDL_initialize_texture_manager(
             (u32)(u64)p_SDL_texture_manager);
 }
 
+void SDL_release_texture(
+        PLATFORM_Gfx_Context *p_PLATFORM_gfx_context,
+        PLATFORM_Texture *p_PLATFORM_texture) {
+    p_PLATFORM_gfx_context
+        ->SDL_gfx_sub_context__wrapper
+        .f_SDL_release_texture(
+                p_PLATFORM_texture);
+    SDL_release_texture_from__texture_manager(
+            SDL_get_p_texture_manager_from__gfx_context(
+                p_PLATFORM_gfx_context), 
+            p_PLATFORM_texture);
+}
+
 PLATFORM_Texture *SDL_allocate_texture_with__texture_manager(
         SDL_Texture_Manager *p_SDL_texture_manager) {
     return (PLATFORM_Texture*)allocate_serialization_header(
@@ -80,54 +93,84 @@ void SDL_dispose_texture_manager(
             continue;
         }
 
-        PLATFORM_release_texture(
+        SDL_release_texture(
                 &__SDL_Gfx_Context,
                 p_PLATFORM_texture);
     }
 }
 
-PLATFORM_Texture *PLATFORM_allocate_texture(
+bool PLATFORM_allocate_texture(
         PLATFORM_Gfx_Context *p_PLATFORM_gfx_context,
         PLATFORM_Graphics_Window *p_PLATFORM_gfx_window,
-        Texture_Flags texture_flags) {
-    return __SDL_Gfx_Context
+        Texture_Flags texture_flags,
+        Texture *p_OUT_texture) {
+#ifndef NDEBUG
+    if (!p_PLATFORM_gfx_context) {
+        debug_error("SDL::PLATFORM_allocate_texture, p_PLATFORM_gfx_context == 0.");
+        return true;
+    }
+    if (!p_OUT_texture) {
+        debug_error("SDL::PLATFORM_allocate_texture, p_OUT_texture == 0.");
+        return true;
+    }
+#endif
+    p_OUT_texture->p_PLATFORM_texture = 
+        __SDL_Gfx_Context
         .SDL_gfx_sub_context__wrapper
         .f_SDL_allocate_texture(
                 p_PLATFORM_gfx_context,
                 texture_flags);
+    p_OUT_texture->texture_flags =
+        texture_flags;
+
+    return !p_OUT_texture->p_PLATFORM_texture;
 }
 
-PLATFORM_Texture *PLATFORM_allocate_texture_with__path(
+bool PLATFORM_allocate_texture_with__path(
         PLATFORM_Gfx_Context *p_PLATFORM_gfx_context,
         PLATFORM_Graphics_Window *p_PLATFORM_gfx_window,
         Texture_Flags texture_flags,
-        const char *path) {
-    return __SDL_Gfx_Context
+        const char *path,
+        Texture *p_OUT_texture) {
+#ifndef NDEBUG
+    if (!p_PLATFORM_gfx_context) {
+        debug_error("SDL::PLATFORM_allocate_texture_with__path, p_PLATFORM_gfx_context == 0.");
+        return true;
+    }
+    if (!path) {
+        debug_error("SDL::PLATFORM_allocate_texture_with__path, path == 0.");
+        return true;
+    }
+    if (!p_OUT_texture) {
+        debug_error("SDL::PLATFORM_allocate_texture_with__path, p_OUT_texture == 0.");
+        return true;
+    }
+#endif
+    p_OUT_texture->p_PLATFORM_texture = 
+        __SDL_Gfx_Context
         .SDL_gfx_sub_context__wrapper
         .f_SDL_allocate_texture_with__path(
                 p_PLATFORM_gfx_context,
                 texture_flags,
                 path);
+    p_OUT_texture->texture_flags =
+        texture_flags;
+    return !p_OUT_texture->p_PLATFORM_texture;
 }
 
 void PLATFORM_use_texture(
         PLATFORM_Gfx_Context *p_PLATFORM_gfx_context,
-        PLATFORM_Texture *texture) {
+        Texture texture) {
     p_PLATFORM_gfx_context
         ->SDL_gfx_sub_context__wrapper
         .f_SDL_use_texture(
-                texture);
+                texture.p_PLATFORM_texture);
 }
 
 void PLATFORM_release_texture(
         PLATFORM_Gfx_Context *p_PLATFORM_gfx_context,
-        PLATFORM_Texture *texture) {
-    p_PLATFORM_gfx_context
-        ->SDL_gfx_sub_context__wrapper
-        .f_SDL_release_texture(
-                texture);
-    SDL_release_texture_from__texture_manager(
-            SDL_get_p_texture_manager_from__gfx_context(
-                p_PLATFORM_gfx_context), 
-            texture);
+        Texture texture) {
+    SDL_release_texture(
+            p_PLATFORM_gfx_context, 
+            texture.p_PLATFORM_texture);
 }

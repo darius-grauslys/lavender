@@ -120,6 +120,10 @@ PLATFORM_Texture *GL_allocate_texture_with__path(
     if (!p_PLATFORM_texture)
         return 0;
 
+    Texture texture = {
+        p_PLATFORM_texture,
+        texture_flags};
+
     int width, height, channels, requested_channels;
 
     switch (p_PLATFORM_texture->SDL_texture_format__u32) {
@@ -147,7 +151,7 @@ PLATFORM_Texture *GL_allocate_texture_with__path(
                 );
 
     if (!p_data) {
-        PLATFORM_release_texture(
+        SDL_release_texture(
                 &__SDL_Gfx_Context,
                 p_PLATFORM_texture);
         debug_error("SDL::GL::PLATFORM_allocate_texture__with__path failed. (stbi_load)");
@@ -183,7 +187,7 @@ PLATFORM_Texture *GL_allocate_texture_with__path(
 
     GLenum error = glGetError();
     if (error != GL_NO_ERROR) {
-        PLATFORM_release_texture(
+        SDL_release_texture(
                 &__SDL_Gfx_Context,
                 p_PLATFORM_texture);
         debug_error("SDL::GL::PLATFORM_allocate_texture__with__path failed. (glTexImage2D:%d)", error);

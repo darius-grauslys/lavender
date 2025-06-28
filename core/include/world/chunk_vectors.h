@@ -100,6 +100,7 @@ Chunk_Vector__3i32 tile_vector_3i32_to__chunk_vector_3i32(
         get_chunk_x_i32_from__tile_vector_3i32(vector),
         get_chunk_y_i32_from__tile_vector_3i32(vector),
         get_chunk_z_i32_from__tile_vector_3i32(vector)
+            + (vector.z__i32 < 0 ? -1 : 0)
     };
 }
 
@@ -110,6 +111,7 @@ Chunk_Vector__3i32 vector_3i32F4_to__chunk_vector_3i32(
         get_chunk_x_i32_from__vector_3i32F4(vector),
         get_chunk_y_i32_from__vector_3i32F4(vector),
         get_chunk_z_i32_from__vector_3i32F4(vector)
+            + (vector.z__i32F4 < 0 ? -1 : 0)
     };
 }
 
@@ -118,7 +120,8 @@ static Chunk_Vector__3i32 inline vector_3i32_to__chunk_vector_3i32(
     return (Chunk_Vector__3i32) {
         normalize_xyz_i32_to__chunk_xyz_i32(vector.x__i32),
         normalize_xyz_i32_to__chunk_xyz_i32(vector.y__i32),
-        normalize_xyz_i32_to__chunk_xyz_i32(vector.z__i32),
+        normalize_xyz_i32_to__chunk_xyz_i32(vector.z__i32)
+            + (vector.z__i32 < 0 ? -1 : 0)
     };
 }
 

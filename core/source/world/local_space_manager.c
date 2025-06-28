@@ -13,19 +13,6 @@
 #include "world/world.h"
 
 static inline
-Local_Space *get_p_local_space_by__index_from__local_space_manager(
-        Local_Space_Manager *p_local_space_manager,
-        Index__u32 index_of__local_space) {
-#ifndef NDEBUG
-    if (index_of__local_space > VOLUME_OF__LOCAL_SPACE_MANAGER) {
-        debug_error("get_p_local_space_by__index_from__local_space_manager, index out of range, %d/%d", index_of__local_space, VOLUME_OF__LOCAL_SPACE_MANAGER);
-        return 0;
-    }
-#endif
-    return &p_local_space_manager->local_spaces[index_of__local_space];
-}
-
-static inline
 Local_Space *get_p_local_space_by__local_xyz_from__local_space_manager(
         Local_Space_Manager *p_local_space_manager,
         u32 x__u32,
@@ -141,10 +128,10 @@ void initialize_local_space_manager(
                     get_vector__3i32(
                             x__i32
                             + center_of__local_space_manager__3i32.x__i32
-                            - (LOCAL_SPACE_MANAGER__WIDTH>>1), 
+                            - (LOCAL_SPACE_MANAGER__WIDTH>>1)-1, 
                             y__i32
                             + center_of__local_space_manager__3i32.y__i32
-                            - (LOCAL_SPACE_MANAGER__HEIGHT>>1), 
+                            - (LOCAL_SPACE_MANAGER__HEIGHT>>1)-1, 
                             _z__i32
                             + center_of__local_space_manager__3i32.z__i32
                             - (LOCAL_SPACE_MANAGER__DEPTH>>1));

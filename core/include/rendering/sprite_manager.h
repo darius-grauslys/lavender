@@ -15,7 +15,7 @@ Sprite *allocate_sprite_from__sprite_manager(
         Sprite_Manager *p_sprite_manager,
         Graphics_Window *p_gfx_window,
         Identifier__u32 uuid__u32,
-        PLATFORM_Texture *p_PLATFORM_texture_to__sample_by__sprite,
+        Texture texture_to__sample_by__sprite,
         Texture_Flags texture_flags_for__sprite);
 
 void release_sprite_from__sprite_manager(
@@ -73,7 +73,7 @@ static inline
 void register_sprite_animation_group_into__sprite_manager(
         Sprite_Manager *p_sprite_manager,
         Sprite_Animation_Group_Kind the_kind_of__sprite_animation_group,
-        Sprite_Animation_Group sprite_animation_group) {
+        Sprite_Animation_Group_Set sprite_animation_group) {
 #ifndef NDEBUG
     if (!p_sprite_manager) {
         debug_error("register_sprite_animation_group_into__sprite_manager, p_sprite_manager == 0.");
@@ -90,20 +90,36 @@ void register_sprite_animation_group_into__sprite_manager(
 }
 
 static inline
-Sprite_Animation_Group get_sprite_animation_group_from__sprite_manager(
+Sprite_Animation_Group_Set get_sprite_animation_group_from__sprite_manager(
         Sprite_Manager *p_sprite_manager,
         Sprite_Animation_Group_Kind the_kind_of__sprite_animation_group) {
 #ifndef NDEBUG
     if (!p_sprite_manager) {
         debug_error("get_sprite_animation_group_from__sprite_manager, p_sprite_manager == 0.");
-        return (Sprite_Animation_Group){0};
+        return (Sprite_Animation_Group_Set){0};
     }
     if (the_kind_of__sprite_animation_group >= Sprite_Animation_Group_Kind__Unknown) {
         debug_error("get_sprite_animation_group_from__sprite_manager, the_kind_of__sprite_animation_group >= Sprite_Animation_Group_Kind__Unknown.");
-        return (Sprite_Animation_Group){0};
+        return (Sprite_Animation_Group_Set){0};
     }
 #endif
     return p_sprite_manager->sprite_animation_groups[
+        the_kind_of__sprite_animation_group];
+}
+
+static inline
+Sprite_Animation_Group_Set 
+*get_p_sprite_animation_group_from__sprite_manager(
+        Sprite_Manager *p_sprite_manager,
+        Sprite_Animation_Group_Kind the_kind_of__sprite_animation_group) {
+#ifndef NDEBUG
+    if (the_kind_of__sprite_animation_group
+            >= Sprite_Animation_Kind__Unknown) {
+        debug_error("get_p_sprite_animation_group_from__sprite_manager, invalid kind.");
+        return 0;
+    }
+#endif
+    return &p_sprite_manager->sprite_animation_groups[
         the_kind_of__sprite_animation_group];
 }
 

@@ -21,25 +21,6 @@
 #include "world/chunk_vectors.h"
 #include "world/tile_vectors.h"
 
-#define BIT_MASK__GLOBAL_SPACE__0_XY__u24 0b101010101010101010101010
-#define BIT_MASK__GLOBAL_SPACE__1_XY__u24 0b010101010101010101010101
-
-#define BIT_MASK__GLOBAL_SPACE__0_Z__u8 MASK(8)
-#define BIT_MASK__GLOBAL_SPACE__1_Z__u8 (MASK(8) << 7)
-
-static inline
-Identifier__u64 get_uuid_for__global_space(
-        Chunk_Vector__3i32 chunk_vector__3i32) {
-    return
-            (uint64_t)((BIT_MASK__GLOBAL_SPACE__0_XY__u24 & chunk_vector__3i32.x__i32)
-                    | (BIT_MASK__GLOBAL_SPACE__1_XY__u24 & chunk_vector__3i32.y__i32))
-            | (((uint64_t)(BIT_MASK__GLOBAL_SPACE__1_XY__u24 & chunk_vector__3i32.x__i32)
-                    | (BIT_MASK__GLOBAL_SPACE__0_XY__u24 & chunk_vector__3i32.y__i32)) << 32)
-            | ((uint64_t)(BIT_MASK__GLOBAL_SPACE__0_Z__u8 & chunk_vector__3i32.z__i32) << 24)
-            | ((uint64_t)(BIT_MASK__GLOBAL_SPACE__1_Z__u8 & chunk_vector__3i32.z__i32) << 56)
-            ;
-}
-
 static inline
 Global_Space *get_p_global_space_by__index_from__global_space_manager(
         Global_Space_Manager *p_global_space_manager,
@@ -84,6 +65,7 @@ Global_Space *allocate_global_space_in__global_space_manager(
     initialize_global_space_as__allocated(
             p_global_space,
             uuid_64);
+    set_global_space_as__dirty(p_global_space);
     p_global_space->chunk_vector__3i32 =
         chunk_vector__3i32;
     return p_global_space;

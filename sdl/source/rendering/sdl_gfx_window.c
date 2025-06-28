@@ -14,8 +14,9 @@
 
 void SDL_initialize_gfx_window(
         PLATFORM_Graphics_Window *p_PLATFORM_gfx_window) {
-    p_PLATFORM_gfx_window
-        ->p_SDL_graphics_window__texture = 0;
+    initialize_texture(
+            p_PLATFORM_gfx_window
+            ->SDL_graphics_window__texture);
     p_PLATFORM_gfx_window
         ->p_SDL_graphics_window__data = 0;
     p_PLATFORM_gfx_window

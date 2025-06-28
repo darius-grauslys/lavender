@@ -3,6 +3,7 @@
 
 #include "platform.h"
 #include "platform_defaults.h"
+#include "types/implemented/sprite_animation_group_kind.h"
 #include "util/bitmap/bitmap.h"
 #include <stdbool.h>
 #include <stdint.h>
@@ -393,77 +394,6 @@ typedef struct Collision_Node_Pool_t {
 /// SECTION_rendering
 ///
 
-typedef uint8_t Sprite_Animation_Flags__u3;
-
-#define SPRITE_ANIMATION_FLAGS__NONE 0
-#define SPRITE_ANIMATION_FLAG__IS_NOT_LOOPING BIT(0)
-#define SPRITE_ANIMATION_FLAG__IS_OFFSET_BY__DIRECTION BIT(1)
-
-///
-/// Returns true if sprite now needs gfx update
-///
-typedef void (*m_Sprite_Animation_Handler)(
-        Sprite *p_this_sprite,
-        Game *p_game);
-
-typedef struct Sprite_Animation_t {
-    Sprite_Animation_Kind the_kind_of_animation__this_sprite_has;
-    Timer__u8 animation_timer__u8;
-    Quantity__u8                sprite_animation__initial_frame__u8;
-    Quantity__u8                sprite_animation__quantity_of__frames__u8;
-    Quantity__u8                sprite_animation__ticks_per__frame__u5  :5;
-    Sprite_Animation_Flags__u3  sprite_animation__flags__u3;
-} Sprite_Animation;
-
-typedef struct Sprite_Animation_Group_t {
-    Quantity__u8 quantity_of__columns_in__sprite_animation_group__u4    :4;
-    Quantity__u8 quantity_of__rows_in__sprite_animation_group__u4       :4;
-    Quantity__u8 quantity_of__groups_for__sprite_animation_group__u8;
-} Sprite_Animation_Group;
-
-typedef uint8_t Sprite_Flags;
-
-#define SPRITE_FLAGS__NONE 0
-
-#define SPRITE_FLAG__BIT_IS_ENABLED BIT(0)
-#define SPRITE_FLAG__BIT_IS_NEEDING_GRAPHICS_UPDATE BIT(1)
-#define SPRITE_FLAG__BIT_IS_FLIPPED_X BIT(2)
-#define SPRITE_FLAG__BIT_IS_FLIPPED_Y BIT(3)
-
-typedef struct Sprite_t {
-    Serialization_Header _serialization_header;
-    PLATFORM_Sprite *p_PLATFORM_sprite;
-    PLATFORM_Texture *p_PLATFORM_texture_for__sprite_to__sample;
-    PLATFORM_Texture *p_PLATFORM_texture_of__sprite;
-    m_Sprite_Animation_Handler m_sprite_animation_handler;
-    Sprite_Animation animation;
-    Index__u16 index_of__sprite_frame;
-    Sprite_Kind the_kind_of__sprite;
-    Sprite_Flags sprite_flags__u8;
-    Direction__u8 direction__old__u8;
-    Direction__u8 direction__delta__u8;
-} Sprite;
-
-typedef struct Sprite_Render_Record_t {
-    Vector__3i32F4 position__3i32F4;
-    Sprite *p_sprite;
-} Sprite_Render_Record;
-
-typedef struct Sprite_Manager_t {
-    Sprite sprites[MAX_QUANTITY_OF__SPRITES];
-    Sprite_Render_Record sprite_render_records[
-        MAX_QUANTITY_OF__SPRITES];
-    Sprite_Animation sprite_animations[
-        Sprite_Animation_Kind__Unknown];
-    Sprite_Animation_Group sprite_animation_groups[
-        Sprite_Animation_Group_Kind__Unknown];
-    Sprite_Render_Record *p_sprite_render_record__last;
-} Sprite_Manager;
-
-#define SPRITE_FRAME__32x32__OFFSET (32 * 32)
-#define SPRITE_FRAME__16x16__OFFSET (16 * 16)
-#define SPRITE_FRAME__8x8__OFFSET (8 * 8)
-
 ///
 /// The meaning of these flags is dependent on
 /// platform_defines.h
@@ -644,11 +574,88 @@ typedef uint32_t Texture_Flags;
 #define GET_TEXTURE_FLAG__LENGTH__HEIGHT(flags) \
     (flags & TEXTURE_FLAG__LENGTH__MASK)
 
-typedef struct Texture_Allocation_Specification_t {
-    PLATFORM_Graphics_Window *p_PLATFORM_graphics_window;
-    void *p_texture_allocation_specification__data;
+typedef struct Texture_t {
+    PLATFORM_Texture *p_PLATFORM_texture;
     Texture_Flags texture_flags;
-} Texture_Allocation_Specification;
+} Texture;
+
+typedef uint8_t Sprite_Animation_Flags__u3;
+
+#define SPRITE_ANIMATION_FLAGS__NONE 0
+#define SPRITE_ANIMATION_FLAG__IS_NOT_LOOPING BIT(0)
+#define SPRITE_ANIMATION_FLAG__IS_OFFSET_BY__DIRECTION BIT(1)
+
+typedef struct Sprite_Manager_t Sprite_Manager;
+
+///
+/// Returns true if sprite now needs gfx update
+///
+typedef void (*m_Sprite_Animation_Handler)(
+        Sprite *p_this_sprite,
+        Game *p_game,
+        Sprite_Manager *p_sprite_manager);
+
+typedef struct Sprite_Animation_t {
+    Sprite_Animation_Kind the_kind_of_animation__this_sprite_has;
+    Timer__u8 animation_timer__u8;
+    Quantity__u8                sprite_animation__initial_frame__u8;
+    Quantity__u8                sprite_animation__quantity_of__frames__u8;
+    Quantity__u8                sprite_animation__ticks_per__frame__u5  :5;
+    Sprite_Animation_Flags__u3  sprite_animation__flags__u3;
+} Sprite_Animation;
+
+///
+/// Expresses subgroups within the sprite's sample texture.
+///
+typedef struct Sprite_Animation_Group_Set_t {
+    Quantity__u8 quantity_of__columns_in__sprite_animation_group__u4    :4;
+    Quantity__u8 quantity_of__rows_in__sprite_animation_group__u4       :4;
+    Index__u8 index_of__sprite_animation_group_in__group_set_u8;
+} Sprite_Animation_Group_Set;
+
+typedef uint8_t Sprite_Flags;
+
+#define SPRITE_FLAGS__NONE 0
+
+#define SPRITE_FLAG__BIT_IS_ENABLED BIT(0)
+#define SPRITE_FLAG__BIT_IS_NEEDING_GRAPHICS_UPDATE BIT(1)
+#define SPRITE_FLAG__BIT_IS_FLIPPED_X BIT(2)
+#define SPRITE_FLAG__BIT_IS_FLIPPED_Y BIT(3)
+
+typedef struct Sprite_t {
+    Serialization_Header _serialization_header;
+    PLATFORM_Sprite *p_PLATFORM_sprite;
+    Texture texture_for__sprite_to__sample;
+    Texture texture_of__sprite;
+    m_Sprite_Animation_Handler m_sprite_animation_handler;
+    Sprite_Animation animation;
+    Sprite_Animation_Group_Kind the_kind_of__sprite__animation_group;
+    Index__u16 index_of__sprite_frame;
+    Sprite_Kind the_kind_of__sprite;
+    Sprite_Flags sprite_flags__u8;
+    Direction__u8 direction__old__u8;
+    Direction__u8 direction__delta__u8;
+} Sprite;
+
+typedef struct Sprite_Render_Record_t {
+    Vector__3i32F4 position__3i32F4;
+    Sprite *p_sprite;
+} Sprite_Render_Record;
+
+typedef struct Sprite_Manager_t {
+    Sprite sprites[MAX_QUANTITY_OF__SPRITES];
+    Sprite_Render_Record sprite_render_records[
+        MAX_QUANTITY_OF__SPRITES];
+    Sprite_Animation sprite_animations[
+        Sprite_Animation_Kind__Unknown];
+    Sprite_Animation_Group_Set sprite_animation_groups[
+        Sprite_Animation_Group_Kind__Unknown];
+    Sprite_Render_Record *p_sprite_render_record__last;
+} Sprite_Manager;
+
+#define SPRITE_FRAME__32x32__OFFSET (32 * 32)
+#define SPRITE_FRAME__16x16__OFFSET (16 * 16)
+#define SPRITE_FRAME__8x8__OFFSET (8 * 8)
 
 #define MAX_LENGTH_OF__TEXTURE_NAME 32
 typedef char Texture_Name__c_str[MAX_LENGTH_OF__TEXTURE_NAME];
@@ -656,7 +663,7 @@ typedef char Texture_Name__c_str[MAX_LENGTH_OF__TEXTURE_NAME];
 typedef struct Aliased_Texture_t {
     Serialization_Header _serialization_header;
     Texture_Name__c_str name_of__texture__c_str;
-    PLATFORM_Texture *P_PLATFORM_texture;
+    Texture texture;
 } Aliased_Texture;
 
 #define MAX_QUANTITY_OF__ALIASED_TEXTURES 128
@@ -687,7 +694,7 @@ typedef u8 Font_Flags;
 typedef struct Font_t {
     Font_Letter font_lookup_table[
         FONT_LETTER_MAX_QUANTITY_OF];
-    PLATFORM_Texture *p_PLATFORM_texture_of__font;
+    Texture texture_of__font;
     Quantity__u8 max_width_of__font_letter;
     Quantity__u8 max_height_of__font_letter;
     Font_Flags font_flags;
@@ -735,7 +742,7 @@ typedef struct Typer_t {
     Vector__3i32 cursor_position__3i32;
     Font *p_font;
     union {
-        PLATFORM_Texture *p_PLATFORM_texture__typer_target;
+        Texture texture_of__typer_target;
         PLATFORM_Graphics_Window *p_PLATFORM_graphics_window__typer_target;
     };
     Quantity__u16 quantity_of__space_in__pixels_between__lines;
@@ -1086,7 +1093,9 @@ typedef struct Process_t {
     Process_Flags__u8 process_flags__u8;
 } Process;
 
+#ifndef PROCESS_MAX_QUANTITY_OF
 #define PROCESS_MAX_QUANTITY_OF 512
+#endif
 
 typedef struct Process_Manager_t {
     Process processes[PROCESS_MAX_QUANTITY_OF];
@@ -1906,6 +1915,16 @@ typedef struct Local_Space_t {
     struct Local_Space_t *p_local_space__below;
 } Local_Space;
 
+#if LOCAL_SPACE_MANAGER__WIDTH < GFX_CONTEXT__RENDERING_WIDTH__IN_CHUNKS
+#error LOCAL_SPACE_MANAGER__WIDTH < GFX_CONTEXT__RENDERING_WIDTH__IN_CHUNKS
+#endif
+#if LOCAL_SPACE_MANAGER__HEIGHT < GFX_CONTEXT__RENDERING_HEIGHT__IN_CHUNKS
+#error LOCAL_SPACE_MANAGER__HEIGHT < GFX_CONTEXT__RENDERING_HEIGHT__IN_CHUNKS
+#endif
+#if LOCAL_SPACE_MANAGER__DEPTH < GFX_CONTEXT__RENDERING_DEPTH__IN_CHUNKS
+#error LOCAL_SPACE_MANAGER__DEPTH < GFX_CONTEXT__RENDERING_DEPTH__IN_CHUNKS
+#endif
+
 typedef struct Local_Space_Manager_t {
     Local_Space local_spaces[
         VOLUME_OF__LOCAL_SPACE_MANAGER];
@@ -2135,7 +2154,9 @@ typedef struct Game_Action_t {
     };
 } Game_Action;
 
+#ifndef MAX_QUANTITY_OF__GAME_ACTIONS
 #define MAX_QUANTITY_OF__GAME_ACTIONS 512
+#endif
 
 typedef struct Game_Action_Manager_t {
     Game_Action game_actions[

@@ -146,6 +146,10 @@ void poll_for__collisions_within_this__collision_node(
         Collision_Node *p_collision_node,
         f_Hitbox_AABB_Collision_Handler f_hitbox_collision_handler,
         Hitbox_AABB *p_hitbox_aabb) {
+    // TODO: we may need to try and look for errors, but this
+    // is probably safe for now.
+    if (!p_collision_node)
+        return;
     Collision_Node_Entry *p_collision_node_entry =
         p_collision_node->p_linked_list__collision_node_entries__tail;
 

@@ -18,29 +18,29 @@ bool is_c_str_matching__aliased_texture(
         const char *c_str);
 
 static inline
-void give_PLATFORM_texture_to__aliased_texture(
+void give_texture_to__aliased_texture(
         Aliased_Texture *p_aliased_texture,
-        PLATFORM_Texture *P_PLATFORM_texture) {
+        Texture *p_texture) {
 #ifndef NDEBUG
     if (!p_aliased_texture) {
         debug_error("give_PLATFORM_texture_to__aliased_texture, p_aliased_texture == 0.");
         return;
     }
 #endif
-    p_aliased_texture->P_PLATFORM_texture =
-        P_PLATFORM_texture;
+    p_aliased_texture->texture=
+        *p_texture;
 }
 
 static inline
-PLATFORM_Texture *get_p_PLATFORM_texture_from__aliased_texture(
+Texture get_texture_from__aliased_texture(
         Aliased_Texture *p_aliased_texture) {
 #ifndef NDEBUG
     if (!p_aliased_texture) {
         debug_error("give_PLATFORM_texture_to__aliased_texture, p_aliased_texture == 0.");
-        return 0;
+        return (Texture){0};
     }
 #endif
-    return p_aliased_texture->P_PLATFORM_texture;
+    return p_aliased_texture->texture;
 }
 
 static inline

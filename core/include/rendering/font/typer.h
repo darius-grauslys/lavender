@@ -93,9 +93,9 @@ Font_Letter *get_p_font_letter_from__typer(
 static inline
 void set_PLATFORM_texture_target_for__typer(
         Typer *p_typer,
-        PLATFORM_Texture *p_PLATFORM_texture) {
-    p_typer->p_PLATFORM_texture__typer_target =
-        p_PLATFORM_texture;
+        Texture texture) {
+    p_typer->texture_of__typer_target=
+        texture;
     p_typer->is_using_PLATFORM_texture_or__PLATFORM_graphics_window =
         true;
 }

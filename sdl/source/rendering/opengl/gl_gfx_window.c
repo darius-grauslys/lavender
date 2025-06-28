@@ -32,16 +32,13 @@ void GL_allocate_gfx_window(
         PLATFORM_Gfx_Context *p_PLATFORM_gfx_context,
         PLATFORM_Graphics_Window *p_PLATFORM_graphics_window,
         Texture_Flags texture_flags) {
-    p_PLATFORM_graphics_window
-        ->p_SDL_graphics_window__texture =
-            PLATFORM_allocate_texture(
+    if (PLATFORM_allocate_texture(
                     p_PLATFORM_gfx_context,
                     p_PLATFORM_graphics_window,
-                    texture_flags);
-
-    if (IS_DEALLOCATED_P(
-                p_PLATFORM_graphics_window
-                ->p_SDL_graphics_window__texture)) {
+                    texture_flags,
+                    &p_PLATFORM_graphics_window
+                    ->SDL_graphics_window__texture
+                    )) {
         debug_error("SDL::GL::GL_allocate_gfx_window, failed to allocate texture.");
         return;
     }
@@ -57,7 +54,7 @@ void GL_allocate_gfx_window(
         PLATFORM_release_texture(
                 p_PLATFORM_gfx_context, 
                 p_PLATFORM_graphics_window
-                ->p_SDL_graphics_window__texture);
+                ->SDL_graphics_window__texture);
         debug_error("SDL::GL::GL_allocate_gfx_window, failed to allocate framebuffer");
         return;
     }
@@ -117,14 +114,13 @@ void GL_compose_gfx_window(
         GL_get_p_framebuffer_manager_from__PLATFORM_gfx_context(
                 p_PLATFORM_gfx_context);
 
-    PLATFORM_Texture *p_PLATFORM_texture__ui_tilesheet =
-        get_p_PLATFORM_texture_by__uuid(
+    Texture texture__ui_tilesheet;
+    if (get_texture_by__uuid(
                 get_p_aliased_texture_manager_from__gfx_context(
                     p_gfx_context), 
                 get_uuid_of__ui_tile_map__texture_from__gfx_window(
-                    p_gfx_window));
-
-    if (!p_PLATFORM_texture__ui_tilesheet) {
+                    p_gfx_window),
+                    &texture__ui_tilesheet)) {
         debug_error("SDL::GL::GL_compose_gfx_window, p_PLATFORM_texture__ui_tilesheet == 0.");
         set_graphics_window_as__disabled(p_gfx_window);
         debug_warning("p_gfx_window disabled.");
@@ -138,7 +134,8 @@ void GL_compose_gfx_window(
             p_GL_framebuffer, 
             p_gfx_window
             ->p_PLATFORM_gfx_window
-            ->p_SDL_graphics_window__texture);
+            ->SDL_graphics_window__texture
+            .p_PLATFORM_texture);
 
     float clear_color[4];
     glGetFloatv(GL_COLOR_CLEAR_VALUE, clear_color);
@@ -160,12 +157,14 @@ void GL_compose_gfx_window(
             p_GL_shader__passthrough);
 
     float width__f = 
-        (float)(p_PLATFORM_texture__ui_tilesheet
+        (float)(texture__ui_tilesheet
+                .p_PLATFORM_texture
         ->width
         >> UI_TILE__WIDTH_AND__HEIGHT__BIT_SHIFT);
         ;
     float height__f = 
-        (float)(p_PLATFORM_texture__ui_tilesheet
+        (float)(texture__ui_tilesheet
+                .p_PLATFORM_texture
         ->height
         >> UI_TILE__WIDTH_AND__HEIGHT__BIT_SHIFT);
         ;
@@ -177,7 +176,7 @@ void GL_compose_gfx_window(
 
     PLATFORM_use_texture(
             p_PLATFORM_gfx_context, 
-            p_PLATFORM_texture__ui_tilesheet);
+            texture__ui_tilesheet);
 
     for (Index__u8 index_of__y_tile = 0;
             index_of__y_tile 
@@ -257,7 +256,7 @@ void GL_render_gfx_window(
     PLATFORM_use_texture(
             p_PLATFORM_gfx_context,
             p_PLATFORM_graphics_window
-            ->p_SDL_graphics_window__texture);
+            ->SDL_graphics_window__texture);
 
     float width_of__uv = 1.0f;
     float height_of__uv = 1.0f;
@@ -274,24 +273,28 @@ void GL_render_gfx_window(
 
         x = 
             (p_PLATFORM_graphics_window
-                ->p_SDL_graphics_window__texture
+                ->SDL_graphics_window__texture
+                .p_PLATFORM_texture
                 ->width / 2.0f)
             + (subtract_u32__clamped(
                     p_GL_viewport->width,
                     p_PLATFORM_graphics_window
-                    ->p_SDL_graphics_window__texture
+                    ->SDL_graphics_window__texture
+                    .p_PLATFORM_texture
                     ->width,
                     0) / 2.0f)
             + p_GL_viewport->x
             ;
         y = 
             (p_PLATFORM_graphics_window
-                ->p_SDL_graphics_window__texture
+                ->SDL_graphics_window__texture
+                .p_PLATFORM_texture
                 ->height / 2.0f)
             + (subtract_u32__clamped(
                     p_GL_viewport->height,
                     p_PLATFORM_graphics_window
-                    ->p_SDL_graphics_window__texture
+                    ->SDL_graphics_window__texture
+                    .p_PLATFORM_texture
                     ->height,
                     0) / 2.0f)
             + p_GL_viewport->y
@@ -318,7 +321,7 @@ void GL_release_gfx_window(
     PLATFORM_release_texture(
             p_PLATFORM_gfx_context, 
             p_PLATFORM_graphics_window
-            ->p_SDL_graphics_window__texture);
+            ->SDL_graphics_window__texture);
 
     GL_Framebuffer *p_GL_framebuffer =
         (GL_Framebuffer*)p_PLATFORM_graphics_window

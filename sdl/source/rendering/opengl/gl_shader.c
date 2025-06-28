@@ -213,7 +213,7 @@ void GL_link_camera_translation_to__shader(
             vec3__translation[1] *= 
                 -(1.0/(BIT(TILE__WIDTH_AND__HEIGHT__BIT_SHIFT)));
             vec3__translation[2] *= 
-                -(1.0/(BIT(TILE__WIDTH_AND__HEIGHT__BIT_SHIFT)));
+                (1.0/(BIT(TILE__WIDTH_AND__HEIGHT__BIT_SHIFT)));
 
         glm_translate_make(
                 *p_translation, 

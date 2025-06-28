@@ -126,74 +126,40 @@ void PLATFORM_render_sprite(
 // TODO: remove
 void PLATFORM_initialize_rendering__game(PLATFORM_Gfx_Context *gfx_context);
 
-PLATFORM_Texture *PLATFORM_allocate_texture(
-        PLATFORM_Gfx_Context *p_PLATFORM_gfx_context,
-        PLATFORM_Graphics_Window *p_PLATFORM_gfx_window,
-        Texture_Flags texture_flags);
-
-PLATFORM_Texture *PLATFORM_allocate_texture_with__path(
+/// 
+/// returns true if failure.
+///
+bool PLATFORM_allocate_texture(
         PLATFORM_Gfx_Context *p_PLATFORM_gfx_context,
         PLATFORM_Graphics_Window *p_PLATFORM_gfx_window,
         Texture_Flags texture_flags,
-        const char *c_str__path);
+        Texture *p_OUT_texture);
 
-// TODO: update to take Texture__Wrapper *p_
+/// 
+/// returns true if failure.
+///
+bool PLATFORM_allocate_texture_with__path(
+        PLATFORM_Gfx_Context *p_PLATFORM_gfx_context,
+        PLATFORM_Graphics_Window *p_PLATFORM_gfx_window,
+        Texture_Flags texture_flags,
+        const char *c_str__path,
+        Texture *p_OUT_texture);
+
 void PLATFORM_update_texture(
-        PLATFORM_Texture *texture);
+        Texture texture);
 
 // TODO: remove
 void PLATFORM_use_texture(
         PLATFORM_Gfx_Context *p_PLATFORM_gfx_context,
-        PLATFORM_Texture *texture);
+        Texture texture);
 
 void PLATFORM_release_texture(
         PLATFORM_Gfx_Context *p_PLATFORM_gfx_context,
-        PLATFORM_Texture *texture);
-
-// TODO: remove
-Texture_Flags *PLATFORM_get_p_texture_flags_from__PLATFORM_texture(
-        PLATFORM_Texture *texture);
-
-// TODO: remove
-Quantity__u32 PLATFORM_get_max_quantity_of__allocations_for__texture_flags(
-        PLATFORM_Gfx_Context *p_PLATFORM_gfx_context,
-        Texture_Flags texture_flags);
-
-// TODO: remove
-Quantity__u32 PLATFORM_get_quantity_of__available_allocations_for__texture_flags(
-        PLATFORM_Gfx_Context *p_PLATFORM_gfx_context,
-        Texture_Flags texture_flags);
-
-// TODO: remove, make a Profile_t struct, and populate
-bool PLATFORM_has_support_for__texture_flag__render_method(
-        PLATFORM_Gfx_Context *p_PLATFORM_gfx_context,
-        Texture_Flags texture_flags);
+        Texture texture);
 
 ///
 /// SECTION_world
 ///
-
-// TODO: remove
-void PLATFORM_render_chunk(
-        Gfx_Context *p_gfx_context,
-        Graphics_Window *p_gfx_window,
-        Chunk_Manager__Chunk_Map_Node *p_chunk_map_node);
-
-// TODO: remove
-void PLATFORM_render_tile(
-        PLATFORM_Gfx_Context *context,
-        Tile *tile);
-
-// TODO: remove
-void PLATFORM_update_chunk(
-        PLATFORM_Gfx_Context *p_gfx_context,
-        Chunk_Manager *p_chunk_manager,
-        Chunk_Manager__Chunk_Map_Node *p_chunk_map_node);
-
-// TODO: remove
-void PLATFORM_update_chunks(
-        PLATFORM_Gfx_Context *gfx_context,
-        Chunk_Manager *chunk_manager);
 
 ///
 /// SECTION_core
@@ -242,7 +208,7 @@ void PLATFORM_compose_world(
         Gfx_Context *p_gfx_context,
         Graphics_Window **p_ptr_array_of__gfx_windows,
         Local_Space_Manager *p_local_space_manager,
-        PLATFORM_Texture **p_ptr_array_of__PLATFORM_textures,
+        Texture *ptr_array_of__textures,
         Quantity__u32 quantity_of__gfx_windows,
         f_Tile_Render_Kernel f_tile_render_kernel);
 

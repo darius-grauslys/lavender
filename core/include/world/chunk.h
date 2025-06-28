@@ -51,15 +51,37 @@ static inline
 Tile* get_p_tile_from__chunk(
         Chunk *chunk, 
         Local_Tile_Vector__3u8 local_tile_vector) {
+#ifndef NDEBUG
+    if (local_tile_vector.x__u8 >= CHUNK__WIDTH) {
+        debug_error("get_p_tile_from__chunk, x out of bounds.");
+        return 0;
+    }
+    if (local_tile_vector.y__u8 >= CHUNK__WIDTH) {
+        debug_error("get_p_tile_from__chunk, y out of bounds.");
+        return 0;
+    }
+    if (local_tile_vector.z__u8 >= CHUNK__WIDTH) {
+        debug_error("get_p_tile_from__chunk, z out of bounds.");
+        return 0;
+    }
+#endif
     // TODO: improve
     // int32_t index = (1 << (z * CHUNK__DEPTH_BIT_SHIFT)) +
     //     ((CHUNK_WIDTH__IN_TILES - y) << CHUNK__HEIGHT_BIT_SHIFT) + x;
-    Index__u8 index__u8 = 
+    // Index__u8 index__u8 = 
+    //     local_tile_vector.x__u8
+    //     + (7 - local_tile_vector.y__u8) 
+    //     * 8;
+    Index__u16 index__u16 = 
         local_tile_vector.x__u8
-        + (7 - local_tile_vector.y__u8) 
-        * 8;
+        + (((CHUNK__HEIGHT-1)
+                - local_tile_vector.y__u8)
+            * CHUNK__WIDTH)
+        + (CHUNK__WIDTH*CHUNK__HEIGHT
+                * local_tile_vector.z__u8)
+        ;
 
-    return &chunk->tiles[index__u8];
+    return &chunk->tiles[index__u16];
 }
 
 static inline 

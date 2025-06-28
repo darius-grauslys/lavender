@@ -4,6 +4,13 @@
 #include "defines_weak.h"
 #include <defines.h>
 
+static inline
+void initialize_texture(
+        Texture texture) {
+    texture.p_PLATFORM_texture = 0;
+    texture.texture_flags = TEXTURE_FLAGS__NONE;
+}
+
 static inline 
 void set_texture_flags_as__hidden(
         Texture_Flags *p_texture_flags) {
@@ -91,48 +98,5 @@ Quantity__u16 get_length_of__texture_flag__width(
 ///
 Quantity__u16 get_length_of__texture_flag__height(
         Texture_Flags texture_flags);
-
-static inline
-void initialize_texture_allocation_specification(
-        Texture_Allocation_Specification
-            *p_texture_allocation_specification,
-        Texture_Flags texture_flags,
-        PLATFORM_Graphics_Window *p_PLATFORM_graphics_window) {
-    p_texture_allocation_specification
-        ->texture_flags = texture_flags;
-    p_texture_allocation_specification
-        ->p_PLATFORM_graphics_window = 
-        p_PLATFORM_graphics_window;
-    p_texture_allocation_specification
-        ->p_texture_allocation_specification__data = 0;
-}
-
-static inline
-void set_texture_allocation_specification__data(
-        Texture_Allocation_Specification
-            *p_texture_allocation_specification,
-        void *p_texture_allocation_specification__data){
-    p_texture_allocation_specification
-        ->p_texture_allocation_specification__data =
-        p_texture_allocation_specification__data
-        ;
-}
-
-static inline
-Texture_Flags get_texture_flags_from__texture_allocation_specification(
-        Texture_Allocation_Specification 
-        *p_texture_allocation_specification) {
-    return p_texture_allocation_specification
-        ->texture_flags;
-}
-
-static inline
-Texture_Flags get_texture_size_from__texture_allocation_specification(
-        Texture_Allocation_Specification 
-        *p_texture_allocation_specification) {
-    return get_texture_flags__size(
-            get_texture_flags_from__texture_allocation_specification(
-                p_texture_allocation_specification));
-}
 
 #endif

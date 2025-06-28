@@ -5,15 +5,24 @@
 #include "platform.h"
 #include "rendering/texture.h"
 #include "serialization/serialization_header.h"
+#include "types/implemented/sprite_animation_group_kind.h"
+#include "types/implemented/sprite_animation_kind.h"
 #include <defines.h>
 
 void m_sprite_animation_handler__default(
         Sprite *p_this_sprite,
-        Game *p_game);
+        Game *p_game,
+        Sprite_Manager *p_sprite_manager);
 
 void poll_sprite_for__animation(
         Game *p_game,
-        Sprite *p_sprite);
+        Sprite *p_sprite,
+        Sprite_Manager *p_sprite_manager);
+
+void set_sprite_animation(
+        Sprite_Manager *p_sprite_manager,
+        Sprite *p_sprite,
+        Sprite_Animation_Kind the_kind_of__sprite_animation);
 
 static inline
 bool is_sprite__deallocated(Sprite *p_sprite) {
@@ -100,6 +109,19 @@ static inline
 bool set_sprite_as__NOT_flipped_y(Sprite *p_sprite) {
     return p_sprite->sprite_flags__u8 &=
         ~SPRITE_FLAG__BIT_IS_FLIPPED_Y;
+}
+
+static inline
+Sprite_Animation *get_p_sprite_animation_from__sprite(
+        Sprite *p_sprite) {
+    return &p_sprite->animation;
+}
+
+static inline
+Sprite_Animation_Group_Kind 
+get_the_kind_of__sprite_animation_group_of__this_sprite(
+        Sprite *p_sprite) {
+    return p_sprite->the_kind_of__sprite__animation_group;
 }
 
 #endif

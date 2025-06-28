@@ -52,6 +52,20 @@ bool is_vector_3i32F4_within__local_space_manager(
         Vector__3i32F4 vector_3i32F4);
 
 static inline
+Local_Space *get_p_local_space_by__index_from__local_space_manager(
+        Local_Space_Manager *p_local_space_manager,
+        Index__u32 index_of__local_space) {
+#ifndef NDEBUG
+    if (index_of__local_space > VOLUME_OF__LOCAL_SPACE_MANAGER) {
+        debug_error("get_p_local_space_by__index_from__local_space_manager, index out of range, %d/%d", index_of__local_space, VOLUME_OF__LOCAL_SPACE_MANAGER);
+        return 0;
+    }
+#endif
+    return &p_local_space_manager->local_spaces[index_of__local_space];
+}
+
+
+static inline
 void load_local_space_manager_at__global_space_vector__3i32(
         Local_Space_Manager *p_local_space_manager,
         Game *p_game,

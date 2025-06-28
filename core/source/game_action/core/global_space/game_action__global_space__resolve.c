@@ -140,6 +140,8 @@ void m_process__game_action__global_space__resolve(
             p_global_space);
     set_global_space_as__NOT_constructing(
             p_global_space);
+    set_global_space_as__dirty(
+            p_global_space);
     complete_process(p_this_process);
 }
 
