@@ -81,18 +81,20 @@ typedef struct GL_Framebuffer_Manager_t {
 } GL_Framebuffer_Manager;
 
 #ifndef GL_MAX_QUANTITY_OF__CHUNK_TEXTURES
-#define GL_MAX_QUANTITY_OF__CHUNK_TEXTURES 1
+#define GL_MAX_QUANTITY_OF__CHUNK_TEXTURES 3
 #endif
 
 typedef struct GL_Chunk_Texture_Entry_t {
     Texture chunk_textures[GL_MAX_QUANTITY_OF__CHUNK_TEXTURES];
     Identifier__u64 uuid_of__chunk__u64;
+    u32 local__z_index;
 } GL_Chunk_Texture_Entry;
 
 typedef struct GL_Chunk_Texture_Manager_t {
     GL_Chunk_Texture_Entry GL_chunk_textures_entries[
         LOCAL_SPACE_MANAGER__WIDTH
             * LOCAL_SPACE_MANAGER__HEIGHT];
+    GL_Framebuffer *p_GL_framebuffer__chunk_compose;
     Texture_Flags texture_flags_for__chunks;
 } GL_Chunk_Texture_Manager;
 

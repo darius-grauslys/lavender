@@ -1,11 +1,7 @@
 #ifndef CHUNK_H
 #define CHUNK_H
 
-#include <stdbool.h>
-#include <stdint.h>
 #include <defines.h>
-
-#include "defines_weak.h"
 #include "platform_defines.h"
 #include "tile.h"
 #include "vectors.h"
@@ -40,8 +36,8 @@ void set_tile_of__chunk(
         Tile* tile) {
     //TODO: we need debug stuffs.
     int32_t index = 
-        (1 << (local_tile_vector.z__u8 * CHUNK__DEPTH__BIT_SHIFT))
-        + (1 << (local_tile_vector.y__u8 * CHUNK__WIDTH__AND_HEIGHT__BIT_SHIFT)) 
+        (local_tile_vector.y__u8 << CHUNK__WIDTH_AND__HEIGHT__BIT_SHIFT)
+        + (local_tile_vector.z__u8 << (CHUNK__WIDTH_AND__HEIGHT__BIT_SHIFT*2)) 
         + local_tile_vector.x__u8;
 
     chunk->tiles[index] = *tile;

@@ -51,6 +51,7 @@ void GL_initialize_gfx_sub_context(
             GL_get_p_framebuffer_manager_from__gfx_sub_context(
                 p_GL_gfx_sub_context));
     GL_initialize_chunk_texture_manager(
+            p_PLATFORM_gfx_context,
             GL_get_p_chunk_texture_manager_from__gfx_sub_context(
                 p_GL_gfx_sub_context));
 

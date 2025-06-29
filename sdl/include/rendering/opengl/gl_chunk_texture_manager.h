@@ -5,6 +5,7 @@
 #include "rendering/opengl/gl_defines.h"
 
 void GL_initialize_chunk_texture_manager(
+        PLATFORM_Gfx_Context *p_PLATFORM_gfx_context,
         GL_Chunk_Texture_Manager *p_GL_chunk_texture_manager);
 
 ///
@@ -29,6 +30,7 @@ bool GL_poll_textures_for__chunk_in__chunk_texture_manager(
         Graphics_Window **p_ptr_array_of__gfx_windows,
         GL_Chunk_Texture_Manager *p_GL_chunk_texture_manager,
         Local_Space *p_local_space,
-        Texture *ptr_array_OUT_textures_for__chunk);
+        Texture *ptr_array_OUT_textures_for__chunk,
+        bool *p_OUT_is_chunk__needing_graphics_update);
 
 #endif

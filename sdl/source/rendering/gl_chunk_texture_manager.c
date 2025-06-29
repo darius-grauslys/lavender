@@ -1,10 +1,12 @@
 #include "rendering/opengl/gl_chunk_texture_manager.h"
+#include "defines.h"
 #include "rendering/gfx_context.h"
 #include "rendering/opengl/gl_defines.h"
 #include "defines_weak.h"
 #include "platform.h"
 #include "platform_defines.h"
 #include "rendering/opengl/gl_defines.h"
+#include "rendering/opengl/gl_framebuffer_manager.h"
 #include "world/global_space_manager.h"
 #include "world/local_space_manager.h"
 
@@ -25,6 +27,7 @@ GL_Chunk_Texture_Entry
 }
 
 void GL_initialize_chunk_texture_manager(
+        PLATFORM_Gfx_Context *p_PLATFORM_gfx_context,
         GL_Chunk_Texture_Manager *p_GL_chunk_texture_manager) {
     memset(
             p_GL_chunk_texture_manager, 
@@ -47,6 +50,13 @@ void GL_initialize_chunk_texture_manager(
         p_GL_chunk_texture_entry->uuid_of__chunk__u64 =
             IDENTIFIER__UNKNOWN__u64;
     }
+
+    p_GL_chunk_texture_manager
+        ->p_GL_framebuffer__chunk_compose =
+        GL_allocate_framebuffer_with__framebuffer_manager(
+                p_PLATFORM_gfx_context, 
+                GL_get_p_framebuffer_manager_from__PLATFORM_gfx_context(
+                    p_PLATFORM_gfx_context));
 
     u32 texture_size;
     switch (TILE__WIDTH_AND__HEIGHT_IN__PIXELS) {
@@ -105,6 +115,7 @@ bool GL_allocate_textures_in__chunk_texture_manager(
                     p_ptr_array_of__gfx_windows,
                     p_GL_chunk_texture_manager, 
                     p_local_space, 
+                    0,
                     0)) {
             return true;
         }
@@ -126,21 +137,41 @@ bool GL_poll_textures_for__chunk_in__chunk_texture_manager(
         Graphics_Window **p_ptr_array_of__gfx_windows,
         GL_Chunk_Texture_Manager *p_GL_chunk_texture_manager,
         Local_Space *p_local_space,
-        Texture *ptr_array_OUT_textures_for__chunk) {
+        Texture *ptr_array_OUT_textures_for__chunk,
+        bool *p_OUT_is_chunk__needing_graphics_update) {
     Texture _tmp[GL_MAX_QUANTITY_OF__CHUNK_TEXTURES];
     if (!ptr_array_OUT_textures_for__chunk)
         ptr_array_OUT_textures_for__chunk = _tmp;
 
     Identifier__u64 uuid__u64 =
         get_uuid_for__global_space(
-                p_local_space->global_space__vector__3i32);
+                p_local_space
+                ->p_global_space
+                ->chunk_vector__3i32);
+
+    // TODO: this acquision of camera is hacky
+    // and the chunk_texture_manager performing this check
+    // may be overloading its responsibilities.
+    Camera *p_camera = p_ptr_array_of__gfx_windows[0]
+        ->p_camera;
+    u32 local__z_index =
+        abs(i32F4_to__i32(p_camera->position.z__i32F4))
+        % CHUNK__DEPTH;
 
     Index__u32 column_in__manager =
-        p_local_space->global_space__vector__3i32.x__i32
+        ((p_local_space
+          ->p_global_space
+          ->chunk_vector__3i32.x__i32
+        % LOCAL_SPACE_MANAGER__WIDTH)
+        + LOCAL_SPACE_MANAGER__WIDTH)
         % LOCAL_SPACE_MANAGER__WIDTH;
 
     Index__u32 row_in__manager =
-        p_local_space->global_space__vector__3i32.y__i32
+        ((p_local_space
+          ->p_global_space
+          ->chunk_vector__3i32.y__i32
+        % LOCAL_SPACE_MANAGER__HEIGHT)
+        + LOCAL_SPACE_MANAGER__HEIGHT)
         % LOCAL_SPACE_MANAGER__HEIGHT;
 
     Index__u32 index_in__manager =
@@ -161,38 +192,38 @@ bool GL_poll_textures_for__chunk_in__chunk_texture_manager(
 
     if (p_GL_chunk_texture_entry
             ->uuid_of__chunk__u64
-            == uuid__u64) {
+            == uuid__u64
+            && p_GL_chunk_texture_entry
+            ->local__z_index
+            == local__z_index) {
         goto yield_textures;
     }
 
-    for (Index__u32 index_of__chunk_texture = 0;
-            index_of__chunk_texture 
-            < GL_MAX_QUANTITY_OF__CHUNK_TEXTURES;
-            index_of__chunk_texture++) {
-        PLATFORM_release_texture(
-                get_p_PLATFORM_gfx_context_from__gfx_context(p_gfx_context), 
-                p_GL_chunk_texture_entry
-                ->chunk_textures[index_of__chunk_texture]);
-    }
-
-    for (Index__u32 index_of__chunk_texture = 0;
-            index_of__chunk_texture 
-            < GL_MAX_QUANTITY_OF__CHUNK_TEXTURES;
-            index_of__chunk_texture++) {
-        if (PLATFORM_allocate_texture(
-                    get_p_PLATFORM_gfx_context_from__gfx_context(p_gfx_context), 
-                    p_ptr_array_of__gfx_windows[index_of__chunk_texture]
-                    ->p_PLATFORM_gfx_window, 
-                    p_GL_chunk_texture_manager
-                    ->texture_flags_for__chunks, 
-                    &p_GL_chunk_texture_entry
-                    ->chunk_textures[index_of__chunk_texture])) {
-            return true;
+    if (p_GL_chunk_texture_entry->uuid_of__chunk__u64
+             == IDENTIFIER__UNKNOWN__u64) {
+        for (Index__u32 index_of__chunk_texture = 0;
+                index_of__chunk_texture 
+                < GL_MAX_QUANTITY_OF__CHUNK_TEXTURES;
+                index_of__chunk_texture++) {
+            if (PLATFORM_allocate_texture(
+                        get_p_PLATFORM_gfx_context_from__gfx_context(p_gfx_context), 
+                        p_ptr_array_of__gfx_windows[index_of__chunk_texture]
+                        ->p_PLATFORM_gfx_window, 
+                        p_GL_chunk_texture_manager
+                        ->texture_flags_for__chunks, 
+                        &p_GL_chunk_texture_entry
+                        ->chunk_textures[index_of__chunk_texture])) {
+                return true;
+            }
         }
     }
 
+    if (p_OUT_is_chunk__needing_graphics_update)
+        *p_OUT_is_chunk__needing_graphics_update = true;
     p_GL_chunk_texture_entry->uuid_of__chunk__u64 =
         uuid__u64;
+    p_GL_chunk_texture_entry->local__z_index =
+        local__z_index;
 yield_textures:
     for (Index__u32 index_of__chunk_texture = 0;
             index_of__chunk_texture 

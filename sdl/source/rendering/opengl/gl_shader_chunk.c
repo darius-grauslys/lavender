@@ -5,9 +5,6 @@ const char *_source_shader_chunk__vertex = "\n\
 #version 330 core\n\
 layout(location = 0) in vec3 position;\n\
 layout(location = 1) in vec2 uv;\n\
-uniform vec2 tileframe_row_col;\n\
-uniform vec2 tileframe_width_height;\n\
-uniform vec2 tile_flip;\n\
 uniform mat4 projection;\n\
 uniform mat4 translation;\n\
 uniform mat4 model;\n\
@@ -17,10 +14,7 @@ out vec2 TexCoord;\n\
 void main()\n\
 {\n\
     gl_Position = (projection * translation * model) * (vec4(position, 1));\n\
-    TexCoord = vec2(tileframe_width_height.x * \n\
-            (abs(tile_flip.x-uv.x) + tileframe_row_col.x) + 0.0005f,\n\
-            tileframe_width_height.y * \n\
-            (abs(tile_flip.y-uv.y) + tileframe_row_col.y) + 0.001f);\n\
+    TexCoord = uv;\n\
 }";
 
 const char *_source_shader_chunk__fragment = " \n\
@@ -44,17 +38,5 @@ void initialize_shader_2d_as__shader_chunk(
             p_GL_shader, 
             _source_shader_chunk__vertex,
             _source_shader_chunk__fragment);
-    p_GL_shader->location_of__general_uniform_0
-        = glGetUniformLocation(
-                p_GL_shader->handle, 
-                "tileframe_row_col");
-    p_GL_shader->location_of__general_uniform_1
-        = glGetUniformLocation(
-                p_GL_shader->handle, 
-                "tileframe_width_height");
-    p_GL_shader->location_of__general_uniform_2
-        = glGetUniformLocation(
-                p_GL_shader->handle, 
-                "tile_flip");
 }
 
