@@ -326,7 +326,7 @@ void GL_compose_world(
                 < GFX_CONTEXT__RENDERING_WIDTH__IN_CHUNKS;
                 x++) {
             if (!is_local_space__active(
-                        p_local_space__current)) {
+                        p_local_space__current_sub)) {
                 goto next_local_space;
             }
             Texture array_of__textures[GL_MAX_QUANTITY_OF__CHUNK_TEXTURES];
@@ -366,7 +366,8 @@ void GL_compose_world(
             Vector__3i32F4 chunk_pos_in__world__3i32f4 =
                 chunk_vector_3i32_to__vector_3i32F4(
                         p_local_space__current_sub
-                        ->global_space__vector__3i32);
+                        ->p_global_space
+                        ->chunk_vector__3i32);
 
             for (Index__u16 index_of__gfx_window = 0;
                     index_of__gfx_window < quantity_of__gfx_windows;
