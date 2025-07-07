@@ -20,6 +20,7 @@
 void initialize_chunk(
         Chunk *p_chunk,
         Identifier__u64 uuid__u64) {
+    memset(p_chunk,0,sizeof(Chunk));
     initialize_serialization_header__uuid_64(
             &p_chunk->_serialization_header, 
             uuid__u64,

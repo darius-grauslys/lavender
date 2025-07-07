@@ -3,6 +3,7 @@
 
 #include "platform.h"
 #include "platform_defaults.h"
+#include "types/implemented/chunk_generator_kind.h"
 #include "types/implemented/sprite_animation_group_kind.h"
 #include "util/bitmap/bitmap.h"
 #include <stdbool.h>
@@ -47,15 +48,19 @@ typedef int8_t      i8;
 
 #define FRACTIONAL_PERCISION_4__BIT_SIZE 4
 #define FRACTIONAL_PERCISION_8__BIT_SIZE 8
+#define FRACTIONAL_PERCISION_12__BIT_SIZE 12
 #define FRACTIONAL_PERCISION_16__BIT_SIZE 16
 #define FRACTIONAL_PERCISION_20__BIT_SIZE 20
 /// FIXED POINT fractional, with 4 bits of percision.
 typedef int32_t     i32F4;
 typedef int16_t     i16F4;
-typedef int8_t     i8F4;
+typedef int8_t      i8F4;
 typedef uint32_t    u32F4;
 typedef uint16_t    u16F4;
-typedef uint8_t    u8F4;
+typedef uint8_t     u8F4;
+
+typedef int32_t     i32F8;
+typedef uint32_t    u32F8;
 
 typedef int32_t     i32F20;
 
@@ -1817,6 +1822,9 @@ typedef struct Tile_Render_Result_t {
     Tile_Render_Index__u16 tile_index__sprite_cover;
     Tile_Render_Index__u16 tile_index__sprite_cover__extra;
     Tile_Wall_Adjacency_Code__u16 wall_adjacency;
+    bool is_flipped__x    :1;
+    bool is_flipped__y    :1;
+    u8                    :6;
 } Tile_Render_Result;
 
 typedef struct Chunk_t Chunk;
@@ -1827,7 +1835,7 @@ typedef void (*f_Chunk_Generator)(
         Global_Space *p_global_space);
 
 typedef struct Chunk_Generator_Table_t {
-    f_Chunk_Generator F_chunk_generators[
+    m_Process M_process__chunk_generators[
         Chunk_Generator_Kind__Unknown];
 } Chunk_Generator_Table;
 
@@ -1847,7 +1855,7 @@ typedef struct Position_Local_To_Chunk_2i8_t {
 ///                                     visuals. No need to serialize yet.
 ///
 
-typedef uint8_t Chunk_Flags;
+typedef uint16_t Chunk_Flags;
 
 #define CHUNK_FLAGS__NONE 0
 #define CHUNK_FLAG__IS_ACTIVE BIT(0)
@@ -1855,6 +1863,14 @@ typedef uint8_t Chunk_Flags;
 #define CHUNK_FLAG__IS_AWAITING_DESERIALIZATION BIT(2)
 #define CHUNK_FLAG__IS_UPDATED BIT(3)
 #define CHUNK_FLAG__IS_VISUALLY_UPDATED BIT(4)
+#define CHUNK_FLAG__RESERVED_0 BIT(5)
+#define CHUNK_FLAG__RESERVED_1 BIT(6)
+#define CHUNK_FLAG__RESERVED_2 BIT(7)
+#define CHUNK_FLAG__RESERVED_3 BIT(8)
+#define CHUNK_FLAG__MODDABLE_0 BIT(9)
+#define CHUNK_FLAG__MODDABLE_1 BIT(10)
+#define CHUNK_FLAG__MODDABLE_2 BIT(11)
+#define CHUNK_FLAG__MODDABLE_3 BIT(12)
 
 typedef struct Chunk_Data_t {
     Tile tiles[CHUNK__QUANTITY_OF__TILES];
@@ -1891,7 +1907,7 @@ typedef struct Global_Space_t {
     Chunk_Vector__3i32 chunk_vector__3i32;
     Chunk *p_chunk;
     Collision_Node *p_collision_node;
-    Process *p_managing_process;
+    Process *p_generation_process;
 
     ///
     /// 0: deallocated
@@ -1940,9 +1956,14 @@ typedef struct Local_Space_Manager_t {
     Local_Space *p_local_space__south_east__top;
 } Local_Space_Manager;
 
+typedef void (*f_Global_Space__Dispose_Handler)(
+        Game *p_game,
+        Global_Space *p_global_space);
+
 typedef struct Global_Space_Manager_t {
     Global_Space global_spaces[
         QUANTITY_OF__GLOBAL_SPACE];
+    f_Global_Space__Dispose_Handler f_global_space__dispose_handler;
 } Global_Space_Manager;
 
 typedef uint8_t Game_Action_Flags;
@@ -2218,6 +2239,7 @@ typedef struct World_t {
 
     Camera camera;
     World_Name_String name;
+    Vector__3i32F4 spawn_point;
 
     f_Hitbox_AABB_Tile_Touch_Handler f_hitbox_aabb_tile_touch_handler;
     f_Hitbox_AABB_Collision_Handler  f_hitbox_aabb_collision_handler;

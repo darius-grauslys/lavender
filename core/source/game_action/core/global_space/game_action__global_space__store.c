@@ -31,6 +31,11 @@ void m_process__game_action__global_space__store(
         return;
     }
 
+    if (!is_global_space__active(p_global_space)) {
+        complete_process(p_this_process);
+        return;
+    }
+
     debug_info__verbose("m_process__game_action__global_space__store [%p], (%d,%d,%d)",
             p_this_process,
             p_global_space->chunk_vector__3i32.x__i32,

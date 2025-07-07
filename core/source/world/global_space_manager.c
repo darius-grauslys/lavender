@@ -98,6 +98,10 @@ void release_global_space(
     p_global_space->p_chunk = 0;
     p_global_space->p_collision_node = 0;
 
+    if (p_global_space->p_generation_process) {
+        fail_process(p_global_space->p_generation_process);
+    }
+
     release_global_space_in__global_space_manager(
             get_p_global_space_manager_from__world(p_world), 
             p_global_space);
@@ -204,12 +208,14 @@ void drop_global_space_within__global_space_manager(
         return;
     }
 
-    if (!is_global_space__active(p_global_space)) {
-        debug_error("drop_global_space_within__global_space_manager, p_global_space is not active.");
+    if (!drop_global_space(p_global_space)) {
         return;
     }
 
-    if (!drop_global_space(p_global_space)) {
+    if (!is_global_space__active(p_global_space)) {
+        release_global_space(
+                get_p_world_from__game(p_game), 
+                p_global_space);
         return;
     }
 

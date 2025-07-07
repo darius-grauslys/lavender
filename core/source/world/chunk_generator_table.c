@@ -1,4 +1,5 @@
 #include "world/chunk_generator_table.h"
+#include "defines_weak.h"
 #include "platform_defines.h"
 #include "types/implemented/chunk_generator_kind.h"
 #include "types/implemented/tile_kind.h"
@@ -7,9 +8,10 @@
 #include "world/implemented/chunk_generator_registrar.h"
 #include "defines.h"
 
-static void _f_chunk_generator__default(
-        Game *p_game,
-        Global_Space *p_global_space) {
+static void _m_chunk_generator__default(
+        Process *p_this_process,
+        Game *p_game) {
+    Global_Space *p_global_space = p_this_process->p_process_data;
     Chunk *p_chunk = get_p_chunk_from__global_space(p_global_space);
     if (!p_chunk)
         return;
@@ -55,7 +57,7 @@ void initialize_chunk_generator_table(
     register_chunk_generator_into__chunk_generator_table(
             p_chunk_generator_table, 
             Chunk_Generator_Kind__None, 
-            _f_chunk_generator__default);
+            _m_chunk_generator__default);
     register_chunk_generators(
             p_chunk_generator_table);
 }
@@ -63,7 +65,7 @@ void initialize_chunk_generator_table(
 void register_chunk_generator_into__chunk_generator_table(
         Chunk_Generator_Table *p_chunk_generator_table,
         Chunk_Generator_Kind the_kind_of__chunk_generator,
-        f_Chunk_Generator f_chunk_generator) {
+        m_Process m_process__chunk_generator) {
 #ifndef NDEBUG
     if (!p_chunk_generator_table) {
         debug_error("register_chunk_generators, p_chunk_generator_table == 0.");
@@ -73,16 +75,16 @@ void register_chunk_generator_into__chunk_generator_table(
         debug_error("register_chunk_generators, the_kind_of__chunk_generator >= Unknown.");
         return;
     }
-    if (!f_chunk_generator) {
-        debug_error("register_chunk_generators, f_chunk_generator == 0.");
+    if (!m_process__chunk_generator) {
+        debug_error("register_chunk_generators, m_chunk_generator == 0.");
         return;
     }
 #endif
-    p_chunk_generator_table->F_chunk_generators[
-        the_kind_of__chunk_generator] = f_chunk_generator;
+    p_chunk_generator_table->M_process__chunk_generators[
+        the_kind_of__chunk_generator] = m_process__chunk_generator;
 }
 
-f_Chunk_Generator get_chunk_generator_from__chunk_generator_table(
+m_Process get_chunk_generator_process_from__chunk_generator_table(
         Chunk_Generator_Table *p_chunk_generator_table,
         Chunk_Generator_Kind the_kind_of__chunk_generator) {
 #ifndef NDEBUG
@@ -96,6 +98,6 @@ f_Chunk_Generator get_chunk_generator_from__chunk_generator_table(
     }
 #endif
 
-    return p_chunk_generator_table->F_chunk_generators[
+    return p_chunk_generator_table->M_process__chunk_generators[
         the_kind_of__chunk_generator];
 }

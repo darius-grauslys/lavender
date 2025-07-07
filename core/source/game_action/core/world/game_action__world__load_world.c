@@ -8,6 +8,7 @@
 #include "game_action/core/world/game_action__world__load_client.h"
 #include "game_action/game_action_logic_entry.h"
 #include "game_action/game_action_logic_table.h"
+#include "platform_defines.h"
 #include "process/game_action_process.h"
 #include "process/process.h"
 #include "process/process_manager.h"
@@ -88,9 +89,13 @@ load_world_data:
     return;
 poll_world_data:
 
-    if (!is_local_space_manager__loaded(
+    if (!is_local_space_manager__loaded_except_with__this_many_spaces(
                 p_game, 
-                get_p_local_space_manager_from__client(p_client))) {
+                get_p_local_space_manager_from__client(p_client),
+                ((CHUNK__WIDTH - 1) * (CHUNK__DEPTH-1) * 2) 
+                + ((CHUNK__HEIGHT - 1) * (CHUNK__DEPTH - 1) * 2)
+                + ((CHUNK__WIDTH - 1) * (CHUNK__HEIGHT - 1) * 2)
+                + 2)) {
         // TODO: timeout
         return;
     }

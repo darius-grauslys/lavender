@@ -75,6 +75,20 @@ Signed_Index__i32 i32F4_to__i32(i32F4 x) {
 }
 
 static inline 
+i32F8 i32_to__i32F8(Signed_Index__i32 x) {
+    return ARITHMETRIC_L_SHIFT(
+            x, 
+            FRACTIONAL_PERCISION_8__BIT_SIZE);
+}
+
+static inline 
+Signed_Index__i32 i32F8_to__i32(i32F8 x) {
+    return ARITHMETRIC_R_SHIFT(
+            x, 
+            FRACTIONAL_PERCISION_8__BIT_SIZE);
+}
+
+static inline 
 i32F20 i32_to__i32F20(Signed_Index__i32 x) {
     return ARITHMETRIC_L_SHIFT(
             x, 
@@ -100,6 +114,20 @@ Signed_Index__i32 i32F4_to__i32F20(i32F4 x) {
     return ARITHMETRIC_L_SHIFT(
             x, 
             FRACTIONAL_PERCISION_16__BIT_SIZE);
+}
+
+static inline 
+Signed_Index__i32 i32F20_to__i32F8(i32F20 x) {
+    return ARITHMETRIC_R_SHIFT(
+            x,
+            FRACTIONAL_PERCISION_12__BIT_SIZE);
+}
+
+static inline 
+Signed_Index__i32 i32F8_to__i32F20(i32F8 x) {
+    return ARITHMETRIC_L_SHIFT(
+            x, 
+            FRACTIONAL_PERCISION_12__BIT_SIZE);
 }
 
 static inline
@@ -481,6 +509,86 @@ void clamp__p_i32(
         *p_value__i32 = max__i32;
         return;
     }
+}
+
+static inline
+u8 mod__i8_into__u8(i8 x__i8, i8 mod__i8) {
+    return (u8)(((x__i8 % mod__i8) + mod__i8) % mod__i8);
+}
+
+static inline
+u32 mod__i32_into__u32(i32 x__i32, i32 mod__i32) {
+    return (u32)(((x__i32 % mod__i32) + mod__i32) % mod__i32);
+}
+
+static inline
+i32F4 lerp__i32F4(i32F4 one__i32F4, i32F4 two__i32F4, i32F4 x) {
+    return one__i32F4 + i32F4_to__i32((two__i32F4 - one__i32F4) * x);
+}
+
+static inline
+i32F4 lerp__xy__i32F4(
+        i32F4 v__00,
+        i32F4 v__10,
+        i32F4 v__01,
+        i32F4 v__11,
+        i32F4 x,
+        i32F4 y) {
+    return
+        lerp__i32F4(
+            lerp__i32F4(
+                v__00, v__10, x),
+            lerp__i32F4(
+                v__01, v__11, x),
+            y);
+}
+
+static inline
+i32F8 lerp__i32F8(i32F8 one__i32F8, i32F8 two__i32F8, i32F8 x) {
+    return one__i32F8 + i32F8_to__i32((two__i32F8 - one__i32F8) * x);
+}
+
+static inline
+i32F8 lerp__xy__i32F8(
+        i32F8 v__00,
+        i32F8 v__10,
+        i32F8 v__01,
+        i32F8 v__11,
+        i32F8 x,
+        i32F8 y) {
+    return
+        lerp__i32F8(
+            lerp__i32F8(
+                v__00, v__10, x),
+            lerp__i32F8(
+                v__01, v__11, x),
+            y);
+}
+
+static inline
+i32F8 divide_into__i32F4(i32 p, i32 q) {
+    return i32_to__i32F4(p) / q;
+}
+
+static inline
+i32F8 divide_into__i32F8(i32 p, i32 q) {
+    return i32_to__i32F8(p) / q;
+}
+
+///
+/// Can only multiply values 0 <-> BIT(12).F4
+///
+static inline
+i32F4 multiply__i32F4(i32F4 x, i32F4 y) {
+    return i32F4_to__i32(x * y);
+}
+
+///
+/// Can only multiply values 0 <-> BIT(8).F8
+///
+static inline
+i32F8 multiply__i32F8(i32F8 x, i32F8 y) {
+    return i32F8_to__i32(x * y);
 }
 
 #endif

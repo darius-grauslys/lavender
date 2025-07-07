@@ -511,13 +511,6 @@ typedef struct Chunk_t Chunk;
 typedef struct Chunk_Manager__Chunk_Map_Node_t Chunk_Manager__Chunk_Map_Node;
 typedef struct Tile_t Tile;
 
-typedef uint8_t Tile_Slope_Flags__u4;
-
-#define TILE_SLOPE_FLAG__NORTH  BIT(0)
-#define TILE_SLOPE_FLAG__EAST   BIT(1)
-#define TILE_SLOPE_FLAG__SOUTH  BIT(2)
-#define TILE_SLOPE_FLAG__WEST   BIT(3)
-
 // TODO: add tile flags as a implemented/type
 typedef uint8_t Tile_Flags__u8;
 

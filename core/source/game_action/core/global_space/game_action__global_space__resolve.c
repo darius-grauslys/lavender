@@ -17,6 +17,16 @@
 #include "world/serialization/world_directory.h"
 #include "world/world.h"
 
+void m_process__dispose_handler__game_action__global_space__resolve(
+        Process *p_this_process,
+        Game *p_game) {
+    Global_Space *p_global_space = p_this_process->p_process_data;
+    set_global_space_as__NOT_constructing(
+            p_global_space);
+    set_global_space_as__dirty(
+            p_global_space);
+}
+
 void m_process__game_action__global_space__resolve(
         Process *p_this_process,
         Game *p_game) {
@@ -124,10 +134,11 @@ void m_process__game_action__global_space__resolve(
         return;
     }
 
-    f_Chunk_Generator f_chunk_generator =
-        get_default_chunk_generator(
+    m_Process m_process__chunk_generator =
+        get_default_chunk_generator_process(
                 get_p_chunk_generation_table_from__game(p_game));
-    if (!f_chunk_generator) {
+    if (!m_process__chunk_generator) {
+        debug_error("null");
         memset(&get_p_chunk_from__global_space(p_global_space)
                 ->chunk_data,
                 0,
@@ -135,14 +146,20 @@ void m_process__game_action__global_space__resolve(
         complete_process(p_this_process);
         return;
     }
-    f_chunk_generator(
-            p_game,
-            p_global_space);
-    set_global_space_as__NOT_constructing(
-            p_global_space);
-    set_global_space_as__dirty(
-            p_global_space);
-    complete_process(p_this_process);
+    p_this_process->m_process_dispose__handler(
+            p_this_process,
+            p_game);
+    p_global_space->p_generation_process =
+        p_this_process;
+    // set as non-critical
+    p_this_process->process_flags__u8 &=
+        ~PROCESS_FLAG__IS_CRITICAL;
+    p_this_process->p_process_data = 
+        p_global_space;
+    p_this_process->m_process_run__handler =
+        m_process__chunk_generator;
+    p_this_process->m_process_dispose__handler =
+        m_process__dispose_handler__game_action__global_space__resolve;
 }
 
 void register_game_action__global_space__resolve(

@@ -24,9 +24,20 @@ Local_Space *get_p_local_space_from__local_space_manager(
         Local_Space_Manager *p_local_space_manager,
         Chunk_Vector__3i32 chunk_vector__3i32);
 
+bool is_local_space_manager__loaded_except_with__this_many_spaces(
+        Game *p_game,
+        Local_Space_Manager *p_local_space_manager,
+        Quantity__u32 maximum_quantity_of__loading_spaces);
+
+static inline
 bool is_local_space_manager__loaded(
         Game *p_game,
-        Local_Space_Manager *p_local_space_manager);
+        Local_Space_Manager *p_local_space_manager) {
+    return is_local_space_manager__loaded_except_with__this_many_spaces(
+            p_game, 
+            p_local_space_manager, 
+            0);
+}
 
 static inline
 Local_Space *get_p_local_space_by__3i32F4_from__local_space_manager(

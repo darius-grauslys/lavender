@@ -193,7 +193,9 @@ bool is_global_space__active(
 static inline
 Chunk *get_p_chunk_from__global_space(
         Global_Space *p_global_space) {
-    return p_global_space->p_chunk;
+    if (p_global_space)
+        return p_global_space->p_chunk;
+    return 0;
 }
 
 static inline

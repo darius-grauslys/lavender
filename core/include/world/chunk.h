@@ -2,6 +2,7 @@
 #define CHUNK_H
 
 #include <defines.h>
+#include "numerics.h"
 #include "platform_defines.h"
 #include "tile.h"
 #include "vectors.h"
@@ -78,6 +79,66 @@ Tile* get_p_tile_from__chunk(
         ;
 
     return &chunk->tiles[index__u16];
+}
+
+static inline
+Tile *try_get_p_tile_from__chunk(
+        Chunk *chunk, 
+        Local_Tile_Vector__3u8 local_tile_vector) {
+    if (local_tile_vector.x__u8 >= CHUNK__WIDTH) {
+        return 0;
+    }
+    if (local_tile_vector.y__u8 >= CHUNK__WIDTH) {
+        return 0;
+    }
+    if (local_tile_vector.z__u8 >= CHUNK__WIDTH) {
+        return 0;
+    }
+    return get_p_tile_from__chunk(
+            chunk, 
+            local_tile_vector);
+}
+
+static inline
+Tile *get_p_tile_from__chunk_neighborhood(
+        Chunk *p_chunk, 
+        Chunk *ptr_array_of__chunks[8],
+        i8 x__local__i8,
+        i8 y__local__i8,
+        u8 z__local__u8) {
+    if (z__local__u8 >= CHUNK__DEPTH) 
+        return 0;
+    if (y__local__i8 < 0) {
+        if (x__local__i8 < 0) {
+            p_chunk = ptr_array_of__chunks[0];
+        } else if (x__local__i8 >= (i8)CHUNK__WIDTH) {
+            p_chunk = ptr_array_of__chunks[2];
+        } else {
+            p_chunk = ptr_array_of__chunks[1];
+        }
+    } else if (y__local__i8 >= (i8)CHUNK__HEIGHT) {
+        if (x__local__i8 < 0) {
+            p_chunk = ptr_array_of__chunks[5];
+        } else if (x__local__i8 >= (i8)CHUNK__WIDTH) {
+            p_chunk = ptr_array_of__chunks[7];
+        } else {
+            p_chunk = ptr_array_of__chunks[6];
+        }
+    } else if (x__local__i8 >= (i8)CHUNK__WIDTH) {
+        p_chunk = ptr_array_of__chunks[4];
+    } else if (x__local__i8 < 0) {
+        p_chunk = ptr_array_of__chunks[3];
+    }
+
+    if (!p_chunk)
+        return 0;
+
+    return get_p_tile_from__chunk(
+            p_chunk, (Local_Tile_Vector__3u8){
+                mod__i8_into__u8(x__local__i8, CHUNK__WIDTH),
+                mod__i8_into__u8(y__local__i8, CHUNK__HEIGHT),
+                z__local__u8
+            });
 }
 
 static inline 

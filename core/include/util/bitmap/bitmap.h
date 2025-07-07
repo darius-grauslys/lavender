@@ -5,7 +5,7 @@
 #include "defines_weak.h"
 
 #define BITMAP(name, N)\
-    u8 name[ N >> 3];
+    u8 name[ N >> 3]
 
 #define BITMAP_AND_HEAP(name, N)\
     u8 name[ (N >> 3)\
@@ -17,7 +17,7 @@
     + (N >> 21)\
     + (N >> 24)\
     + (N >> 27)\
-    + (N >> 30)];
+    + (N >> 30)]
 
 void initialize_bitmap(
         u8 *p_bitmap,

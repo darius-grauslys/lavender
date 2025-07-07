@@ -10,16 +10,16 @@ void initialize_chunk_generator_table(
 void register_chunk_generator_into__chunk_generator_table(
         Chunk_Generator_Table *p_chunk_generator_table,
         Chunk_Generator_Kind the_kind_of__chunk_generator,
-        f_Chunk_Generator f_chunk_generator);
+        m_Process m_process__chunk_generator);
 
-f_Chunk_Generator get_chunk_generator_from__chunk_generator_table(
+m_Process get_chunk_generator_process_from__chunk_generator_table(
         Chunk_Generator_Table *p_chunk_generator_table,
         Chunk_Generator_Kind the_kind_of__chunk_generator);
 
 static inline
-f_Chunk_Generator get_default_chunk_generator(
+m_Process get_default_chunk_generator_process(
         Chunk_Generator_Table *p_chunk_generator_table) {
-    return get_chunk_generator_from__chunk_generator_table(
+    return get_chunk_generator_process_from__chunk_generator_table(
             p_chunk_generator_table, 
             Chunk_Generator_Kind__None);
 }
