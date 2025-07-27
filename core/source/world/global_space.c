@@ -352,6 +352,7 @@ void m_process__serialize_global_space(
             p_process = run_process(
                     get_p_process_manager_from__game(p_game), 
                     m_process__serialize_chunk, 
+                    PROCESS_PRIORITY__0_MAXIMUM,
                     PROCESS_FLAGS__NONE);
             if (!p_process) {
                 debug_error("m_process__serialize_global_space, failed to allocate process for m_process__serialize_chunk.");
@@ -418,6 +419,7 @@ void m_process__serialize_global_space(
             p_process = run_process(
                     get_p_process_manager_from__game(p_game), 
                     m_process__serialize_entities_in__global_space, 
+                    PROCESS_PRIORITY__0_MAXIMUM,
                     PROCESS_FLAGS__NONE);
             if (!p_process) {
                 debug_error("m_process__serialize_global_space, failed to allocate process for m_process__serialize_entities_in__global_space.");
@@ -513,6 +515,7 @@ void m_process__deserialize_global_space(
             p_process = run_process(
                     get_p_process_manager_from__game(p_game), 
                     m_process__deserialize_chunk, 
+                    PROCESS_PRIORITY__0_MAXIMUM,
                     PROCESS_FLAGS__NONE);
             if (!p_process) {
                 debug_error("m_process__deserialize_global_space, failed to allocate process for m_process__deserialize_chunk.");
@@ -569,6 +572,7 @@ void m_process__deserialize_global_space(
             p_process = run_process(
                     get_p_process_manager_from__game(p_game), 
                     m_process__deserialize_entities_in__global_space, 
+                    PROCESS_PRIORITY__0_MAXIMUM,
                     PROCESS_FLAGS__NONE);
             if (!p_process) {
                 debug_error("m_process__deserialize_global_space, failed to allocate process for m_process__deserialize_entities_in__global_space.");
@@ -633,6 +637,7 @@ Process *dispatch_process__deserialize_global_space(
         run_process(
                 get_p_process_manager_from__game(p_game), 
                 m_process__deserialize_global_space, 
+                PROCESS_PRIORITY__0_MAXIMUM,
                 PROCESS_FLAGS__NONE);
 
     if (!p_process) {
@@ -655,6 +660,8 @@ Process *dispatch_process__deserialize_global_space(
 
     set_global_space_as__constructing(
             p_global_space);
+    set_global_space_as__NOT_awaiting_construction(
+            p_global_space);
 
     return p_process;
 }
@@ -674,6 +681,7 @@ Process *dispatch_process__serialize_global_space(
         run_process(
                 get_p_process_manager_from__game(p_game), 
                 m_process__serialize_global_space, 
+                PROCESS_PRIORITY__0_MAXIMUM,
                 PROCESS_FLAGS__NONE);
 
     if (!p_process) {
@@ -695,6 +703,8 @@ Process *dispatch_process__serialize_global_space(
     }
 
     set_global_space_as__deconstructing(
+            p_global_space);
+    set_global_space_as__NOT_awaiting_deconstruction(
             p_global_space);
 
     return p_process;

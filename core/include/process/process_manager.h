@@ -19,7 +19,8 @@ void release_process_from__process_manager(
 ///
 Process *allocate_process_in__process_manager(
         Process_Manager *p_process_manager,
-        Identifier__u32 uuid);
+        Identifier__u32 uuid,
+        uint32_t priority_level);
 
 ///
 /// Don't invoke.
@@ -36,11 +37,13 @@ Process *run_process_with__uuid(
         Process_Manager *p_process_manager,
         m_Process m_process,
         Identifier__u32 uuid,
+        Process_Priority__u8 process_priority__u8,
         Process_Flags__u8 process_flags__u8);
 
 Process *run_process(
         Process_Manager *p_process_manager,
         m_Process m_process,
+        uint32_t priority_level,
         Process_Flags__u8 process_flags__u8);
 
 Quantity__u32 get_quantity_of__processes_in__process_manager(

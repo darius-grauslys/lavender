@@ -44,6 +44,7 @@ void PLATFORM_initialize_file_system_context(
         run_process(
                 get_p_process_manager_from__game(p_game),
                 m_SDL_process__serialization,
+                PROCESS_PRIORITY__0_MAXIMUM,
                 PROCESS_FLAG__IS_CRITICAL);
     if (!p_serialization_process) {
         debug_abort("SDL::PLATFORM_initialize_file_system_context, failed to allocate p_serialization_process.");

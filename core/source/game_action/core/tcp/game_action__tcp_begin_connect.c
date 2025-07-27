@@ -120,6 +120,7 @@ void register_game_action__tcp_connect__begin(
             GAME_ACTION_FLAG_MASK__OUTBOUND_SANITIZE,
             GAME_ACTION_FLAGS__INBOUND_SANITIZE,
             GAME_ACTION_FLAG_MASK__INBOUND_SANITIZE,
+            PROCESS_PRIORITY__0_MAXIMUM,
             m_process__game_action__tcp_connect__begin__init, 
             PROCESS_FLAGS__NONE,
             0,

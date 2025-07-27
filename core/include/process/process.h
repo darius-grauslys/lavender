@@ -11,6 +11,7 @@ void initialize_process(
         Identifier__u32 uuid__u32,
         m_Process m_process_run__handler,
         void *p_process_data,
+        Process_Priority__u8 process_priority__u8,
         Process_Flags__u8 process_flags__u8);
 
 static inline
@@ -19,7 +20,7 @@ void initialize_process_as__empty_process(
     initialize_process(
             p_process, 
             IDENTIFIER__UNKNOWN__u32, 
-            0, 0, 
+            0, 0, 1,
             PROCESS_FLAGS__NONE);
 }
 
@@ -29,12 +30,14 @@ void initialize_process_as__serialized_process(
         Identifier__u32 uuid__u32,
         m_Process m_process_run__handler,
         Serialization_Request *p_serialization_request,
+        Process_Priority__u8 process_priority__u8,
         Process_Flags__u8 process_flags__u8) {
     initialize_process(
             p_process, 
             uuid__u32, 
             m_process_run__handler, 
             p_serialization_request, 
+            process_priority__u8,
             process_flags__u8
             | PROCESS_FLAG__IS_CRITICAL);
 }
@@ -332,4 +335,9 @@ void set_the_kind_of__process(
         the_kind_of__process;
 }
 
+static inline
+Process_Priority__u8 get_process_priorty_of__process(
+        Process *p_process) {
+    return p_process->process_priority__u8;
+}
 #endif

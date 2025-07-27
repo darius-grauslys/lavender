@@ -7,6 +7,7 @@ void initialize_game_action_logic_entry(
         Game_Action_Flags game_action_flags__outbound_mask,
         Game_Action_Flags game_action_flags__inbound,
         Game_Action_Flags game_action_flags__inbound_mask,
+        Process_Priority__u8 process_priority__u8,
         m_Process m_process__game_action__outbound,
         Process_Flags__u8 process_flags__outbound,
         m_Process m_process__game_action__inbound,
@@ -32,6 +33,8 @@ void initialize_game_action_logic_entry(
     p_game_action_logic_entry
         ->process_flags_of__game_action__inbound =
         process_flags__inbound;
+    p_game_action_logic_entry
+        ->process_priority__u8 = process_priority__u8;
 }
 
 void santize_game_action__inbound(

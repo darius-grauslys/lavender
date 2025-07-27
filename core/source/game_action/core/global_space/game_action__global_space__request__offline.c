@@ -52,6 +52,7 @@ void register_game_action__global_space__request_for__offline(
             get_p_game_action_logic_entry_by__game_action_kind(
                 p_game_action_logic_table, 
                 Game_Action_Kind__Global_Space__Request), 
+            PROCESS_PRIORITY__0_MAXIMUM,
             m_process__game_action__global_space__request__outbound_offline, 
             PROCESS_FLAG__IS_CRITICAL);
 }

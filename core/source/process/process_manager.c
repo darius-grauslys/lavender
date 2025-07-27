@@ -3,6 +3,7 @@
 #include "defines_weak.h"
 #include "game.h"
 #include "platform.h"
+#include "process/process_table.h"
 #include "random.h"
 #include "serialization/hashing.h"
 #include "serialization/identifiers.h"
@@ -11,6 +12,18 @@
 #include "timer.h"
 #include <process/process_manager.h>
 #include <process/process.h>
+
+static inline
+bool is_process_priority_table_entry__empty(
+        Process_Priority_Table_Entry *p_process_priority_table_entry) {
+    return p_process_priority_table_entry
+        ->p_ptr_process__oldest_of__priority
+        == 0
+        || p_process_priority_table_entry
+        ->p_ptr_process__youngest_of__priority
+        == 0
+        ;
+}
 
 static inline
 Process *get_p_process_by__index_from__process_manager(
@@ -25,22 +38,6 @@ Process *get_p_process_by__index_from__process_manager(
     }
 #endif
     return &p_process_manager->processes[
-        index_of__process];
-}
-
-static inline
-Process **get_p_ptr_process_by__index_from__active_procs_in__process_manager(
-        Process_Manager *p_process_manager,
-        Index__u32 index_of__process) {
-#ifndef NDEBUG
-    if (index_of__process >= PROCESS_MAX_QUANTITY_OF) {
-        debug_error("get_p_ptr_process_by__index_from__active_processes_in__process_manager, index out of bounds: %d/%d",
-                index_of__process,
-                PROCESS_MAX_QUANTITY_OF);
-        return 0;
-    }
-#endif
-    return &p_process_manager->ptr_array_of__processes[
         index_of__process];
 }
 
@@ -59,83 +56,29 @@ void initialize_process_manager(
                 &p_process_manager
                 ->processes[index_of__process]);
     }
-    memset(p_process_manager->ptr_array_of__processes,
-            0,
-            sizeof(p_process_manager->ptr_array_of__processes));
+    initialize_process_table(
+            &p_process_manager->process_table);
     p_process_manager->next__uuid__u32 = 0;
-    p_process_manager->p_ptr_to__last_process_in__ptr_array_of__processes = 
-        p_process_manager->ptr_array_of__processes;
 
     initialize_repeatable_psuedo_random(
             &p_process_manager->repeatable_psuedo_random_for__process_uuid,
             (u32)((uint64_t)p_process_manager));
 }
 
-Process **get_p_ptr_to__process_in__active_processes_in__process_manager(
-        Process_Manager *p_process_manager,
-        Process *p_process) {
-    for (Index__u32 index_of__process = 0;
-            index_of__process < PROCESS_MAX_QUANTITY_OF;
-            index_of__process++) {
-        Process **p_ptr_process = 
-            get_p_ptr_process_by__index_from__active_procs_in__process_manager(
-                    p_process_manager, 
-                    index_of__process);
-        if (!p_ptr_process) {
-            return 0;
-        }
-
-        if ((*p_ptr_process) == p_process) {
-            return p_ptr_process;
-        }
-    }
-    return 0;
-}
-
 void remove_process_from__active_processes_in__process_manager(
         Process_Manager *p_process_manager,
         Process *p_process) {
-    Process **p_ptr_process =
-        get_p_ptr_to__process_in__active_processes_in__process_manager(
-                p_process_manager, 
-                p_process);
-    if (!p_ptr_process) {
-        debug_error("remove_process_from__active_processes_in__process_manager, failed to find process within process_manager.");
-        return;
-    }
-
-    if ((p_process_manager->p_ptr_to__last_process_in__ptr_array_of__processes - 1)
-            == p_ptr_process) {
-#ifndef NDEBUG
-        if ((p_process_manager->p_ptr_to__last_process_in__ptr_array_of__processes - 1)
-                - p_process_manager->ptr_array_of__processes
-                >= PROCESS_MAX_QUANTITY_OF) {
-            debug_error("remove_process_from__active_processes_in__process_manager, intrinsic violated.");
-            return;
-        }
-#endif
-        *(--p_process_manager->p_ptr_to__last_process_in__ptr_array_of__processes) = 0;
-        return;
-    }
-    *p_ptr_process = *(--p_process_manager
-        ->p_ptr_to__last_process_in__ptr_array_of__processes);
-    *p_process_manager->p_ptr_to__last_process_in__ptr_array_of__processes = 0;
+    remove_process_from__process_table(
+            &p_process_manager->process_table, 
+            p_process);
 }
 
 bool add_process_to__active_processes_in__process_manager(
         Process_Manager *p_process_manager,
         Process *p_process) {
-    if (p_process_manager->p_ptr_to__last_process_in__ptr_array_of__processes >=
-            (p_process_manager->ptr_array_of__processes + PROCESS_MAX_QUANTITY_OF)) {
-        debug_error("add_process_to__active_processes_in__process_manager, too many active processes.");
-        return false;
-    }
-
-    *p_process_manager->p_ptr_to__last_process_in__ptr_array_of__processes =
-        p_process;
-    p_process_manager->p_ptr_to__last_process_in__ptr_array_of__processes++;
-
-    return true;
+    return add_process_to__process_table(
+            &p_process_manager->process_table, 
+            p_process);
 }
 
 void release_process_from__process_manager(
@@ -175,7 +118,8 @@ Identifier__u32 get_next_uuid__u32_from__process_manager(
 ///
 Process *allocate_process_in__process_manager(
         Process_Manager *p_process_manager,
-        Identifier__u32 uuid) {
+        Identifier__u32 uuid,
+        uint32_t priority_level) {
     Process *p_process =
         (Process*)get_next_available__allocation_in__contiguous_array(
                 (Serialization_Header*)p_process_manager->processes, 
@@ -191,78 +135,34 @@ Process *allocate_process_in__process_manager(
         return 0;
     }
 
-    add_process_to__active_processes_in__process_manager(
-            p_process_manager, 
-            p_process);
-
     initialize_process(
             p_process, 
             uuid, 
             0, 
             0,
+            priority_level,
             PROCESS_FLAGS__NONE);
-    return p_process;
-}
 
-void swap_p_ptr_process_with__last_active_process_in__process_manager(
-        Process_Manager *p_process_manager,
-        Process **p_ptr_process) {
-#ifndef NDEBUG
-    if (!p_ptr_process) {
-        debug_error("swap_p_ptr_process_with__last_active_process_in__process_manager, p_ptr_process == 0.");
-        return;
-    }
-    if (p_ptr_process
-            - p_process_manager->ptr_array_of__processes
-            >= PROCESS_MAX_QUANTITY_OF) {
-        debug_error("swap_p_ptr_process_with__last_active_process_in__process_manager, p_ptr_process is not from this manager.");
-    }
-#endif
-    Process **p_ptr_to__last_process =
-        (p_process_manager
-                ->p_ptr_to__last_process_in__ptr_array_of__processes-1);
-    Process *p_last_process = *p_ptr_to__last_process;
-    *p_ptr_to__last_process = *p_ptr_process;
-    *p_ptr_process = p_last_process;
+    add_process_to__active_processes_in__process_manager(
+            p_process_manager, 
+            p_process);
+
+    return p_process;
 }
 
 Quantity__u32 poll_process_manager(
         Process_Manager *p_process_manager,
         Game *p_game) {
+    begin_polling_of__process_table(&p_process_manager->process_table);
     p_process_manager->p_process__latest = 0;
-    for (Index__u32 index_of__process = 0;
-            index_of__process < PROCESS_MAX_QUANTITY_OF;
-            index_of__process++) {
-        Process **p_ptr_process = 
-            get_p_ptr_process_by__index_from__active_procs_in__process_manager(
-                p_process_manager, 
-                index_of__process);
-
-        if (!p_ptr_process || !*p_ptr_process)
+    Process *p_process = 0;
+    Quantity__u32 ticks_elapsed = 0;
+    while ((p_process = poll_next_p_process_from__process_table(
+                    &p_process_manager->process_table))
+            && (is_process__critical(p_process)
+            || !ticks_elapsed)) {
+        if (!p_process)
             break;
-
-        Quantity__u32 ticks_elapsed =
-            poll__game_tick_timer(p_game);
-
-        if (!is_process__critical(*p_ptr_process)) {
-            if (ticks_elapsed) {
-                continue;
-            }
-
-            ///
-            /// continuously rotate non-critical processes.
-            /// if one process constantly causes poll_process_manager to
-            /// miss game ticks, it will not cause any process freezes for long.
-            ///
-            /// this will eventually push the problematic process the the back.
-            ///
-            swap_p_ptr_process_with__last_active_process_in__process_manager(
-                    p_process_manager, 
-                    p_ptr_process);
-        }
-
-        Process *p_process = *p_ptr_process;
-
         if (is_process__finished(p_process)) {
             if (p_process->p_enqueued_process) {
                 set_process_as__dequeued(
@@ -278,6 +178,7 @@ Quantity__u32 poll_process_manager(
             continue;
         }
         if (!p_process->m_process_run__handler) {
+            complete_process(p_process);
             continue;
         }
 
@@ -285,7 +186,6 @@ Quantity__u32 poll_process_manager(
                 p_process,
                 p_game);
     }
-
     return get_elapsed_ticks__u32F20_of__game(p_game);
 }
 
@@ -293,11 +193,13 @@ Process *run_process_with__uuid(
         Process_Manager *p_process_manager,
         m_Process m_process,
         Identifier__u32 uuid,
+        Process_Priority__u8 process_priority__u8,
         Process_Flags__u8 process_flags__u8) {
     Process *p_process =
         allocate_process_in__process_manager(
                 p_process_manager,
-                uuid);
+                uuid,
+                process_priority__u8);
 
     if (!p_process) {
         debug_error("run_process, failed to allocate process.");
@@ -309,6 +211,7 @@ Process *run_process_with__uuid(
             p_process->_serialization_header.uuid, 
             m_process, 
             0,
+            process_priority__u8,
             process_flags__u8);
 
     p_process_manager->p_process__latest =
@@ -320,6 +223,7 @@ Process *run_process_with__uuid(
 Process *run_process(
         Process_Manager *p_process_manager,
         m_Process m_process,
+        uint32_t priority_level,
         Process_Flags__u8 process_flags__u8) {
     Identifier__u32 uuid =
         get_next_available__random_uuid_in__contiguous_array(
@@ -331,23 +235,12 @@ Process *run_process(
             p_process_manager, 
             m_process, 
             uuid, 
+            priority_level,
             process_flags__u8);
 }
 
 Quantity__u32 get_quantity_of__processes_in__process_manager(
         Process_Manager *p_process_manager) {
-    Quantity__u32 quantity_of__processes = 0;
-    for (;quantity_of__processes
-            < PROCESS_MAX_QUANTITY_OF;
-            quantity_of__processes++) {
-        Process **p_ptr_process =
-            get_p_ptr_process_by__index_from__active_procs_in__process_manager(
-                    p_process_manager, 
-                    quantity_of__processes);
-        if (!p_ptr_process || !*p_ptr_process) {
-            return quantity_of__processes;
-        }
-    }
-
-    return PROCESS_MAX_QUANTITY_OF; 
+    return get_quantity_of__processes_in__process_table(
+            &p_process_manager->process_table);
 }

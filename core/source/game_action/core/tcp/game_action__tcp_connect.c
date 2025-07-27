@@ -116,6 +116,7 @@ void register_game_action__tcp_connect(
             | GAME_ACTION_FLAGS__BIT_IS_PROCESSED_ON_INVOCATION_OR_RESPONSE
             | GAME_ACTION_FLAGS__BIT_IS_LOCAL,
             GAME_ACTION_FLAG_MASK__INBOUND_SANITIZE,
+            PROCESS_PRIORITY__0_MAXIMUM,
             0,
             0,
             m_process__game_action__tcp_connect__inbound, 

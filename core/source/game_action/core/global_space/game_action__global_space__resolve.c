@@ -21,6 +21,7 @@ void m_process__dispose_handler__game_action__global_space__resolve(
         Process *p_this_process,
         Game *p_game) {
     Global_Space *p_global_space = p_this_process->p_process_data;
+    p_global_space->p_generation_process = 0;
     set_global_space_as__NOT_constructing(
             p_global_space);
     set_global_space_as__dirty(
@@ -175,6 +176,7 @@ void register_game_action__global_space__resolve(
             GAME_ACTION_FLAG_MASK__OUTBOUND_SANITIZE,
             GAME_ACTION_FLAGS__INBOUND_SANITIZE,
             GAME_ACTION_FLAG_MASK__INBOUND_SANITIZE,
+            PROCESS_PRIORITY__0_MAXIMUM,
             m_process__game_action__global_space__resolve, 
             PROCESS_FLAG__IS_CRITICAL,
             0,

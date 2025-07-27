@@ -1066,6 +1066,15 @@ typedef uint8_t Process_Flags__u8;
 #define PROCESS_FLAG__IS_SUB_PROCESS BIT(1)
 #define PROCESS_FLAGS__NONE 0
 
+typedef uint8_t Process_Priority__u8;
+
+///
+/// MAXIMUM PRIORITY
+///
+#define PROCESS_PRIORITY__0_MAXIMUM 0
+#define PROCESS_PRIORITY__1 1
+#define PROCESS_PRIORITY__MINIMUM (PROCESS_MAX_PRIORITY_LEVEL-1)
+
 ///
 /// Multithreading abstraction.
 ///
@@ -1078,11 +1087,11 @@ typedef struct Process_t {
         Process *p_sub_process;
     };
     void *p_process_data;
-    Process_Status_Kind the_kind_of_status__this_process_has;
-    Process_Kind the_kind_of__process_this__process_is;
     union {
-        i32 process_valueA__i32; // free to use by m_process
-        i32 process_valueB__i32; // free to use by m_process
+        struct {
+            i32 process_valueA__i32; // free to use by m_process
+            i32 process_valueB__i32; // free to use by m_process
+        };
         struct {
             i16 process_valueA__i16;
             i16 process_valueB__i16;
@@ -1095,17 +1104,42 @@ typedef struct Process_t {
                 sizeof(i32)*2];
         };
     };
+    Process_Status_Kind the_kind_of_status__this_process_has;
+    Process_Kind the_kind_of__process_this__process_is;
     Process_Flags__u8 process_flags__u8;
+    Process_Priority__u8 process_priority__u8;
 } Process;
 
 #ifndef PROCESS_MAX_QUANTITY_OF
 #define PROCESS_MAX_QUANTITY_OF 512
 #endif
 
+#ifndef PROCESS_MAX_PRIORITY_LEVEL
+#define PROCESS_MAX_PRIORITY_LEVEL 4
+#else
+    #if PROCESS_MAX_PRIORITY_LEVEL < 1 
+    #error PROCESS_MAX_PRIORITY_LEVEL must be atleast 1.
+    #endif
+    #if PROCESS_MAX_PRIORITY_LEVEL > 255
+    #error PROCESS_MAX_PRIORITY_LEVEL cannot exceed 255.
+    #endif
+#endif
+
+typedef struct Process_Priority_Table_Entry_t {
+    Process **p_ptr_process__youngest_of__priority;
+    Process **p_ptr_process__oldest_of__priority;
+    Process **p_ptr_process__current_priority_to__swap;
+} Process_Priority_Table_Entry;
+
+typedef struct Process_Table_t {
+    Process_Priority_Table_Entry process_priority_table[PROCESS_MAX_PRIORITY_LEVEL + 1];
+    Process *ptr_array_of__processes[PROCESS_MAX_QUANTITY_OF];
+    Process_Priority_Table_Entry *p_process_priority_table_entry__current;
+} Process_Table;
+
 typedef struct Process_Manager_t {
     Process processes[PROCESS_MAX_QUANTITY_OF];
-    Process *ptr_array_of__processes[PROCESS_MAX_QUANTITY_OF];
-    Process **p_ptr_to__last_process_in__ptr_array_of__processes;
+    Process_Table process_table;
     Repeatable_Psuedo_Random repeatable_psuedo_random_for__process_uuid;
     Process *p_process__latest;
     Identifier__u32 next__uuid__u32;
@@ -1863,14 +1897,14 @@ typedef uint16_t Chunk_Flags;
 #define CHUNK_FLAG__IS_AWAITING_DESERIALIZATION BIT(2)
 #define CHUNK_FLAG__IS_UPDATED BIT(3)
 #define CHUNK_FLAG__IS_VISUALLY_UPDATED BIT(4)
-#define CHUNK_FLAG__RESERVED_0 BIT(5)
-#define CHUNK_FLAG__RESERVED_1 BIT(6)
-#define CHUNK_FLAG__RESERVED_2 BIT(7)
-#define CHUNK_FLAG__RESERVED_3 BIT(8)
-#define CHUNK_FLAG__MODDABLE_0 BIT(9)
-#define CHUNK_FLAG__MODDABLE_1 BIT(10)
-#define CHUNK_FLAG__MODDABLE_2 BIT(11)
-#define CHUNK_FLAG__MODDABLE_3 BIT(12)
+#define CHUNK_FLAG__RESERVED_3 BIT(5)
+#define CHUNK_FLAG__RESERVED_2 BIT(6)
+#define CHUNK_FLAG__RESERVED_1 BIT(7)
+#define CHUNK_FLAG__RESERVED_0 BIT(8)
+#define CHUNK_FLAG__MODDABLE_3 BIT(9)
+#define CHUNK_FLAG__MODDABLE_2 BIT(10)
+#define CHUNK_FLAG__MODDABLE_1 BIT(11)
+#define CHUNK_FLAG__MODDABLE_0 BIT(12)
 
 typedef struct Chunk_Data_t {
     Tile tiles[CHUNK__QUANTITY_OF__TILES];
@@ -2194,6 +2228,7 @@ typedef struct Game_Action_Logic_Entry_t {
     Game_Action_Flags game_action_flags__outbound_mask;
     Process_Flags__u8 process_flags_of__game_action__outbound;
     Process_Flags__u8 process_flags_of__game_action__inbound;
+    Process_Priority__u8 process_priority__u8;
 } Game_Action_Logic_Entry;
 
 typedef struct Game_Action_Logic_Table_t {

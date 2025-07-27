@@ -338,6 +338,7 @@ void register_game_action__global_space__request_for__client(
             get_p_game_action_logic_entry_by__game_action_kind(
                 p_game_action_logic_table, 
                 Game_Action_Kind__Global_Space__Request), 
+            PROCESS_PRIORITY__0_MAXIMUM,
             m_process__game_action__global_space__request__outbound_client__init, 
             PROCESS_FLAG__IS_CRITICAL);
 }
@@ -355,6 +356,7 @@ void register_game_action__global_space__request_for__server(
             | GAME_ACTION_FLAGS__BIT_IS_WITH_PROCESS
             | GAME_ACTION_FLAGS__BIT_IS_PROCESSED_ON_INVOCATION_OR_RESPONSE,
             GAME_ACTION_FLAG_MASK__INBOUND_SANITIZE,
+            PROCESS_PRIORITY__0_MAXIMUM,
             m_process__game_action__global_space__request__outbound_server, 
             PROCESS_FLAGS__NONE,
             m_process__game_action__global_space__request__inbound_server__init, 

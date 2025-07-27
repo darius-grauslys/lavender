@@ -116,6 +116,7 @@ void register_game_action__world__load_world(
             GAME_ACTION_FLAG_MASK__OUTBOUND_SANITIZE,
             GAME_ACTION_FLAGS__INBOUND_SANITIZE,
             GAME_ACTION_FLAG_MASK__INBOUND_SANITIZE,
+            PROCESS_PRIORITY__0_MAXIMUM,
             m_process__game_action__world__load_world, 
             PROCESS_FLAG__IS_CRITICAL,
             0, 

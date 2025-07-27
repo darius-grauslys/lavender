@@ -16,6 +16,7 @@ Process *dispatch_game_action_process(
         Process_Manager *p_process_manager,
         Game_Action *p_game_action,
         m_Process m_process__game_action,
+        Process_Priority__u8 process_priority__u8,
         Process_Flags__u8 process_flags__u8) {
     if (!m_process__game_action) {
         debug_error("dispatch_game_action_process, m_process__game_action == 0.");
@@ -26,6 +27,7 @@ Process *dispatch_game_action_process(
             p_process_manager, 
             m_process__game_action, 
             p_game_action->_serialiation_header.uuid,
+            process_priority__u8,
             process_flags__u8);
 
     if (!p_process) {
@@ -57,8 +59,11 @@ Process *dispatch_game_action_process__outbound(
             p_game_action, 
             get_m_process__outbound_of__game_action_logic_entry(
                 p_game_action_logic_entry),
+            get_process_priority__game_action_logic_entry(
+                p_game_action_logic_entry),
             get_process_flags__outbound_of__game_action_logic_entry(
-                p_game_action_logic_entry));
+                p_game_action_logic_entry)
+            );
 }
 
 Process *dispatch_game_action_process__inbound(
@@ -77,6 +82,8 @@ Process *dispatch_game_action_process__inbound(
             p_process_manager, 
             p_game_action, 
             get_m_process__inbound_of__game_action_logic_entry(
+                p_game_action_logic_entry),
+            get_process_priority__game_action_logic_entry(
                 p_game_action_logic_entry),
             get_process_flags__inbound_of__game_action_logic_entry(
                 p_game_action_logic_entry));

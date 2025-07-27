@@ -25,6 +25,7 @@ Process *dispatch_game_action_process(
         Process_Manager *p_process_manager,
         Game_Action *p_game_action,
         m_Process m_process__game_action,
+        Process_Priority__u8 process_priority__u8,
         Process_Flags__u8 process_flags__u8);
 
 Process *dispatch_game_action_process__outbound(

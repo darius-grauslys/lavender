@@ -10,6 +10,7 @@ void initialize_process(
         Identifier__u32 uuid__u32,
         m_Process m_process_run__handler,
         void *p_process_data,
+        Process_Priority__u8 process_priority__u8,
         Process_Flags__u8 process_flags__u8) {
     memset(p_process, 0, sizeof(Process));
     initialize_serialization_header(
@@ -18,6 +19,8 @@ void initialize_process(
             sizeof(Process));
     p_process->m_process_run__handler =
         m_process_run__handler;
+    p_process->process_priority__u8 =
+        process_priority__u8;
     p_process->the_kind_of__process_this__process_is =
         Process_Kind__None;
     p_process->the_kind_of_status__this_process_has =

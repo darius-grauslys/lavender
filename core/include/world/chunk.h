@@ -48,6 +48,7 @@ static inline
 Tile* get_p_tile_from__chunk(
         Chunk *chunk, 
         Local_Tile_Vector__3u8 local_tile_vector) {
+    if (!chunk) return 0;
 #ifndef NDEBUG
     if (local_tile_vector.x__u8 >= CHUNK__WIDTH) {
         debug_error("get_p_tile_from__chunk, x out of bounds.");
@@ -85,6 +86,7 @@ static inline
 Tile *try_get_p_tile_from__chunk(
         Chunk *chunk, 
         Local_Tile_Vector__3u8 local_tile_vector) {
+    if (!chunk) return 0;
     if (local_tile_vector.x__u8 >= CHUNK__WIDTH) {
         return 0;
     }
@@ -147,6 +149,7 @@ Tile* get_p_tile_from__chunk_using__u8(
         Index__u8 x__local__u8,
         Index__u8 y__local__u8,
         Index__u8 z__local__u8) {
+    if (!chunk) return 0;
     Index__u16 index__u16 =
         (x__local__u8
          + ((CHUNK__HEIGHT - 1 - y__local__u8)
@@ -239,6 +242,11 @@ bool is_chunk__awaiting_deserialization(Chunk *p_chunk) {
 static inline
 bool is_chunk__active(Chunk *p_chunk) {
     return p_chunk->chunk_flags & CHUNK_FLAG__IS_ACTIVE;
+}
+
+static inline
+bool is_chunk__inactive(Chunk *p_chunk) {
+    return !is_chunk__active(p_chunk);
 }
 
 static inline

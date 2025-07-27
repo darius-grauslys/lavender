@@ -31,7 +31,7 @@ void m_process__game_action__global_space__store(
         return;
     }
 
-    if (!is_global_space__active(p_global_space)) {
+    if (!is_global_space__allocated(p_global_space)) {
         complete_process(p_this_process);
         return;
     }
@@ -75,6 +75,7 @@ void register_game_action__global_space__store(
             GAME_ACTION_FLAG_MASK__OUTBOUND_SANITIZE,
             GAME_ACTION_FLAGS__INBOUND_SANITIZE,
             GAME_ACTION_FLAG_MASK__INBOUND_SANITIZE,
+            PROCESS_PRIORITY__0_MAXIMUM,
             m_process__game_action__global_space__store, 
             PROCESS_FLAG__IS_CRITICAL,
             0,

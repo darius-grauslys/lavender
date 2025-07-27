@@ -46,6 +46,7 @@ void register_game_action__bad_request(
             GAME_ACTION_FLAG_MASK__OUTBOUND_SANITIZE,
             GAME_ACTION_FLAGS__INBOUND_SANITIZE,
             GAME_ACTION_FLAG_MASK__INBOUND_SANITIZE,
+            PROCESS_PRIORITY__0_MAXIMUM,
             0, 
             PROCESS_FLAGS__NONE,
             m_process__game_action__bad_request__inbound, 

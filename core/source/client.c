@@ -160,6 +160,7 @@ void teleport_client(
         run_process(
                 get_p_process_manager_from__game(p_game), 
                 m_process__teleport_client, 
+                PROCESS_PRIORITY__0_MAXIMUM,
                 PROCESS_FLAG__IS_CRITICAL);
 
     p_process->p_process_data =

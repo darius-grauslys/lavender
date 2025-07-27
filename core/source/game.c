@@ -346,6 +346,7 @@ Process *dispatch_handler_process_to__load_client(
         run_process(
             get_p_process_manager_from__game(p_game), 
             p_game->m_process__deserialize_client, 
+            PROCESS_PRIORITY__0_MAXIMUM,
             PROCESS_FLAG__IS_CRITICAL);
 
     if (!initialize_process_as__filesystem_process__open_file(
@@ -378,6 +379,7 @@ Process *dispatch_handler_process_to__save_client(
         run_process(
             get_p_process_manager_from__game(p_game), 
             p_game->m_process__serialize_client, 
+            PROCESS_PRIORITY__0_MAXIMUM,
             PROCESS_FLAG__IS_CRITICAL);
 
     if (!initialize_process_as__filesystem_process__open_file(

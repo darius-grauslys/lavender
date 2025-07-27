@@ -102,6 +102,7 @@ void register_game_action__hitbox_for__server(
             GAME_ACTION_FLAG_MASK__OUTBOUND_SANITIZE,
             GAME_ACTION_FLAGS__INBOUND_SANITIZE,
             GAME_ACTION_FLAG_MASK__INBOUND_SANITIZE,
+            PROCESS_PRIORITY__0_MAXIMUM,
             m_process__game_action__hitbox, 
             PROCESS_FLAG__IS_CRITICAL,
             0, 
@@ -119,6 +120,7 @@ void register_game_action__hitbox_for__client(
             GAME_ACTION_FLAGS__INBOUND_SANITIZE
             | GAME_ACTION_FLAGS__BIT_IS_PROCESSED_ON_INVOCATION_OR_RESPONSE,
             GAME_ACTION_FLAG_MASK__INBOUND_SANITIZE,
+            PROCESS_PRIORITY__0_MAXIMUM,
             0, 
             0,
             m_process__game_action__hitbox, 
