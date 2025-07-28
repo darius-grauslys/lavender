@@ -8,6 +8,7 @@
 #include "rendering/opengl/gl_defines.h"
 #include "rendering/opengl/gl_framebuffer_manager.h"
 #include "world/global_space_manager.h"
+#include "world/local_space.h"
 #include "world/local_space_manager.h"
 
 static inline
@@ -155,7 +156,8 @@ bool GL_poll_textures_for__chunk_in__chunk_texture_manager(
     Camera *p_camera = p_ptr_array_of__gfx_windows[0]
         ->p_camera;
     u32 local__z_index =
-        abs(i32F4_to__i32(p_camera->position.z__i32F4))
+        abs(i32F4_to__i32(p_camera->position.z__i32F4) 
+                >> TILE__WIDTH_AND__HEIGHT__BIT_SHIFT)
         % CHUNK__DEPTH;
 
     Index__u32 column_in__manager =

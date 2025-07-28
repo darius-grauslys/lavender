@@ -18,6 +18,7 @@
 #include "rendering/opengl/gl_viewport.h"
 #include "rendering/opengl/glad/glad.h"
 #include "vectors.h"
+#include "world/chunk.h"
 #include "world/chunk_vectors.h"
 #include "world/global_space.h"
 #include "world/local_space.h"
@@ -330,6 +331,9 @@ void GL_compose_world(
                 goto next_local_space;
             }
             Texture array_of__textures[GL_MAX_QUANTITY_OF__CHUNK_TEXTURES];
+            bool is_local_space_with__chunk = 
+                get_p_chunk_from__local_space(
+                        p_local_space__current_sub);
             bool is_chunk__needing_graphics_update = false;
             if (GL_poll_textures_for__chunk_in__chunk_texture_manager(
                         p_gfx_context, 
@@ -344,10 +348,13 @@ void GL_compose_world(
                 debug_error("SDL::GL_compose_world, error polling chunk textures.");
                 continue;
             }
-            if (is_chunk__needing_graphics_update 
-                    || is_global_space__dirty(
-                        get_p_global_space_from__local_space(
-                            p_local_space__current_sub))) {
+            if (is_local_space_with__chunk
+                    && (is_chunk__needing_graphics_update
+                    || (is_chunk__visually_updated(
+                        get_p_chunk_from__local_space(
+                            p_local_space__current_sub))
+                        || is_global_space__dirty( // TODO: two source of truth, chunk dirty, and global dirty
+                            get_p_global_space_from__local_space(p_local_space__current))))) {
                 GL_compose_chunk(
                         p_gfx_context, 
                         p_ptr_array_of__gfx_windows, 
@@ -356,6 +363,9 @@ void GL_compose_world(
                         array_of__sample_textures, 
                         quantity_of__gfx_windows, 
                         f_tile_render_kernel);
+                set_chunk_as__visually_committed( // TODO change dog shit name
+                        get_p_chunk_from__local_space(
+                            p_local_space__current_sub));
                 set_global_space_as__NOT_dirty(
                         get_p_global_space_from__local_space(
                             p_local_space__current_sub));
