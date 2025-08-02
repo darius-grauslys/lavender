@@ -13,6 +13,21 @@ bool get_tile_logic_record_for__this_tile(
         Tile *p_tile);
 
 static inline
+bool is_tile_logic_record__unpassable(Tile_Logic_Record *p_tile_logic_record) {
+    return p_tile_logic_record->tile_logic_flags__u8 & TILE_LOGIC_FLAG__IS_UNPASSABLE;
+}
+
+static inline
+bool is_tile_logic_record__sight_blocking(Tile_Logic_Record *p_tile_logic_record) {
+    return p_tile_logic_record->tile_logic_flags__u8 & TILE_LOGIC_FLAG__IS_SIGHT_BLOCKING;
+}
+
+static inline
+bool is_tile_logic_record__without_ground(Tile_Logic_Record *p_tile_logic_record) {
+    return p_tile_logic_record->tile_logic_flags__u8 & TILE_LOGIC_FLAG__IS_WITHOUT_GROUND;
+}
+
+static inline
 bool poll__is_tile__unpassable(
         Tile_Logic_Table *p_tile_logic_table,
         Tile *p_tile) {
@@ -21,8 +36,7 @@ bool poll__is_tile__unpassable(
             p_tile_logic_table, 
             &record, 
             p_tile);
-    return record.tile_logic_flags__u8
-        & TILE_LOGIC_FLAG__IS_UNPASSABLE;
+    return is_tile_logic_record__unpassable(&record);
 }
 
 static inline
@@ -34,8 +48,7 @@ bool poll__is_tile__sight_blocking(
             p_tile_logic_table, 
             &record, 
             p_tile);
-    return record.tile_logic_flags__u8
-        & TILE_LOGIC_FLAG__IS_SIGHT_BLOCKING;
+    return is_tile_logic_record__sight_blocking(&record);
 }
 
 static inline
@@ -47,8 +60,7 @@ bool poll__is_tile__without_ground(
             p_tile_logic_table, 
             &record, 
             p_tile);
-    return record.tile_logic_flags__u8
-        & TILE_LOGIC_FLAG__IS_WITHOUT_GROUND;
+    return is_tile_logic_record__without_ground(&record);
 }
 
 static inline

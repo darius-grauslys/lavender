@@ -428,37 +428,36 @@ void poll_hitbox_aabb_for__tile_collision(
         Local_Space_Manager *p_local_space_manager,
         Hitbox_AABB *p_hitbox_aabb,
         f_Hitbox_AABB_Tile_Touch_Handler f_hitbox_aabb_tile_touch_handler) {
+    Tile *p_tile = get_p_tile_by__3i32F4_from__local_space_manager(
+            p_local_space_manager, 
+            get_position_3i32F4_of__hitbox_aabb(p_hitbox_aabb));
+    Tile_Logic_Record tile_logic_record;
     Vector__3i32F4 forward_position__3i32F4 =
         add_vectors__3i32F4(
                 p_hitbox_aabb->position__3i32F4,
                 p_hitbox_aabb->velocity__3i32F4);
     Vector__3i32F4 upper_forward_position__3i32F4 =
         forward_position__3i32F4;
-    upper_forward_position__3i32F4.z__i32F4++;
-    Tile_Vector__3i32 forward_tile_position__3i32 =
-        get_tile_vector_using__3i32F4(
-                forward_position__3i32F4);
+    upper_forward_position__3i32F4.z__i32F4 += i32_to__i32F4(1);
 
-    Tile *p_tile;
-    if ((p_hitbox_aabb->position__3i32F4.z__i32F4
+    if (!poll__is_tile__without_ground(
+                get_p_tile_logic_table_from__world(
+                    get_p_world_from__game(p_game)),
+                p_tile)
+            && (p_hitbox_aabb->position__3i32F4.z__i32F4
             & MASK(5)) >= TILE_STAIR_HEIGHT) {
-        Tile_Vector__3i32 upper_forward_tile_position__3i32 =
-            forward_tile_position__3i32;
-        upper_forward_tile_position__3i32.z__i32++;
-
         p_tile = get_p_tile_by__3i32F4_from__local_space_manager(
                 p_local_space_manager, 
                 upper_forward_position__3i32F4);
 
-        if (!poll__is_tile__unpassable(
-                    get_p_tile_logic_table_from__world(
-                        get_p_world_from__game(p_game)), p_tile)) {
-            dispatch_game_action__hitbox(
-                    p_game, 
-                    GET_UUID_P(p_hitbox_aabb), 
-                    upper_forward_position__3i32F4, 
-                    get_velocity_3i32F4_of__hitbox_aabb(p_hitbox_aabb),
-                    VECTOR__3i16F8__0_0_nGRAVITY_PER_TICK);
+        get_tile_logic_record_for__this_tile(
+                get_p_tile_logic_table_from__world(
+                    get_p_world_from__game(p_game)), 
+                &tile_logic_record, 
+                p_tile);
+        if (!is_tile_logic_record__unpassable(&tile_logic_record)
+                && !is_tile_logic_record__without_ground(&tile_logic_record)) {
+            p_hitbox_aabb->position__3i32F4 = upper_forward_position__3i32F4;
             return;
         }
     }
