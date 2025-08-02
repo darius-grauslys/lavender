@@ -78,18 +78,6 @@ void set_hitbox__position_with__3i32(
         z__global << FRACTIONAL_PERCISION_4__BIT_SIZE;
 }
 
-void commit_hitbox_velocity(
-        Hitbox_AABB *hitbox) {
-
-    add_p_vectors__3i32F4(
-            &hitbox->position__3i32F4, 
-            &hitbox->velocity__3i32F4);
-
-    hitbox->velocity__3i32F4.x__i32F4 = 0;
-    hitbox->velocity__3i32F4.y__i32F4 = 0;
-    hitbox->velocity__3i32F4.z__i32F4 = 0;
-}
-
 void initialize_vector_3i32F4_as__aa_bb_without__velocity(
         Vector__3i32F4 *hitbox_point,
         Hitbox_AABB *hitbox,

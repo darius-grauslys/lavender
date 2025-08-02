@@ -18,6 +18,20 @@
         BIT(31),\
         BIT(31)}
 
+#define VECTOR__3i16F8__0_0_0 \
+    (const Vector__3i16F8) VECTOR__0_0_0
+#define VECTOR__3i16F8__0_0_nGRAVITY \
+    (const Vector__3i16F8) {\
+        0,\
+        0,\
+        -GRAVITY__16F8\
+    }
+#define VECTOR__3i16F8__0_0_nGRAVITY_PER_TICK \
+    (const Vector__3i16F8) {\
+        0,\
+        0,\
+        -GRAVITY_PER_TICK__16F8\
+    }
 #define VECTOR__3i32__0_0_0 \
     (const Vector__3i32) VECTOR__0_0_0
 #define VECTOR__3i32F4__0_0_0 \
@@ -169,6 +183,17 @@ bool is_vectors_3i32F4__equal(
 }
 
 static inline 
+bool is_vectors_3i16F8__equal(
+        Vector__3i16F8 vector_1,
+        Vector__3i16F8 vector_2) {
+    return
+        vector_1.x__i16F8 == vector_2.x__i16F8
+        && vector_1.y__i16F8 == vector_2.y__i16F8
+        && vector_1.z__i16F8 == vector_2.z__i16F8
+        ;
+}
+
+static inline 
 bool is_vectors_3i32F20__equal(
         Vector__3i32F20 vector_1,
         Vector__3i32F20 vector_2) {
@@ -274,6 +299,32 @@ Vector__3u8 vector_3i32F4_to__vector_3u8(
             >> FRACTIONAL_PERCISION_4__BIT_SIZE,
         vector.z__i32F4 
             >> FRACTIONAL_PERCISION_4__BIT_SIZE,
+    };
+}
+
+static inline 
+Vector__3i16F8 vector_3i32F4_to__vector_3i16F8(
+        Vector__3i32F4 vector) {
+    return (Vector__3i16F8){
+        (vector.x__i32F4
+            << FRACTIONAL_PERCISION_4__BIT_SIZE),
+        (vector.y__i32F4
+            << FRACTIONAL_PERCISION_4__BIT_SIZE),
+        (vector.z__i32F4 
+            << FRACTIONAL_PERCISION_4__BIT_SIZE),
+    };
+}
+
+static inline 
+Vector__3i32F4 vector_3i16F8_to__vector_3i32F4(
+        Vector__3i16F8 vector) {
+    return (Vector__3i32F4){
+        (vector.x__i16F8
+            >> FRACTIONAL_PERCISION_4__BIT_SIZE),
+        (vector.y__i16F8
+            >> FRACTIONAL_PERCISION_4__BIT_SIZE),
+        (vector.z__i16F8 
+            >> FRACTIONAL_PERCISION_4__BIT_SIZE),
     };
 }
 

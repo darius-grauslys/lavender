@@ -20,9 +20,6 @@ void get_aa_bb_as__vectors_3i32_from__hitbox(
         Vector__3i32 *aa,
         Vector__3i32 *bb);
 
-void commit_hitbox_velocity(
-        Hitbox_AABB *hitbox);
-
 /// If the hitbox resides in an entity which is
 /// registered to the collision system, DO NOT invoke this.
 /// Instead invoke using game_action.h .
@@ -249,6 +246,18 @@ Vector__3i32F4 get_velocity_3i32F4_of__hitbox_aabb(
 }
 
 static inline
+Vector__3i16F8 get_acceleration_3i16F8_of__hitbox_aabb(
+        Hitbox_AABB *p_hitbox_aabb) {
+#ifndef NDEBUG
+    if (!p_hitbox_aabb) {
+        debug_error("get_acceleration_3i16F8_of__hitbox_aabb, p_hitbox_aabb == 0.");
+        return VECTOR__3i16F8__0_0_0;
+    }
+#endif
+    return p_hitbox_aabb->acceleration__3i16F8;
+}
+
+static inline
 Quantity__u32 get_width_u32_of__hitbox_aabb(
         Hitbox_AABB *p_hitbox_aabb) {
 #ifndef NDEBUG
@@ -348,6 +357,45 @@ void apply_velocity_to__hitbox(
 }
 
 static inline
+void set_x_position_to__hitbox(
+        Hitbox_AABB *p_hitbox_aabb,
+        i32F4 x__position) {
+#ifndef NDEBUG
+    if (!p_hitbox_aabb) {
+        debug_error("set_x_position_to__hitbox, p_hitbox_aabb == 0.");
+        return;
+    }
+#endif
+    p_hitbox_aabb->position__3i32F4.x__i32F4 = x__position;
+}
+
+static inline
+void set_y_position_to__hitbox(
+        Hitbox_AABB *p_hitbox_aabb,
+        i32F4 y__position) {
+#ifndef NDEBUG
+    if (!p_hitbox_aabb) {
+        debug_error("set_y_position_to__hitbox, p_hitbox_aabb == 0.");
+        return;
+    }
+#endif
+    p_hitbox_aabb->position__3i32F4.y__i32F4 = y__position;
+}
+
+static inline
+void set_z_position_to__hitbox(
+        Hitbox_AABB *p_hitbox_aabb,
+        i32F4 z__position) {
+#ifndef NDEBUG
+    if (!p_hitbox_aabb) {
+        debug_error("set_z_position_to__hitbox, p_hitbox_aabb == 0.");
+        return;
+    }
+#endif
+    p_hitbox_aabb->position__3i32F4.z__i32F4 = z__position;
+}
+
+static inline
 void set_x_velocity_to__hitbox(
         Hitbox_AABB *p_hitbox_aabb,
         i32F4 x__velocity) {
@@ -384,6 +432,45 @@ void set_z_velocity_to__hitbox(
     }
 #endif
     p_hitbox_aabb->velocity__3i32F4.z__i32F4 = z__velocity;
+}
+
+static inline
+void set_x_acceleration_to__hitbox(
+        Hitbox_AABB *p_hitbox_aabb,
+        i16F8 x__acceleration) {
+#ifndef NDEBUG
+    if (!p_hitbox_aabb) {
+        debug_error("set_x_acceleration_to__hitbox, p_hitbox_aabb == 0.");
+        return;
+    }
+#endif
+    p_hitbox_aabb->acceleration__3i16F8.x__i16F8 = x__acceleration;
+}
+
+static inline
+void set_y_acceleration_to__hitbox(
+        Hitbox_AABB *p_hitbox_aabb,
+        i16F8 y__acceleration) {
+#ifndef NDEBUG
+    if (!p_hitbox_aabb) {
+        debug_error("set_y_acceleration_to__hitbox, p_hitbox_aabb == 0.");
+        return;
+    }
+#endif
+    p_hitbox_aabb->acceleration__3i16F8.y__i16F8 = y__acceleration;
+}
+
+static inline
+void set_z_acceleration_to__hitbox(
+        Hitbox_AABB *p_hitbox_aabb,
+        i16F8 z__acceleration) {
+#ifndef NDEBUG
+    if (!p_hitbox_aabb) {
+        debug_error("set_z_acceleration_to__hitbox, p_hitbox_aabb == 0.");
+        return;
+    }
+#endif
+    p_hitbox_aabb->acceleration__3i16F8.z__i16F8 = z__acceleration;
 }
 
 static inline

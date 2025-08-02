@@ -71,8 +71,8 @@ Entity_Manager *get_p_entity_manager_from__world(World *p_world) {
 }
 
 static inline
-Tile_Logic_Table_Manager *get_p_tile_logic_table_manager_from__world(World *p_world) {
-    return &p_world->tile_logic_table_manager;
+Tile_Logic_Table *get_p_tile_logic_table_from__world(World *p_world) {
+    return &p_world->tile_logic_table;
 }
 
 static inline

@@ -188,6 +188,9 @@ enum PLATFORM_Read_File_Error PLATFORM_read_file(
     *p_length_of__data_to_read = 
         size_of__read
         * *p_length_of__data_to_read;
+    
+    if (!*p_length_of__data_to_read)
+        return PLATFORM_Read_File_Error__End_Of_File;
 
     return PLATFORM_Read_File_Error__None;
 }

@@ -1802,36 +1802,31 @@ typedef void (*m_Tile_Logic_Table__Get_Tile_Logic_Record)(
         Tile_Logic_Record *p_tile_logic_record,
         Tile *p_tile);
 
-#include "types/implemented/tile_logic_record_data.h"
-#ifndef DEFINE_TILE_LOGIC_RECORD_DATA
-typedef struct Tile_Logic_Record_Data_t {
+#include <types/implemented/tile_logic_table_data.h>
+#ifndef DEFINE_TILE_LOGIC_TABLE_DATA
+typedef struct Tile_Logic_Table_Data_t {
     Tile_Logic_Record tile_logic_record__tile_kind[
         Tile_Kind__Unknown];
-} Tile_Logic_Record_Data;
+} Tile_Logic_Table_Data;
 #endif
 
-typedef struct Tile_Logic_Record_t {
-    Tile_Logic_Record_Data      tile_logic_record_data;
-    Tile_Logic_Flags__u16        tile_logic_flags__u8;
-} Tile_Logic_Record;
+#ifndef TILE_STAIR_HEIGHT
+///
+/// 0.5 >= will move the player up
+/// prior to wall collision.
+///
+#define TILE_STAIR_HEIGHT 0b1000
+#endif
 
 ///
 /// Manages the logic associated with special tiles.
 /// IE. lava tile, water tile, chest tile, etc.
 ///
 typedef struct Tile_Logic_Table_t {
-    Tile_Logic_Record *p_tile_logic_records;
+    Tile_Logic_Table_Data tile_logic_table_data;
     m_Tile_Logic_Table__Get_Tile_Logic_Record m_get_tile_logic_record;
     Quantity__u32 quantity_of__records;
 } Tile_Logic_Table;
-
-
-#define MAX_QUANTITY_OF__TILE_LOGIC_TABLES 8
-
-typedef struct Tile_Logic_Table_Manager_t {
-    Tile_Logic_Table tile_logic_tables[
-        MAX_QUANTITY_OF__TILE_LOGIC_TABLES];
-} Tile_Logic_Table_Manager;
 
 #include <types/implemented/tile.h>
 #ifndef DEFINE_TILE
@@ -2187,6 +2182,8 @@ typedef struct Game_Action_t {
                     ga_kind__hitbox__position__3i32F4;
                 Vector__3i32F4 
                     ga_kind__hitbox__velocity__3i32F4;
+                Vector__3i16F8 
+                    ga_kind__hitbox__acceleration__3i16F8;
             }; // Hitbox__Set_Position
         }; // Hitbox_AABB
 
@@ -2242,6 +2239,7 @@ typedef u16 Client_Flags__u16;
 #define CLIENT_FLAG__IS_ACTIVE BIT(0)
 #define CLIENT_FLAG__IS_LOADING BIT(1)
 #define CLIENT_FLAG__IS_SAVING BIT(2)
+#define CLIENT_FLAG__IS_FRESH BIT(3)
 
 typedef struct Client_t {
     Serialization_Header _serialization_header;
@@ -2265,7 +2263,7 @@ typedef struct World_t {
     Chunk_Pool chunk_pool;
 
     Structure_Manager structure_manager;
-    Tile_Logic_Table_Manager tile_logic_table_manager;
+    Tile_Logic_Table tile_logic_table;
     Chunk_Generator_Table chunk_generator_table;
     Repeatable_Psuedo_Random repeatable_pseudo_random;
 

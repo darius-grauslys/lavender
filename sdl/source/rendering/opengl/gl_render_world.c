@@ -411,9 +411,9 @@ void GL_compose_world(
                             chunk_pos_in__world__3i32f4,
                             get_vector__3i32F4_using__i32(
                                 ((CHUNK__WIDTH << TILE__WIDTH_AND__HEIGHT__BIT_SHIFT) >> 1)
-                                + (TILE__WIDTH_AND__HEIGHT_IN__PIXELS >> 1),
-                                -(((CHUNK__HEIGHT << TILE__WIDTH_AND__HEIGHT__BIT_SHIFT) >> 1)
-                                + (TILE__WIDTH_AND__HEIGHT_IN__PIXELS >> 1)),
+                                - (TILE__WIDTH_AND__HEIGHT_IN__PIXELS >> 1),
+                                + (((CHUNK__HEIGHT << TILE__WIDTH_AND__HEIGHT__BIT_SHIFT) >> 1)
+                                - (TILE__WIDTH_AND__HEIGHT_IN__PIXELS >> 1)),
                                 0)),
                         (0b1000
                         << (TILE__WIDTH_AND__HEIGHT__BIT_SHIFT - 3))

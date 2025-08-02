@@ -131,7 +131,8 @@ void initialize_game_action_for__hitbox(
         Game_Action *p_game_action,
         Identifier__u32 uuid_of__target__u32,
         Vector__3i32F4 position__3i32F4,
-        Vector__3i32F4 velocity__3i32F4) {
+        Vector__3i32F4 velocity__3i32F4,
+        Vector__3i16F8 acceleration__3i16F8) {
     initialize_game_action(p_game_action);
     set_the_kind_of__game_action(
             p_game_action, 
@@ -142,4 +143,6 @@ void initialize_game_action_for__hitbox(
         position__3i32F4;
     p_game_action->ga_kind__hitbox__velocity__3i32F4 = 
         velocity__3i32F4;
+    p_game_action->ga_kind__hitbox__acceleration__3i16F8 =
+        acceleration__3i16F8;
 }

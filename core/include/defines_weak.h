@@ -20,6 +20,7 @@
 #define MASK(n) ((u32)BIT(n) - 1)
 #define MASK__u64(n) ((u64)(BIT__u64(n) - 1))
 
+typedef int64_t     i64;
 typedef int32_t     i32;
 typedef int16_t     i16;
 typedef int8_t      i8;
@@ -86,6 +87,14 @@ typedef struct Vector__3i32F20_t {
 typedef struct Vector__3i16F8_t {
     i16F8 x__i16F8, y__i16F8, z__i16F8;
 } Vector__3i16F8;
+
+#ifndef GRAVITY__16F8
+#define GRAVITY__16F8 0b100111001100
+#endif
+
+#ifndef GRAVITY_PER_TICK__16F8
+#define GRAVITY_PER_TICK__16F8 0b00101001
+#endif
 
 typedef struct Vector__3i32_t Chunk_Vector__3i32;
 typedef struct Vector__3i32_t Tile_Vector__3i32;
@@ -538,7 +547,7 @@ typedef uint16_t Tile_Logic_Flags__u16;
 #define TILE_LOGIC_FLAGS__NONE 0
 #define TILE_LOGIC_FLAG__IS_UNPASSABLE BIT(0)
 #define TILE_LOGIC_FLAG__IS_SIGHT_BLOCKING BIT(1)
-#define TILE_LOGIC_FLAG__RESERVED_0 BIT(2)
+#define TILE_LOGIC_FLAG__IS_WITHOUT_GROUND BIT(2)
 #define TILE_LOGIC_FLAG__RESERVED_1 BIT(3)
 #define TILE_LOGIC_FLAG__RESERVED_2 BIT(4)
 #define TILE_LOGIC_FLAG__RESERVED_3 BIT(5)
@@ -553,6 +562,15 @@ typedef uint16_t Tile_Logic_Flags__u16;
 #define TILE_LOGIC_FLAG__CUSTOM_5 BIT(13)
 #define TILE_LOGIC_FLAG__CUSTOM_6 BIT(14)
 #define TILE_LOGIC_FLAG__CUSTOM_7 BIT(15)
+
+#ifndef DEFINE_TILE_LOGIC_RECORD
+// TODO: impl header config
+#define DEFINE_TILE_LOGIC_RECORD
+typedef struct Tile_Logic_Record_t {
+    Tile_Logic_Flags__u16       tile_logic_flags__u8;
+    i32F4                       tile_height__i32F4; // [0 - 1 + (15/16) ]
+} Tile_Logic_Record;
+#endif
 
 typedef struct Tile_Render_Kernel_Result_t Tile_Render_Kernel_Result;
 

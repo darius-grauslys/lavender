@@ -5,6 +5,9 @@
 #include <defines_weak.h>
 #include <stdint.h>
 
+#define ARITHMETRIC_MASK(x, n)\
+    (((x)>=0) ? (x) & (n) : ((n + 1 - ((-(x)) & (n))) & n))
+
 ///
 /// R shift on negative numbers is compiler specific
 /// on implementation, this is to keep things consistent.
@@ -19,6 +22,9 @@
 ///
 #define ARITHMETRIC_L_SHIFT(x, n)\
     ((i32)((u32)(x) << (n)))
+
+#define ARITHMETRIC_L_SHIFT__u64(x, n)\
+    ((i64)((u64)(x) << (n)))
 
 static const u8 MAX__U8     = ((u8)-1);
 static const u16 MAX__U16   = ((u16)-1);

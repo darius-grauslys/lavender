@@ -245,11 +245,15 @@ Tile *get_p_tile_from__global_space_manager(
                 p_global_space_manager, 
                 gsv__3i32);
 
-    if (!p_global_space)
+    if (!p_global_space) {
+        debug_error("get_p_tile_from__global_space_manager, p_global_space == 0.");
         return 0;
+    }
 
-    if (!is_global_space__active(p_global_space))
+    if (!is_global_space__active(p_global_space)) {
+        debug_error("get_p_tile_from__global_space_manager, p_global_space is inactive.");
         return 0;
+    }
 
     return get_p_tile_from__chunk(
             get_p_chunk_from__global_space(p_global_space), 

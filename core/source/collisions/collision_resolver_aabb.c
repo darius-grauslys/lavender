@@ -5,14 +5,16 @@
 #include "defines.h"
 #include "defines_weak.h"
 #include "game.h"
+#include "game_action/core/hitbox/game_action__hitbox.h"
 #include "platform_defines.h"
+#include "vectors.h"
 #include "world/chunk.h"
 #include "world/chunk_vectors.h"
 #include "world/local_space_manager.h"
 #include "world/local_space.h"
 #include "world/tile.h"
 #include "world/tile_vectors.h"
-#include "world/tile_logic_table_manager.h"
+#include "world/tile_logic_table.h"
 #include "world/world.h"
 
 void f_hitbox_aabb_collision_handler__default(
@@ -108,8 +110,7 @@ void f_hitbox_aabb_tile_touch_handler__default(
             ;
     }
 
-    //TODO: 3d
-    p_hitbox_aabb->velocity__3i32F4.z__i32F4 *= 0;
+    p_hitbox_aabb->velocity__3i32F4.z__i32F4 = 0;
 }
 
 void poll_collision_resolver_aabb(
@@ -117,7 +118,6 @@ void poll_collision_resolver_aabb(
         Hitbox_AABB_Manager *p_hitbox_aabb_manager,
         f_Hitbox_AABB_Collision_Handler f_hitbox_aabb_collision_handler,
         f_Hitbox_AABB_Tile_Touch_Handler f_hitbox_aabb_tile_touch_handler) {
-
     for(Index__u32 index_of__hitbox = 0;
             index_of__hitbox < MAX_QUANTITY_OF__HITBOX_AABB;
             index_of__hitbox++) {
@@ -140,11 +140,13 @@ void poll_collision_resolver_aabb(
             continue;
         }
 
-        poll_hitbox_aabb_for__tile_collision(
-                p_game, 
-                p_local_space_manager, 
-                p_hitbox_aabb, 
-                f_hitbox_aabb_tile_touch_handler);
+        if (f_hitbox_aabb_collision_handler) {
+            poll_hitbox_aabb_for__tile_collision(
+                    p_game, 
+                    p_local_space_manager, 
+                    p_hitbox_aabb, 
+                    f_hitbox_aabb_tile_touch_handler);
+        }
 
         Local_Space *p_local_space =
             get_p_local_space_from__local_space_manager(
@@ -154,7 +156,8 @@ void poll_collision_resolver_aabb(
                             p_hitbox_aabb)));
 
         if (!p_local_space 
-                || !is_local_space__active(p_local_space)) {
+                || !is_local_space__active(p_local_space)
+                || !f_hitbox_aabb_collision_handler) {
             // TODO: unload presence.
             continue;
         }
@@ -272,7 +275,7 @@ void poll_collision_resolver_aabb(
     }
 }
 
-void poll_hitbox_aabb_for__tile_collision(
+bool _poll_hitbox_aabb_for__tile_collision(
         Game *p_game,
         Local_Space_Manager *p_local_space_manager,
         Hitbox_AABB *p_hitbox_aabb,
@@ -281,6 +284,11 @@ void poll_hitbox_aabb_for__tile_collision(
     Vector__3i32F4 aa, bb;
     get_aa_bb_as__vectors_3i32F4_from__hitbox(
             p_hitbox_aabb, &aa, &bb);
+
+    Vector__3i32F4 position__3i32F4 =
+        get_position_3i32F4_of__hitbox_aabb(p_hitbox_aabb);
+    Vector__3i32F4 velocity__3i32F4 =
+        get_velocity_3i32F4_of__hitbox_aabb(p_hitbox_aabb);
 
     //TODO: magic num
     i32F4 chunk_xy_vectors[8] = {
@@ -316,6 +324,47 @@ void poll_hitbox_aabb_for__tile_collision(
         DIRECTION__NORTH_WEST
     };
 
+    if (velocity__3i32F4.z__i32F4 < 0) {
+        Tile *p_tile = 
+            get_p_tile_by__3i32F4_from__local_space_manager(
+                    p_local_space_manager, 
+                    get_position_3i32F4_of__hitbox_aabb(
+                        p_hitbox_aabb));
+        i32F4 z__tile_height =
+            (get_z_i32F4_from__hitbox(p_hitbox_aabb)
+            & ~MASK(5))
+            | poll__tile_height(
+                    get_p_tile_logic_table_from__world(
+                        get_p_world_from__game(p_game)), 
+                    p_tile)
+            ;
+        if (!poll__is_tile__without_ground(
+                    get_p_tile_logic_table_from__world(
+                        get_p_world_from__game(p_game)), 
+                    p_tile)) {
+            Vector__3i32F4 sum__3i32F4 =
+                add_vectors__3i32F4(
+                        velocity__3i32F4, 
+                        position__3i32F4);
+            if (sum__3i32F4.z__i32F4
+                    < z__tile_height) {
+                set_z_position_to__hitbox(
+                        p_hitbox_aabb, 
+                        z__tile_height);
+                // zero out z velocity and acceleration
+                set_z_velocity_to__hitbox(
+                        p_hitbox_aabb, 
+                        0);
+                set_z_acceleration_to__hitbox(
+                        p_hitbox_aabb,
+                        0);
+                
+            }
+        }
+    }
+
+    bool aggregate_return_for__collisions = false;
+
     for (Index__u32 index=0;index<8;index+=2) {
         Signed_Index__i32 x__chunk =
             chunk_xy_vectors[index]; //entity->hitbox.x__chunk;
@@ -345,7 +394,7 @@ void poll_hitbox_aabb_for__tile_collision(
             debug_warning__verbose("access attempt: %d, %d",
                     x__chunk, y__chunk);
             debug_error("poll_hitbox_aabb_for__tile_collision, hitbox out of bounds.");
-            return;
+            return false;
         }
 
         Tile *p_tile =
@@ -355,18 +404,12 @@ void poll_hitbox_aabb_for__tile_collision(
                     local_positions[index+1],
                     0);
 
-        Tile_Logic_Record tile_logic_record;
-
-        get_tile_logic_record_for__this_tile(
-                get_p_tile_logic_table_manager_from__world(
-                    get_p_world_from__game(p_game)), 
-                &tile_logic_record, 
-                p_tile);
-
         // TODO: rename unpassable to something else,
         // as this is just polling for touch-tile logic.
-        if (is_tile__unpassable(
-                    tile_logic_record.tile_logic_flags__u8)) {
+        if (poll__is_tile__unpassable(
+                    get_p_tile_logic_table_from__world(
+                        get_p_world_from__game(p_game)), 
+                    p_tile)) {
             f_hitbox_aabb_tile_touch_handler(
                     p_game,
                     get_p_world_from__game(p_game),
@@ -374,6 +417,55 @@ void poll_hitbox_aabb_for__tile_collision(
                     p_tile,
                     corner_positions[index],
                     corner_positions[index+1]);
+            aggregate_return_for__collisions = true;
         }
     }
+    return aggregate_return_for__collisions;
+}
+
+void poll_hitbox_aabb_for__tile_collision(
+        Game *p_game,
+        Local_Space_Manager *p_local_space_manager,
+        Hitbox_AABB *p_hitbox_aabb,
+        f_Hitbox_AABB_Tile_Touch_Handler f_hitbox_aabb_tile_touch_handler) {
+    Vector__3i32F4 forward_position__3i32F4 =
+        add_vectors__3i32F4(
+                p_hitbox_aabb->position__3i32F4,
+                p_hitbox_aabb->velocity__3i32F4);
+    Vector__3i32F4 upper_forward_position__3i32F4 =
+        forward_position__3i32F4;
+    upper_forward_position__3i32F4.z__i32F4++;
+    Tile_Vector__3i32 forward_tile_position__3i32 =
+        get_tile_vector_using__3i32F4(
+                forward_position__3i32F4);
+
+    Tile *p_tile;
+    if ((p_hitbox_aabb->position__3i32F4.z__i32F4
+            & MASK(5)) >= TILE_STAIR_HEIGHT) {
+        Tile_Vector__3i32 upper_forward_tile_position__3i32 =
+            forward_tile_position__3i32;
+        upper_forward_tile_position__3i32.z__i32++;
+
+        p_tile = get_p_tile_by__3i32F4_from__local_space_manager(
+                p_local_space_manager, 
+                upper_forward_position__3i32F4);
+
+        if (!poll__is_tile__unpassable(
+                    get_p_tile_logic_table_from__world(
+                        get_p_world_from__game(p_game)), p_tile)) {
+            dispatch_game_action__hitbox(
+                    p_game, 
+                    GET_UUID_P(p_hitbox_aabb), 
+                    upper_forward_position__3i32F4, 
+                    get_velocity_3i32F4_of__hitbox_aabb(p_hitbox_aabb),
+                    VECTOR__3i16F8__0_0_nGRAVITY_PER_TICK);
+            return;
+        }
+    }
+
+    _poll_hitbox_aabb_for__tile_collision(
+            p_game, 
+            p_local_space_manager, 
+            p_hitbox_aabb, 
+            f_hitbox_aabb_tile_touch_handler);
 }

@@ -2,6 +2,7 @@
 #define TILE_VECTORS_H
 
 #include "defines_weak.h"
+#include "numerics.h"
 #include "platform_defaults.h"
 #include "world/chunk_vectors.h"
 #include <defines.h>
@@ -27,8 +28,9 @@ i32 normalize_xyz_i32F20_to__tile_xyz_i32(i32F20 xyz__i32F20) {
 static Index__u8 inline normalize_i32__to_tile_u8(
         Signed_Index__i32 x) {
     return 
-        (x >> TILE__WIDTH_AND__HEIGHT__BIT_SHIFT) 
-        & MASK(TILE__WIDTH_AND__HEIGHT__BIT_SHIFT);
+        ARITHMETRIC_MASK(
+                ARITHMETRIC_R_SHIFT(x, TILE__WIDTH_AND__HEIGHT__BIT_SHIFT),
+                MASK(TILE__WIDTH_AND__HEIGHT__BIT_SHIFT));
 }
 
 static Index__u8 inline get_tile_x_u8_from__vector_3i32F4(
@@ -157,9 +159,9 @@ static inline
 Local_Tile_Vector__3u8 tile_vector_3i32_to__local_tile_vector_3u8(
         Tile_Vector__3i32 tile_vector__3i32) {
     return get_vector__3u8(
-            tile_vector__3i32.x__i32 & MASK(TILE__WIDTH_AND__HEIGHT__BIT_SHIFT),
-            tile_vector__3i32.y__i32 & MASK(TILE__WIDTH_AND__HEIGHT__BIT_SHIFT),
-            tile_vector__3i32.z__i32 & MASK(TILE__WIDTH_AND__HEIGHT__BIT_SHIFT)
+            ARITHMETRIC_MASK(tile_vector__3i32.x__i32, MASK(TILE__WIDTH_AND__HEIGHT__BIT_SHIFT)),
+            ARITHMETRIC_MASK(tile_vector__3i32.y__i32, MASK(TILE__WIDTH_AND__HEIGHT__BIT_SHIFT)),
+            ARITHMETRIC_MASK(tile_vector__3i32.z__i32, MASK(TILE__WIDTH_AND__HEIGHT__BIT_SHIFT))
             );
 }
 

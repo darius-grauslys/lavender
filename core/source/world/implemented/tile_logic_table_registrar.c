@@ -2,6 +2,6 @@
 
 void register_tile_logic_tables(
         Game *p_game,
-        Tile_Logic_Table_Manager *p_tile_logic_table_manager) {
+        Tile_Logic_Table_Manager *p_tile_logic_table) {
     debug_warning("register_tile_logic_tables, impl");
 }
