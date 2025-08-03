@@ -649,12 +649,18 @@ bool is_vector_3i32F20_within__squared_distance_i32(
     i32 y = i32F20_to__i32(vector.y__i32F20);
     i32 z = i32F20_to__i32(vector.z__i32F20);
     return (x * x + y * y + z * z) <= distance;
-    // return ((vector.x__i32F20 * vector.x__i32F20
-    //         + vector.y__i32F20 * vector.y__i32F20
-    //         + vector.z__i32F20 * vector.z__i32F20)
-    //         >> FRACTIONAL_PERCISION_4__BIT_SIZE)
-    //     <= distance * distance
-    //     ;
+}
+
+static inline 
+bool is_vector_3i32F20_within__squared_distance_i32F4(
+        Vector__3i32F20 vector,
+        i32 distance) {
+    i32F4 x = i32F20_to__i32F4(vector.x__i32F20);
+    i32F4 y = i32F20_to__i32F4(vector.y__i32F20);
+    i32F4 z = i32F20_to__i32F4(vector.z__i32F20);
+    return (multiply__i32F4(x, x) 
+            + multiply__i32F4(y, y) 
+            + multiply__i32F4(z, z)) <= distance;
 }
 
 static inline 

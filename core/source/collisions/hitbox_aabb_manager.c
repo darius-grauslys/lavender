@@ -162,14 +162,8 @@ void poll_hitbox_manager_for__movement(
                     index_of__hitbox);
         if (!p_hitbox_aabb)
             break;
-        if (is_vectors_3i32F4__equal(
-                    p_hitbox_aabb->velocity__3i32F4,
-                    VECTOR__3i32F4__0_0_0)
-                && is_vectors_3i16F8__equal(
-                    p_hitbox_aabb->acceleration__3i16F8, 
-                    VECTOR__3i16F8__0_0_0)) {
-            goto accelerate_by_gravity;
-        }
+        if (!p_hitbox_aabb->is_hitbox_aabb__dirty)
+            continue;
 
         dispatch_game_action__hitbox(
                 p_game, 
@@ -181,12 +175,6 @@ void poll_hitbox_manager_for__movement(
                     get_velocity_3i32F4_of__hitbox_aabb(p_hitbox_aabb), 
                     vector_3i16F8_to__vector_3i32F4(
                         get_acceleration_3i16F8_of__hitbox_aabb(p_hitbox_aabb))),
-                get_acceleration_3i16F8_of__hitbox_aabb(p_hitbox_aabb));
-        p_hitbox_aabb->velocity__3i32F4.x__i32F4 >>= 1;
-        p_hitbox_aabb->velocity__3i32F4.y__i32F4 >>= 1;
-        p_hitbox_aabb->velocity__3i32F4.z__i32F4 >>= 1;
-accelerate_by_gravity:
-        p_hitbox_aabb->acceleration__3i16F8 =
-            VECTOR__3i16F8__0_0_nGRAVITY_PER_TICK;
+                VECTOR__3i16F8__0_0_nGRAVITY_PER_TICK);
     }
 }

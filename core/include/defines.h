@@ -105,13 +105,20 @@ typedef uint16_t Degree__u9;
 ///
 #define ANGLE__360  512
 #define ANGLE__MASK MASK(5)
-#define ANGLE__OUT_OF_BOUNDS (uint16_t)(-1)
+#define ANGLE__OUT_OF_BOUNDS MASK(10)
 #define LENGTH_OF_RAY__i32F20 0b11111111
+
+typedef enum Ray_Plane_Mode {
+    Ray_Plane_Mode__XY,
+    Ray_Plane_Mode__XZ,
+    Ray_Plane_Mode__YZ,
+} Ray_Plane_Mode;
 
 typedef struct Ray__3i32F20_t {
     Vector__3i32F20 ray_starting_vector__3i32F20;
     Vector__3i32F20 ray_current_vector__3i32F20;
-    Degree__u9 angle_of__ray;
+    Degree__u9 angle_of__ray        : 10;
+    Ray_Plane_Mode ray_plane_mode   : 2;
 } Ray__3i32F20;
 
 #define INDEX__UNKNOWN__u64 (uint64_t)(-1)
@@ -327,6 +334,7 @@ typedef struct Hitbox_AABB_t {
     Vector__3i16F8 acceleration__3i16F8;
     Quantity__u32 width__quantity_u32;
     Quantity__u32 height__quantity_u32;
+    bool is_hitbox_aabb__dirty;
 } Hitbox_AABB;
 
 typedef void (*f_Hitbox_AABB_Collision_Handler)(

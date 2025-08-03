@@ -100,114 +100,6 @@ bool is_this_hitbox__fully_inside_this_hitbox__without_velocity(
         Hitbox_AABB *hitbox__two);
 
 static inline
-i32F4 get_x_i32F4_from__hitbox(
-        Hitbox_AABB *p_hitbox) {
-#ifndef NDEBUG
-    if (!p_hitbox) {
-        debug_error("get_x_i32F4_from__hitbox, p_hitbox == 0.");
-        return 0;
-    }
-#endif
-    return get_x_i32F4_from__vector_3i32F4(p_hitbox->position__3i32F4);
-}
-
-static inline
-i32F4 get_y_i32F4_from__hitbox(
-        Hitbox_AABB *p_hitbox) {
-#ifndef NDEBUG
-    if (!p_hitbox) {
-        debug_error("get_y_i32F4_from__hitbox, p_hitbox == 0.");
-        return 0;
-    }
-#endif
-    return get_y_i32F4_from__vector_3i32F4(p_hitbox->position__3i32F4);
-}
-
-static inline
-i32F4 get_z_i32F4_from__hitbox(
-        Hitbox_AABB *p_hitbox) {
-#ifndef NDEBUG
-    if (!p_hitbox) {
-        debug_error("get_z_i32F4_from__hitbox, p_hitbox == 0.");
-        return 0;
-    }
-#endif
-    return get_z_i32F4_from__vector_3i32F4(p_hitbox->position__3i32F4);
-}
-
-static inline
-Signed_Index__i32 get_x_i32_from__hitbox(
-        Hitbox_AABB *p_hitbox) {
-#ifndef NDEBUG
-    if (!p_hitbox) {
-        debug_error("get_x_i32_from__hitbox, p_hitbox == 0.");
-        return 0;
-    }
-#endif
-    return get_x_i32_from__vector_3i32F4(p_hitbox->position__3i32F4);
-}
-
-static inline
-Signed_Index__i32 get_y_i32_from__hitbox(
-        Hitbox_AABB *p_hitbox) {
-#ifndef NDEBUG
-    if (!p_hitbox) {
-        debug_error("get_y_i32_from__hitbox, p_hitbox == 0.");
-        return 0;
-    }
-#endif
-    return get_y_i32_from__vector_3i32F4(p_hitbox->position__3i32F4);
-}
-
-static inline
-Signed_Index__i32 get_z_i32_from__hitbox(
-        Hitbox_AABB *p_hitbox) {
-#ifndef NDEBUG
-    if (!p_hitbox) {
-        debug_error("get_z_i32_from__hitbox, p_hitbox == 0.");
-        return 0;
-    }
-#endif
-    return get_z_i32_from__vector_3i32F4(p_hitbox->position__3i32F4);
-}
-
-static inline
-Signed_Index__i32 get_chunk_x_i32_from__hitbox(
-        Hitbox_AABB *p_hitbox) {
-#ifndef NDEBUG
-    if (!p_hitbox) {
-        debug_error("get_chunk_x_i32_from__hitbox, p_hitbox == 0.");
-        return 0;
-    }
-#endif
-    return get_chunk_x_i32_from__vector_3i32F4(p_hitbox->position__3i32F4);
-}
-
-static inline
-Signed_Index__i32 get_chunk_y_i32_from__hitbox(
-        Hitbox_AABB *p_hitbox) {
-#ifndef NDEBUG
-    if (!p_hitbox) {
-        debug_error("get_chunk_y_i32_from__hitbox, p_hitbox == 0.");
-        return 0;
-    }
-#endif
-    return get_chunk_y_i32_from__vector_3i32F4(p_hitbox->position__3i32F4);
-}
-
-static inline
-Signed_Index__i32 get_chunk_z_i32_from__hitbox(
-        Hitbox_AABB *p_hitbox) {
-#ifndef NDEBUG
-    if (!p_hitbox) {
-        debug_error("get_chunk_z_i32_from__hitbox, p_hitbox == 0.");
-        return 0;
-    }
-#endif
-    return get_chunk_z_i32_from__vector_3i32F4(p_hitbox->position__3i32F4);
-}
-
-static inline
 Vector__3i32F4 get_position_3i32F4_of__hitbox_aabb(
         Hitbox_AABB *p_hitbox_aabb) {
 #ifndef NDEBUG
@@ -292,6 +184,7 @@ void set_size_of__hitbox_aabb(
         return;
     }
 #endif
+    p_hitbox_aabb->is_hitbox_aabb__dirty = true;
     p_hitbox_aabb->width__quantity_u32 = width__quantity_u32;
     p_hitbox_aabb->height__quantity_u32 = height__quantity_u32;
 }
@@ -366,6 +259,7 @@ void set_x_position_to__hitbox(
         return;
     }
 #endif
+    p_hitbox_aabb->is_hitbox_aabb__dirty = true;
     p_hitbox_aabb->position__3i32F4.x__i32F4 = x__position;
 }
 
@@ -379,6 +273,7 @@ void set_y_position_to__hitbox(
         return;
     }
 #endif
+    p_hitbox_aabb->is_hitbox_aabb__dirty = true;
     p_hitbox_aabb->position__3i32F4.y__i32F4 = y__position;
 }
 
@@ -392,7 +287,50 @@ void set_z_position_to__hitbox(
         return;
     }
 #endif
+    p_hitbox_aabb->is_hitbox_aabb__dirty = true;
     p_hitbox_aabb->position__3i32F4.z__i32F4 = z__position;
+}
+
+static inline
+void offset_x_position_to__hitbox(
+        Hitbox_AABB *p_hitbox_aabb,
+        i32F4 x__position) {
+#ifndef NDEBUG
+    if (!p_hitbox_aabb) {
+        debug_error("offset_x_position_to__hitbox, p_hitbox_aabb == 0.");
+        return;
+    }
+#endif
+    p_hitbox_aabb->is_hitbox_aabb__dirty = true;
+    p_hitbox_aabb->position__3i32F4.x__i32F4 += x__position;
+}
+
+static inline
+void offset_y_position_to__hitbox(
+        Hitbox_AABB *p_hitbox_aabb,
+        i32F4 y__position) {
+#ifndef NDEBUG
+    if (!p_hitbox_aabb) {
+        debug_error("offset_y_position_to__hitbox, p_hitbox_aabb == 0.");
+        return;
+    }
+#endif
+    p_hitbox_aabb->is_hitbox_aabb__dirty = true;
+    p_hitbox_aabb->position__3i32F4.y__i32F4 += y__position;
+}
+
+static inline
+void offset_z_position_to__hitbox(
+        Hitbox_AABB *p_hitbox_aabb,
+        i32F4 z__position) {
+#ifndef NDEBUG
+    if (!p_hitbox_aabb) {
+        debug_error("offset_z_position_to__hitbox, p_hitbox_aabb == 0.");
+        return;
+    }
+#endif
+    p_hitbox_aabb->is_hitbox_aabb__dirty = true;
+    p_hitbox_aabb->position__3i32F4.z__i32F4 += z__position;
 }
 
 static inline
@@ -405,6 +343,7 @@ void set_x_velocity_to__hitbox(
         return;
     }
 #endif
+    p_hitbox_aabb->is_hitbox_aabb__dirty = true;
     p_hitbox_aabb->velocity__3i32F4.x__i32F4 = x__velocity;
 }
 
@@ -418,6 +357,7 @@ void set_y_velocity_to__hitbox(
         return;
     }
 #endif
+    p_hitbox_aabb->is_hitbox_aabb__dirty = true;
     p_hitbox_aabb->velocity__3i32F4.y__i32F4 = y__velocity;
 }
 
@@ -431,6 +371,7 @@ void set_z_velocity_to__hitbox(
         return;
     }
 #endif
+    p_hitbox_aabb->is_hitbox_aabb__dirty = true;
     p_hitbox_aabb->velocity__3i32F4.z__i32F4 = z__velocity;
 }
 
@@ -444,6 +385,7 @@ void set_x_acceleration_to__hitbox(
         return;
     }
 #endif
+    p_hitbox_aabb->is_hitbox_aabb__dirty = true;
     p_hitbox_aabb->acceleration__3i16F8.x__i16F8 = x__acceleration;
 }
 
@@ -457,6 +399,7 @@ void set_y_acceleration_to__hitbox(
         return;
     }
 #endif
+    p_hitbox_aabb->is_hitbox_aabb__dirty = true;
     p_hitbox_aabb->acceleration__3i16F8.y__i16F8 = y__acceleration;
 }
 
@@ -470,6 +413,7 @@ void set_z_acceleration_to__hitbox(
         return;
     }
 #endif
+    p_hitbox_aabb->is_hitbox_aabb__dirty = true;
     p_hitbox_aabb->acceleration__3i16F8.z__i16F8 = z__acceleration;
 }
 
@@ -483,9 +427,137 @@ void set_velocity_to__hitbox(
         return;
     }
 #endif
+    p_hitbox_aabb->is_hitbox_aabb__dirty = true;
     set_x_velocity_to__hitbox(p_hitbox_aabb, velocity.x__i32F4);
     set_y_velocity_to__hitbox(p_hitbox_aabb, velocity.y__i32F4);
     set_z_velocity_to__hitbox(p_hitbox_aabb, velocity.z__i32F4);
+}
+
+static inline
+void set_acceleration_to__hitbox(
+        Hitbox_AABB *p_hitbox_aabb,
+        Vector__3i16F8 acceleration) {
+#ifndef NDEBUG
+    if (!p_hitbox_aabb) {
+        debug_error("set_acceleration_to__hitbox, p_hitbox_aabb == 0.");
+        return;
+    }
+#endif
+    p_hitbox_aabb->is_hitbox_aabb__dirty = true;
+    set_x_acceleration_to__hitbox(p_hitbox_aabb, acceleration.x__i16F8);
+    set_y_acceleration_to__hitbox(p_hitbox_aabb, acceleration.y__i16F8);
+    set_z_acceleration_to__hitbox(p_hitbox_aabb, acceleration.z__i16F8);
+}
+
+static inline
+i32F4 get_x_i32F4_from__hitbox(
+        Hitbox_AABB *p_hitbox) {
+#ifndef NDEBUG
+    if (!p_hitbox) {
+        debug_error("get_x_i32F4_from__hitbox, p_hitbox == 0.");
+        return 0;
+    }
+#endif
+    return get_x_i32F4_from__vector_3i32F4(get_position_3i32F4_of__hitbox_aabb(p_hitbox));
+}
+
+static inline
+i32F4 get_y_i32F4_from__hitbox(
+        Hitbox_AABB *p_hitbox) {
+#ifndef NDEBUG
+    if (!p_hitbox) {
+        debug_error("get_y_i32F4_from__hitbox, p_hitbox == 0.");
+        return 0;
+    }
+#endif
+    return get_y_i32F4_from__vector_3i32F4(get_position_3i32F4_of__hitbox_aabb(p_hitbox));
+}
+
+static inline
+i32F4 get_z_i32F4_from__hitbox(
+        Hitbox_AABB *p_hitbox) {
+#ifndef NDEBUG
+    if (!p_hitbox) {
+        debug_error("get_z_i32F4_from__hitbox, p_hitbox == 0.");
+        return 0;
+    }
+#endif
+    return get_z_i32F4_from__vector_3i32F4(get_position_3i32F4_of__hitbox_aabb(p_hitbox));
+}
+
+static inline
+Signed_Index__i32 get_x_i32_from__hitbox(
+        Hitbox_AABB *p_hitbox) {
+#ifndef NDEBUG
+    if (!p_hitbox) {
+        debug_error("get_x_i32_from__hitbox, p_hitbox == 0.");
+        return 0;
+    }
+#endif
+    return get_x_i32_from__vector_3i32F4(get_position_3i32F4_of__hitbox_aabb(p_hitbox));
+}
+
+static inline
+Signed_Index__i32 get_y_i32_from__hitbox(
+        Hitbox_AABB *p_hitbox) {
+#ifndef NDEBUG
+    if (!p_hitbox) {
+        debug_error("get_y_i32_from__hitbox, p_hitbox == 0.");
+        return 0;
+    }
+#endif
+    return get_y_i32_from__vector_3i32F4(get_position_3i32F4_of__hitbox_aabb(p_hitbox));
+}
+
+static inline
+Signed_Index__i32 get_z_i32_from__hitbox(
+        Hitbox_AABB *p_hitbox) {
+#ifndef NDEBUG
+    if (!p_hitbox) {
+        debug_error("get_z_i32_from__hitbox, p_hitbox == 0.");
+        return 0;
+    }
+#endif
+    return get_z_i32_from__vector_3i32F4(get_position_3i32F4_of__hitbox_aabb(p_hitbox));
+}
+
+static inline
+Signed_Index__i32 get_chunk_x_i32_from__hitbox(
+        Hitbox_AABB *p_hitbox) {
+#ifndef NDEBUG
+    if (!p_hitbox) {
+        debug_error("get_chunk_x_i32_from__hitbox, p_hitbox == 0.");
+        return 0;
+    }
+#endif
+    return get_chunk_x_i32_from__vector_3i32F4(
+            get_position_3i32F4_of__hitbox_aabb(p_hitbox));
+}
+
+static inline
+Signed_Index__i32 get_chunk_y_i32_from__hitbox(
+        Hitbox_AABB *p_hitbox) {
+#ifndef NDEBUG
+    if (!p_hitbox) {
+        debug_error("get_chunk_y_i32_from__hitbox, p_hitbox == 0.");
+        return 0;
+    }
+#endif
+    return get_chunk_y_i32_from__vector_3i32F4(
+            get_position_3i32F4_of__hitbox_aabb(p_hitbox));
+}
+
+static inline
+Signed_Index__i32 get_chunk_z_i32_from__hitbox(
+        Hitbox_AABB *p_hitbox) {
+#ifndef NDEBUG
+    if (!p_hitbox) {
+        debug_error("get_chunk_z_i32_from__hitbox, p_hitbox == 0.");
+        return 0;
+    }
+#endif
+    return get_chunk_z_i32_from__vector_3i32F4(
+            get_position_3i32F4_of__hitbox_aabb(p_hitbox));
 }
 
 #endif

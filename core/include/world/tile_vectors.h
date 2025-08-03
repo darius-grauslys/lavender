@@ -4,6 +4,7 @@
 #include "defines_weak.h"
 #include "numerics.h"
 #include "platform_defaults.h"
+#include "platform_defines.h"
 #include "world/chunk_vectors.h"
 #include <defines.h>
 #include <vectors.h>
@@ -29,29 +30,38 @@ static Index__u8 inline normalize_i32__to_tile_u8(
         Signed_Index__i32 x) {
     return 
         ARITHMETRIC_MASK(
-                ARITHMETRIC_R_SHIFT(x, TILE__WIDTH_AND__HEIGHT__BIT_SHIFT),
-                MASK(TILE__WIDTH_AND__HEIGHT__BIT_SHIFT));
+                ARITHMETRIC_R_SHIFT(x, 
+                        TILE__WIDTH_AND__HEIGHT__BIT_SHIFT)
+                - (x < 0),
+                MASK(CHUNK__WIDTH_AND__HEIGHT__BIT_SHIFT));
+}
+
+static Index__u8 inline normalize_i32F4__to_tile_u8(
+        i32F4 x) {
+    return normalize_i32__to_tile_u8(
+            i32F4_to__i32(x)
+            - (x < 0 && -x <= BIT(FRACTIONAL_PERCISION_4__BIT_SIZE)));
 }
 
 static Index__u8 inline get_tile_x_u8_from__vector_3i32F4(
         Vector__3i32F4 vector__3i32F4) {
     return 
-        normalize_i32__to_tile_u8(
-                get_x_i32_from__vector_3i32F4(vector__3i32F4));
+        normalize_i32F4__to_tile_u8(
+                get_x_i32F4_from__vector_3i32F4(vector__3i32F4));
 }
 
 static Index__u8 inline get_tile_y_u8_from__vector_3i32F4(
         Vector__3i32F4 vector__3i32F4) {
     return 
-        normalize_i32__to_tile_u8(
-                get_y_i32_from__vector_3i32F4(vector__3i32F4));
+        normalize_i32F4__to_tile_u8(
+                get_y_i32F4_from__vector_3i32F4(vector__3i32F4));
 }
 
 static Index__u8 inline get_tile_z_u8_from__vector_3i32F4(
         Vector__3i32F4 vector__3i32F4) {
     return 
-        normalize_i32__to_tile_u8(
-                get_z_i32_from__vector_3i32F4(vector__3i32F4));
+        normalize_i32F4__to_tile_u8(
+                get_z_i32F4_from__vector_3i32F4(vector__3i32F4));
 }
 
 ///
@@ -168,9 +178,11 @@ Local_Tile_Vector__3u8 tile_vector_3i32_to__local_tile_vector_3u8(
 static inline 
 Local_Tile_Vector__3u8 vector_3i32F4_to__local_tile_vector_3u8(
         Vector__3i32F4 vector__3i32F4) {
-    Tile_Vector__3i32 tile_vector__3i32 =
-        get_tile_vector_using__3i32F4(vector__3i32F4);
-    return tile_vector_3i32_to__local_tile_vector_3u8(tile_vector__3i32);
+    return (Local_Tile_Vector__3u8){
+        get_tile_x_u8_from__vector_3i32F4(vector__3i32F4),
+        get_tile_y_u8_from__vector_3i32F4(vector__3i32F4),
+        get_tile_z_u8_from__vector_3i32F4(vector__3i32F4)
+    };
 }
 
 #endif

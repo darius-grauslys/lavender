@@ -907,6 +907,11 @@ void poll_local_space_for__scrolling(
         return;
     }
 
+    debug_info("move local_space_manager: (%d, %d, %d)",
+            global_space_vector__center__3i32.x__i32,
+            global_space_vector__center__3i32.y__i32,
+            global_space_vector__center__3i32.z__i32);
+
     do {
         i32 d_x__i32 = global_space_vector__center__3i32.x__i32
             - p_local_space_manager->center_of__local_space_manager__3i32.x__i32;

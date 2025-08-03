@@ -45,6 +45,10 @@ void m_process__game_action__hitbox(
             p_hitbox_aabb, 
             p_game_action
             ->ga_kind__hitbox__velocity__3i32F4);
+    set_acceleration_to__hitbox(
+            p_hitbox_aabb, 
+            p_game_action
+            ->ga_kind__hitbox__acceleration__3i16F8);
 
     Chunk_Vector__3i32 gsv__current__3i32 =
                 vector_3i32F4_to__chunk_vector_3i32(

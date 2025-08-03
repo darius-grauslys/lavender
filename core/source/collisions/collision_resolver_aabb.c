@@ -4,8 +4,10 @@
 #include "collisions/hitbox_aabb_manager.h"
 #include "defines.h"
 #include "defines_weak.h"
+#include "degree.h"
 #include "game.h"
 #include "game_action/core/hitbox/game_action__hitbox.h"
+#include "numerics.h"
 #include "platform_defines.h"
 #include "vectors.h"
 #include "world/chunk.h"
@@ -16,6 +18,7 @@
 #include "world/tile_vectors.h"
 #include "world/tile_logic_table.h"
 #include "world/world.h"
+#include "raycast/ray.h"
 
 void f_hitbox_aabb_collision_handler__default(
         Game *p_game,
@@ -109,8 +112,6 @@ void f_hitbox_aabb_tile_touch_handler__default(
             -(ideal_delta_y - delta_y) >> 2
             ;
     }
-
-    p_hitbox_aabb->velocity__3i32F4.z__i32F4 = 0;
 }
 
 void poll_collision_resolver_aabb(
@@ -275,7 +276,7 @@ void poll_collision_resolver_aabb(
     }
 }
 
-bool _poll_hitbox_aabb_for__tile_collision(
+void poll_hitbox_aabb_for__tile_collision(
         Game *p_game,
         Local_Space_Manager *p_local_space_manager,
         Hitbox_AABB *p_hitbox_aabb,
@@ -289,6 +290,9 @@ bool _poll_hitbox_aabb_for__tile_collision(
         get_position_3i32F4_of__hitbox_aabb(p_hitbox_aabb);
     Vector__3i32F4 velocity__3i32F4 =
         get_velocity_3i32F4_of__hitbox_aabb(p_hitbox_aabb);
+
+    u8 local_z_tile = get_tile_z_u8_from__vector_3i32F4(
+            get_position_3i32F4_of__hitbox_aabb(p_hitbox_aabb));
 
     //TODO: magic num
     i32F4 chunk_xy_vectors[8] = {
@@ -325,45 +329,110 @@ bool _poll_hitbox_aabb_for__tile_collision(
     };
 
     if (velocity__3i32F4.z__i32F4 < 0) {
-        Tile *p_tile = 
-            get_p_tile_by__3i32F4_from__local_space_manager(
-                    p_local_space_manager, 
-                    get_position_3i32F4_of__hitbox_aabb(
-                        p_hitbox_aabb));
-        i32F4 z__tile_height =
-            (get_z_i32F4_from__hitbox(p_hitbox_aabb)
-            & ~MASK(5))
-            | poll__tile_height(
-                    get_p_tile_logic_table_from__world(
-                        get_p_world_from__game(p_game)), 
-                    p_tile)
-            ;
-        if (!poll__is_tile__without_ground(
-                    get_p_tile_logic_table_from__world(
-                        get_p_world_from__game(p_game)), 
-                    p_tile)) {
-            Vector__3i32F4 sum__3i32F4 =
-                add_vectors__3i32F4(
-                        velocity__3i32F4, 
-                        position__3i32F4);
-            if (sum__3i32F4.z__i32F4
-                    < z__tile_height) {
-                set_z_position_to__hitbox(
-                        p_hitbox_aabb, 
-                        z__tile_height);
-                // zero out z velocity and acceleration
-                set_z_velocity_to__hitbox(
-                        p_hitbox_aabb, 
-                        0);
-                set_z_acceleration_to__hitbox(
-                        p_hitbox_aabb,
-                        0);
-                
+        Vector__3i32F4 ray_begin__3i32F4 =
+            (Vector__3i32F4){
+            0, 0,
+            position__3i32F4.z__i32F4
+            };
+        Ray__3i32F20 ray__3i32F20 =
+            get_ray(ray_begin__3i32F4, ANGLE__180, Ray_Plane_Mode__XZ);
+        do {
+            for (Index__u32 index=0;index<8;index+=2) {
+                i32F4 z_ground_tile__i32F4 = 
+                    get_z_i32F4_from__hitbox(p_hitbox_aabb)
+                    - get_z_offset_i32F4_of__ray(
+                            &ray__3i32F20)
+                    ;
+                if ((z_ground_tile__i32F4 & MASK(FRACTIONAL_PERCISION_4__BIT_SIZE
+                            + TILE__WIDTH_AND__HEIGHT__BIT_SHIFT))
+                        > BIT(FRACTIONAL_PERCISION_4__BIT_SIZE
+                            + TILE__WIDTH_AND__HEIGHT__BIT_SHIFT - 1)) {
+                    // round up
+                    z_ground_tile__i32F4 += i32_to__i32F4(BIT(TILE__WIDTH_AND__HEIGHT__BIT_SHIFT - 1));
+                }
+                z_ground_tile__i32F4 &= ~MASK(FRACTIONAL_PERCISION_4__BIT_SIZE
+                        + TILE__WIDTH_AND__HEIGHT__BIT_SHIFT);
+                Tile *p_tile = 
+                    get_p_tile_by__3i32F4_from__local_space_manager(
+                            p_local_space_manager, 
+                            (Vector__3i32F4){
+                                i32_to__i32F4(corner_positions[index]),
+                                i32_to__i32F4(corner_positions[index+1]),
+                                z_ground_tile__i32F4
+                            });
+                if (!poll__is_tile__without_ground(
+                            get_p_tile_logic_table_from__world(
+                                get_p_world_from__game(p_game)), 
+                            p_tile)) {
+                    z_ground_tile__i32F4 +=
+                        poll__tile_height(
+                                get_p_tile_logic_table_from__world(
+                                    get_p_world_from__game(p_game)), 
+                                p_tile);
+                    set_z_velocity_to__hitbox(
+                            p_hitbox_aabb, 
+                            0);
+                    set_z_acceleration_to__hitbox(
+                            p_hitbox_aabb, 
+                            0);
+                    set_z_position_to__hitbox(
+                            p_hitbox_aabb, 
+                            z_ground_tile__i32F4);
+                    goto landed_on_ground;
+                }
             }
+            step_p_ray_until__next_tile(&ray__3i32F20);
+        } while (is_p_ray_within__squared_length_i32F4(
+                    &ray__3i32F20, 
+                    multiply__i32F4(velocity__3i32F4.z__i32F4,
+                        velocity__3i32F4.z__i32F4)));
+    }
+landed_on_ground:;
+
+    Tile *p_tile = get_p_tile_by__3i32F4_from__local_space_manager(
+            p_local_space_manager, 
+            get_position_3i32F4_of__hitbox_aabb(p_hitbox_aabb));
+    if (!poll__is_tile__without_ground(
+                get_p_tile_logic_table_from__world(
+                    get_p_world_from__game(p_game)),
+                p_tile)
+            && (p_hitbox_aabb->position__3i32F4.z__i32F4
+            & MASK(TILE__WIDTH_AND__HEIGHT__BIT_SHIFT 
+                + FRACTIONAL_PERCISION_4__BIT_SIZE)) >= TILE_STAIR_HEIGHT) {
+        Vector__3i32F4 offset__3i32F4 =
+            get_2i32F4_offset_from__angle(
+                    get_angle_from__direction(
+                        get_movement_direction_of__hitbox(
+                            p_hitbox_aabb)));
+        offset__3i32F4.x__i32F4 <<= FRACTIONAL_PERCISION_4__BIT_SIZE;
+        offset__3i32F4.y__i32F4 <<= FRACTIONAL_PERCISION_4__BIT_SIZE;
+        Tile_Logic_Record tile_logic_record;
+        Vector__3i32F4 forward_position__3i32F4 =
+            (Vector__3i32F4){
+                get_x_i32F4_from__hitbox(p_hitbox_aabb) + offset__3i32F4.x__i32F4,
+                get_y_i32F4_from__hitbox(p_hitbox_aabb) + offset__3i32F4.y__i32F4,
+                (get_z_i32F4_from__hitbox(
+                        p_hitbox_aabb) & ~MASK(TILE__WIDTH_AND__HEIGHT__BIT_SHIFT 
+                            + FRACTIONAL_PERCISION_4__BIT_SIZE))
+                    + i32_to__i32F4(BIT(TILE__WIDTH_AND__HEIGHT__BIT_SHIFT))
+            };
+        p_tile = get_p_tile_by__3i32F4_from__local_space_manager(
+                p_local_space_manager, 
+                forward_position__3i32F4);
+
+        get_tile_logic_record_for__this_tile(
+                get_p_tile_logic_table_from__world(
+                    get_p_world_from__game(p_game)), 
+                &tile_logic_record, 
+                p_tile);
+        if (!is_tile_logic_record__unpassable(&tile_logic_record)
+                && !is_tile_logic_record__without_ground(&tile_logic_record)) {
+            offset_z_position_to__hitbox(
+                    p_hitbox_aabb, 
+                    i32_to__i32F4(BIT(TILE__WIDTH_AND__HEIGHT__BIT_SHIFT)));
+            return;
         }
     }
-
-    bool aggregate_return_for__collisions = false;
 
     for (Index__u32 index=0;index<8;index+=2) {
         Signed_Index__i32 x__chunk =
@@ -372,7 +441,7 @@ bool _poll_hitbox_aabb_for__tile_collision(
             chunk_xy_vectors[index+1]; //entity->hitbox.y__chunk;
 
         Chunk_Vector__3i32 gsv__3i32 =
-            get_chunk_vector__3i32_with__i32F4(
+            get_vector__3i32(
                     x__chunk, 
                     y__chunk, 
                     get_chunk_z_i32_from__hitbox(p_hitbox_aabb));
@@ -394,7 +463,7 @@ bool _poll_hitbox_aabb_for__tile_collision(
             debug_warning__verbose("access attempt: %d, %d",
                     x__chunk, y__chunk);
             debug_error("poll_hitbox_aabb_for__tile_collision, hitbox out of bounds.");
-            return false;
+            return;
         }
 
         Tile *p_tile =
@@ -402,7 +471,7 @@ bool _poll_hitbox_aabb_for__tile_collision(
                     p_chunk,
                     local_positions[index],
                     local_positions[index+1],
-                    0);
+                    local_z_tile);
 
         // TODO: rename unpassable to something else,
         // as this is just polling for touch-tile logic.
@@ -417,54 +486,7 @@ bool _poll_hitbox_aabb_for__tile_collision(
                     p_tile,
                     corner_positions[index],
                     corner_positions[index+1]);
-            aggregate_return_for__collisions = true;
         }
     }
-    return aggregate_return_for__collisions;
-}
-
-void poll_hitbox_aabb_for__tile_collision(
-        Game *p_game,
-        Local_Space_Manager *p_local_space_manager,
-        Hitbox_AABB *p_hitbox_aabb,
-        f_Hitbox_AABB_Tile_Touch_Handler f_hitbox_aabb_tile_touch_handler) {
-    Tile *p_tile = get_p_tile_by__3i32F4_from__local_space_manager(
-            p_local_space_manager, 
-            get_position_3i32F4_of__hitbox_aabb(p_hitbox_aabb));
-    Tile_Logic_Record tile_logic_record;
-    Vector__3i32F4 forward_position__3i32F4 =
-        add_vectors__3i32F4(
-                p_hitbox_aabb->position__3i32F4,
-                p_hitbox_aabb->velocity__3i32F4);
-    Vector__3i32F4 upper_forward_position__3i32F4 =
-        forward_position__3i32F4;
-    upper_forward_position__3i32F4.z__i32F4 += i32_to__i32F4(1);
-
-    if (!poll__is_tile__without_ground(
-                get_p_tile_logic_table_from__world(
-                    get_p_world_from__game(p_game)),
-                p_tile)
-            && (p_hitbox_aabb->position__3i32F4.z__i32F4
-            & MASK(5)) >= TILE_STAIR_HEIGHT) {
-        p_tile = get_p_tile_by__3i32F4_from__local_space_manager(
-                p_local_space_manager, 
-                upper_forward_position__3i32F4);
-
-        get_tile_logic_record_for__this_tile(
-                get_p_tile_logic_table_from__world(
-                    get_p_world_from__game(p_game)), 
-                &tile_logic_record, 
-                p_tile);
-        if (!is_tile_logic_record__unpassable(&tile_logic_record)
-                && !is_tile_logic_record__without_ground(&tile_logic_record)) {
-            p_hitbox_aabb->position__3i32F4 = upper_forward_position__3i32F4;
-            return;
-        }
-    }
-
-    _poll_hitbox_aabb_for__tile_collision(
-            p_game, 
-            p_local_space_manager, 
-            p_hitbox_aabb, 
-            f_hitbox_aabb_tile_touch_handler);
+    return;
 }
