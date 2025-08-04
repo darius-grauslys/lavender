@@ -354,7 +354,7 @@ void GL_compose_world(
                         get_p_chunk_from__local_space(
                             p_local_space__current_sub))
                         || is_global_space__dirty( // TODO: two source of truth, chunk dirty, and global dirty
-                            get_p_global_space_from__local_space(p_local_space__current))))) {
+                            get_p_global_space_from__local_space(p_local_space__current_sub))))) {
                 GL_compose_chunk(
                         p_gfx_context, 
                         p_ptr_array_of__gfx_windows, 

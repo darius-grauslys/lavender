@@ -256,7 +256,7 @@ bool is_chunk__updated(Chunk *p_chunk) {
 
 static inline
 bool is_chunk__visually_updated(Chunk *p_chunk) {
-    return p_chunk->chunk_flags & CHUNK_FLAG__IS_UPDATED;
+    return p_chunk->chunk_flags & CHUNK_FLAG__IS_VISUALLY_UPDATED;
 }
 
 #endif

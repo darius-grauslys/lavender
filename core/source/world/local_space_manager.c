@@ -321,7 +321,7 @@ void set_center_of__local_space_manager(
                 p_local_space_manager
                 ->center_of__local_space_manager__3i32);
 
-    // this boolean logic works because u32(-1) + 1 == 0.
+    // this boolean logic works because u32(-1) + 1 == 0. (wrap around)
     // and we are checking a range of -1 to 1 in each axis.
     if ((u32)distance_manhattan__3i32.x__i32 + 1 < 3
             && (u32)distance_manhattan__3i32.y__i32 + 1 < 3
@@ -906,11 +906,6 @@ void poll_local_space_for__scrolling(
                 ->center_of__local_space_manager__3i32)) {
         return;
     }
-
-    debug_info("move local_space_manager: (%d, %d, %d)",
-            global_space_vector__center__3i32.x__i32,
-            global_space_vector__center__3i32.y__i32,
-            global_space_vector__center__3i32.z__i32);
 
     do {
         i32 d_x__i32 = global_space_vector__center__3i32.x__i32

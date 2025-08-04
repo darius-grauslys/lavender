@@ -11,7 +11,7 @@ static inline
 i32 normalize_xyz_i32_to__chunk_xyz_i32(
         i32 tile_xyz__i32) {
     return ARITHMETRIC_R_SHIFT(
-            tile_xyz__i32 + (tile_xyz__i32 < 0), 
+            tile_xyz__i32, 
             LOCAL_SPACE__WIDTH_AND__HEIGHT_IN__PIXELS__BIT_SHIFT)
         - (tile_xyz__i32 < 0);
 }
@@ -50,7 +50,7 @@ static inline
 i32 normalize_xyz_i32F4_to__chunk_xyz_i32(i32F4 xyz__i32F4) {
     return normalize_xyz_i32_to__chunk_xyz_i32(
             i32F4_to__i32(xyz__i32F4))
-        - ((u32)(-xyz__i32F4 >> 4) < 0 && (xyz__i32F4 & MASK(4)));
+        - (xyz__i32F4 < 0 && -xyz__i32F4 < BIT(FRACTIONAL_PERCISION_4__BIT_SIZE));
 }
 
 static Signed_Index__i32 inline get_chunk_x_i32_from__vector_3i32F4(

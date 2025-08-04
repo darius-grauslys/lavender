@@ -40,7 +40,7 @@ static Index__u8 inline normalize_i32F4__to_tile_u8(
         i32F4 x) {
     return normalize_i32__to_tile_u8(
             i32F4_to__i32(x)
-            - (x < 0 && -x <= BIT(FRACTIONAL_PERCISION_4__BIT_SIZE)));
+            - (x < 0 && -x < BIT(FRACTIONAL_PERCISION_4__BIT_SIZE)));
 }
 
 static Index__u8 inline get_tile_x_u8_from__vector_3i32F4(
