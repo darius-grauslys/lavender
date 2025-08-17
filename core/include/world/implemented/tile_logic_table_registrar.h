@@ -5,6 +5,6 @@
 
 void register_tile_logic_tables(
         Game *p_game,
-        Tile_Logic_Table_Manager *p_tile_logic_table);
+        Tile_Logic_Table *p_tile_logic_table);
 
 #endif

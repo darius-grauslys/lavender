@@ -17,10 +17,9 @@
 # For every bash function call to update(...) there should be
 # a directory in ./tests/ with an ./include and ./source
 
-export ancientsgame_base_dir=$(realpath "../")
-export ancientsgame_core_dir=$(realpath "../core/source")
-export ancientsgame_nds_dir=$(realpath "../nds/source")
-export ancientsgame_sdl_dir=$(realpath "../sdl/source")
+export base_dir=$(realpath "${GAME_DIR}")
+export core_dir=$(realpath "${LAVENDER_DIR}/core/source")
+export platform_dir=$(realpath "${LAVENDER_DIR}/${PLATFORM}/source")
 
 gen_main() {
     find $2 -iname test_suite_main.c -exec sed -i "s/#include <main.c>//" {} \;
@@ -34,45 +33,58 @@ int main(int argc, char* argv[MUNIT_ARRAY_PARAM(argc + 1)]) {
 
     return munit_suite_main(&test_suite, (void*) \"µnit\", argc, argv);
 }\n" > $output
-    cp ./templates/test_util.h "$1/test_util.h"
-    cp ./templates/munit.h "$1/munit.h"
-    cp ./templates/munit.c "$2/munit.c"
+    cp ${LAVENDER_DIR}/tests/templates/test_util.h "$1/test_util.h"
+    cp ${LAVENDER_DIR}/tests/templates/munit.h "$1/munit.h"
+  cp ${LAVENDER_DIR}/tests/templates/munit.c "$2/munit.c"
     if [ -n "$3" ]; then
         return
     fi
     if ! test -f "$1/platform_defines.h"; then
-        cp ./templates/include/platform_defines.h "$1/platform_defines.h"
+        cp ${LAVENDER_DIR}/tests/templates/include/platform_defines.h "$1/platform_defines.h"
     fi
     if ! test -f "$2/PLATFORM.c"; then
-        cp ./templates/source/PLATFORM.c "$2/PLATFORM.c"
+        cp ${LAVENDER_DIR}/tests/templates/source/PLATFORM.c "$2/PLATFORM.c"
     fi
 }
 
-update () {
-    mkdir -p ./core/include
-    mkdir -p ./core/source
-    core_include=$(realpath "./core/include")
-    core_source=$(realpath "./core/source")
+update_core () {
+    mkdir -p ${GAME_DIR}/tests/core/include
+    mkdir -p ${GAME_DIR}/tests/core/source
+    core_include=$(realpath "${GAME_DIR}/tests/core/include")
+    core_source=$(realpath "${GAME_DIR}/tests/core/source")
     ./update_recursive.sh \
-        $ancientsgame_core_dir \
+        $core_dir \
         "" \
         $core_include \
         $core_source \
-        "core"
+        "core" \
+        "*/implemented*"
     gen_main $core_include $core_source $1
 }
 
-update $1
+update_core $1
 
 if [ "$1" ]; then
-    mkdir -p ./$1/include
-    mkdir -p ./$1/source
+    mkdir -p ${GAME_DIR}/tests/$1/include
+    mkdir -p ${GAME_DIR}/tests/$1/source
     ./update_recursive.sh \
-        $(eval echo \$ancientsgame_$1_dir) \
+        $platform_dir \
         "" \
-        $1/include \
-        $1/source \
-        $1
-    exit 
+        ${GAME_DIR}/tests/$1/include \
+        ${GAME_DIR}/tests/$1/source \
+        $1 \
+        "*/implemented*"
 fi
 
+if [[ $LAVENDER_DIR != $GAME_DIR ]]; then
+    mkdir -p ${GAME_DIR}/tests/$(basename $GAME_DIR)/include
+    mkdir -p ${GAME_DIR}/tests/$(basename $GAME_DIR)/source
+    ./update_recursive.sh \
+        ${GAME_DIR}/source \
+        "" \
+        $(basename $GAME_DIR)/include \
+        $(basename $GAME_DIR)/source \
+        $(basename $GAME_DIR) \
+        ""
+    exit 
+fi

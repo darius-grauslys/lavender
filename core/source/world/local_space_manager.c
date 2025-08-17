@@ -205,7 +205,7 @@ void initialize_local_space_manager(
                     - GFX_CONTEXT__RENDERING_HEIGHT__IN_CHUNKS
                     + 1) >> 1,
                 (LOCAL_SPACE_MANAGER__DEPTH
-                    - GFX_CONTEXT__RENDERING_DEPTH__IN_CHUNKS
+                    + GFX_CONTEXT__RENDERING_DEPTH__IN_CHUNKS
                     + 1) >> 1
                 );
     p_local_space_manager->p_local_space__south_east__top =
@@ -218,7 +218,7 @@ void initialize_local_space_manager(
                     - GFX_CONTEXT__RENDERING_HEIGHT__IN_CHUNKS
                     + 1) >> 1,
                 (LOCAL_SPACE_MANAGER__DEPTH
-                    - GFX_CONTEXT__RENDERING_DEPTH__IN_CHUNKS
+                    + GFX_CONTEXT__RENDERING_DEPTH__IN_CHUNKS
                     + 1) >> 1
                 );
     p_local_space_manager->p_local_space__north_west__top =
@@ -231,7 +231,7 @@ void initialize_local_space_manager(
                     + GFX_CONTEXT__RENDERING_HEIGHT__IN_CHUNKS
                     - 1) >> 1,
                 (LOCAL_SPACE_MANAGER__DEPTH
-                    - GFX_CONTEXT__RENDERING_DEPTH__IN_CHUNKS
+                    + GFX_CONTEXT__RENDERING_DEPTH__IN_CHUNKS
                     + 1) >> 1
                 );
     p_local_space_manager->p_local_space__north_east__top =
@@ -244,7 +244,7 @@ void initialize_local_space_manager(
                     + GFX_CONTEXT__RENDERING_HEIGHT__IN_CHUNKS
                     - 1) >> 1,
                 (LOCAL_SPACE_MANAGER__DEPTH
-                    - GFX_CONTEXT__RENDERING_DEPTH__IN_CHUNKS
+                    + GFX_CONTEXT__RENDERING_DEPTH__IN_CHUNKS
                     + 1) >> 1
                 );
 #else

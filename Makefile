@@ -59,23 +59,25 @@ default:
 endif
 
 test:
-	sh -c "cd ./tests && ./update.sh $(PLATFORM)"
+	@sh -c "cp -r ${LAVENDER_DIR}/tests ./"
+	@sh -c "cd ./tests && ./update.sh $(PLATFORM)"
 	$(SILENT)if [ -z "${PLATFORM}" ]; then \
 		mkdir -p ./build \
-		&& make -C $(LAVENDER_DIR)/tests \
+		&& make -C $(GAME_DIR)/tests \
 		-f $(LAVENDER_DIR)/tests/Makefile \
-		-e BUILD=$(LAVENDER_DIR)/build/test_core; \
-		stat $(BUILD_TEST_CORE)/compile_commands.json \
-		&& ln -sf $(LAVENDER_DIR)/build/test_core/compile_commands.json ./compile_commands.json; \
+		-e BUILD=$(GAME_DIR)/build/test_core\
+			DIR_CORE=$(LAVENDER_DIR)/core; \
+		stat $(GAME_DIR)/build/test_core/compile_commands.json \
+		&& ln -sf $(GAME_DIR)/build/test_core/compile_commands.json $(GAME_DIR)/compile_commands.json; \
 	else \
 		mkdir -p ./build && make \
-			-C $(LAVENDER_DIR)/tests \
+			-C $(GAME_DIR)/tests \
 			-f $(LAVENDER_DIR)/tests/Makefile \
-			-e BUILD=$(LAVENDER_DIR)/build/test_$(PLATFORM) \
+			-e BUILD=$(GAME_DIR)/build/test_$(PLATFORM) \
 				DIR_CORE=$(LAVENDER_DIR)/core \
 				PLATFORM=$(PLATFORM); \
-		stat $(LAVENDER_DIR)/build/test_$(PLATFORM)/compile_commands.json \
-			&& ln -sf $(LAVENDER_DIR)build/test_$(PLATFORM)/compile_commands.json ./compile_commands.json; \
+		stat $(GAME_DIR)/build/test_$(PLATFORM)/compile_commands.json \
+			&& ln -sf $(GAME_DIR)/build/test_core/compile_commands.json $(GAME_DIR)/compile_commands.json; \
 	fi
 
 clean:

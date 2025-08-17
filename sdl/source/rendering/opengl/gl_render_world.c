@@ -18,10 +18,12 @@
 #include "rendering/opengl/gl_viewport.h"
 #include "rendering/opengl/glad/glad.h"
 #include "vectors.h"
+#include "world/camera.h"
 #include "world/chunk.h"
 #include "world/chunk_vectors.h"
 #include "world/global_space.h"
 #include "world/local_space.h"
+#include "world/local_space_manager.h"
 #include "world/tile_vectors.h"
 #include "world/world.h"
 #include "sdl_defines.h"
@@ -247,10 +249,14 @@ void GL_compose_world(
         Quantity__u32 quantity_of__gfx_windows,
         f_Tile_Render_Kernel f_tile_render_kernel) {
 
-    // debug_error("GL_compose_world, impl");
+    Camera *p_camera =
+        p_ptr_array_of__gfx_windows[0]
+        ->p_camera;
 
     Local_Space *p_local_space__current =
-        p_local_space_manager->p_local_space__north_west;
+        get_p_local_space_by__3i32F4_from__local_space_manager(
+                p_local_space_manager, 
+                get_position_3i32F4_of__camera(p_camera));
     Local_Space *p_local_space__current_sub;
 
     float clear_color[4];
@@ -292,10 +298,6 @@ void GL_compose_world(
             clear_color[1],
             clear_color[2],
             clear_color[3]);
-
-    Camera *p_camera =
-        p_ptr_array_of__gfx_windows[0]
-        ->p_camera;
 
     GL_Viewport_Stack *p_GL_viewport_stack =
         GL_get_p_viewport_stack_from__PLATFORM_gfx_context(

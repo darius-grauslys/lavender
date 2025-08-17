@@ -1,5 +1,0 @@
-
-#include <test_util.h>
-
-DECLARE_SUITE(CORE_GAME_ACTION_IMPLEMENTED_HITBOX);
-

@@ -13,6 +13,7 @@
 # to.
 # 4) The directory path output source files will go
 # to.
+# 5) find exclusion string
 #
 
 search_base_dir=$1
@@ -20,6 +21,7 @@ search_suffix=$2
 output_base_dir__include=$3
 output_base_dir__source=$4
 tree_name="${5^^}"
+exclusion_string=$6
 
 if [ "$search_suffix" == "" ]; then
     main_suite_dir__include="${output_base_dir__include}";
@@ -106,7 +108,7 @@ DEFINE_SUITE(${test_suite__module_name%.*}, END_TESTS)\n" > $test_sub_suite__sou
         >> $main_test_suite__source
 done
 # find $search_path -maxdepth 1 -type d -exec realpath {} \;
-subdirs=$(find $search_path -mindepth 1 -maxdepth 1 -type d -exec realpath {} \;)
+subdirs=$(find $search_path -mindepth 1 -maxdepth 1 -type d -not -wholename "$exclusion_string" -exec realpath {} \;)
 for dir in $subdirs; do
     module_count=$((module_count+1))
     dir_basename=$(basename $dir)
@@ -132,13 +134,15 @@ for dir in $subdirs; do
             \"${search_suffix}${dir_basename}\" \
             \"${output_base_dir__include}\" \
             \"${output_base_dir__source}\" \
-            \"${tree_name}\""
+            \"${tree_name}\" \
+            \"${exclusion_string}\""
     else
         sh -c "./update_recursive.sh \
             $search_base_dir \
             \"${search_suffix}/${dir_basename}\" \
             \"${output_base_dir__include}\" \
             \"${output_base_dir__source}\" \
-            \"${tree_name}\""
+            \"${tree_name}\" \
+            \"${exclusion_string}\""
     fi
 done
