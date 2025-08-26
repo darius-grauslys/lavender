@@ -84,9 +84,15 @@ export INCLUDES := \
 export OUTPUT 	:= $(BUILD)/$(TARGET)
 export DEPSDIR 	:= $(BUILD)
 
+ifneq ($(LAVENDER_DIR),$(GAME_DIR))
 export CFILES_TEST_CORE != realpath \
 	--relative-to=$(SOURCE_TEST_CORE) \
 	$$(find $(SOURCE_TEST_CORE) -name \*.c -not -path */implemented/*)
+else
+export CFILES_TEST_CORE != realpath \
+	--relative-to=$(SOURCE_TEST_CORE) \
+	$$(find $(SOURCE_TEST_CORE) -name \*.c)
+endif
 
 #---------------------------------------------------------------------------------
 # use CXX for linking C++ projects, CC for standard C

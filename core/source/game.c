@@ -121,6 +121,8 @@ void initialize_game(
     set_dispatch_handler_process_for__save_client(
             p_game, 
             m_process__serialize_client__default);
+
+    PLATFORM_initialize_game(p_game);
 }
 
 void allocate_client_pool_for__game(

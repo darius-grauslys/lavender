@@ -111,7 +111,7 @@ void m_process__teleport_client(
     fail_process(p_this_process);
 }
 
-void teleport_client(
+Process *teleport_client(
         Game *p_game,
         Client *p_client,
         Vector__3i32F4 position__3i32F4) {
@@ -153,7 +153,7 @@ void teleport_client(
     if (!p_local_space) {
         debug_warning("note, the following error results in the client hitbox being removed from world space:");
         debug_error("teleport_client, failed to get destination p_local_space for client.");
-        return;
+        return 0;
     }
 
     Process *p_process =
@@ -167,6 +167,8 @@ void teleport_client(
         p_local_space;
     p_process->process_valueA__i32 =
         GET_UUID_P(p_client);
+
+    return p_process;
 }
 
 bool release_game_action_from__client(

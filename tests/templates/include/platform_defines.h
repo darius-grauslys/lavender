@@ -1,203 +1,188 @@
 #ifndef PLATFORM_DEFINES_H
 #define PLATFORM_DEFINES_H
 
-#ifndef PLATFORM__IO
-#define PLATFORM__IO
-#define MAX_LENGTH_OF__IO_PATH 128
-#define PATH_SEPERATOR "/"
+#ifndef MAX_LENGTH_OF__IO_PATH
+#define MAX_LENGTH_OF__IO_PATH 1024
 #endif
 
-#ifndef PLATFORM__TCP
-#define PLATFORM__TCP
-//#define IS_SERVER
-    #ifndef IS_SERVER
-        #define MAX_QUANTITY_OF__TCP_SOCKETS 1
-    #else
-        #define MAX_QUANTITY_OF__TCP_SOCKETS 256
-    #endif
-///
-/// MAX_SIZE_OF__TCP_PACKET >>MUST<< be a power of 2!
-/// So you should always express it as BIT(n) and likely
-/// n >= 5 for most applications.
-///
-/// If it is not a power of 2 (BIT(n)) then
-/// game_action__tcp_delivery will fail to operate.
-/// Things such as global_space delivery, inventory, EVERYTHING
-/// will fail to properly send over TCP, and will NEVER do
-/// so reliably. It relies on MASK(n) logic, dervied from
-/// the size, so BIT(n)-1 == MASK(n). non BIT(n) values will
-/// result in bad bit masks.
-///
-/// USE BIT(n)
-///
-#define MAX_SIZE_OF__TCP_PACKET BIT(9)
-///
-/// >>MUST<< be a power of 2!
-///
-#define MAX_QUANTITY_OF__TCP_PACKETS_PER__SOCKET BIT(8)
-
-///
-/// Destination has run out of space. Need more space
-/// to finish sending packet.
-///
-#define TCP_ERROR__DESTINATION_OVERFLOW (-1)
-///
-/// The socket queue is full, read the contents before
-/// acquiring more.
-///
-#define TCP_ERROR__QUEUE_FULL (-2)
+#ifdef _WIN32
+#ifndef PATH_SEPERATOR
+#define PATH_SEPERATOR '\\'
+#endif
+#else
+#ifndef PATH_SEPERATOR
+#define PATH_SEPERATOR '/'
+#endif
 #endif
 
-#ifndef PLATFORM__CAMERA
-#define PLATFORM__CAMERA
+#ifndef CAMERA_FULCRUM__WIDTH
 #define CAMERA_FULCRUM__WIDTH 256
+#endif
+#ifndef CAMERA_FULCRUM__HEIGHT
 #define CAMERA_FULCRUM__HEIGHT 196
 #endif
 
-#ifndef PLATFORM__TEXTURES
-#define PLATFORM__TEXTURES
+#ifndef MAX_QUANTITY_OF__TEXTURES
 #define MAX_QUANTITY_OF__TEXTURES 128
 #endif
 
-#ifndef PLATFORM__CHUNKS
-#define PLATFORM__CHUNKS
+/*****************************************************
+ *  CHUNKS
+ *****************************************************/
+
+#ifndef GFX_CONTEXT__RENDERING_WIDTH__IN_CHUNKS
 #define GFX_CONTEXT__RENDERING_WIDTH__IN_CHUNKS 4
+#endif
+#ifndef GFX_CONTEXT__RENDERING_HEIGHT__IN_CHUNKS
 #define GFX_CONTEXT__RENDERING_HEIGHT__IN_CHUNKS 3
+#endif
+#ifndef GFX_CONTEXT__RENDERING_DEPTH__IN_CHUNKS
+#define GFX_CONTEXT__RENDERING_DEPTH__IN_CHUNKS 1
+#endif
 
-//16bpx, 8 pixels per row (of 8 rows)
-#define TILE_WIDTH__IN_BYTES (2 * 8)
-#define TILE_WIDTH__IN_PIXELS 8
+#ifndef CHUNK__WIDTH_AND__HEIGHT__BIT_SHIFT
+#define CHUNK__WIDTH_AND__HEIGHT__BIT_SHIFT 3
+#endif
+#ifndef CHUNK__DEPTH__BIT_SHIFT
+#define CHUNK__DEPTH__BIT_SHIFT 1
+#endif
 
-#define CHUNK_WIDTH__IN_TILES 8
-#define CHUNK_DEPTH__IN_TILES 1
+#ifndef CHUNK__WIDTH
+#define CHUNK__WIDTH BIT(CHUNK__WIDTH_AND__HEIGHT__BIT_SHIFT)
+#endif
+#ifndef CHUNK__HEIGHT
+#define CHUNK__HEIGHT BIT(CHUNK__WIDTH_AND__HEIGHT__BIT_SHIFT)
+#endif
+#ifndef CHUNK__DEPTH
+#define CHUNK__DEPTH BIT(CHUNK__DEPTH__BIT_SHIFT)
+#endif
 
-#define CHUNK_QUANTITY_OF__TILES \
-    (CHUNK_WIDTH__IN_TILES * CHUNK_WIDTH__IN_TILES)
+#ifndef CHUNK__QUANTITY_OF_TILES
+#define CHUNK__QUANTITY_OF__TILES \
+    (CHUNK__WIDTH * CHUNK__HEIGHT * CHUNK__DEPTH)
+#endif
 
-#define CHUNK__WIDTH_BIT_SHIFT 3
-#define CHUNK__HEIGHT_BIT_SHIFT 3
-#define CHUNK__DEPTH_BIT_SHIFT (CHUNK__WIDTH_BIT_SHIFT + CHUNK__HEIGHT_BIT_SHIFT)
+#ifndef TILE__WIDTH_AND__HEIGHT__BIT_SHIFT
+#define TILE__WIDTH_AND__HEIGHT__BIT_SHIFT 3
+#endif
 
-#define CHUNK__WIDTH (1 << CHUNK__WIDTH_BIT_SHIFT)
-#define CHUNK__HEIGHT (1 << CHUNK__HEIGHT_BIT_SHIFT)
-// depth is 1 until AFTER the adventure update.
-#define CHUNK__DEPTH (1)
+#ifndef TILE__WIDTH_AND__HEIGHT_IN__PIXELS
+#define TILE__WIDTH_AND__HEIGHT_IN__PIXELS \
+    BIT(TILE__WIDTH_AND__HEIGHT__BIT_SHIFT)
+#endif
 
-#define CHUNK__QUANTITY_OF_TILES (CHUNK__WIDTH * \
-        CHUNK__HEIGHT * CHUNK__DEPTH)
+#ifndef LOCAL_SPACE_MANAGER__WIDTH
+#define LOCAL_SPACE_MANAGER__WIDTH 8
+#endif
+#ifndef LOCAL_SPACE_MANAGER__HEIGHT
+#define LOCAL_SPACE_MANAGER__HEIGHT 8
+#endif
+#ifndef LOCAL_SPACE_MANAGER__DEPTH
+#define LOCAL_SPACE_MANAGER__DEPTH 1
+#endif
+#ifndef VOLUME_OF__LOCAL_SPACE_MANAGER
+#define VOLUME_OF__LOCAL_SPACE_MANAGER\
+    (LOCAL_SPACE_MANAGER__WIDTH\
+    * LOCAL_SPACE_MANAGER__HEIGHT\
+    * LOCAL_SPACE_MANAGER__DEPTH)
+#endif
 
-///
-/// Note, both  CHUNK_MANAGER__QUANTITY_OF_CHUNKS__PER_ROW
-/// and         CHUNK_MANAGER__QUANTITY_OF_MANAGED_CHUNK_ROWS
-///
-/// must equal one another. These two only exist to remind
-/// the programmer if we are moving along COLS or ROWS.
-///
-/// That also means YOU should use these appropriately.
-///
-#define CHUNK_MANAGER__QUANTITY_OF_CHUNKS__PER_ROW 8
-#define CHUNK_MANAGER__QUANTITY_OF_MANAGED_CHUNK_ROWS 8
-#define CHUNK_MANAGER__QUANTITY_OF_CHUNKS \
-    (CHUNK_MANAGER__QUANTITY_OF_MANAGED_CHUNK_ROWS \
-    * CHUNK_MANAGER__QUANTITY_OF_CHUNKS__PER_ROW)
-#define CHUNK_MANAGER__QUANTITY_OF_IO_QUEUED_CHUNKS \
-    CHUNK_MANAGER__QUANTITY_OF_CHUNKS \
-    * 2
-// We use a singular wrapping background.
-// #define LOCAL_SPACE_RENDER_WIDTH__IN_CHUNKS 0
-// #define LOCAL_SPACE_LOGICAL_WIDTH__IN_CHUNKS 5
-
-//16bpx, 8 pixels per row (of 8 rows)
-#define TILE_WIDTH__IN_BYTES (2 * 8)
-#define TILE_WIDTH__IN_PIXELS 8
-
-#define CHUNK_WIDTH__IN_BYTES (\
-        TILE_WIDTH__IN_BYTES *\
-        CHUNK_WIDTH__IN_TILES)
-
-#define WIDTH_OF__LOCAL_SPACE_MANAGER 8
-#define HEIGHT_OF__LOCAL_SPACE_MANAGER 8
-#define AREA_OF__LOCAL_SPACE_MANAGER\
-    (WIDTH_OF__LOCAL_SPACE_MANAGER\
-    * HEIGHT_OF__LOCAL_SPACE_MANAGER)
-
+#ifndef MAX_QUANTITY_OF__CLIENTS
 #define MAX_QUANTITY_OF__CLIENTS 4
+#endif
 
+#ifndef QUANTITY_OF__GLOBAL_SPACE
 #define QUANTITY_OF__GLOBAL_SPACE\
-    (AREA_OF__LOCAL_SPACE_MANAGER\
+    (VOLUME_OF__LOCAL_SPACE_MANAGER\
      * MAX_QUANTITY_OF__CLIENTS)
 #endif
 
-#ifndef PLATFORM__ENTITIES
-#define PLATFORM__ENTITIES
-#define ENTITY_MAXIMUM_QUANTITY_OF 128
-#define ENTITY_MAXIMUM_QUANTITY_OF__PLAYERS 8
-#define ENTITY_MAXIMUM_QUANTITY_OF__NPCS 48
-#define ENTITY_MAXIMUM_QUANTITY_OF__PROJECTILES 32
-#define ENTITY_MAXIMUM_QUANTITY_OF__PARTICLES 40
-#define ENTITY_MAXIMUM_QUANTITY_OF__COLLIDABLE \
-    (ENTITY_MAXIMUM_QUANTITY_OF__NPCS \
-    + ENTITY_MAXIMUM_QUANTITY_OF__PROJECTILES \
-    + ENTITY_MAXIMUM_QUANTITY_OF__PLAYERS)
+/*****************************************************
+ *  ENTITIES
+ *****************************************************/
+
+#ifndef MAX_QUANTITY_OF__ENTITIES
+#define MAX_QUANTITY_OF__ENTITIES 128
 #endif
 
-#define QUANTITY_OF__INPUTS 14
-#ifndef PLATFORM__INPUT
-#define INPUT_CODE_NONE 0
-#define INPUT_CODE_FORWARD (1+0)
-#define INPUT_CODE_LEFT (INPUT_CODE_FORWARD+1)
-#define INPUT_CODE_RIGHT (INPUT_CODE_LEFT+1)
-#define INPUT_CODE_BACKWARD (INPUT_CODE_RIGHT+1)
+/*****************************************************
+ *  INPUT
+ *****************************************************/
 
-#define INPUT_CODE_GAME_SETTINGS (INPUT_CODE_BACKWARD+1)
-#define INPUT_CODE_LOCKON (INPUT_CODE_GAME_SETTINGS+1)
-#define INPUT_CODE_USE (INPUT_CODE_LOCKON+1)
-#define INPUT_CODE_USE_SECONDARY (INPUT_CODE_USE+1)
-#define INPUT_CODE_EXAMINE (INPUT_CODE_USE_SECONDARY+1)
-#define INPUT_CODE_CONSUME (INPUT_CODE_EXAMINE+1)
-#define INPUT_CODE_TURN_RIGHT (INPUT_CODE_CONSUME+1)
-#define INPUT_CODE_TURN_LEFT (INPUT_CODE_TURN_RIGHT+1)
-#define INPUT_CODE_CLICK (INPUT_CODE_TURN_LEFT+1)
+#define SDL_QUANTITY_OF__INPUTS QUANTITY_OF__INPUTS + 1
+#define SDL_INPUT_CODE_EQUIP QUANTITY_OF__INPUTS
+#define SDL_INPUT_EQUIP BIT(QUANTITY_OF__INPUTS)
 
-#define INPUT_NONE 0
-#define INPUT_FORWARD (1<<0)
-#define INPUT_LEFT (INPUT_FORWARD<<1)
-#define INPUT_RIGHT (INPUT_LEFT<<1)
-#define INPUT_BACKWARD (INPUT_RIGHT<<1)
+/*****************************************************
+ *  TILES
+ *****************************************************/
 
-#define INPUT_GAME_SETTINGS (INPUT_BACKWARD<<1)
-#define INPUT_LOCKON (INPUT_GAME_SETTINGS<<1)
-#define INPUT_USE (INPUT_LOCKON<<1)
-#define INPUT_USE_SECONDARY (INPUT_USE<<1)
-#define INPUT_EXAMINE (INPUT_USE_SECONDARY<<1)
-#define INPUT_CONSUME (INPUT_EXAMINE<<1)
-#define INPUT_TURN_RIGHT (INPUT_CONSUME<<1)
-#define INPUT_TURN_LEFT (INPUT_TURN_RIGHT<<1)
-#define INPUT_CLICK (INPUT_TURN_LEFT<<1)
+/*****************************************************
+ *  GFX_CONTEXT
+ *****************************************************/
+
+/*****************************************************
+ *  TEXTURES
+ *****************************************************/
+
+/*****************************************************
+ *  SPRITES
+ *****************************************************/
+
+#ifndef UI_TILE__WIDTH_AND__HEIGHT__BIT_SHIFT
+#define UI_TILE__WIDTH_AND__HEIGHT__BIT_SHIFT 3
 #endif
 
-#ifndef PLATFORM__UI
-#define PLATFORM__UI
-// #define UI_TILE__IS_NOT__SAVING_FLAGS_TO__RAW
-#define UI_TILE__WIDTH_IN__PIXELS 8
-#define UI_TILE__HEIGHT_IN__PIXELS 8
+#ifndef UI_TILE__WIDTH_AND__HEIGHT_IN__PIXELS
+#define UI_TILE__WIDTH_AND__HEIGHT_IN__PIXELS \
+    BIT(UI_TILE__WIDTH_AND__HEIGHT__BIT_SHIFT)
+#endif
 
+#ifndef UI_TILE_MAP__SMALL__MAX_QUANTITY_OF
 #define UI_TILE_MAP__SMALL__MAX_QUANTITY_OF 32
+#endif
+#ifndef UI_TILE_MAP__SMALL__WIDTH
 #define UI_TILE_MAP__SMALL__WIDTH 8
+#endif
+#ifndef UI_TILE_MAP__SMALL__HEIGHT
 #define UI_TILE_MAP__SMALL__HEIGHT 8
+#endif
 
+#ifndef UI_TILE_MAP__MEDIUM__MAX_QUANTITY_OF
 #define UI_TILE_MAP__MEDIUM__MAX_QUANTITY_OF 16
+#endif
+#ifndef UI_TILE_MAP__MEDIUM__WIDTH
 #define UI_TILE_MAP__MEDIUM__WIDTH 16
+#endif
+#ifndef UI_TILE_MAP__MEDIUM__HEIGHT
 #define UI_TILE_MAP__MEDIUM__HEIGHT 16
+#endif
 
+#ifndef UI_TILE_MAP__LARGE__MAX_QUANTITY_OF
 #define UI_TILE_MAP__LARGE__MAX_QUANTITY_OF 8
+#endif
+#ifndef UI_TILE_MAP__LARGE__WIDTH
 #define UI_TILE_MAP__LARGE__WIDTH 32
+#endif
+#ifndef UI_TILE_MAP__LARGE__HEIGHT
 #define UI_TILE_MAP__LARGE__HEIGHT 32
 #endif
 
-#ifndef PLATFORM__GFX_WINDOW
-#define PLATFORM__GFX_WINDOW
-#define PLATFORM__GFX_WINDOW__MAX_QUANTITY_OF 1
+/*****************************************************
+ *  SDL
+ *****************************************************/
+
+#define TEXTURE_FLAG__FORMAT__RGB888 \
+    TEXTURE_FLAG__FORMAT__1
+#define TEXTURE_FLAG__FORMAT__RGBA8888 \
+    TEXTURE_FLAG__FORMAT__2
+
+#define TEXTURE_FLAG__SDL_FLAGS__BIT_COUNT 8
+#define TEXTURE_FLAG__BIT_SHIFT__SDL_FLAGS \
+    TEXTURE_FLAG__BIT_SHIFT__GENERAL_FLAGS
+
+#ifndef PLATFORM__GFX_WINDOW__MAX_QUANTITY_OF
+#define PLATFORM__GFX_WINDOW__MAX_QUANTITY_OF 128
 #endif
 
 #endif

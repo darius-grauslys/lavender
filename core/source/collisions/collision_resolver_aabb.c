@@ -81,9 +81,15 @@ void f_hitbox_aabb_tile_touch_handler__default(
     // later on tile_logic flags will be changed.
     Vector__3i32F4 tile_center =
         get_vector__3i32F4(
-                x_collision__i32, 0b1000, 
-                y_collision__i32, 0b1000, 
-                0, 0);
+                ARITHMETRIC_L_SHIFT(
+                    x_collision__i32,
+                    FRACTIONAL_PERCISION_4__BIT_SIZE)
+                + 0b1000, 
+                ARITHMETRIC_L_SHIFT(
+                    y_collision__i32,
+                    FRACTIONAL_PERCISION_4__BIT_SIZE)
+                + 0b1000, 
+                0);
 
     Signed_Index__i32 delta_x =
         get_x_i32F4_from__hitbox(p_hitbox_aabb)
@@ -360,6 +366,8 @@ void poll_hitbox_aabb_for__tile_collision(
                                 i32_to__i32F4(corner_positions[index+1]),
                                 z_ground_tile__i32F4
                             });
+                if (!p_tile)
+                    continue;
                 if (!poll__is_tile__without_ground(
                             get_p_tile_logic_table_from__world(
                                 get_p_world_from__game(p_game)), 
@@ -369,15 +377,21 @@ void poll_hitbox_aabb_for__tile_collision(
                                 get_p_tile_logic_table_from__world(
                                     get_p_world_from__game(p_game)), 
                                 p_tile);
-                    set_z_velocity_to__hitbox(
-                            p_hitbox_aabb, 
-                            0);
-                    set_z_acceleration_to__hitbox(
-                            p_hitbox_aabb, 
-                            0);
-                    set_z_position_to__hitbox(
-                            p_hitbox_aabb, 
-                            z_ground_tile__i32F4);
+                    dispatch_game_action__hitbox(
+                            p_game, 
+                            GET_UUID_P(p_hitbox_aabb), 
+                            get_vector__3i32F4(
+                                get_x_i32F4_from__hitbox(p_hitbox_aabb), 
+                                get_y_i32F4_from__hitbox(p_hitbox_aabb), 
+                                z_ground_tile__i32F4), 
+                            get_vector__3i32F4(
+                                get_velocity_3i32F4_of__hitbox_aabb(p_hitbox_aabb).x__i32F4, 
+                                get_velocity_3i32F4_of__hitbox_aabb(p_hitbox_aabb).y__i32F4, 
+                                0), 
+                            get_vector__3i16F8(
+                                get_acceleration_3i16F8_of__hitbox_aabb(p_hitbox_aabb).x__i16F8, 
+                                get_acceleration_3i16F8_of__hitbox_aabb(p_hitbox_aabb).y__i16F8, 
+                                0));
                     goto landed_on_ground;
                 }
             }
@@ -404,8 +418,8 @@ landed_on_ground:;
                     get_angle_from__direction(
                         get_movement_direction_of__hitbox(
                             p_hitbox_aabb)));
-        offset__3i32F4.x__i32F4 <<= FRACTIONAL_PERCISION_4__BIT_SIZE;
-        offset__3i32F4.y__i32F4 <<= FRACTIONAL_PERCISION_4__BIT_SIZE;
+        offset__3i32F4.x__i32F4 <<= FRACTIONAL_PERCISION_4__BIT_SIZE - 1;
+        offset__3i32F4.y__i32F4 <<= FRACTIONAL_PERCISION_4__BIT_SIZE - 1;
         Tile_Logic_Record tile_logic_record;
         Vector__3i32F4 forward_position__3i32F4 =
             (Vector__3i32F4){
@@ -427,9 +441,17 @@ landed_on_ground:;
                 p_tile);
         if (!is_tile_logic_record__unpassable(&tile_logic_record)
                 && !is_tile_logic_record__without_ground(&tile_logic_record)) {
-            offset_z_position_to__hitbox(
-                    p_hitbox_aabb, 
-                    i32_to__i32F4(BIT(TILE__WIDTH_AND__HEIGHT__BIT_SHIFT)));
+            dispatch_game_action__hitbox(
+                    p_game, 
+                    GET_UUID_P(p_hitbox_aabb), 
+                    forward_position__3i32F4,
+                    // get_vector__3i32F4(
+                    //     get_x_i32F4_from__hitbox(p_hitbox_aabb), 
+                    //     get_y_i32F4_from__hitbox(p_hitbox_aabb), 
+                    //     get_z_i32F4_from__hitbox(p_hitbox_aabb)
+                    //     + i32_to__i32F4(BIT(TILE__WIDTH_AND__HEIGHT__BIT_SHIFT))),
+                    get_velocity_3i32F4_of__hitbox_aabb(p_hitbox_aabb),
+                    get_acceleration_3i16F8_of__hitbox_aabb(p_hitbox_aabb));
             return;
         }
     }

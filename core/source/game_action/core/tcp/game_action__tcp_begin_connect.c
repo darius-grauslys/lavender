@@ -59,6 +59,9 @@ void m_process__game_action__tcp_connect__begin(
                             p_tcp_socket, 
                             TCP_Socket_State__Authenticated);
                     set_tcp_socket_as__automatically_driven(p_tcp_socket);
+                    set_state_of__tcp_socket(
+                            p_tcp_socket, 
+                            TCP_Socket_State__Connected);
                     complete_process(p_this_process);
                     break;
             }

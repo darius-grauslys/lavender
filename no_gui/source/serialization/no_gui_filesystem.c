@@ -32,7 +32,7 @@ bool NO_GUI_get_path_to__assets(
                     1024,
                     "%s%s",
                     buffer,
-                    PATH_SEPERATOR
+                    PATH_SEPERATOR,
                     "assets");
             break;
         case Asset_Directory_Kind__Audio:
@@ -40,9 +40,9 @@ bool NO_GUI_get_path_to__assets(
                     1024,
                     "%s%s",
                     buffer,
-                    PATH_SEPERATOR
-                    "assets" 
-                    PATH_SEPERATOR 
+                    PATH_SEPERATOR,
+                    "assets",
+                    PATH_SEPERATOR, 
                     "audio");
             break;
         case Asset_Directory_Kind__Entities:
@@ -50,9 +50,9 @@ bool NO_GUI_get_path_to__assets(
                     1024,
                     "%s%s",
                     buffer,
-                    PATH_SEPERATOR
-                    "assets" 
-                    PATH_SEPERATOR 
+                    PATH_SEPERATOR,
+                    "assets",
+                    PATH_SEPERATOR, 
                     "entities");
             break;
         case Asset_Directory_Kind__Entity_Sprite__16x16:
@@ -60,11 +60,11 @@ bool NO_GUI_get_path_to__assets(
                     1024,
                     "%s%s",
                     buffer,
-                    PATH_SEPERATOR
-                    "assets" 
-                    PATH_SEPERATOR 
-                    "entities" 
-                    PATH_SEPERATOR 
+                    PATH_SEPERATOR,
+                    "assets",
+                    PATH_SEPERATOR, 
+                    "entities",
+                    PATH_SEPERATOR, 
                     "entity_sprite__16x16");
             break;
         case Asset_Directory_Kind__Entity_Sprite__8x8:
@@ -72,11 +72,11 @@ bool NO_GUI_get_path_to__assets(
                     1024,
                     "%s%s",
                     buffer,
-                    PATH_SEPERATOR
-                    "assets" 
-                    PATH_SEPERATOR 
-                    "entities" 
-                    PATH_SEPERATOR 
+                    PATH_SEPERATOR,
+                    "assets",
+                    PATH_SEPERATOR, 
+                    "entities" ,
+                    PATH_SEPERATOR, 
                     "entity_sprite__8x8");
             break;
         case Asset_Directory_Kind__UI:
@@ -84,9 +84,9 @@ bool NO_GUI_get_path_to__assets(
                     1024,
                     "%s%s",
                     buffer,
-                    PATH_SEPERATOR
-                    "assets" 
-                    PATH_SEPERATOR 
+                    PATH_SEPERATOR,
+                    "assets",
+                    PATH_SEPERATOR, 
                     "ui");
             break;
         case Asset_Directory_Kind__UI__Default:
@@ -94,11 +94,11 @@ bool NO_GUI_get_path_to__assets(
                     1024,
                     "%s%s",
                     buffer,
-                    PATH_SEPERATOR
-                    "assets" 
-                    PATH_SEPERATOR 
-                    "ui" 
-                    PATH_SEPERATOR 
+                    PATH_SEPERATOR,
+                    "assets",
+                    PATH_SEPERATOR, 
+                    "ui",
+                    PATH_SEPERATOR, 
                     "default");
             break;
         case Asset_Directory_Kind__UI__Font:
@@ -106,11 +106,11 @@ bool NO_GUI_get_path_to__assets(
                     1024,
                     "%s%s",
                     buffer,
-                    PATH_SEPERATOR
-                    "assets" 
-                    PATH_SEPERATOR 
-                    "ui" 
-                    PATH_SEPERATOR 
+                    PATH_SEPERATOR,
+                    "assets",
+                    PATH_SEPERATOR, 
+                    "ui",
+                    PATH_SEPERATOR, 
                     "font");
             break;
         case Asset_Directory_Kind__UI__Log:
@@ -118,11 +118,11 @@ bool NO_GUI_get_path_to__assets(
                     1024,
                     "%s%s",
                     buffer,
-                    PATH_SEPERATOR
-                    "assets" 
-                    PATH_SEPERATOR 
-                    "ui" 
-                    PATH_SEPERATOR 
+                    PATH_SEPERATOR,
+                    "assets",
+                    PATH_SEPERATOR, 
+                    "ui",
+                    PATH_SEPERATOR, 
                     "log");
             break;
         case Asset_Directory_Kind__UI__Sprite__8x8:
@@ -130,13 +130,13 @@ bool NO_GUI_get_path_to__assets(
                     1024,
                     "%s%s",
                     buffer,
-                    PATH_SEPERATOR
-                    "assets" 
-                    PATH_SEPERATOR 
-                    "ui" 
-                    PATH_SEPERATOR 
-                    "sprites" 
-                    PATH_SEPERATOR 
+                    PATH_SEPERATOR,
+                    "assets",
+                    PATH_SEPERATOR, 
+                    "ui",
+                    PATH_SEPERATOR, 
+                    "sprites",
+                    PATH_SEPERATOR, 
                     "ui_sprite__8x8");
             break;
         case Asset_Directory_Kind__UI__Sprite__16x16:
@@ -144,13 +144,13 @@ bool NO_GUI_get_path_to__assets(
                     1024,
                     "%s%s",
                     buffer,
-                    PATH_SEPERATOR
-                    "assets" 
-                    PATH_SEPERATOR
-                    "ui" 
-                    PATH_SEPERATOR 
-                    "sprites" 
-                    PATH_SEPERATOR 
+                    PATH_SEPERATOR,
+                    "assets",
+                    PATH_SEPERATOR,
+                    "ui",
+                    PATH_SEPERATOR, 
+                    "sprites",
+                    PATH_SEPERATOR, 
                     "ui_sprite__16x16");
             break;
         case Asset_Directory_Kind__UI__Sprite__32x32:
@@ -158,13 +158,13 @@ bool NO_GUI_get_path_to__assets(
                     1024,
                     "%s%s",
                     buffer,
-                    PATH_SEPERATOR
-                    "assets" 
-                    PATH_SEPERATOR 
-                    "ui" 
-                    PATH_SEPERATOR 
-                    "sprites" 
-                    PATH_SEPERATOR 
+                    PATH_SEPERATOR,
+                    "assets",
+                    PATH_SEPERATOR, 
+                    "ui",
+                    PATH_SEPERATOR, 
+                    "sprites",
+                    PATH_SEPERATOR, 
                     "ui_sprite__32x32");
             break;
         case Asset_Directory_Kind__UI__Typer:
@@ -172,11 +172,11 @@ bool NO_GUI_get_path_to__assets(
                     1024,
                     "%s%s",
                     buffer,
-                    PATH_SEPERATOR
-                    "assets" 
-                    PATH_SEPERATOR 
-                    "ui" 
-                    PATH_SEPERATOR 
+                    PATH_SEPERATOR,
+                    "assets",
+                    PATH_SEPERATOR, 
+                    "ui",
+                    PATH_SEPERATOR, 
                     "typer");
             break;
         case Asset_Directory_Kind__World:
@@ -184,9 +184,9 @@ bool NO_GUI_get_path_to__assets(
                     1024,
                     "%s%s",
                     buffer,
-                    PATH_SEPERATOR
-                    "assets" 
-                    PATH_SEPERATOR 
+                    PATH_SEPERATOR,
+                    "assets",
+                    PATH_SEPERATOR, 
                     "world");
             break;
     }
@@ -221,6 +221,7 @@ void PLATFORM_initialize_file_system_context(
         run_process(
                 get_p_process_manager_from__game(p_game),
                 m_NO_GUI_process__serialization,
+                PROCESS_PRIORITY__0_MAXIMUM,
                 PROCESS_FLAG__IS_CRITICAL);
     if (!p_serialization_process) {
         debug_abort("NO_GUI::PLATFORM_initialize_file_system_context, failed to allocate p_serialization_process.");

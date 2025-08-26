@@ -2,6 +2,7 @@
 #include "client.h"
 #include "collisions/collision_node.h"
 #include "collisions/collision_node_pool.h"
+#include "collisions/hitbox_aabb.h"
 #include "collisions/hitbox_aabb_manager.h"
 #include "defines.h"
 #include "defines_weak.h"
@@ -64,37 +65,58 @@ void m_process__serialize_entities_in__global_space(
     Collision_Node_Entry *p_collision_node__entry =
         p_collision_node->p_linked_list__collision_node_entries__tail;
 
-    if (!p_collision_node__entry) {
-        complete_process(p_this_process);
-        return;
+    for (;p_collision_node__entry;
+            p_collision_node__entry = 
+            p_collision_node__entry->p_previous_entry) {
+        Identifier__u32 uuid__u32 =
+            p_collision_node__entry
+            ->uuid_of__hitbox__u32
+            ;
+
+        Entity *p_entity =
+            get_p_entity_by__uuid_from__entity_manager(
+                    get_p_entity_manager_from__world(
+                        get_p_world_from__game(p_game)), 
+                    uuid__u32);
+
+        if (!p_entity) {
+            debug_error("m_process__serialize_entities_in__global_space, failed to locate entity in collision_node.");
+            return;
+        }
+
+        // Hitbox_AABB *p_hitbox_aabb =
+        //     get_p_hitbox_aabb_by__entity_from__hitbox_aabb_manager(
+        //             get_p_hitbox_aabb_manager_from__game(p_game), 
+        //             p_entity);
+
+        // TODO: this is a hack fix atm
+        // When entities move, their prior entries in other collision nodes
+        // SHOULD be properly removed, and this check SHOULD not be needed.
+        // if (p_hitbox_aabb) {
+        //     if (!is_chunk_vectors_3i32__equal(
+        //                 vector_3i32F4_to__chunk_vector_3i32(
+        //                     get_position_3i32F4_of__hitbox_aabb(p_hitbox_aabb)), 
+        //                 p_global_space->chunk_vector__3i32)) {
+        //         p_collision_node__entry->uuid_of__hitbox__u32 = 
+        //             IDENTIFIER__UNKNOWN__u32;
+        //         continue;
+        //     }
+        // }
+        // TODO: -- up to here --
+
+        serialize_entity(
+                p_game,
+                p_serialization_request, 
+                p_entity);
+
+        release_entity_from__entity_manager(
+                p_game, 
+                get_p_world_from__game(p_game), 
+                get_p_entity_manager_from__game(p_game), 
+                p_entity);
     }
 
-    Identifier__u32 uuid__u32 =
-        p_collision_node__entry
-        ->uuid_of__hitbox__u32
-        ;
-
-    Entity *p_entity =
-        get_p_entity_by__uuid_from__entity_manager(
-                get_p_entity_manager_from__world(
-                    get_p_world_from__game(p_game)), 
-                uuid__u32);
-
-    if (!p_entity) {
-        debug_error("m_process__serialize_entities_in__global_space, failed to locate entity in collision_node.");
-        return;
-    }
-
-    serialize_entity(
-            p_game,
-            p_serialization_request, 
-            p_entity);
-
-    release_entity_from__entity_manager(
-            p_game, 
-            get_p_world_from__game(p_game), 
-            get_p_entity_manager_from__game(p_game), 
-            p_entity);
+    complete_process(p_this_process);
 }
 
 void m_process__deserialize_entities_in__global_space(
@@ -368,10 +390,28 @@ void m_process__serialize_global_space(
                         get_p_entity_manager_from__game(p_game), 
                         &p_collision_node_entry, 
                         &p_entity)) {
+                Hitbox_AABB *p_hitbox_aabb =
+                    get_p_hitbox_aabb_by__entity_from__hitbox_aabb_manager(
+                            get_p_hitbox_aabb_manager_from__game(p_game), 
+                            p_entity);
+                // TODO: this is a hack fix atm
+                // When entities move, their prior entries in other collision nodes
+                // SHOULD be properly removed, and this check SHOULD not be needed.
+                // if (p_hitbox_aabb) {
+                //     if (!is_chunk_vectors_3i32__equal(
+                //                 vector_3i32F4_to__chunk_vector_3i32(
+                //                     get_position_3i32F4_of__hitbox_aabb(p_hitbox_aabb)), 
+                //                 p_global_space->chunk_vector__3i32)) {
+                //         p_collision_node_entry->uuid_of__hitbox__u32 = 
+                //             IDENTIFIER__UNKNOWN__u32;
+                //         continue;
+                //     }
+                // }
+                // TODO: -- up to here --
                 set_entity_as__disabled(p_entity);
             }
 
-            debug_info__verbose("m_process__SERialize_global_space [%p], dispatch m_process__serialize_chunk: (%d,%d,%d), ser_req: %p",
+            debug_info__verbose("m_process__serialize_global_space [%p], dispatch m_process__serialize_chunk: (%d,%d,%d), ser_req: %p",
                     p_this_process,
                     p_global_space->chunk_vector__3i32.x__i32,
                     p_global_space->chunk_vector__3i32.y__i32,

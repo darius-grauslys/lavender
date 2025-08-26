@@ -52,13 +52,23 @@ update_core () {
     mkdir -p ${GAME_DIR}/tests/core/source
     core_include=$(realpath "${GAME_DIR}/tests/core/include")
     core_source=$(realpath "${GAME_DIR}/tests/core/source")
-    ./update_recursive.sh \
-        $core_dir \
-        "" \
-        $core_include \
-        $core_source \
-        "core" \
-        "*/implemented*"
+    if [ $GAME_DIR != $LAVENDER_DIR ]; then
+        ./update_recursive.sh \
+            $core_dir \
+            "" \
+            $core_include \
+            $core_source \
+            "core" \
+            "*/implemented*"
+    else
+        ./update_recursive.sh \
+            $core_dir \
+            "" \
+            $core_include \
+            $core_source \
+            "core" \
+            ""
+    fi
     gen_main $core_include $core_source $1
 }
 

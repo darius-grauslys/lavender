@@ -182,6 +182,18 @@ bool is_vectors_3i32F4__equal(
         ;
 }
 
+static inline
+Vector__3i16F8 get_vector__3i16F8(
+        i16F8 x,
+        i16F8 y,
+        i16F8 z) {
+    return (Vector__3i16F8) {
+        x, 
+        y, 
+        z
+    };
+}
+
 static inline 
 bool is_vectors_3i16F8__equal(
         Vector__3i16F8 vector_1,
@@ -343,15 +355,12 @@ Vector__3u8 get_vector__3u8(
 static inline 
 Vector__3i32F4 get_vector__3i32F4(
         i32F4 x,
-        i32F4 x__fractional,
         i32F4 y,
-        i32F4 y__fractional,
-        i32F4 z,
-        i32F4 z__fractional) {
+        i32F4 z) {
     return (Vector__3i32F4) {
-        (x << FRACTIONAL_PERCISION_4__BIT_SIZE) + x__fractional, 
-        (y << FRACTIONAL_PERCISION_4__BIT_SIZE) + y__fractional, 
-        (z << FRACTIONAL_PERCISION_4__BIT_SIZE) + z__fractional
+        x, 
+        y, 
+        z
     };
 }
 

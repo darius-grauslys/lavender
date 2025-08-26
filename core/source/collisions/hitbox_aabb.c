@@ -118,7 +118,8 @@ void initialize_vector_3i32F4_as__aa_bb_without__velocity(
         hitbox->position__3i32F4.y__i32F4
         + offset_half_height
         ;
-    hitbox_point->z__i32F4 = 0;
+    hitbox_point->z__i32F4 = 
+        hitbox->position__3i32F4.z__i32F4;
 }
 
 void initialize_vector_3i32F4_as__aa_bb(
@@ -171,7 +172,8 @@ void initialize_vector_3i32_as__aa_bb_without__velocity(
         get_y_i32_from__hitbox(hitbox)
         + offset_half_height
         ;
-    hitbox_point->z__i32 = 0;
+    hitbox_point->z__i32 = 
+        hitbox->position__3i32F4.z__i32F4;
 }
 
 void initialize_vector_3i32_as__aa_bb(

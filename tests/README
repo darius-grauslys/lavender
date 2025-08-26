@@ -1,12 +1,28 @@
 
-This is where the tests for ./core can be found.
-This is the most important testsuite for AncientsGame
-as it tests all the buisness logic.
+For the most part, you can use:
+TEST_FUNCTION(name)
 
-I might come around to making tests for the specific
-PLATFORMS as well, but for now, I wont. Maybe you'd like to?
+and,
 
-I have to give credit to mikelong on StackOverflow for the idea
+INCLUDE_TEST__STATELESS(name)
+
+for most tests. See test_util.h in core/include
+for usable macros. In each test module, you will
+find a DEFINE_SUITE([module name], END_TESTS)
+You will add tests like so:
+
+DEFINE_SUITE([module name],
+    INCLUDE_TEST__STATELESS(name),
+    END_TESTS)
+
+Tests should return the following:
+    MUNIT_OK
+    MUNIT_FAIL
+
+For the various assertions, check:
+    munit.h
+
+Credit to mikelong on StackOverflow for the idea
 of including the C source file into the test module.
 https://stackoverflow.com/questions/65820/unit-testing-c-code
 

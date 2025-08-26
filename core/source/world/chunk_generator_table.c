@@ -32,7 +32,12 @@ static void _m_chunk_generator__default(
                             p_chunk, 
                             index__x, 
                             index__y, 
-                            index__z);
+#if CHUNK__DEPTH > 1
+                            index__z
+#else
+                            0
+#endif
+                            );
 
                 p_tile->the_kind_of__tile =
                     Tile_Kind__None;

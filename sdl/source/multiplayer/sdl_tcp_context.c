@@ -245,7 +245,7 @@ PLATFORM_TCP_Socket *PLATFORM_tcp_poll_accept(
         PLATFORM_TCP_Socket *p_PLATFORM_tcp_socket__server,
         IPv4_Address *p_ipv4) {
     struct sockaddr_in addr_in;
-    socklen_t socket_length;
+    socklen_t socket_length = sizeof(addr_in);
     errno = 0;
     int socket_handle__new_connection =
         accept(p_PLATFORM_tcp_socket__server->socket_handle,

@@ -1,5 +1,5 @@
 
-.PHONY: COPY_CFILES
+.PHONY: COPY_CFILES GAME_SETUP
 
 ifneq ($(BUILD),$(CURDIR))
 
@@ -9,6 +9,9 @@ include $(BASE_DIR)/$(PLATFORM)/Makefile.build
 
 ifneq ($(GAME_DIR),$(BASE_DIR))
 include $(GAME_DIR)/Makefile.build
+else
+GAME_SETUP:
+	@echo Building from $LAVENDER_DIR
 endif
 
 $(BUILD): 

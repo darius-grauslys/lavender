@@ -106,8 +106,11 @@ void m_process__game_action__global_space__request__inbound_server(
                 *p_gsv__3i32);
     
     Global_Space *p_global_space =
-        get_p_global_space_from__local_space(
-                p_local_space);
+        is_local_space__active(p_local_space)
+        ? get_p_global_space_from__local_space(
+                p_local_space)
+        : 0
+        ;
 
     if (!p_global_space) {
         dispatch_game_action__bad_request(

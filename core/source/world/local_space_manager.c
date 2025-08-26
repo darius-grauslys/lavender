@@ -504,6 +504,8 @@ void move_local_space_manager(
     Local_Space *p_local_space__end = 0;
     Chunk_Vector__3i32 chunk_vector__start__3i32;
 
+    i8 dz_update = 0;
+
     if (direction__u8 & DIRECTION__NORTH) {
         p_local_space_manager->center_of__local_space_manager__3i32
             .y__i32++;
@@ -547,7 +549,11 @@ void move_local_space_manager(
                     p_game,
                     p_local_space__current,
                     p_local_space__end,
-                    chunk_vector__start__3i32,
+                    get_vector__3i32(
+                        chunk_vector__start__3i32.x__i32, 
+                        chunk_vector__start__3i32.y__i32, 
+                        chunk_vector__start__3i32.z__i32
+                        + (dz_update++)),
                     DIRECTION__EAST);
 #if LOCAL_SPACE_MANAGER__DEPTH > 1
             move_p_ptr_local_space__upwards(&p_local_space__end);
@@ -600,7 +606,11 @@ void move_local_space_manager(
                     p_game,
                     p_local_space__current,
                     p_local_space__end,
-                    chunk_vector__start__3i32,
+                    get_vector__3i32(
+                        chunk_vector__start__3i32.x__i32, 
+                        chunk_vector__start__3i32.y__i32, 
+                        chunk_vector__start__3i32.z__i32
+                        + (dz_update++)),
                     DIRECTION__EAST);
 #if LOCAL_SPACE_MANAGER__DEPTH > 1
             move_p_ptr_local_space__upwards(&p_local_space__end);
@@ -610,6 +620,7 @@ void move_local_space_manager(
                     DIRECTION__UPWARDS));
 #endif
     }
+    dz_update = 0;
     if (direction__u8 & DIRECTION__EAST) {
         p_local_space_manager->center_of__local_space_manager__3i32
             .x__i32++;
@@ -653,7 +664,11 @@ void move_local_space_manager(
                     p_game,
                     p_local_space__current,
                     p_local_space__end,
-                    chunk_vector__start__3i32,
+                    get_vector__3i32(
+                        chunk_vector__start__3i32.x__i32, 
+                        chunk_vector__start__3i32.y__i32, 
+                        chunk_vector__start__3i32.z__i32
+                        + (dz_update++)),
                     DIRECTION__SOUTH);
 #if LOCAL_SPACE_MANAGER__DEPTH > 1
             move_p_ptr_local_space__upwards(&p_local_space__end);
@@ -705,7 +720,11 @@ void move_local_space_manager(
                     p_game,
                     p_local_space__current,
                     p_local_space__end,
-                    chunk_vector__start__3i32,
+                    get_vector__3i32(
+                        chunk_vector__start__3i32.x__i32, 
+                        chunk_vector__start__3i32.y__i32, 
+                        chunk_vector__start__3i32.z__i32
+                        + (dz_update++)),
                     DIRECTION__SOUTH);
 #if LOCAL_SPACE_MANAGER__DEPTH > 1
             move_p_ptr_local_space__upwards(&p_local_space__end);
@@ -715,6 +734,7 @@ void move_local_space_manager(
                     DIRECTION__UPWARDS));
 #endif
     }
+    dz_update = 0;
 #if LOCAL_SPACE_MANAGER__DEPTH > 1
     if (direction__u8 & DIRECTION__UPWARDS) {
         p_local_space_manager->center_of__local_space_manager__3i32
@@ -722,7 +742,7 @@ void move_local_space_manager(
 
         chunk_vector__start__3i32 =
             p_local_space_manager
-            ->p_local_space__north_west
+            ->p_local_space__north_west__top
             ->global_space__vector__3i32
             ;
         chunk_vector__start__3i32.z__i32++;
@@ -864,14 +884,14 @@ Local_Space *get_p_local_space_from__local_space_manager(
         }
     }
 
-    return
-        (is_vectors_3i32__equal(
-                p_local_space
-                ->global_space__vector__3i32, 
-                chunk_vector__3i32))
-        ? p_local_space
-        : 0
-        ;
+    // TODO: can we do better at a systemic level?
+    if (!is_chunk_vectors_3i32__equal(
+                chunk_vector__3i32, 
+                p_local_space->global_space__vector__3i32)) {
+        return 0;
+    }
+
+    return p_local_space;
 }
 
 Tile *get_p_tile_by__3i32F4_from__local_space_manager(
@@ -882,7 +902,7 @@ Tile *get_p_tile_by__3i32F4_from__local_space_manager(
                 p_local_space_manager,
                 vector__3i32F4);
 
-    if (!is_local_space__allocated(p_local_space))
+    if (!is_local_space__active(p_local_space))
         return 0;
 
     Local_Tile_Vector__3u8 local_tile_vector__3u8 =

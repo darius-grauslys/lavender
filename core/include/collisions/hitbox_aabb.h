@@ -249,6 +249,7 @@ void apply_velocity_to__hitbox(
     apply_z_velocity_to__hitbox(p_hitbox_aabb, vector->z__i32F4);
 }
 
+/// TODO: REMOVE, must use dispatch_game_action__hitbox instead
 static inline
 void set_x_position_to__hitbox(
         Hitbox_AABB *p_hitbox_aabb,
@@ -263,6 +264,7 @@ void set_x_position_to__hitbox(
     p_hitbox_aabb->position__3i32F4.x__i32F4 = x__position;
 }
 
+/// TODO: REMOVE, must use dispatch_game_action__hitbox instead
 static inline
 void set_y_position_to__hitbox(
         Hitbox_AABB *p_hitbox_aabb,
@@ -277,6 +279,7 @@ void set_y_position_to__hitbox(
     p_hitbox_aabb->position__3i32F4.y__i32F4 = y__position;
 }
 
+/// TODO: REMOVE, must use dispatch_game_action__hitbox instead
 static inline
 void set_z_position_to__hitbox(
         Hitbox_AABB *p_hitbox_aabb,
@@ -291,6 +294,7 @@ void set_z_position_to__hitbox(
     p_hitbox_aabb->position__3i32F4.z__i32F4 = z__position;
 }
 
+/// TODO: REMOVE, must use dispatch_game_action__hitbox instead
 static inline
 void offset_x_position_to__hitbox(
         Hitbox_AABB *p_hitbox_aabb,
@@ -305,6 +309,7 @@ void offset_x_position_to__hitbox(
     p_hitbox_aabb->position__3i32F4.x__i32F4 += x__position;
 }
 
+/// TODO: REMOVE, must use dispatch_game_action__hitbox instead
 static inline
 void offset_y_position_to__hitbox(
         Hitbox_AABB *p_hitbox_aabb,
@@ -319,6 +324,7 @@ void offset_y_position_to__hitbox(
     p_hitbox_aabb->position__3i32F4.y__i32F4 += y__position;
 }
 
+/// TODO: REMOVE, must use dispatch_game_action__hitbox instead
 static inline
 void offset_z_position_to__hitbox(
         Hitbox_AABB *p_hitbox_aabb,

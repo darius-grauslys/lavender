@@ -226,6 +226,7 @@ PLATFORM_TCP_Socket *PLATFORM_tcp_server(
     if (bind(p_PLATFORM_tcp_socket->socket_handle,
                 (struct sockaddr*)&addr_in,
                 sizeof(addr_in))) {
+        debug_error("NO_GUI::PLATFORM_tcp_server, failed to bind.");
         PLATFORM_tcp_close_socket(
                 p_PLATFORM_tcp_context, 
                 p_PLATFORM_tcp_socket);
@@ -249,6 +250,10 @@ PLATFORM_TCP_Socket *PLATFORM_tcp_server(
 bool PLATFORM_tcp_close_socket(
         PLATFORM_TCP_Context *p_PLATFORM_tcp_context,
         PLATFORM_TCP_Socket *p_PLATFORM_tcp_socket) {
+    if (!p_PLATFORM_tcp_socket) {
+        debug_error("NO_GUI::PLATFORM_tcp_close_socket, p_PLATFORM_tcp_socket == 0.");
+        return false;
+    }
     if (close(p_PLATFORM_tcp_socket->socket_handle)) {
         debug_error("NO_GUI::PLATFORM_tcp_close_socket, failed to close socket.");
         return false;
@@ -268,7 +273,7 @@ PLATFORM_TCP_Socket *PLATFORM_tcp_poll_accept(
         PLATFORM_TCP_Socket *p_PLATFORM_tcp_socket__server,
         IPv4_Address *p_ipv4) {
     struct sockaddr_in addr_in;
-    socklen_t socket_length;
+    socklen_t socket_length = sizeof(addr_in);
     errno = 0;
     int socket_handle__new_connection =
         accept(p_PLATFORM_tcp_socket__server->socket_handle,
@@ -277,7 +282,7 @@ PLATFORM_TCP_Socket *PLATFORM_tcp_poll_accept(
 
     if (socket_handle__new_connection == -1) {
         if (errno != EWOULDBLOCK && errno != EAGAIN) {
-            debug_error("NO_GUI::PLATFORM_tcp_poll_accept, error.");
+            debug_error("NO_GUI::PLATFORM_tcp_poll_accept, unexpected error: %d.", errno);
             return 0;
         }
         return 0;

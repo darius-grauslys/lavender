@@ -1,0 +1,30 @@
+#include "test_suite_main.h"
+#include "test_suite_vectors.h"
+#include "test_suite_core_string.h"
+#include "test_suite_random.h"
+#include "test_suite_client.h"
+#include "test_suite_degree.h"
+#include "test_suite_game.h"
+#include "input/MAIN_TEST_SUITE__CORE_INPUT.h"
+#include "rendering/MAIN_TEST_SUITE__CORE_RENDERING.h"
+#include "world/MAIN_TEST_SUITE__CORE_WORLD.h"
+#include "inventory/MAIN_TEST_SUITE__CORE_INVENTORY.h"
+#include "sort/MAIN_TEST_SUITE__CORE_SORT.h"
+#include "debug/MAIN_TEST_SUITE__CORE_DEBUG.h"
+#include "audio/MAIN_TEST_SUITE__CORE_AUDIO.h"
+#include "log/MAIN_TEST_SUITE__CORE_LOG.h"
+#include "serialization/MAIN_TEST_SUITE__CORE_SERIALIZATION.h"
+#include "game_action/MAIN_TEST_SUITE__CORE_GAME_ACTION.h"
+#include "entity/MAIN_TEST_SUITE__CORE_ENTITY.h"
+#include "ui/MAIN_TEST_SUITE__CORE_UI.h"
+#include "collisions/MAIN_TEST_SUITE__CORE_COLLISIONS.h"
+#include "util/MAIN_TEST_SUITE__CORE_UTIL.h"
+#include "multiplayer/MAIN_TEST_SUITE__CORE_MULTIPLAYER.h"
+#include "raycast/MAIN_TEST_SUITE__CORE_RAYCAST.h"
+#include "process/MAIN_TEST_SUITE__CORE_PROCESS.h"
+#include "scene/MAIN_TEST_SUITE__CORE_SCENE.h"
+
+#include <test_util.h>
+
+DECLARE_SUITE(CORE_ANCIENTS_GAME);
+

@@ -253,10 +253,34 @@ void GL_compose_world(
         p_ptr_array_of__gfx_windows[0]
         ->p_camera;
 
-    Local_Space *p_local_space__current =
-        get_p_local_space_by__3i32F4_from__local_space_manager(
+    Chunk_Vector__3i32 chunk_vector__3i32 =
+        vector_3i32F4_to__chunk_vector_3i32(
+                get_position_3i32F4_of__camera(
+                    p_camera));
+    Local_Space *p_local_space__north_west =
+        p_local_space_manager
+        ->p_local_space__north_west;
+    chunk_vector__3i32.x__i32 = 
+        p_local_space__north_west
+        ->p_local_space__south
+        ->p_local_space__east
+        ->global_space__vector__3i32
+        .x__i32
+        ;
+    chunk_vector__3i32.y__i32 = 
+        p_local_space__north_west
+        ->p_local_space__south
+        ->p_local_space__east
+        ->global_space__vector__3i32
+        .y__i32
+        ;
+
+    Local_Space *p_local_space__begin =
+        get_p_local_space_from__local_space_manager(
                 p_local_space_manager, 
-                get_position_3i32F4_of__camera(p_camera));
+                chunk_vector__3i32);
+    Local_Space *p_local_space__current =
+        p_local_space__begin;
     Local_Space *p_local_space__current_sub;
 
     float clear_color[4];

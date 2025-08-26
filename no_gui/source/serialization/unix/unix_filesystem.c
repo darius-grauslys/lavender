@@ -8,6 +8,8 @@
 #include <dirent.h>
 #include <unistd.h>
 #include <libgen.h>
+#include <sys/stat.h>
+#include <stdlib.h>
 
 bool NO_GUI_get_path_to__the_game(char path[1024]) {
     bool result = (bool)(uint64_t)realpath("/proc/self/exe", path);
@@ -48,6 +50,47 @@ void PLATFORM_closedir(PLATFORM_Directory *p_dir) {
 
 bool PLATFORM_mkdir(const char *p_c_str, uint32_t file_code) {
     return mkdir(p_c_str, file_code);
+}
+
+Quantity__u32 PLATFORM_get_directories(
+        PLATFORM_File_System_Context *p_PLATFORM_file_system_context,
+        IO_path path,
+        char *p_directory_name__buffer,
+        Quantity__u32 size_of__directory_name__buffer,
+        Quantity__u32 max_length_of__directory_name) {
+    DIR *p_dir = opendir(path);
+    if (!p_dir) {
+        debug_error("SDL::UNIX::PLATFORM_get_directories, failed to find path: %s",
+                path);
+        return 0;
+    }
+
+    Quantity__u32 quantity_of__directories = 0;
+
+    struct dirent *p_directory_entry;
+
+    while ((p_directory_entry = readdir(p_dir))) {
+        if (!strncmp(p_directory_entry->d_name, ".", 1)
+                || !strncmp(p_directory_entry->d_name, "..", 2)) {
+            continue;
+        }
+        if (max_length_of__directory_name
+                * quantity_of__directories
+                > size_of__directory_name__buffer) {
+            quantity_of__directories++;
+            continue;
+        }
+
+        strncpy(
+                p_directory_name__buffer
+                + sizeof(char)
+                * max_length_of__directory_name
+                * quantity_of__directories++, 
+                p_directory_entry->d_name, 
+                max_length_of__directory_name);
+    }
+
+    return quantity_of__directories;
 }
 
 #endif

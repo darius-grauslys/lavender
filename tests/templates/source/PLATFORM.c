@@ -1,227 +1,199 @@
+#if !defined(PLATFORM)
 ///
-/// !!THIS FILE IS TO BE REMOVED COMPLETELY IN THE FUTURE!!
-///
-
-///
-/// We are temporarily storing platform specific definitions here.
-/// Specifically those which are not yet implemented in the SDL
-/// backend.
+/// This file includes everything from platform.h
+/// which is NOT implemented.
 ///
 
-#include "defines_weak.h"
-#include "game.h"
-#include "platform.h"
-#include "platform_defines.h"
-#include "rendering/texture.h"
+#include "defines.h"
+#include "timer.h"
 
-void PLATFORM_initialize_audio(
-        PLATFORM_Audio_Context *p_PLATFORM_audio_context) {}
+#ifdef __unix__
+#include <stdlib.h>
+#include <unistd.h>
+#endif
 
-/// 
-/// Returns false if fails to allocate audio effect.
-///
-Audio_Effect *PLATFORM_allocate_audio_effect(
-        PLATFORM_Audio_Context *p_PLATFORM_audio_context) {
-    return 0;
-}
+#ifdef _WIN32
 
-void PLATFORM_play_audio_effect(
-        PLATFORM_Audio_Context *p_PLATFORM_audio_context,
-        Audio_Effect *p_audio_effect) {}
-
-void PLATFORM_poll_audio_effects(
-        PLATFORM_Audio_Context *p_PLATFORM_audio_context) {}
-
-void PLATFORM_play_audio__stream(
-        PLATFORM_Audio_Context *p_PLATFORM_audio_context,
-        enum Audio_Stream_Kind the_kind_of__audio_stream) {}
-
-bool PLATFORM_is_audio__streaming(
-        PLATFORM_Audio_Context *p_PLATFORM_audio_context) {
-    return 0;
+void PLATFORM_initialize_time(void) {
+    return;
 }
 
 ///
-/// SECTION_debug
+/// NOTE: Timer value is considered to be u32F20 seconds
 ///
+#include <windows.h>
+#include <mmsystem.h>
+u32F20 PLATFORM_get_time_elapsed(
+        Timer__u32 *p_timer__seconds__u32,
+        Timer__u32 *p_timer__nanoseconds__u32) {
+    DWORD time__old = get_time_elapsed_from__timer_u32(
+            p_timer__nanoseconds__u32);
+    DWORD time__current = timeGetTime();
 
-void PLATFORM_coredump(void) {}
-void PLATFORM_pre_abort(void) {}
-void PLATFORM_abort(void) {}
+    if (time__old == time__current)
+        return 0;
+
+    u32 elapsed__miliseconds = 
+        subtract_u32__no_overflow(
+                time__current,
+                time__old);
+    if (!elapsed__miliseconds) {
+        elapsed__miliseconds =
+            time__current
+            + (((uint32_t)-1)
+                - time__old)
+            ;
+    }
+    
+    (void)progress_timer__u32(
+                p_timer__nanoseconds__u32, 
+                elapsed__miliseconds);
+
+    return 
+        ((elapsed__miliseconds
+                & MASK(10))
+                << 10)
+        ;
+}
+#else
+
+#include <time.h>
+
+struct timespec _NO_GUI_timespec__initial;
+
+void PLATFORM_initialize_time(void) {
+    clock_gettime(
+            CLOCK_MONOTONIC, 
+            &_NO_GUI_timespec__initial);
+}
 
 ///
-/// SECTION_entity
+/// NOTE: Timer value is considered to be u32F20 seconds
 ///
-// TODO: remove
-void PLATFORM_render_entity(
-        Entity *entity,
-        Game *game) {}
+u32F20 PLATFORM_get_time_elapsed(
+        Timer__u32 *p_timer__seconds__u32,
+        Timer__u32 *p_timer__nanoseconds__u32) {
+    struct timespec timespec__current;
+    clock_gettime(
+            CLOCK_MONOTONIC, 
+            &timespec__current);
 
-///
-/// SECTION_game_actions
-///
+    if (timespec__current.tv_nsec < _NO_GUI_timespec__initial.tv_nsec) {
+        timespec__current.tv_sec--;
+        timespec__current.tv_nsec = 
+            _NO_GUI_timespec__initial.tv_nsec
+            - timespec__current.tv_nsec;
+    } else {
+        timespec__current.tv_nsec -= _NO_GUI_timespec__initial.tv_nsec;
+    }
+    timespec__current.tv_sec = _NO_GUI_timespec__initial.tv_sec;
 
-// TODO: remove, make PLATFORM_tcp PLATFORM_udp
-void m_PLATFORM_game_action_handler_for__multiplayer(
-        Game *p_this_game,
-        Game_Action *p_game_action) {}
+    u32 elapsed__seconds = 
+        subtract_u32__no_overflow(
+                timespec__current.tv_sec, 
+                get_time_elapsed_from__timer_u32(
+                    p_timer__seconds__u32));
+    if (!elapsed__seconds) {
+        elapsed__seconds=
+            timespec__current.tv_sec
+            + p_timer__seconds__u32->remaining__u32
+            ;
+    }
 
-///
-/// SECTION_rendering
-///
+    u32 elapsed__nanoseconds =
+        subtract_u32__no_overflow(
+                timespec__current.tv_nsec, 
+                get_time_elapsed_from__timer_u32(
+                    p_timer__nanoseconds__u32));
+    if (!elapsed__nanoseconds) {
+        elapsed__nanoseconds=
+            timespec__current.tv_nsec
+            + p_timer__nanoseconds__u32->remaining__u32
+            ;
+    }
 
-void PLATFORM_put_char_in__typer(
-        PLATFORM_Gfx_Context *p_PLATFORM_gfx_context,
-        Typer *p_typer,
-        unsigned char letter) {}
+    (void)progress_timer__u32(
+                p_timer__seconds__u32, 
+                elapsed__seconds);
+    if (progress_timer__u32(
+                p_timer__nanoseconds__u32, 
+                elapsed__nanoseconds)) {
+        elapsed__seconds--;
+    }
 
-PLATFORM_Sprite *PLATFORM_allocate_sprite(
+    return 
+        (elapsed__seconds << 20)
+        + ((elapsed__nanoseconds
+                & MASK(30))
+                >> 10)
+        ;
+}
+
+void PLATFORM_get_date_time(Date_Time *p_date_time) {
+    time_t time_raw;
+    struct tm * p_time_local;
+
+    time(&time_raw);
+    p_time_local = localtime(&time_raw);
+
+    p_date_time->seconds =
+        p_time_local->tm_sec;
+    p_date_time->minutes =
+        p_time_local->tm_min;
+    p_date_time->hours =
+        p_time_local->tm_hour;
+    p_date_time->days =
+        p_time_local->tm_mday;
+    p_date_time->months =
+        p_time_local->tm_mon;
+    p_date_time->years =
+        p_time_local->tm_year;
+}
+
+#endif
+
+void PLATFORM_coredump(void) {
+#ifdef _WIN32
+    // TODO: impl win32
+#else
+    if(!fork()) abort();
+#endif
+}
+
+void PLATFORM_pre_abort(void) {
+}
+
+void PLATFORM_abort(void) {
+    abort();
+}
+
+void PLATFORM_pre_render(Game *p_game) {}
+void PLATFORM_post_render(Game *p_game) {}
+
+void PLATFORM_compose_world(
         Gfx_Context *p_gfx_context,
-        Graphics_Window *p_gfx_window,
-        PLATFORM_Texture *p_PLATFORM_texture_to__sample_by__sprite,
-        Texture_Flags texture_flags_for__sprite) {
-    return 0;
-}
+        Graphics_Window **p_ptr_array_of__gfx_windows,
+        Local_Space_Manager *p_local_space_manager,
+        Texture *ptr_array_of__textures,
+        Quantity__u32 quantity_of__gfx_windows,
+        f_Tile_Render_Kernel f_tile_render_kernel) {}
 
-
-void PLATFORM_release_sprite(
-        Gfx_Context *p_gfx_context,
-        PLATFORM_Sprite *p_PLATFORM_sprite) {}
-
-void PLATFORM_release_all__sprites(
-        PLATFORM_Gfx_Context *p_PLATFORM_gfx_context) {}
-
-// TODO: use wrapper types
-void PLATFORM_render_sprite(
-        Gfx_Context *p_gfx_context,
-        Graphics_Window *p_gfx_window,
-        Sprite_Wrapper *sprite,
-        Vector__3i32F4 position_of__sprite__3i32F4) {}
-
-// TODO: remove
-void PLATFORM_update_sprite_gfx__to_current_frame(
-        Sprite_Wrapper *sprite_wrapper) {}
-
-void PLATFORM_update_sprite(
-        PLATFORM_Sprite *p_PLATFORM_sprite) {}
-
-/// 
-/// On NDS, this will init both main and sub.
-///
-// TODO: remove
-void PLATFORM_initialize_rendering__game(PLATFORM_Gfx_Context *gfx_context) {}
-
-void PLATFORM_initialize_gfx_context(
-        PLATFORM_Gfx_Context *p_PLATFORM_gfx_context) {}
-
-PLATFORM_Texture *PLATFORM_allocate_texture(
-        PLATFORM_Gfx_Context *p_PLATFORM_gfx_context,
-        PLATFORM_Graphics_Window *p_PLATFORM_gfx_window,
-        Texture_Flags texture_flags) {
-    return 0;
-}
-
-
-PLATFORM_Texture *PLATFORM_allocate_texture_with__path(
+bool PLATFORM_allocate_texture(
         PLATFORM_Gfx_Context *p_PLATFORM_gfx_context,
         PLATFORM_Graphics_Window *p_PLATFORM_gfx_window,
         Texture_Flags texture_flags,
-        const char *c_str__path) {
-    return 0;
-}
+        Texture *p_OUT_texture) { return 0; }
 
-
-// TODO: update to take Texture__Wrapper *p_
-void PLATFORM_update_texture(
-        PLATFORM_Texture *texture) {}
-
-// TODO: remove
-void PLATFORM_use_texture(
+bool PLATFORM_allocate_texture_with__path(
         PLATFORM_Gfx_Context *p_PLATFORM_gfx_context,
-        PLATFORM_Texture *texture) {}
+        PLATFORM_Graphics_Window *p_PLATFORM_gfx_window,
+        Texture_Flags texture_flags,
+        const char *c_str__path,
+        Texture *p_OUT_texture) { return 0; }
 
 void PLATFORM_release_texture(
         PLATFORM_Gfx_Context *p_PLATFORM_gfx_context,
-        PLATFORM_Texture *texture) {}
-
-// TODO: remove
-Texture_Flags *PLATFORM_get_p_texture_flags_from__PLATFORM_texture(
-        PLATFORM_Texture *texture) {
-    return 0;
-}
-
-
-// TODO: remove
-Quantity__u32 PLATFORM_get_max_quantity_of__allocations_for__texture_flags(
-        PLATFORM_Gfx_Context *p_PLATFORM_gfx_context,
-        Texture_Flags texture_flags) {
-    return 0;
-}
-
-
-// TODO: remove
-Quantity__u32 PLATFORM_get_quantity_of__available_allocations_for__texture_flags(
-        PLATFORM_Gfx_Context *p_PLATFORM_gfx_context,
-        Texture_Flags texture_flags) {
-    return 0;
-}
-
-
-// TODO: remove, make a Profile_t struct, and populate
-bool PLATFORM_has_support_for__texture_flag__render_method(
-        PLATFORM_Gfx_Context *p_PLATFORM_gfx_context,
-        Texture_Flags texture_flags) {
-    return 0;
-}
-
-
-///
-/// SECTION_world
-///
-
-// TODO: remove
-void PLATFORM_render_chunk(
-        Gfx_Context *p_gfx_context,
-        Graphics_Window *p_gfx_window,
-        Chunk_Manager__Chunk_Map_Node *p_chunk_map_node) {}
-
-// TODO: remove
-void PLATFORM_render_tile(
-        PLATFORM_Gfx_Context *context,
-        Tile *tile) {}
-
-// TODO: remove
-void PLATFORM_update_chunk(
-        PLATFORM_Gfx_Context *p_gfx_context,
-        Chunk_Manager *p_chunk_manager,
-        Chunk_Manager__Chunk_Map_Node *p_chunk_map_node) {}
-
-// TODO: remove
-void PLATFORM_update_chunks(
-        PLATFORM_Gfx_Context *gfx_context,
-        Chunk_Manager *chunk_manager) {}
-
-///
-/// SECTION_core
-///
-
-i32F20 PLATFORM_get_time_elapsed(
-        Timer__u32 *p_timer__seconds__u32,
-        Timer__u32 *p_timer__nanoseconds__u32) {
-    return 0;
-}
-
-int PLATFORM_main(Game *p_game) {
-    return 0;
-}
-
-void PLATFORM_pre_render(Game *game) {}
-
-void PLATFORM_post_render(Game *game) {}
-
-/// 
-/// SECTION_ui
-///
+        Texture texture) {}
 
 PLATFORM_Graphics_Window *PLATFORM_allocate_gfx_window(
         Gfx_Context *p_gfx_context,
@@ -237,21 +209,53 @@ void PLATFORM_compose_gfx_window(
         Gfx_Context *p_gfx_context, 
         Graphics_Window *p_gfx_window) {}
 
-void PLATFORM_compose_world(
-        Gfx_Context *p_gfx_context,
-        Graphics_Window **p_ptr_array_of__gfx_windows,
-        Local_Space_Manager *p_local_space_manager,
-        PLATFORM_Texture **p_ptr_array_of__PLATFORM_textures,
-        Quantity__u32 quantity_of__gfx_windows,
-        f_Tile_Render_Kernel f_tile_render_kernel) {}
-
 void PLATFORM_render_gfx_window(
         Gfx_Context *p_gfx_context,
         Graphics_Window *p_gfx_window) {}
 
-///
-/// SECTION_scene
-///
+void PLATFORM_put_char_in__typer(
+        Gfx_Context *p_gfx_context,
+        Typer *p_typer,
+        unsigned char letter) {}
+
+void PLATFORM_initialize_audio(
+        PLATFORM_Audio_Context *p_PLATFORM_audio_context) {}
+Audio_Effect *PLATFORM_allocate_audio_effect(
+        PLATFORM_Audio_Context *p_PLATFORM_audio_context) { return 0; }
+
+void PLATFORM_play_audio_effect(
+        PLATFORM_Audio_Context *p_PLATFORM_audio_context,
+        Audio_Effect *p_audio_effect) {}
+
+void PLATFORM_poll_audio_effects(
+        PLATFORM_Audio_Context *p_PLATFORM_audio_context) {}
+
+void PLATFORM_play_audio__stream(
+        PLATFORM_Audio_Context *p_PLATFORM_audio_context,
+        enum Audio_Stream_Kind the_kind_of__audio_stream) {}
+
+bool PLATFORM_is_audio__streaming(
+        PLATFORM_Audio_Context *p_PLATFORM_audio_context) { return false; }
+
+PLATFORM_Sprite *PLATFORM_allocate_sprite(
+        Gfx_Context *p_gfx_context,
+        Graphics_Window *p_gfx_window,
+        Sprite *p_sprite,
+        Texture_Flags texture_flags_for__sprite) { return 0; }
+
+void PLATFORM_release_sprite(
+        Gfx_Context *p_gfx_context,
+        PLATFORM_Sprite *p_PLATFORM_sprite) {}
+
+void PLATFORM_release_all__sprites(
+        PLATFORM_Gfx_Context *p_PLATFORM_gfx_context) {}
+
+// TODO: use wrapper types
+void PLATFORM_render_sprite(
+        Gfx_Context *p_gfx_context,
+        Graphics_Window *p_gfx_window,
+        Sprite *sprite,
+        Vector__3i32F4 position_of__sprite__3i32F4) {}
 
 ///
 /// SECTION_serialization
@@ -265,6 +269,15 @@ void PLATFORM_initialize_file_system_context(
 /// Returns length of the path
 ///
 Quantity__u32 PLATFORM_get_base_directory(IO_path path) {
+    return 0;
+}
+
+Quantity__u32 PLATFORM_get_directories(
+        PLATFORM_File_System_Context *p_PLATFORM_file_system_context,
+        IO_path path,
+        char *p_directory_name__buffer,
+        Quantity__u32 size_of__directory_name__buffer,
+        Quantity__u32 max_length_of__directory_name) {
     return 0;
 }
 
@@ -442,7 +455,4 @@ i32 PLATFORM_tcp_recieve(
         Quantity__u32 length_of_bytes_in__destination) {
     return 0;
 }
-
-/// 
-/// SECTION_defines
-///
+#endif

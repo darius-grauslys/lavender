@@ -141,7 +141,6 @@ Global_Space *get_p_global_space_from__global_space_manager(
             get_uuid_for__global_space(local_space_vector__3i32));
     if (!is_global_space__allocated(p_global_space))
         return 0;
-
     return p_global_space;
 }
 

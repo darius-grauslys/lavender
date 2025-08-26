@@ -7,6 +7,7 @@
 #include "platform_defines.h"
 #include "rendering/gfx_context.h"
 #include "rendering/sprite.h"
+#include "rendering/texture.h"
 #include "serialization/hashing.h"
 #include "serialization/identifiers.h"
 #include "serialization/serialization_header.h"
@@ -239,6 +240,13 @@ void render_sprites_in__sprite_manager(
         }
         p_sprite_render_record->position__3i32F4 =
             p_hitbox_aabb->position__3i32F4;
+        p_sprite_render_record->position__3i32F4.x__i32F4 -=
+            i32_to__i32F4(
+                    get_length_of__texture_flag__width(
+                        p_sprite_render_record
+                        ->p_sprite
+                        ->texture_of__sprite
+                        .texture_flags)) >> 2; // TODO: why >> 2 and not >> 1?
     } while ((++p_sprite_render_record)->p_sprite
             && p_sprite_render_record 
             < p_sprite_manager->p_sprite_render_record__last);

@@ -176,13 +176,15 @@ int strncmp(const char *, const char *, size_t);
 size_t strnlen(const char *, size_t);
 char *strncpy(char *dest, const char *src, size_t n);
 
+void PLATFORM_initialize_time(void);
 void PLATFORM_get_date_time(Date_Time *p_date_time);
 
 u32F20 PLATFORM_get_time_elapsed(
         Timer__u32 *p_timer__seconds__u32,
         Timer__u32 *p_timer__nanoseconds__u32);
 
-int PLATFORM_main(Game *p_game);
+void PLATFORM_initialize_game(Game *p_game);
+void PLATFORM_close_game(Game *p_game);
 
 void PLATFORM_pre_render(Game *game);
 

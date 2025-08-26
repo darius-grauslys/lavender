@@ -1,0 +1,8 @@
+#include <game_action/core/world/MAIN_TEST_SUITE__CORE_GAME_ACTION_CORE_WORLD.h>
+
+INCLUDE_SUB_SUITES(CORE_GAME_ACTION_CORE_WORLD, 3,
+INCLUDE_SUITE(game_action__world__load_client),
+INCLUDE_SUITE(game_action__world__load_world),NULL);
+
+DEFINE_SUITE_WITH__SUB_SUITES(CORE_GAME_ACTION_CORE_WORLD, END_TESTS);
+

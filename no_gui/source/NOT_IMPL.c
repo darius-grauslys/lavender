@@ -9,27 +9,29 @@ void PLATFORM_pre_render(Game *p_game) {}
 void PLATFORM_post_render(Game *p_game) {}
 
 void PLATFORM_compose_world(
-        Gfx_Context *p_gfx_context, 
-        Graphics_Window **p_ptr_array_of__gfx_windows, 
-        Local_Space_Manager *p_local_space_manager, 
-        PLATFORM_Texture **p_ptr_array_of__PLATFORM_textures, 
-        Quantity__u32 quantity_of__gfx_windows, 
+        Gfx_Context *p_gfx_context,
+        Graphics_Window **p_ptr_array_of__gfx_windows,
+        Local_Space_Manager *p_local_space_manager,
+        Texture *ptr_array_of__textures,
+        Quantity__u32 quantity_of__gfx_windows,
         f_Tile_Render_Kernel f_tile_render_kernel) {}
 
-PLATFORM_Texture *PLATFORM_allocate_texture(
-        PLATFORM_Gfx_Context *p_PLATFORM_gfx_context, 
-        PLATFORM_Graphics_Window *p_PLATFORM_gfx_window, 
-        Texture_Flags texture_flags) { return 0; }
-
-PLATFORM_Texture *PLATFORM_allocate_texture_with__path(
+bool PLATFORM_allocate_texture(
         PLATFORM_Gfx_Context *p_PLATFORM_gfx_context,
         PLATFORM_Graphics_Window *p_PLATFORM_gfx_window,
         Texture_Flags texture_flags,
-        const char *c_str__path) { return 0; }
+        Texture *p_OUT_texture) { return 0; }
+
+bool PLATFORM_allocate_texture_with__path(
+        PLATFORM_Gfx_Context *p_PLATFORM_gfx_context,
+        PLATFORM_Graphics_Window *p_PLATFORM_gfx_window,
+        Texture_Flags texture_flags,
+        const char *c_str__path,
+        Texture *p_OUT_texture) { return 0; }
 
 void PLATFORM_release_texture(
         PLATFORM_Gfx_Context *p_PLATFORM_gfx_context,
-        PLATFORM_Texture *texture) {}
+        Texture texture) {}
 
 PLATFORM_Graphics_Window *PLATFORM_allocate_gfx_window(
         Gfx_Context *p_gfx_context,
@@ -50,7 +52,7 @@ void PLATFORM_render_gfx_window(
         Graphics_Window *p_gfx_window) {}
 
 void PLATFORM_put_char_in__typer(
-        PLATFORM_Gfx_Context *p_PLATFORM_gfx_context,
+        Gfx_Context *p_gfx_context,
         Typer *p_typer,
         unsigned char letter) {}
 
@@ -76,7 +78,7 @@ bool PLATFORM_is_audio__streaming(
 PLATFORM_Sprite *PLATFORM_allocate_sprite(
         Gfx_Context *p_gfx_context,
         Graphics_Window *p_gfx_window,
-        PLATFORM_Texture *p_PLATFORM_texture_to__sample_by__sprite,
+        Sprite *p_sprite,
         Texture_Flags texture_flags_for__sprite) { return 0; }
 
 void PLATFORM_release_sprite(

@@ -60,6 +60,10 @@ void remove_entry_from__collision_node(
         Collision_Node_Pool *p_collision_node_pool,
         Collision_Node *p_collision_node,
         Identifier__u32 uuid__u32) {
+    if (!p_collision_node) {
+        debug_error("remove_entry_from__collision_node, p_collision_node == 0.");
+        return;
+    }
     Collision_Node_Entry *p_collision_node_entry =
         p_collision_node->p_linked_list__collision_node_entries__tail;
     Collision_Node_Entry *p_collision_node_entry__parent = 

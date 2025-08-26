@@ -2,7 +2,6 @@
 #define ITEM_STACK_H
 
 #include "defines_weak.h"
-#include "sdl_defines.h"
 #include <defines.h>
 #include <inventory/item.h>
 

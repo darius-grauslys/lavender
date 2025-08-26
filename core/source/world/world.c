@@ -110,7 +110,16 @@ void manage_world(
                     p_game, 
                     index_of__client);
 
-        if (!p_gfx_window->p_camera) {
+        if (!p_client) {
+            continue;
+        }
+
+        Hitbox_AABB *p_hitbox_aabb =
+            get_p_hitbox_aabb_by__uuid_u32_from__hitbox_aabb_manager(
+                    get_p_hitbox_aabb_manager_from__game(p_game), 
+                    GET_UUID_P(p_client));
+
+        if (!p_hitbox_aabb) {
             continue;
         }
 
@@ -120,11 +129,13 @@ void manage_world(
         // Being properly invoked in graphics_window_manager.c
         //
         // but we need to hackily invoke here now too
-        if (p_gfx_window->p_camera->m_camera_handler) {
-            p_gfx_window->p_camera->m_camera_handler(
-                    p_gfx_window->p_camera,
-                    p_game,
-                    p_gfx_window);
+        if (p_gfx_window && p_gfx_window->p_camera) {
+            if (p_gfx_window->p_camera->m_camera_handler) {
+                p_gfx_window->p_camera->m_camera_handler(
+                        p_gfx_window->p_camera,
+                        p_game,
+                        p_gfx_window);
+            }
         }
 
         poll_local_space_for__scrolling(
@@ -133,8 +144,8 @@ void manage_world(
                 get_p_global_space_manager_from__world(
                     get_p_world_from__game(p_game)), 
                 vector_3i32F4_to__chunk_vector_3i32(
-                    p_gfx_window->p_camera
-                    ->position));
+                    get_position_3i32F4_of__hitbox_aabb(
+                        p_hitbox_aabb)));
     }
 }
 

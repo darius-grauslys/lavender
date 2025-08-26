@@ -47,7 +47,6 @@ default:
 	@echo ""
 	@echo "--- Useful FLAGS ---"
 	@echo "X: anything, NA: omit to disable."
-	@echo "-DPLATFORM	- 	specify target platform. DONT USE."
 	@echo "-DIS_SERVER 	-	treat build as a server."
 	@echo "-DNDEBUG		-	disable debug, performant but most errors will result in a crash now!"
 	@echo "-ggdb		-	generate gdb debug symbols - required for gdb."
@@ -59,7 +58,9 @@ default:
 endif
 
 test:
-	@sh -c "cp -r ${LAVENDER_DIR}/tests ./"
+	$(SILENT)if [ $(GAME_DIR) != $(LAVENDER_DIR) ]; then \
+		sh -c "cp -r ${LAVENDER_DIR}/tests ./"; \
+	fi
 	@sh -c "cd ./tests && ./update.sh $(PLATFORM)"
 	$(SILENT)if [ -z "${PLATFORM}" ]; then \
 		mkdir -p ./build \
@@ -77,7 +78,7 @@ test:
 				DIR_CORE=$(LAVENDER_DIR)/core \
 				PLATFORM=$(PLATFORM); \
 		stat $(GAME_DIR)/build/test_$(PLATFORM)/compile_commands.json \
-			&& ln -sf $(GAME_DIR)/build/test_core/compile_commands.json $(GAME_DIR)/compile_commands.json; \
+		&& ln -sf $(GAME_DIR)/build/test_core/compile_commands.json $(GAME_DIR)/compile_commands.json; \
 	fi
 
 clean:

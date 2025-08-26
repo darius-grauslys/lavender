@@ -5,7 +5,7 @@
 
 #ifdef _WIN32
 
-void NO_GUI_initialize_time(void) {
+void PLATFORM_initialize_time(void) {
     return;
 }
 
@@ -52,7 +52,7 @@ u32F20 PLATFORM_get_time_elapsed(
 
 struct timespec _NO_GUI_timespec__initial;
 
-void NO_GUI_initialize_time(void) {
+void PLATFORM_initialize_time(void) {
     clock_gettime(
             CLOCK_MONOTONIC, 
             &_NO_GUI_timespec__initial);

@@ -9,7 +9,7 @@
 #endif
 
 #ifndef PATH_SEPERATOR
-#define PATH_SEPERATOR "/"
+#define PATH_SEPERATOR '/'
 #endif
 
 #ifndef MAX_QUANTITY_OF__TCP_SOCKETS
