@@ -212,7 +212,8 @@ void close_socket_on__tcp_socket_manager__ipv4(
         *p_ptr_tcp_socket__being_release =
             *p_ptr_tcp_socket__last;
     }
-    *p_ptr_tcp_socket__last = 0;
+    if (p_ptr_tcp_socket__last)
+        *p_ptr_tcp_socket__last = 0;
 
     initialize_tcp_socket_as__deallocated(p_tcp_socket);
 

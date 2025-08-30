@@ -246,9 +246,6 @@ void m_process__game_action__global_space__request__outbound_client(
     set_global_space_as__NOT_constructing(
             p_global_space);
 
-    drop_global_space_within__global_space_manager(
-            p_game,
-            *p_gsv__3i32);
     complete_process(p_this_process);
     debug_info("m_process__game_action__global_space__request__outbound_client, finished.");
 }
