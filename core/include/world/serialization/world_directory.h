@@ -30,6 +30,19 @@ Index__u32 stat_world_directory(
         World *p_world,
         IO_path p_path);
 
+///
+/// Creates the client file if not present
+///
+Index__u32 open_client_file(
+        PLATFORM_File_System_Context *p_PLATFORM_file_system_context,
+        World *p_world,
+        IO_path p_path,
+        Identifier__u32 uuid_of__client,
+        Index__u32 *p_OUT_index_of__path_to__file_base_directory);
+
+///
+/// Checks to see if client file exists.
+///
 Index__u32 stat_client_file(
         PLATFORM_File_System_Context *p_PLATFORM_file_system_context,
         World *p_world,
