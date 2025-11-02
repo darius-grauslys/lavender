@@ -59,7 +59,7 @@ Direction__u8 get_movement_direction_of__hitbox(
 void set_hitbox__position_with__3i32F4(
         Hitbox_AABB *hitbox,
         Vector__3i32F4 position__3i32F4) {
-    hitbox->is_hitbox_aabb__dirty = true;
+    set_hitbox_aabb_as__dirty(hitbox);
     hitbox->position__3i32F4 =
         position__3i32F4;
 }
@@ -67,7 +67,7 @@ void set_hitbox__position_with__3i32F4(
 void set_hitbox__position_with__3i32(
         Hitbox_AABB *hitbox,
         Vector__3i32 position__3i32) {
-    hitbox->is_hitbox_aabb__dirty = true;
+    set_hitbox_aabb_as__dirty(hitbox);
     i32F4 x__global = position__3i32.x__i32;
     i32F4 y__global = position__3i32.y__i32;
     i32F4 z__global = position__3i32.z__i32;

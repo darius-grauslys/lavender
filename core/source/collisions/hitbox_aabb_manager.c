@@ -162,7 +162,8 @@ void poll_hitbox_manager_for__movement(
                     index_of__hitbox);
         if (!p_hitbox_aabb)
             break;
-        if (!p_hitbox_aabb->is_hitbox_aabb__dirty)
+        if (!is_hitbox_aabb__dirty(p_hitbox_aabb)
+                || !is_hitbox_aabb__active(p_hitbox_aabb))
             continue;
 
         dispatch_game_action__hitbox(

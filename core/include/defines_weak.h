@@ -611,6 +611,7 @@ typedef enum Lavender_Type {
     Lavender_Type__Entity,
     Lavender_Type__Game_Action,
     Lavender_Type__Inventory,
+    Lavender_Type__Player,
 
     // no uuid branding:
     Lavender_Type__Chunk,

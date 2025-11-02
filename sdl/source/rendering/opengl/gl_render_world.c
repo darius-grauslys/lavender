@@ -281,6 +281,9 @@ void GL_compose_world(
                 chunk_vector__3i32);
     Local_Space *p_local_space__current =
         p_local_space__begin;
+    if (!p_local_space__current) {
+        return;
+    }
     Local_Space *p_local_space__current_sub;
 
     float clear_color[4];

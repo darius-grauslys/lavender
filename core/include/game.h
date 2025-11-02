@@ -6,9 +6,11 @@
 /// You will need to compile with a backend.
 ///
 
+#include "client.h"
 #include "defines_weak.h"
 #include "log/log.h"
 #include "log/message.h"
+#include "multiplayer/session_token.h"
 #include "multiplayer/tcp_socket_manager.h"
 #include "platform.h"
 #include "random.h"
@@ -270,7 +272,27 @@ Game_Action_Logic_Table *get_p_game_action_logic_table_from__game(Game *p_game) 
 
 static inline
 Input *get_p_input_from__game(Game *p_game) {
+    if (p_game->max_quantity_of__clients)
+        return get_p_input_of__client(
+                get_p_local_client_by__from__game(p_game));
     return &p_game->input;
+}
+
+static inline
+Session_Token get_session_token_from__game(Game *p_game) {
+    return p_game->session_token;
+}
+
+///
+/// "raw" in the sense that this may not be accurate to the
+/// uuid determined through TCP connection, as the server
+/// may assign it's own u32 uuid for the player during
+/// u64->u32 uuid compression.
+///
+static inline
+Identifier__u32 get_raw_uuid_u32_of__player_from__game_session_token(Game *p_game) {
+    return get_uuid_u32_of__session_token_player_uuid_u64(
+            get_session_token_from__game(p_game));
 }
 
 static inline
@@ -370,6 +392,13 @@ static inline
 bool is_world_allocated_for__game(
         Game *p_game) {
     return p_game->pM_world;
+}
+
+static inline
+bool is_game__server_or__client(Game *p_game) {
+    return p_game->game_flags__u32
+        & GAME_FLAG__IS_SERVER_OR__CLIENT
+        ;
 }
 
 #endif

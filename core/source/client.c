@@ -23,12 +23,6 @@
 #include "world/local_space_manager.h"
 #include "world/world.h"
 
-static inline
-Serialized_Field *get_ps_entity_of__client(
-        Client *p_client) {
-    return &p_client->s_entity_of__client;
-}
-
 void initialize_client(
         Client *p_client,
         Identifier__u32 uuid__u32,
@@ -48,28 +42,11 @@ void initialize_client(
     initialize_local_space_manager(
             get_p_local_space_manager_from__client(p_client), 
             global_space_vector__3i32);
-
-    initialize_serialized_field_as__unassigned(
-            get_ps_entity_of__client(p_client));
 }
 
 void m_process__teleport_client(
         Process *p_this_process,
         Game *p_game) {
-    Local_Space *p_local_space =
-        (Local_Space*)p_this_process->p_process_data;
-
-    if (!p_local_space) {
-        debug_warning("note, the following error results in the client hitbox being removed from world space:");
-        debug_error("m_process__teleport_client, p_local_space == 0.");
-        fail_process(p_this_process);
-        return;
-    }
-
-    if (!is_local_space__active(p_local_space)) {
-        return;
-    }
-
     Client *p_client = 
         get_p_client_by__uuid_from__game(
                 p_game, 
@@ -91,6 +68,22 @@ void m_process__teleport_client(
         debug_warning("note, the following error results in the client hitbox being removed from world space:");
         debug_error("m_process__teleport_client, p_hitbox_of__client == 0.");
         fail_process(p_this_process);
+        return;
+    }
+
+    Local_Space *p_local_space =
+        get_p_local_space_by__3i32F4_from__local_space_manager(
+                get_p_local_space_manager_from__client(p_client), 
+                get_position_3i32F4_of__hitbox_aabb(p_hitbox_of__client));
+
+    if (!p_local_space) {
+        debug_warning("note, the following error results in the client hitbox being removed from world space:");
+        debug_error("m_process__teleport_client, p_local_space == 0.");
+        fail_process(p_this_process);
+        return;
+    }
+
+    if (!is_local_space__active(p_local_space)) {
         return;
     }
 
@@ -145,17 +138,6 @@ Process *teleport_client(
             vector_3i32F4_to__chunk_vector_3i32(
                 position__3i32F4));
 
-    Local_Space *p_local_space =
-        get_p_local_space_by__3i32F4_from__local_space_manager(
-                get_p_local_space_manager_from__client(p_client), 
-                position__3i32F4);
-
-    if (!p_local_space) {
-        debug_warning("note, the following error results in the client hitbox being removed from world space:");
-        debug_error("teleport_client, failed to get destination p_local_space for client.");
-        return 0;
-    }
-
     Process *p_process =
         run_process(
                 get_p_process_manager_from__game(p_game), 
@@ -163,8 +145,6 @@ Process *teleport_client(
                 PROCESS_PRIORITY__0_MAXIMUM,
                 PROCESS_FLAG__IS_CRITICAL);
 
-    p_process->p_process_data =
-        p_local_space;
     p_process->process_valueA__i32 =
         GET_UUID_P(p_client);
 
@@ -183,15 +163,6 @@ bool release_game_action_from__client(
     return release_game_action_from__game_action_manager(
             get_p_game_action_manager__outbound_from__client(p_client), 
             p_game_action);
-}
-
-void set_entity_of__client(
-        Client *p_client,
-        Entity *p_entity) {
-    initialize_serialized_field(
-            get_ps_entity_of__client(p_client), 
-            p_entity, 
-            p_entity->_serialization_header.uuid);
 }
 
 bool receive_game_action_for__client(
@@ -389,13 +360,20 @@ bool dispatch_game_action_for__client(
         return true;
     }
 
+    // If is server, and p_client is local client - do not send anything over TCP.
+    if (is_game__server_or__client(p_game)
+            && p_client 
+            == get_p_local_client_by__from__game(p_game)) {
+        return true; // do not tcp send to self
+    }
+
     TCP_Socket *p_tcp_socket =
         get_p_tcp_socket_for__this_uuid(
                 p_tcp_socket_manager, 
                 p_client->_serialization_header.uuid);
 
     if (!p_tcp_socket) {
-        debug_abort("dispatch_game_action_for__client, p_tcp_socket == 0.");
+        debug_error("dispatch_game_action_for__client, p_tcp_socket == 0.");
         return false;
     }
 

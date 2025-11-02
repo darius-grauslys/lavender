@@ -30,7 +30,7 @@ void m_ui_draggable__dragged_handler__default(
         Game *p_game,
         Graphics_Window *p_graphics_window) {
     Vector__3i32 position =
-        p_game->input.cursor__3i32;
+        get_p_input_from__game(p_game)->cursor__3i32;
 
     Hitbox_AABB *p_hitbox_aabb =
         get_p_hitbox_aabb_by__uuid_u32_from__hitbox_aabb_manager(

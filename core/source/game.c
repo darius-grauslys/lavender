@@ -42,6 +42,22 @@
 
 #include <ui/ui_manager.h>
 
+static inline
+void flag_game_as__server(
+        Game *p_game) {
+    p_game->game_flags__u32 |=
+        GAME_FLAG__IS_SERVER_OR__CLIENT
+        ;
+}
+
+static inline
+void flag_game_as__client(
+        Game *p_game) {
+    p_game->game_flags__u32 &=
+        ~GAME_FLAG__IS_SERVER_OR__CLIENT
+        ;
+}
+
 bool m_game_action_handler__dispatch__singleplayer(
         Game *p_game,
         Client *p_client,
@@ -71,6 +87,7 @@ bool m_game_action_handler__resolve__multiplayer(
 
 void initialize_game(
         Game *p_game) {
+    memset(p_game, 0, sizeof(Game));
     initialize_gfx_context(
             get_p_gfx_context_from__game(p_game));
     initialize_scene_manager(get_p_scene_manager_from__game(p_game));
@@ -100,8 +117,6 @@ void initialize_game(
             &p_game->time__nanoseconds__u32, 
             999999999);
     p_game->tick_accumilator__u32F20 = 0;
-
-    p_game->is_world__initialized = false;
 
     p_game->m_game_action_handler__dispatch =
         m_game_action_handler__dispatch__singleplayer;
@@ -231,9 +246,11 @@ void begin_multiplayer_for__game(
         m_game_action_handler__resolve__multiplayer;
 
     if (p_game->max_quantity_of__clients == 1) {
+        flag_game_as__client(p_game);
         register_game_actions__client(
                 get_p_game_action_logic_table_from__game(p_game));
     } else {
+        flag_game_as__server(p_game);
         register_game_actions__server(
                 get_p_game_action_logic_table_from__game(p_game));
     }
@@ -362,6 +379,10 @@ Process *dispatch_handler_process_to__load_client(
         release_client_from__game(
                 p_game, 
                 p_client);
+        release_process_from__process_manager(
+                p_game, 
+                get_p_process_manager_from__game(p_game), 
+                p_process);
         return 0;
     }
 
@@ -621,7 +642,7 @@ void manage_game__pre_render(Game *p_game) {
 }
 
 void manage_game__post_render(Game *p_game) {
-    PLATFORM_poll_input(
+    poll_input(
             p_game,
             get_p_input_from__game(p_game));
     reset__game_tick_timer(p_game);
@@ -657,6 +678,38 @@ bool m_game_action_handler__dispatch__multiplayer(
                 p_client,
                 p_game_action);
     }
+
+    if (is_game_action__broadcasted(p_game_action)) {
+        bool is_local =
+            !is_vectors_3i32F4__out_of_bounds(
+                    p_game_action
+                    ->vector_3i32F4__broadcast_point);
+        for (Index__u32 index_of__client = 0;
+                index_of__client
+                < get_quantity_of__clients_connect_to__game(p_game);
+                index_of__client++) {
+            Client *p_client = get_p_client_by__index_from__game(
+                    p_game, 
+                    index_of__client);
+
+            if (is_local
+                     && !is_vector_3i32F4_within__local_space_manager(
+                        get_p_local_space_manager_from__client(p_client), 
+                        p_game_action->vector_3i32F4__broadcast_point)) {
+                continue;
+            }
+
+            dispatch_game_action_for__client(
+                    p_client, 
+                    p_game, 
+                    get_p_tcp_socket_manager_from__game(p_game),
+                    p_game_action);
+        }
+        // TODO: handle errors?
+        return true;
+    }
+
+
     if (!p_client) {
         debug_error("m_game_action_handler__dispatch__multiplayer, failed to locate associated client.");
         return false;
@@ -688,35 +741,6 @@ bool m_game_action_handler__receive__multiplayer(
                 p_game, 
                 p_client,
                 p_game_action);
-    }
-
-    if (is_game_action__broadcasted(p_game_action)) {
-        bool is_local =
-            !is_vectors_3i32F4__out_of_bounds(
-                    p_game_action
-                    ->vector_3i32F4__broadcast_point);
-        for (Index__u32 index_of__client = 0;
-                index_of__client
-                < get_quantity_of__clients_connect_to__game(p_game);
-                index_of__client++) {
-            Client *p_client = get_p_client_by__index_from__game(
-                    p_game, 
-                    index_of__client);
-
-            if (is_local
-                     && !is_vector_3i32F4_within__local_space_manager(
-                        get_p_local_space_manager_from__client(p_client), 
-                        p_game_action->vector_3i32F4__broadcast_point)) {
-                continue;
-            }
-
-            receive_game_action_for__client(
-                    p_client, 
-                    p_game, 
-                    p_game_action);
-        }
-        // TODO: handle errors?
-        return true;
     }
 
     if (!p_client) {

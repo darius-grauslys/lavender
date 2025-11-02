@@ -1,3 +1,4 @@
+#include "game_action/core/input/game_action__input.h"
 #include "platform_defaults.h"
 #include <input/input.h>
 
@@ -25,4 +26,21 @@ void buffer_input_for__writing(
     p_input->index_of__writing_buffer__write = (
             p_input->index_of__writing_buffer__write + 1)
         & MASK(MAX_QUANTITY_OF__SYMBOLS_IN__INPUT_WRITING_BUFFER__BIT_SHIFT);
+}
+
+void poll_input(
+        Game *p_game,
+        Input *p_input) {
+    PLATFORM_poll_input(
+            p_game,
+            p_input);
+    if (p_input->input_flags__held
+            || p_input->input_flags__pressed
+            || p_input->input_flags__released) {
+        if (p_game->pM_clients) {
+            dispatch_game_action__input(
+                    p_game, 
+                    p_input);
+        }
+    }
 }

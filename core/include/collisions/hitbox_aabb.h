@@ -100,6 +100,48 @@ bool is_this_hitbox__fully_inside_this_hitbox__without_velocity(
         Hitbox_AABB *hitbox__two);
 
 static inline
+bool is_hitbox_aabb__dirty(Hitbox_AABB *p_hitbox_aabb) {
+    return p_hitbox_aabb->hitbox_aabb_flags__u8
+        & HITBOX_AABB_FLAG__IS_DIRTY
+        ;
+}
+
+static inline
+bool set_hitbox_aabb_as__dirty(Hitbox_AABB *p_hitbox_aabb) {
+    return p_hitbox_aabb->hitbox_aabb_flags__u8 |=
+        HITBOX_AABB_FLAG__IS_DIRTY
+        ;
+}
+
+static inline
+bool set_hitbox_aabb_as__not_dirty(Hitbox_AABB *p_hitbox_aabb) {
+    return p_hitbox_aabb->hitbox_aabb_flags__u8 &=
+        ~HITBOX_AABB_FLAG__IS_DIRTY
+        ;
+}
+
+static inline
+bool is_hitbox_aabb__active(Hitbox_AABB *p_hitbox_aabb) {
+    return p_hitbox_aabb->hitbox_aabb_flags__u8
+        & HITBOX_AABB_FLAG__IS_ACTIVE
+        ;
+}
+
+static inline
+bool set_hitbox_aabb_as__active(Hitbox_AABB *p_hitbox_aabb) {
+    return p_hitbox_aabb->hitbox_aabb_flags__u8 |=
+        HITBOX_AABB_FLAG__IS_ACTIVE
+        ;
+}
+
+static inline
+bool set_hitbox_aabb_as__disabled(Hitbox_AABB *p_hitbox_aabb) {
+    return p_hitbox_aabb->hitbox_aabb_flags__u8 &=
+        ~HITBOX_AABB_FLAG__IS_ACTIVE
+        ;
+}
+
+static inline
 Vector__3i32F4 get_position_3i32F4_of__hitbox_aabb(
         Hitbox_AABB *p_hitbox_aabb) {
 #ifndef NDEBUG
@@ -184,7 +226,7 @@ void set_size_of__hitbox_aabb(
         return;
     }
 #endif
-    p_hitbox_aabb->is_hitbox_aabb__dirty = true;
+    set_hitbox_aabb_as__dirty(p_hitbox_aabb);
     p_hitbox_aabb->width__quantity_u32 = width__quantity_u32;
     p_hitbox_aabb->height__quantity_u32 = height__quantity_u32;
 }
@@ -260,7 +302,7 @@ void set_x_position_to__hitbox(
         return;
     }
 #endif
-    p_hitbox_aabb->is_hitbox_aabb__dirty = true;
+    set_hitbox_aabb_as__dirty(p_hitbox_aabb);
     p_hitbox_aabb->position__3i32F4.x__i32F4 = x__position;
 }
 
@@ -275,7 +317,7 @@ void set_y_position_to__hitbox(
         return;
     }
 #endif
-    p_hitbox_aabb->is_hitbox_aabb__dirty = true;
+    set_hitbox_aabb_as__dirty(p_hitbox_aabb);
     p_hitbox_aabb->position__3i32F4.y__i32F4 = y__position;
 }
 
@@ -290,7 +332,7 @@ void set_z_position_to__hitbox(
         return;
     }
 #endif
-    p_hitbox_aabb->is_hitbox_aabb__dirty = true;
+    set_hitbox_aabb_as__dirty(p_hitbox_aabb);
     p_hitbox_aabb->position__3i32F4.z__i32F4 = z__position;
 }
 
@@ -305,7 +347,7 @@ void offset_x_position_to__hitbox(
         return;
     }
 #endif
-    p_hitbox_aabb->is_hitbox_aabb__dirty = true;
+    set_hitbox_aabb_as__dirty(p_hitbox_aabb);
     p_hitbox_aabb->position__3i32F4.x__i32F4 += x__position;
 }
 
@@ -320,7 +362,7 @@ void offset_y_position_to__hitbox(
         return;
     }
 #endif
-    p_hitbox_aabb->is_hitbox_aabb__dirty = true;
+    set_hitbox_aabb_as__dirty(p_hitbox_aabb);
     p_hitbox_aabb->position__3i32F4.y__i32F4 += y__position;
 }
 
@@ -335,7 +377,7 @@ void offset_z_position_to__hitbox(
         return;
     }
 #endif
-    p_hitbox_aabb->is_hitbox_aabb__dirty = true;
+    set_hitbox_aabb_as__dirty(p_hitbox_aabb);
     p_hitbox_aabb->position__3i32F4.z__i32F4 += z__position;
 }
 
@@ -349,7 +391,7 @@ void set_x_velocity_to__hitbox(
         return;
     }
 #endif
-    p_hitbox_aabb->is_hitbox_aabb__dirty = true;
+    set_hitbox_aabb_as__dirty(p_hitbox_aabb);
     p_hitbox_aabb->velocity__3i32F4.x__i32F4 = x__velocity;
 }
 
@@ -363,7 +405,7 @@ void set_y_velocity_to__hitbox(
         return;
     }
 #endif
-    p_hitbox_aabb->is_hitbox_aabb__dirty = true;
+    set_hitbox_aabb_as__dirty(p_hitbox_aabb);
     p_hitbox_aabb->velocity__3i32F4.y__i32F4 = y__velocity;
 }
 
@@ -377,7 +419,7 @@ void set_z_velocity_to__hitbox(
         return;
     }
 #endif
-    p_hitbox_aabb->is_hitbox_aabb__dirty = true;
+    set_hitbox_aabb_as__dirty(p_hitbox_aabb);
     p_hitbox_aabb->velocity__3i32F4.z__i32F4 = z__velocity;
 }
 
@@ -391,7 +433,7 @@ void set_x_acceleration_to__hitbox(
         return;
     }
 #endif
-    p_hitbox_aabb->is_hitbox_aabb__dirty = true;
+    set_hitbox_aabb_as__dirty(p_hitbox_aabb);
     p_hitbox_aabb->acceleration__3i16F8.x__i16F8 = x__acceleration;
 }
 
@@ -405,7 +447,7 @@ void set_y_acceleration_to__hitbox(
         return;
     }
 #endif
-    p_hitbox_aabb->is_hitbox_aabb__dirty = true;
+    set_hitbox_aabb_as__dirty(p_hitbox_aabb);
     p_hitbox_aabb->acceleration__3i16F8.y__i16F8 = y__acceleration;
 }
 
@@ -419,7 +461,7 @@ void set_z_acceleration_to__hitbox(
         return;
     }
 #endif
-    p_hitbox_aabb->is_hitbox_aabb__dirty = true;
+    set_hitbox_aabb_as__dirty(p_hitbox_aabb);
     p_hitbox_aabb->acceleration__3i16F8.z__i16F8 = z__acceleration;
 }
 
@@ -433,7 +475,7 @@ void set_velocity_to__hitbox(
         return;
     }
 #endif
-    p_hitbox_aabb->is_hitbox_aabb__dirty = true;
+    set_hitbox_aabb_as__dirty(p_hitbox_aabb);
     set_x_velocity_to__hitbox(p_hitbox_aabb, velocity.x__i32F4);
     set_y_velocity_to__hitbox(p_hitbox_aabb, velocity.y__i32F4);
     set_z_velocity_to__hitbox(p_hitbox_aabb, velocity.z__i32F4);
@@ -449,7 +491,7 @@ void set_acceleration_to__hitbox(
         return;
     }
 #endif
-    p_hitbox_aabb->is_hitbox_aabb__dirty = true;
+    set_hitbox_aabb_as__dirty(p_hitbox_aabb);
     set_x_acceleration_to__hitbox(p_hitbox_aabb, acceleration.x__i16F8);
     set_y_acceleration_to__hitbox(p_hitbox_aabb, acceleration.y__i16F8);
     set_z_acceleration_to__hitbox(p_hitbox_aabb, acceleration.z__i16F8);

@@ -43,14 +43,13 @@ void initialize_tcp_socket(
         TCP_Socket *p_tcp_socket,
         IPv4_Address ipv4_address,
         Identifier__u32 uuid_of__tcp_socket__u32) {
+    memset(&p_tcp_socket->queue_of__tcp_packet,
+            0,
+            sizeof(TCP_Socket));
     initialize_serialization_header(
             &p_tcp_socket->_serialization_header, 
             uuid_of__tcp_socket__u32, 
             sizeof(TCP_Socket));
-    memset(&p_tcp_socket->queue_of__tcp_packet,
-            0,
-            sizeof(TCP_Packet)
-            * MAX_QUANTITY_OF__TCP_PACKETS_PER__SOCKET);
     p_tcp_socket->tcp_socket__address = ipv4_address;
     p_tcp_socket->index_of__enqueue_begin = 0;
     p_tcp_socket->quantity_of__received_packets = 0;

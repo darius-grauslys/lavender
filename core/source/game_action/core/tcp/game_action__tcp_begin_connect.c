@@ -5,6 +5,7 @@
 #include "game_action/game_action.h"
 #include "game_action/game_action_logic_entry.h"
 #include "game_action/game_action_logic_table.h"
+#include "multiplayer/session_token.h"
 #include "multiplayer/tcp_socket.h"
 #include "multiplayer/tcp_socket_manager.h"
 #include "process/process.h"
@@ -21,8 +22,9 @@ void m_process__game_action__tcp_connect__begin(
     TCP_Socket *p_tcp_socket =
         get_p_tcp_socket_for__this_uuid(
                 get_p_tcp_socket_manager_from__game(p_game), 
-                p_game_action
-                ->ga_kind__tcp_connect__begin__session__uuid__u32);
+                get_uuid_u32_of__session_token_player_uuid_u64(
+                    p_game_action
+                    ->ga_kind__tcp_connect__begin__session_token));
     switch (get_state_of__tcp_socket(p_tcp_socket)) {
         default:
             break;
@@ -70,8 +72,9 @@ void m_process__game_action__tcp_connect__begin(
             debug_info("m_process__game_action__tcp_connect__begin: connecting...");
             dispatch_game_action__connect(
                     p_game, 
-                    p_game_action
-                    ->ga_kind__tcp_connect__begin__session__uuid__u32); 
+                    get_uuid_u32_of__session_token_player_uuid_u64(
+                        p_game_action
+                        ->ga_kind__tcp_connect__begin__session_token)); 
             set_state_of__tcp_socket(
                     p_tcp_socket, 
                     TCP_Socket_State__Authenticating);
@@ -92,11 +95,23 @@ void m_process__game_action__tcp_connect__begin__init(
         Game *p_game) {
     Game_Action *p_game_action =
         (Game_Action*)p_this_process->p_process_data;
+    // TODO: Need to first determine if client exists in DB, then
+    // load their resolved u32 uuid if they do, or otherwise
+    // compress their u64 global uuid into u32(branded) and 
+    // ensure it does not collide - resolve if it does and then
+    // continue with connection. In the very unlikely scenario
+    // that the uuid collision resolution FAILS, respond with
+    // the game_action being bad, and relevant error code.
+    //
+    // whoever is running the server that runs into this error
+    // without deliberately causing it gets a free beer on me
+    // if they are of drinking age.
     Client *p_client =
         get_p_client_by__uuid_from__game(
                 p_game, 
-                p_game_action
-                ->ga_kind__tcp_connect__begin__session__uuid__u32);
+                get_uuid_u32_of__session_token_player_uuid_u64(
+                    p_game_action
+                    ->ga_kind__tcp_connect__begin__session_token));
     TCP_Socket *p_tcp_socket =
         open_socket_on__tcp_socket_manager__ipv4(
                 get_p_tcp_socket_manager_from__game(p_game), 
@@ -133,13 +148,13 @@ void register_game_action__tcp_connect__begin(
 void initialize_game_action_for__tcp_connect__begin(
         Game_Action *p_game_action,
         IPv4_Address ipv4_address,
-        Identifier__u32 session_token__uuid__u32) {
+        Session_Token session_token) {
     initialize_game_action(p_game_action);
     set_the_kind_of__game_action(
             p_game_action, 
             Game_Action_Kind__TCP_Connect__Begin);
     p_game_action->ga_kind__tcp_connect__begin__ipv4_address =
         ipv4_address;
-    p_game_action->ga_kind__tcp_connect__begin__session__uuid__u32 =
-        session_token__uuid__u32;
+    p_game_action->ga_kind__tcp_connect__begin__session_token =
+        session_token;
 }

@@ -1,6 +1,7 @@
 #ifndef GAME_ACTION__HITBOX_H
 #define GAME_ACTION__HITBOX_H
 
+#include "collisions/hitbox_aabb.h"
 #include "defines.h"
 #include "defines_weak.h"
 #include "game.h"

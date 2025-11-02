@@ -9,6 +9,11 @@
 void initialize_input(Input *p_input);
 
 ///
+/// DO NOT CALL. Done so by game.c
+///
+void poll_input(Game *p_game, Input *p_input);
+
+///
 /// Get the next character made by the player
 /// via some keyboard input, be it touch, controller, or keyboard.
 ///

@@ -85,6 +85,18 @@ void m_process__game_action__world__load_client__outbound(
                 p_game_action
                 ->ga_kind__world__load_world__uuid_of__client__u32);
 
+    if (!p_client) {
+        p_client = allocate_client_from__game(
+                p_game, 
+                p_game_action->ga_kind__world__load_world__uuid_of__client__u32);
+
+        if (!p_client) {
+            debug_error("m_process__game_action__world__load_client__outbound, failed to allocate client.");
+            fail_process(p_this_process);
+            return;
+        }
+    }
+
     if (is_client__active(p_client)) {
         complete_process(p_this_process);
         return;

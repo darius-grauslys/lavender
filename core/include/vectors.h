@@ -36,6 +36,8 @@
     (const Vector__3i32) VECTOR__0_0_0
 #define VECTOR__3i32F4__0_0_0 \
     (const Vector__3i32F4) VECTOR__0_0_0
+#define VECTOR__3i16F8__0_0_0 \
+    (const Vector__3i16F8) VECTOR__0_0_0
 #define VECTOR__3i32F4__1_0_0 \
         (const Vector__3i32F4){\
         i32_to__i32F4(1),\

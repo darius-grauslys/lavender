@@ -139,4 +139,25 @@ void set_client_as__inactive(
         ~CLIENT_FLAG__IS_ACTIVE;
 }
 
+static inline
+Input *get_p_input_of__client(
+        Client *p_client) {
+#ifndef NDEBUG
+    if (!p_client)
+        return 0;
+#endif
+    return &p_client->input_of__client;
+}
+
+static inline
+void copy_input_into__client(
+        Client *p_client,
+        Input *p_input) {
+#ifndef NDEBUG
+    if (!p_client || !p_input)
+        return;
+#endif
+    p_client->input_of__client = *p_input;
+}
+
 #endif

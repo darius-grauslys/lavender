@@ -4,6 +4,8 @@
 #include "platform.h"
 #include "platform_defaults.h"
 #include "types/implemented/chunk_generator_kind.h"
+#include "types/implemented/entity_kind.h"
+#include "types/implemented/scene_kind.h"
 #include "types/implemented/sprite_animation_group_kind.h"
 #include "util/bitmap/bitmap.h"
 #include <stdbool.h>
@@ -327,6 +329,13 @@ typedef struct Audio_Effect_t {
 /// SECTION_collisions
 ///
 
+typedef u8 Hitbox_AABB_Flags__u8;
+
+#define HITBOX_AABB_FLAG__IS_ACTIVE BIT(0)
+#define HITBOX_AABB_FLAG__IS_DIRTY BIT(1)
+
+#define HITBOX_AABB_FLAGS__NONE 0;
+
 typedef struct Hitbox_AABB_t {
     Serialization_Header _serialization_header;
     Vector__3i32F4 position__3i32F4;
@@ -334,7 +343,7 @@ typedef struct Hitbox_AABB_t {
     Vector__3i16F8 acceleration__3i16F8;
     Quantity__u32 width__quantity_u32;
     Quantity__u32 height__quantity_u32;
-    bool is_hitbox_aabb__dirty;
+    Hitbox_AABB_Flags__u8 hitbox_aabb_flags__u8;
 } Hitbox_AABB;
 
 typedef void (*f_Hitbox_AABB_Collision_Handler)(
@@ -1012,6 +1021,16 @@ typedef struct Input_t {
 /// SECTION_multiplayer
 ///
 
+typedef struct Session_Token_t {
+    // represents the uuid of the player
+    // it is compressed to 32 bit uuid for entities by server
+    // server is responsible for managing uuid collisions.
+    // NOTE: The theoretical limit of player accounts exceeds
+    // by 32bits the theoretical limit of server-side serializable players.
+    Identifier__u64 player_uuid;
+    Identifier__u64 session_token;
+} Session_Token;
+
 typedef struct IPv4_Address_t {
     u8 ip_bytes[4];
     u16 port;
@@ -1187,11 +1206,8 @@ typedef struct Scene_t {
     bool is_active;
 } Scene;
 
-//TODO: move to platform.h in ifndef
-#define SCENE_MAX_QUANTITY_OF 8
-
 typedef struct Scene_Manager_t {
-    Scene scenes[SCENE_MAX_QUANTITY_OF];
+    Scene scenes[Scene_Kind__Unknown];
     Scene *p_active_scene;
 } Scene_Manager;
 
@@ -2105,7 +2121,7 @@ typedef struct Game_Action_t {
         union {
             struct {
                 IPv4_Address ga_kind__tcp_connect__begin__ipv4_address;
-                Identifier__u32 ga_kind__tcp_connect__begin__session__uuid__u32;
+                Session_Token ga_kind__tcp_connect__begin__session_token;
             }; // Connect__Begin
             struct {
                 Identifier__u64 ga_kind__tcp_connect__session_token;
@@ -2211,6 +2227,22 @@ typedef struct Game_Action_t {
         /// ---------------------
         /// </      Input      >
         /// ---------------------
+        /// ---------------------
+        /// <       Entity     >
+        /// ---------------------
+
+        union {
+            struct {
+                TCP_PAYLOAD_BITMAP(Entity, 
+                        ga_kind__entity__get__entity_data_payload_bitmap);
+                Identifier__u32 ga_kind__entity__uuid;
+                Entity_Kind ga_kind__entity__the_kind_of__entity;
+            }; // Entity
+        };
+
+        /// ---------------------
+        /// </      Entity     >
+        /// ---------------------
     };
 } Game_Action;
 
@@ -2254,7 +2286,7 @@ typedef struct Client_t {
     Game_Action_Manager game_action_manager__inbound;
     Game_Action_Manager game_action_manager__outbound;
     Local_Space_Manager local_space_manager;
-    Serialized_Field s_entity_of__client;
+    Input input_of__client;
     Client_Flags__u16 client_flags__u16;
 } Client;
 
@@ -2351,8 +2383,14 @@ typedef bool (*m_Game_Action_Handler)(
         Client *p_client,
         Game_Action *p_game_action);
 
+typedef u32 Game_Flags__u32;
+
+#define GAME_FLAG__IS_SERVER_OR__CLIENT BIT(0)
+
+#define GAME_FLAGS__NONE 0
+
 typedef struct Game_t {
-    Input input;
+    Input input; // TODO: should memory condense this later
     Scene_Manager scene_manager;
     Hitbox_AABB_Manager hitbox_aabb_manager;
 
@@ -2372,10 +2410,17 @@ typedef struct Game_t {
 
     Game_Action_Logic_Table game_action_logic_table;
 
+    // initialize_game will set this to 0(64bit),0(64bit)
+    Session_Token session_token;
+
     Timer__u32 tick__timer_u32;
     Timer__u32 time__seconds__u32;
     Timer__u32 time__nanoseconds__u32;
 
+    ///
+    /// If max_quantity_of__clients == 0
+    /// we will use input, otherwise local player input.
+    ///
     Quantity__u32 max_quantity_of__clients;
     Quantity__u32 index_to__next_client_in__pool;
     Client *pM_clients;
@@ -2388,10 +2433,11 @@ typedef struct Game_t {
 
     m_Process m_process__serialize_client;
     m_Process m_process__deserialize_client;
+    m_Process m_process__create_client;
 
     u32F20 time_elapsed__u32F20;
     u32F20 tick_accumilator__u32F20;
-    bool is_world__initialized;
+    Game_Flags__u32 game_flags__u32;
 } Game;
 
 #endif

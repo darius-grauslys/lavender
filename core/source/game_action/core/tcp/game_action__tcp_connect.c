@@ -1,5 +1,6 @@
 #include "game_action/core/tcp/game_action__tcp_connect.h"
 #include "client.h"
+#include "debug/debug.h"
 #include "defines.h"
 #include "defines_weak.h"
 #include "game.h"
@@ -15,6 +16,11 @@
 #include "process/process.h"
 #include "world/local_space_manager.h"
 
+enum _TCP_Connection_State {
+    _TCP_Connection_State__Allocate_Client = 0,
+    _TCP_Connection_State__Client_Load_Enqueued = 1
+};
+
 ///
 /// inbound - proccessed by server.
 ///
@@ -25,81 +31,114 @@ void m_process__game_action__tcp_connect__inbound(
     Game_Action *p_game_action =
         (Game_Action*)p_this_process->p_process_data;
 
-    IPv4_Address ipv4;
-    PLATFORM_TCP_Socket *p_PLATFORM_tcp_socket =
-        poll_tcp_socket_manager_for__pending_connections(
-                get_p_tcp_socket_manager_from__game(p_game), 
-                &get_p_tcp_socket_manager_from__game(p_game)->tcp_sockets[0], 
-                &ipv4);
-
-    if (!p_PLATFORM_tcp_socket) {
-        debug_error("m_process__game_action__tcp_connect__inbound__init, p_PLATFORM_tcp_socket == 0.");
-        fail_process(p_this_process);
-        return;
-    }
-
     Identifier__u64 session_token =
         p_game_action->ga_kind__tcp_connect__session_token;
+    Identifier__u32 uuid__u32 = IDENTIFIER__UNKNOWN__u32;
 
-    // TODO: use authentication result to get user uuid,
-    // then with user uuid determine local server uuid.
+    PLATFORM_TCP_Socket *p_PLATFORM_tcp_socket = 0;
 
-    // TODO: this is to be changed:
-    Identifier__u32 uuid__u32 = session_token;
+    switch (p_this_process->process_valueA__i16) {
+        case _TCP_Connection_State__Allocate_Client:
+            ;
+            IPv4_Address ipv4;
+            p_PLATFORM_tcp_socket =
+                poll_tcp_socket_manager_for__pending_connections(
+                        get_p_tcp_socket_manager_from__game(p_game), 
+                        &get_p_tcp_socket_manager_from__game(p_game)->tcp_sockets[0], 
+                        &ipv4);
 
-    // verify connection not already existing:
-    Client *p_client =
-        get_p_client_by__uuid_from__game(
-                p_game, 
-                uuid__u32);
+            if (!p_PLATFORM_tcp_socket) {
+                debug_error("m_process__game_action__tcp_connect__inbound__init, p_PLATFORM_tcp_socket == 0.");
+                fail_process(p_this_process);
+                return;
+            }
 
-    if (p_client) {
-        goto reject;
+            // TODO: use authentication result to get user uuid,
+            // then with user uuid determine local server uuid.
+
+            // TODO: this is to be changed:
+            p_this_process->process_valueB__i32 = 
+                uuid__u32 = session_token;
+
+            // verify connection not already existing:
+            Client *p_client =
+                get_p_client_by__uuid_from__game(
+                        p_game, 
+                        uuid__u32);
+
+            if (p_client) {
+                debug_warning("Client already present.");
+                goto reject;
+            }
+
+            TCP_Socket *p_tcp_socket =
+                accept_pending_connection(
+                        get_p_tcp_socket_manager_from__game(p_game), 
+                        uuid__u32);
+
+            if (!p_tcp_socket) {
+                debug_warning("Failed to establish TCP socket.");
+                goto reject;
+            }
+
+            Process *p_process__load_client =
+                load_client(
+                        p_game, 
+                        uuid__u32);
+
+            p_this_process->process_valueA__i16 = 
+                _TCP_Connection_State__Client_Load_Enqueued;
+
+            enqueue_process(
+                    p_this_process, 
+                    p_process__load_client);
+            return;
+        case _TCP_Connection_State__Client_Load_Enqueued:
+            ;
+            uuid__u32 = p_this_process->process_valueB__i32;
+            p_PLATFORM_tcp_socket =
+                get_p_PLATFORM_tcp_socket_from__tcp_socket(
+                        get_p_tcp_socket_for__this_uuid(
+                            get_p_tcp_socket_manager_from__game(p_game), 
+                            uuid__u32));
+            Client *p_client__new =
+                get_p_client_by__uuid_from__game(
+                        p_game, 
+                        uuid__u32);
+
+            if (!p_client__new) {
+                debug_warning("Failed to load client.");
+                goto reject;
+            }
+
+            load_local_space_manager_at__global_space_vector__3i32(
+                    get_p_local_space_manager_from__client(p_client__new), 
+                    p_game,
+                    VECTOR__3i32__0_0_0);
+
+            debug_info("game_action__tcp_connect: accept");
+
+            dispatch_game_action__connect__accept(
+                    p_game, 
+                    p_client__new);
+            complete_process(p_this_process);
+            return;
     }
-
-    TCP_Socket *p_tcp_socket =
-        accept_pending_connection(
-                get_p_tcp_socket_manager_from__game(p_game), 
-                uuid__u32);
-
-    if (!p_tcp_socket) {
-        goto reject;
-    }
-
-    Client *p_client__new =
-        allocate_client_from__game(
-                p_game, 
-                uuid__u32);
-
-    if (!p_client__new) {
-        goto reject;
-    }
-
-    load_local_space_manager_at__global_space_vector__3i32(
-            get_p_local_space_manager_from__client(p_client__new), 
-            p_game,
-            VECTOR__3i32__0_0_0);
-
-    debug_info("game_action__tcp_connect: accept");
-
-    dispatch_game_action__connect__accept(
-            p_game, 
-            p_client__new);
-    complete_process(p_this_process);
-    return;
 reject:
     debug_info("game_action__tcp_connect: reject");
 
-    Game_Action ga_reject;
-    initialize_game_action_for__tcp_connect__reject(
-            &ga_reject, 
-            0);
-    PLATFORM_tcp_send(
-            p_PLATFORM_tcp_socket, 
-            (u8*)&ga_reject, 
-            sizeof(ga_reject));
-    reject_pending_connection(
-            get_p_tcp_socket_manager_from__game(p_game));
+    if (p_PLATFORM_tcp_socket) {
+        Game_Action ga_reject;
+        initialize_game_action_for__tcp_connect__reject(
+                &ga_reject, 
+                0);
+        PLATFORM_tcp_send(
+                p_PLATFORM_tcp_socket, 
+                (u8*)&ga_reject, 
+                sizeof(ga_reject));
+        reject_pending_connection(
+                get_p_tcp_socket_manager_from__game(p_game));
+    }
     fail_process(p_this_process);
 }
 

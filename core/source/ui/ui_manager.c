@@ -190,10 +190,12 @@ UI_Element *get_highest_priority_ui_element_thats__under_this_ui_element(
 UI_Element *get_highest_priority_ui_element_thats__under_the_cursor(
         UI_Manager *p_ui_manager,
         Game *p_game) {
+    Input *p_input =
+        get_p_input_from__game(p_game);
     Vector__3i32 cursor_position =
-        (is_input__click_released(&p_game->input))
-        ? p_game->input.cursor__old__3i32
-        : p_game->input.cursor__3i32;
+        (is_input__click_released(p_input))
+        ? p_input->cursor__old__3i32
+        : p_input->cursor__3i32;
         ;
     for (Index__u32 index_of__ui_element=0;
             index_of__ui_element
@@ -481,7 +483,7 @@ void poll_ui_manager__update(
         UI_Manager *p_ui_manager,
         Game *p_game,
         Graphics_Window *p_graphics_window) {
-    Input *p_input = &p_game->input;
+    Input *p_input = get_p_input_from__game(p_game);
 
     switch (get_input_mode_of__input(
                 get_p_input_from__game(p_game))) {

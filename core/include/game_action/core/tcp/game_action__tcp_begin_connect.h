@@ -15,21 +15,23 @@ void register_game_action__tcp_connect__begin(
 void initialize_game_action_for__tcp_connect__begin(
         Game_Action *p_game_action,
         IPv4_Address ipv4_address,
-        Identifier__u32 session_token__uuid__u32);
+        Session_Token session_token);
 
 static inline
 void dispatch_game_action__connect__begin(
         Game *p_game,
         IPv4_Address ipv4_address,
-        Identifier__u32 session_token__uuid__u32) {
+        Session_Token session_token) {
     Game_Action ga_connect__begin;
     initialize_game_action_for__tcp_connect__begin(
             &ga_connect__begin,
             ipv4_address,
-            session_token__uuid__u32);
+            session_token);
     dispatch_game_action(
             p_game, 
-            session_token__uuid__u32,
+            0, // TODO: this may be incorrect to do
+               // however, we don't know what uuid the server will
+               // determine for us. Ultimately this likely doesn't matter.
             &ga_connect__begin);
 }
 
