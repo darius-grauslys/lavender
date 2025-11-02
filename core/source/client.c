@@ -350,9 +350,13 @@ bool dispatch_game_action_for__client(
                     p_game_action
                         ->the_kind_of_game_action__this_action_is);
 
-        if (m_process_of__game_action)
+        if (m_process_of__game_action) {
             m_process_of__game_action(
                     &process, p_game);
+            if (is_process__failed(&process)) {
+                set_game_action_as__bad_request(p_game_action);
+            }
+        }
     } 
 
     if (!p_tcp_socket_manager
@@ -400,6 +404,7 @@ void m_process__deserialize_client__default(
 
     if (!p_hitbox_aabb) {
         debug_error("m_process__deserialize_client__default, failed to allocate p_hitbox_aabb for client.");
+        set_client_as__failed_to_load(p_client);
         fail_process(p_this_process);
         return;
     }
@@ -434,11 +439,12 @@ void m_process__deserialize_client__default(
     if (error) {
         debug_error("m_process__deserialize_client__default, read file error: %d",
                 error);
+        set_client_as__failed_to_load(p_client);
         fail_process(p_this_process);
         return;
     }
 
-    set_client_as__active(p_client);
+    set_client_as__loaded(p_client);
     complete_process(p_this_process);
 }
 

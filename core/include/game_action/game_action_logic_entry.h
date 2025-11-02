@@ -146,9 +146,23 @@ void initialize_game_action_logic_entry_as__message(
             0);
 }
 
+///
+/// BROADCAST messages are resolved IMMEDIATELY upon
+/// reception by the client object, both server/client side.
+///
+/// For server side (outbound) it is only handled for uuid 0 clients.
+/// The handled process is checked for failure:
+/// Failure     -> do nothing.
+/// Completion  -> forward message to other clients.
+///
+/// All other clients will just forward the broadcast.
+///
 static inline
-void initialize_game_action_logic_entry_as__broadcast(
-        Game_Action_Logic_Entry *p_game_action_logic_entry) {
+void initialize_game_action_logic_entry_as__broadcast__server(
+        Game_Action_Logic_Entry *p_game_action_logic_entry,
+        Process_Priority__u8 process_priority__u8,
+        m_Process m_process__game_action__outbound,
+        Process_Flags__u8 process_flags__outbound) {
     initialize_game_action_logic_entry(
             p_game_action_logic_entry, 
             GAME_ACTION_FLAGS__OUTBOUND_SANITIZE
@@ -156,11 +170,11 @@ void initialize_game_action_logic_entry_as__broadcast(
             GAME_ACTION_FLAG_MASK__OUTBOUND_SANITIZE, 
             GAME_ACTION_FLAGS__INBOUND_SANITIZE, 
             GAME_ACTION_FLAG_MASK__INBOUND_SANITIZE, 
-            PROCESS_PRIORITY__MINIMUM,
-            0, 
+            process_priority__u8,
+            m_process__game_action__outbound, 
+            process_flags__outbound,
             0,
-            0,
-            0);
+            PROCESS_FLAGS__NONE);
 }
 
 static inline

@@ -1,16 +1,25 @@
 #include "game_action/core/world/game_action__world__load_client.h"
 #include "client.h"
+#include "collisions/hitbox_aabb.h"
+#include "collisions/hitbox_aabb_manager.h"
+#include "debug/debug.h"
+#include "defines.h"
 #include "defines_weak.h"
 #include "game.h"
 #include "game_action/core/game_action__bad_request.h"
 #include "game_action/game_action.h"
 #include "game_action/game_action_logic_entry.h"
 #include "game_action/game_action_logic_table.h"
+#include "multiplayer/session_token.h"
 #include "process/game_action_process.h"
 #include "process/process.h"
 #include "process/process_manager.h"
 #include "types/implemented/game_action_kind.h"
+#include "vectors.h"
+#include "world/chunk_vectors.h"
+#include "world/local_space_manager.h"
 #include "world/serialization/world_directory.h"
+#include "world/world.h"
 
 void m_process__game_action__world__load_client__inbound(
         Process *p_this_process,
@@ -86,23 +95,51 @@ void m_process__game_action__world__load_client__outbound(
                 ->ga_kind__world__load_world__uuid_of__client__u32);
 
     if (!p_client) {
-        p_client = allocate_client_from__game(
-                p_game, 
-                p_game_action->ga_kind__world__load_world__uuid_of__client__u32);
-
-        if (!p_client) {
-            debug_error("m_process__game_action__world__load_client__outbound, failed to allocate client.");
-            fail_process(p_this_process);
+        debug_error("m_process__game_action__world__load_client__outbound, p_client == 0.");
+        fail_process(p_this_process);
+        return;
+    }
+    if (is_client__loaded(p_client)) {
+        Hitbox_AABB *p_hitbox_aabb =
+            get_p_hitbox_aabb_by__uuid_u32_from__hitbox_aabb_manager(
+                    get_p_hitbox_aabb_manager_from__game(p_game), 
+                    GET_UUID_P(p_client));
+        if (!p_hitbox_aabb) {
+            debug_warning("m_process__game_action__world__load_client__outbound, client missing hitbox, defaulting to world spawn point.");
+        }
+        Global_Space_Vector__3i32 gsv__3i32 =
+            (p_hitbox_aabb)
+            ? vector_3i32F4_to__chunk_vector_3i32(
+                    get_position_3i32F4_of__hitbox_aabb(p_hitbox_aabb))
+            : vector_3i32F4_to__chunk_vector_3i32(
+                    get_spawn_point_of__world(get_p_world_from__game(p_game)))
+            ;
+        if (!is_chunk_vectors_3i32__equal(
+                    get_center_of__local_space_manager(get_p_local_space_manager_from__client(p_client)), 
+                    gsv__3i32)) {
+            // TODO: timeout/retry this code path.
+            Process *p_process__teleport_client =
+                teleport_client(p_game, p_client, get_position_3i32F4_of__hitbox_aabb(p_hitbox_aabb));
+            enqueue_process(
+                    p_this_process,
+                    p_process__teleport_client);
+            return;
+        } else {
+            if (p_hitbox_aabb)
+                set_hitbox_aabb_as__active(p_hitbox_aabb);
+            set_client_as__active(p_client);
+            complete_process(p_this_process);
             return;
         }
     }
 
-    if (is_client__active(p_client)) {
-        complete_process(p_this_process);
+    if (!is_local_space_manager__loaded(
+                p_game, 
+                get_p_local_space_manager_from__client(p_client))) {
+        // Wait for world to be loaded...
+        // TODO: timeout
         return;
     }
-
-    set_client_as__loading(p_client);
 
     // TODO: magic num timeout
     if (p_this_process->process_valueA__i16++ > 16) {
@@ -127,25 +164,26 @@ void m_process__game_action__world__load_client__outbound(
                 ->ga_kind__world__load_world__uuid_of__client__u32,
                 &index_of__path_to__base_directory);
 
+    Process *p_process = 0;
     if (!index_of__path_to__base_directory) {
-        debug_error("m_process__game_action__world__load_client__outbound, failed to find client file.");
-        dispatch_game_action__bad_request(
-                p_game, 
-                p_game_action, 
-                0);
-        fail_process(p_this_process);
+        // client file does not exist, we can go ahead and generate a new client.
+        p_process =
+            dispatch_handler_process_to__create_client(
+                    p_game, 
+                    get_uuid_u32_of__session_token_player_uuid_u64(
+                        p_game_action->ga_kind__tcp_connect__begin__session_token));
         return;
+    } else {
+        p_process =
+            dispatch_handler_process_to__load_client(
+                p_game, 
+                path_to__client,
+                p_game_action
+                ->ga_kind__world__load_world__uuid_of__client__u32);
     }
 
-    Process *p_process =
-        dispatch_handler_process_to__load_client(
-            p_game, 
-            path_to__client,
-            p_game_action
-            ->ga_kind__world__load_world__uuid_of__client__u32);
-
     if (!p_process) {
-        debug_error("m_process__game_action__world__load_client__outbound, failed to dispatch deserialization process.");
+        debug_error("m_process__game_action__world__load_client__outbound, failed to dispatch process.");
         dispatch_game_action__bad_request(
                 p_game, 
                 p_game_action, 

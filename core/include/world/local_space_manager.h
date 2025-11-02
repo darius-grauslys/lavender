@@ -36,7 +36,10 @@ bool is_local_space_manager__loaded(
     return is_local_space_manager__loaded_except_with__this_many_spaces(
             p_game, 
             p_local_space_manager, 
-            0);
+            ((CHUNK__WIDTH - 1) * (CHUNK__DEPTH-1) * 2) 
+            + ((CHUNK__HEIGHT - 1) * (CHUNK__DEPTH - 1) * 2)
+            + ((CHUNK__WIDTH - 1) * (CHUNK__HEIGHT - 1) * 2)
+            + 2);
 }
 
 static inline

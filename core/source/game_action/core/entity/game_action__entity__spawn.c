@@ -1,4 +1,5 @@
 #include "game_action/core/entity/game_action__entity__spawn.h"
+#include "defines.h"
 #include "entity/entity.h"
 #include "game_action/core/entity/game_action__entity__get.h"
 #include "defines_weak.h"
@@ -35,12 +36,47 @@ void m_process__game_action__entity__spawn__inbound_client(
     complete_process(p_this_process);
 }
 
+void m_process__game_action__entity__spawn__outbound_server(
+        Process *p_this_process,
+        Game *p_game) {
+    Game_Action *p_game_action =
+       (Game_Action*)p_this_process->p_process_data;
+    Entity *p_entity =
+       get_p_entity_by__uuid_from__entity_manager(
+               get_p_entity_manager_from__game(p_game), 
+               p_game_action->ga_kind__entity__uuid);
+
+    if (p_entity) {
+        debug_error("m_process__game_action__entity__spawn__outbound_server, p_entity already allocated for this uuid.");
+        fail_process(p_this_process);
+        return;
+    }
+
+    p_entity =
+        allocate_entity_in__entity_manager(
+                p_game, 
+                get_p_world_from__game(p_game), 
+                get_p_entity_manager_from__game(p_game), 
+                p_game_action->ga_kind__entity__the_kind_of__entity);
+
+    if (!p_entity) {
+        debug_error("m_process__game_action__entity__spawn__outbound_server, failed to allocate entity.");
+        fail_process(p_this_process);
+        return;
+    }
+
+    complete_process(p_this_process);
+}
+
 void register_game_action__entity__spawn_for__server(
         Game_Action_Logic_Table *p_game_action_logic_table) {
-    initialize_game_action_logic_entry_as__broadcast(
+    initialize_game_action_logic_entry_as__broadcast__server(
             get_p_game_action_logic_entry_by__game_action_kind(
                 p_game_action_logic_table, 
-                Game_Action_Kind__Entity__Spawn));
+                Game_Action_Kind__Entity__Spawn),
+            PROCESS_PRIORITY__0_MAXIMUM,
+            m_process__game_action__entity__spawn__outbound_server,
+            PROCESS_FLAGS__NONE);
 }
 
 void register_game_action__entity__spawn_for__client(

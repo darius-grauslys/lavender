@@ -80,6 +80,8 @@ void initialize_world(
     set_f_hitbox_aabb_collision_handler_of__world(
             p_world, 
             f_hitbox_aabb_collision_handler__default);
+
+    p_world->spawn_point = VECTOR__3i32F4__OUT_OF_BOUNDS;
 }
 
 void manage_world(

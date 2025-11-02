@@ -1,4 +1,5 @@
 #include "client.h"
+#include "collisions/hitbox_aabb_manager.h"
 #include "defines.h"
 #include "defines_weak.h"
 #include "game_action/core/world/game_action__world__load_client.h"
@@ -140,13 +141,16 @@ void initialize_game(
     PLATFORM_initialize_game(p_game);
 }
 
-void allocate_client_pool_for__game(
+bool allocate_client_pool_for__game(
         Game *p_game,
-        Identifier__u32 uuid_of__local_client_or__server__u32,
         Quantity__u32 quantity_of__clients) {
     if (quantity_of__clients > MAX_QUANTITY_OF__TCP_SOCKETS) {
-        debug_error("allocate_client_pool_for__game, quantity_of__clients > MAX_QUANTITY_OF__TCP_SOCKETS");
+        debug_warning("allocate_client_pool_for__game, quantity_of__clients > MAX_QUANTITY_OF__TCP_SOCKETS");
         quantity_of__clients = MAX_QUANTITY_OF__TCP_SOCKETS;
+    }
+    if (p_game->pM_clients) {
+        debug_error("allocate_client_pool_for__game, pM_clients != 0. Release first.");
+        return false;
     }
     p_game->pM_clients = malloc(sizeof(Client) * quantity_of__clients);
 
@@ -163,15 +167,36 @@ void allocate_client_pool_for__game(
             0,
             p_game->max_quantity_of__clients);
 
+    // TODO: do better on the uuid acquisition.
     initialize_client(
             &p_game->pM_clients[0],
-            uuid_of__local_client_or__server__u32,
+            get_raw_uuid_u32_of__player_from__game_session_token(p_game),
             VECTOR__3i32__0_0_0);
 
     p_game->pM_ptr_array_of__clients[0] =
         &p_game->pM_clients[0];
 
     p_game->index_to__next_client_in__pool = 1;
+    return true;
+}
+
+bool release_client_pool_from__game(
+        Game *p_game) {
+    if (!p_game->pM_clients)
+        return true;
+    for (Index__u32 index_of__client = 0;
+            index_of__client < get_max_quantity_of__clients_for__game(p_game);
+            index_of__client++) {
+        Client *p_client = get_p_client_by__index_from__game(
+                p_game, 
+                index_of__client);
+        if (is_client__active(p_client)) {
+            debug_error("release_client_pool_from__game, active clients are present, cannot release now.");
+            return false;
+        }
+    }
+    free(p_game->pM_clients);
+    return true;
 }
 
 Local_Space_Manager *get_p_local_space_manager_thats__closest_to__this_position(
@@ -335,6 +360,44 @@ void release_client_from__game(
     }
 }
 
+Process *dispatch_handler_process_to__create_client(
+        Game *p_game,
+        Identifier__u32 uuid_of__client__u32) {
+    if (!p_game->m_process__create_client) {
+        debug_warning("m_process__create_client is 0 by default, did you forget to register a handler?");
+        debug_warning("NOTE: use, set_dispatch_handler_process_for__create_client(...)");
+        debug_error("dispatch_handler_process_to__create_client, m_process__create_client == 0.");
+        return 0;
+    }
+
+    Client *p_client =
+        get_p_client_by__uuid_from__game(
+                p_game, 
+                uuid_of__client__u32);
+
+    if (!p_client) {
+        debug_error("dispatch_handler_process_to__create_client, p_client == 0.");
+        return 0;
+    }
+
+    Process *p_process =
+        run_process(
+            get_p_process_manager_from__game(p_game), 
+            p_game->m_process__create_client, 
+            PROCESS_PRIORITY__0_MAXIMUM,
+            PROCESS_FLAG__IS_CRITICAL);
+
+    if (!p_process) {
+        debug_error("dispatch_handler_process_to__create_client, failed to allocate process.");
+        set_client_as__failed_to_load(p_client);
+        return 0;
+    }
+
+    p_process->p_process_data = p_client;
+
+    return p_process;
+}
+
 Process *dispatch_handler_process_to__load_client(
         Game *p_game,
         IO_path path_to__client_file,
@@ -350,15 +413,8 @@ Process *dispatch_handler_process_to__load_client(
                 uuid_of__client__u32);
 
     if (!p_client) {
-        p_client =
-            allocate_client_from__game(
-                    p_game, 
-                    uuid_of__client__u32);
-
-        if (!p_client) {
-            debug_error("dispatch_handler_process_to__load_client, failed to allocate client.");
-            return 0;
-        }
+        debug_error("dispatch_handler_process_to__load_client, p_client == 0.");
+        return 0;
     }
 
     Process *p_process =
@@ -376,9 +432,7 @@ Process *dispatch_handler_process_to__load_client(
                 p_client,
                 true)) {
         debug_error("dispatch_handler_process_to__load_client, failed to run process.");
-        release_client_from__game(
-                p_game, 
-                p_client);
+        set_client_as__failed_to_load(p_client);
         release_process_from__process_manager(
                 p_game, 
                 get_p_process_manager_from__game(p_game), 
@@ -511,7 +565,41 @@ void broadcast_game_action(
         Game *p_game,
         Game_Action *p_game_action,
         Global_Space_Vector__3i32 global_space__vector__3i32) {
-    debug_abort("broadcast_game_action, impl.");
+    dispatch_game_action_for__client(
+            get_p_local_client_by__from__game(p_game), 
+            p_game, 
+            get_p_tcp_socket_manager_from__game(p_game),
+            p_game_action);
+
+    if (is_game_action__bad_request(p_game_action)) {
+        return;
+    }
+
+    // TODO: this needs to be optimized with client KD-Tree
+
+    for (Index__u32 index_of__client = 0;
+            get_max_quantity_of__clients_for__game(p_game);
+            index_of__client++) {
+        Client *p_client = get_p_client_by__index_from__game(
+                p_game, 
+                index_of__client);
+
+        if (p_client == get_p_local_client_by__from__game(p_game))
+            continue;
+
+        Local_Space *p_local_space =
+            get_p_local_space_from__local_space_manager(
+                    get_p_local_space_manager_from__client(p_client), 
+                    global_space__vector__3i32);
+        if (!p_local_space)
+            continue; // broadcast out of bounds.
+
+        dispatch_game_action_for__client(
+                p_client, 
+                p_game, 
+                get_p_tcp_socket_manager_from__game(p_game), 
+                p_game_action);
+    }
 }
 
 void poll_multiplayer(Game *p_game) {
@@ -680,33 +768,21 @@ bool m_game_action_handler__dispatch__multiplayer(
     }
 
     if (is_game_action__broadcasted(p_game_action)) {
-        bool is_local =
-            !is_vectors_3i32F4__out_of_bounds(
-                    p_game_action
-                    ->vector_3i32F4__broadcast_point);
-        for (Index__u32 index_of__client = 0;
-                index_of__client
-                < get_quantity_of__clients_connect_to__game(p_game);
-                index_of__client++) {
-            Client *p_client = get_p_client_by__index_from__game(
-                    p_game, 
-                    index_of__client);
-
-            if (is_local
-                     && !is_vector_3i32F4_within__local_space_manager(
-                        get_p_local_space_manager_from__client(p_client), 
-                        p_game_action->vector_3i32F4__broadcast_point)) {
-                continue;
-            }
-
-            dispatch_game_action_for__client(
-                    p_client, 
-                    p_game, 
-                    get_p_tcp_socket_manager_from__game(p_game),
-                    p_game_action);
+        Global_Space_Vector__3i32 gsv_3i32 = VECTOR__3i32__0_0_0;
+        Hitbox_AABB *p_hitbox_aabb =
+            get_p_hitbox_aabb_by__uuid_u32_from__hitbox_aabb_manager(
+                    get_p_hitbox_aabb_manager_from__game(p_game), 
+                    GET_UUID_P(p_client));
+        if (p_hitbox_aabb) {
+            gsv_3i32 = vector_3i32F4_to__chunk_vector_3i32(
+                    get_position_3i32F4_of__hitbox_aabb(p_hitbox_aabb));
         }
-        // TODO: handle errors?
-        return true;
+        broadcast_game_action(
+                p_game, 
+                p_game_action, 
+                gsv_3i32);
+        // TODO: is this sufficent to handle errors?
+        return is_game_action__bad_request(p_game_action);
     }
 
 

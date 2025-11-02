@@ -75,24 +75,64 @@ Local_Space_Manager *get_p_local_space_manager_from__client(
 }
 
 static inline
-bool is_client__loading(
-        Client *p_client) {
-    return p_client && p_client->client_flags__u16
-        & CLIENT_FLAG__IS_LOADING;
-}
-
-static inline
-void set_client_as__loading(
-        Client *p_client) {
-    p_client->client_flags__u16 |=
-        CLIENT_FLAG__IS_LOADING;
-}
-
-static inline
-void set_client_as__NOT_loading(
+void set_client_as__inactive(
         Client *p_client) {
     p_client->client_flags__u16 &=
-        ~CLIENT_FLAG__IS_LOADING;
+        ~CLIENT_FLAG__IS_ACTIVE;
+}
+
+static inline
+bool is_client__failed_to_load(
+        Client *p_client) {
+    set_client_as__inactive(p_client);
+    return p_client && p_client->client_flags__u16
+        & CLIENT_FLAG__IS_FAILED_TO_LOAD;
+}
+
+static inline
+void set_client_as__failed_to_load(
+        Client *p_client) {
+    p_client->client_flags__u16 = CLIENT_FLAGS__NONE;
+    p_client->client_flags__u16 |=
+        CLIENT_FLAG__IS_FAILED_TO_LOAD;
+}
+
+static inline
+void set_client_as__NOT_failed_to_load(
+        Client *p_client) {
+    p_client->client_flags__u16 &=
+        ~CLIENT_FLAG__IS_FAILED_TO_LOAD;
+}
+
+
+static inline
+bool is_client__loaded(
+        Client *p_client) {
+    return p_client && p_client->client_flags__u16
+        & CLIENT_FLAG__IS_LOADED;
+}
+
+
+static inline
+void set_client_as__loaded(
+        Client *p_client) {
+    set_client_as__NOT_failed_to_load(p_client);
+    p_client->client_flags__u16 |=
+        CLIENT_FLAG__IS_LOADED;
+}
+
+static inline
+void set_client_as__NOT_loaded(
+        Client *p_client) {
+    p_client->client_flags__u16 &=
+        ~CLIENT_FLAG__IS_LOADED;
+}
+
+static inline
+bool is_client__active(
+        Client *p_client) {
+    return p_client && p_client->client_flags__u16
+        & CLIENT_FLAG__IS_ACTIVE;
 }
 
 static inline
@@ -117,26 +157,13 @@ void set_client_as__NOT_saving(
 }
 
 static inline
-bool is_client__active(
-        Client *p_client) {
-    return p_client && p_client->client_flags__u16
-        & CLIENT_FLAG__IS_ACTIVE;
-}
-
-static inline
 void set_client_as__active(
         Client *p_client) {
-    set_client_as__NOT_loading(p_client);
+    set_client_as__NOT_failed_to_load(p_client);
+    set_client_as__NOT_loaded(p_client);
     set_client_as__NOT_saving(p_client);
     p_client->client_flags__u16 |=
         CLIENT_FLAG__IS_ACTIVE;
-}
-
-static inline
-void set_client_as__inactive(
-        Client *p_client) {
-    p_client->client_flags__u16 &=
-        ~CLIENT_FLAG__IS_ACTIVE;
 }
 
 static inline

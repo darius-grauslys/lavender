@@ -126,4 +126,16 @@ void set_f_hitbox_aabb_collision_handler_of__world(
         f_hitbox_aabb_collision_handler;
 }
 
+static inline
+void set_spawn_point_of__world(
+        World *p_world,
+        Vector__3i32F4 spawn_point__3i32F4) {
+    p_world->spawn_point = spawn_point__3i32F4;
+}
+
+static inline
+Vector__3i32F4 get_spawn_point_of__world(World *p_world) {
+    return p_world->spawn_point;
+}
+
 #endif

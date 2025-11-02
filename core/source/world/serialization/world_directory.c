@@ -412,7 +412,7 @@ Index__u32 stat_chunk_file__inventories(
             'i');
 }
 
-Index__u32 stat_client_file(
+Index__u32 open_client_file(
         PLATFORM_File_System_Context *p_PLATFORM_file_system_context,
         World *p_world,
         IO_path p_path,
@@ -470,6 +470,67 @@ Index__u32 stat_client_file(
 
     if (PLATFORM_access(p_path, IO_Access_Kind__File)) {
         return false;
+    }
+
+    return index_of__path_append;
+}
+
+Index__u32 stat_client_file(
+        PLATFORM_File_System_Context *p_PLATFORM_file_system_context,
+        World *p_world,
+        IO_path p_path,
+        Identifier__u32 uuid_of__client,
+        Index__u32 *p_OUT_index_of__path_to__file_base_directory) {
+    *p_OUT_index_of__path_to__file_base_directory = 0;
+    if (is_identifier_u32__invalid(
+                uuid_of__client)) {
+        debug_error("stat_client_file, invalid client uuid.");
+        return 0;
+    }
+    Index__u32 index_of__path_append = 
+        stat_world_directory(
+                p_PLATFORM_file_system_context, 
+                p_world, 
+                p_path);
+    if (!index_of__path_append) {
+        debug_error("stat_client_file, failed to find file of world.");
+        return 0;
+    }
+
+    Identifier__u32 uuid_of__client__processed = 
+        uuid_of__client;
+    Identifier__u32 uuid_of__client__processed_mask = 
+        (Identifier__u32)-1;
+    do {
+        Quantity__u8 prefix_of__uuid__u4 = 
+            0b1111
+            & uuid_of__client__processed;
+        p_path[index_of__path_append++] = PATH_SEPERATOR;
+        append_hex_value_to__path(
+                &index_of__path_append, 
+                prefix_of__uuid__u4, 
+                p_path);
+        PLATFORM_Directory *p_dir;
+        if (!(p_dir = PLATFORM_opendir(p_path))) {
+            return 0;
+        } else {
+            PLATFORM_closedir(p_dir);
+        }
+        uuid_of__client__processed_mask >>= 4;
+        uuid_of__client__processed >>= 4;
+    } while (uuid_of__client__processed_mask > MASK(4));
+
+    *p_OUT_index_of__path_to__file_base_directory =
+        index_of__path_append;
+
+    p_path[index_of__path_append++] = PATH_SEPERATOR;
+    append_hex_value_to__path(
+            &index_of__path_append, 
+            uuid_of__client__processed, 
+            p_path);
+
+    if (PLATFORM_access(p_path, IO_Access_Kind__File)) {
+        return 0;
     }
 
     return index_of__path_append;

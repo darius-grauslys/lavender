@@ -48,9 +48,8 @@ void stop_multiplayer_for__game(
         Game *p_game);
 void poll_multiplayer(Game *p_game);
 
-void allocate_client_pool_for__game(
+bool allocate_client_pool_for__game(
         Game *p_game,
-        Identifier__u32 uuid_of__local_client_or__server__u32,
         Quantity__u32 quantity_of__clients);
 
 Client *allocate_client_from__game(
@@ -61,9 +60,24 @@ void release_client_from__game(
         Game *p_game,
         Client *p_client);
 
+///
+/// NOTE: Be sure to do this outside of an active game state.
+/// Specifically, one where the world is loaded and clients are ACTIVE.
+///
+/// Ensure all clients are disconnected prior to doing this.
+///
+/// returns false if any clients are still active.
+///
+bool release_client_pool_from__game(
+        Game *p_game);
+
 Client *get_p_client_by__uuid_from__game(
         Game *p_game,
         Identifier__u32 uuid__u32);
+
+Process *dispatch_handler_process_to__create_client(
+        Game *p_game,
+        Identifier__u32 uuid_of__client__u32);
 
 Process *dispatch_handler_process_to__load_client(
         Game *p_game,
@@ -97,6 +111,13 @@ Process *save_client(
 Local_Space_Manager *get_p_local_space_manager_thats__closest_to__this_position(
         Game *p_game,
         Vector__3i32 vector__3i32);
+
+static inline
+void set_dispatch_handler_process_for__create_client(
+        Game *p_game,
+        m_Process m_process) {
+    p_game->m_process__create_client = m_process;
+}
 
 static inline
 void set_dispatch_handler_process_for__load_client(
@@ -293,6 +314,12 @@ static inline
 Identifier__u32 get_raw_uuid_u32_of__player_from__game_session_token(Game *p_game) {
     return get_uuid_u32_of__session_token_player_uuid_u64(
             get_session_token_from__game(p_game));
+}
+
+static inline
+Quantity__u32 get_max_quantity_of__clients_for__game(
+        Game *p_game) {
+    return p_game->max_quantity_of__clients;
 }
 
 static inline

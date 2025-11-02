@@ -89,13 +89,9 @@ load_world_data:
     return;
 poll_world_data:
 
-    if (!is_local_space_manager__loaded_except_with__this_many_spaces(
+    if (!is_local_space_manager__loaded(
                 p_game, 
-                get_p_local_space_manager_from__client(p_client),
-                ((CHUNK__WIDTH - 1) * (CHUNK__DEPTH-1) * 2) 
-                + ((CHUNK__HEIGHT - 1) * (CHUNK__DEPTH - 1) * 2)
-                + ((CHUNK__WIDTH - 1) * (CHUNK__HEIGHT - 1) * 2)
-                + 2)) {
+                get_p_local_space_manager_from__client(p_client))) {
         // TODO: timeout
         return;
     }

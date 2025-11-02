@@ -2277,9 +2277,10 @@ typedef u16 Client_Flags__u16;
 
 #define CLIENT_FLAGS__NONE 0
 #define CLIENT_FLAG__IS_ACTIVE BIT(0)
-#define CLIENT_FLAG__IS_LOADING BIT(1)
-#define CLIENT_FLAG__IS_SAVING BIT(2)
-#define CLIENT_FLAG__IS_FRESH BIT(3)
+#define CLIENT_FLAG__IS_LOADED BIT(1)
+#define CLIENT_FLAG__IS_FAILED_TO_LOAD BIT(2)
+#define CLIENT_FLAG__IS_SAVING BIT(3)
+#define CLIENT_FLAG__IS_FRESH BIT(4)
 
 typedef struct Client_t {
     Serialization_Header _serialization_header;
