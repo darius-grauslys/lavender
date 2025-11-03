@@ -42,14 +42,14 @@ BASENAME=$(basename $FILE_SEARCH)
 
 BACKEND=$(echo $BACKEND | tr '[:upper:]' '[:lower:]')
 
-XML=$(find ./core/assets/ui/xml/$BACKEND -iname $BASENAME.xml)
+XML=$(find ./assets/ui/xml/$BACKEND -iname $BASENAME.xml)
 
 if [ -z "$XML" ]; then
     echo Could not find $BASENAME.xml
     exit 1
 fi
 
-python ./tools/ui_builder.py $XML $ARGS &
+python $LAVENDER_DIR/tools/ui_builder.py $XML $ARGS &
 VISUALIZER_PID=$!
 if [ -z "$(echo $ARGS | grep "is_visualizing false")" ]; then
     nvim $XML &

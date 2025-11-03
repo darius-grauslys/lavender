@@ -646,6 +646,7 @@ def construct_ui_from__xml_element(xml_element, context_stack):
 
 def generate_source__ui(xml_node__ui):
     global current_element_id
+    print("GEN: " + config.associated_header_sub_dir_in__include_folder + "\\" + config.source_name)
     config.includes.insert(0, Include("{}{}.h".format(\
             config.associated_header_sub_dir_in__include_folder,\
             config.source_name)))
@@ -714,6 +715,7 @@ def read_ui(path):
         tree = ET.parse(path)
         root = tree.getroot()
     except ET.ParseError as exception:
+        print("Error reading xml: {}".format(exception.position))
         set_error("Error reading xml: {}".format(exception.position))
         return
     set_error('')
@@ -728,18 +730,24 @@ def read_ui(path):
     try:
         config.update_from__xml_node(xml_node__config)
     except FileNotFoundError as exception:
+        print("File missing: {}".format(exception.filename))
         set_error("File missing: {}".format(exception.filename))
         return
     try:
         generate_source__ui(xml_node__ui)
     except KeyError as exception:
+        print("Missing field: {}".format(exception))
         set_error("Missing field: {}".format(exception))
         return
     if config.is_outputting:
+        output_path = os.path.dirname(os.path.join(config.base_dir, config.output__c_path))
+        os.makedirs(output_path, exist_ok=True)
         text_file = open(\
                 os.path.join(config.base_dir, config.output__c_path), "w")
         text_file.write(source_c)
         text_file.close()
+        output_path = os.path.dirname(os.path.join(config.base_dir, config.output__h_path))
+        os.makedirs(output_path, exist_ok=True)
         text_file = open(\
                 os.path.join(config.base_dir, config.output__h_path), "w")
         text_file.write(source_h)
