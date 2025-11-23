@@ -1,8 +1,10 @@
 #include "rendering/gfx_context.h"
+#include "defines.h"
 #include "defines_weak.h"
 #include "platform_defaults.h"
 #include "rendering/aliased_texture_manager.h"
 #include "rendering/font/font_manager.h"
+#include "rendering/graphics_window.h"
 #include "rendering/graphics_window_manager.h"
 #include "rendering/sprite_manager.h"
 #include "ui/ui_context.h"
@@ -26,7 +28,15 @@ void initialize_gfx_context(
 }
 
 Sprite_Manager *allocate_sprite_manager_from__gfx_context(
-        Gfx_Context *p_gfx_context) {
+        Gfx_Context *p_gfx_context,
+        Graphics_Window *p_gfx_window__owning_the__sprite_manager) {
+
+    if (get_p_sprite_manager_from__graphics_window(
+                p_gfx_window__owning_the__sprite_manager)) {
+        debug_error("allocate_sprite_manager_from__gfx_context, p_gfx_window__owning_the__sprite_manager already has a sprite_manager.");
+        return 0;
+    }
+
     for (Index__u32 index_of__sprite_manager = 0;
             index_of__sprite_manager
             < MAX_QUANTITY_OF__SPRITE_MANAGERS;
@@ -45,6 +55,13 @@ Sprite_Manager *allocate_sprite_manager_from__gfx_context(
         }
         
         initialize_sprite_manager(*p_ptrM_sprite_manager);
+        (*p_ptrM_sprite_manager)->uuid_of__owning_graphics_window =
+            GET_UUID_P(p_gfx_window__owning_the__sprite_manager);
+        // This "share" seems confusing here, but
+        // ownership is expressed in the line above.
+        share_sprite_manager_with__graphics_window(
+                p_gfx_window__owning_the__sprite_manager, 
+                (*p_ptrM_sprite_manager));
         return *p_ptrM_sprite_manager;
     }
 
@@ -54,7 +71,8 @@ Sprite_Manager *allocate_sprite_manager_from__gfx_context(
 
 void release_sprite_manager_from__gfx_context(
         Gfx_Context *p_gfx_context,
-        Sprite_Manager *p_sprite_manager) {
+        Sprite_Manager *p_sprite_manager,
+        Graphics_Window *p_graphics_window__owning_this__sprite_manager) {
 #ifndef NDEBUG
     if (!p_gfx_context) {
         debug_error("release_sprite_manager_from__gfx_context, p_gfx_context == 0.");
@@ -65,6 +83,13 @@ void release_sprite_manager_from__gfx_context(
         return;
     }
 #endif
+
+    if (!is_graphics_window__owning_this__sprite_manager(
+                p_graphics_window__owning_this__sprite_manager, 
+                p_sprite_manager)) {
+        // fail silently.
+        return;
+    }
 
     for (Index__u32 index_of__sprite_manager = 0;
             index_of__sprite_manager 

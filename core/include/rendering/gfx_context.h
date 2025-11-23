@@ -7,11 +7,13 @@
 void initialize_gfx_context(Gfx_Context *p_gfx_context);
 
 Sprite_Manager *allocate_sprite_manager_from__gfx_context(
-        Gfx_Context *p_gfx_context);
+        Gfx_Context *p_gfx_context,
+        Graphics_Window *p_gfx_window__owning_the__sprite_manager);
 
 void release_sprite_manager_from__gfx_context(
         Gfx_Context *p_gfx_context,
-        Sprite_Manager *p_sprite_manager);
+        Sprite_Manager *p_sprite_manager,
+        Graphics_Window *p_graphics_window__owning_this__sprite_manager);
 
 static inline
 PLATFORM_Gfx_Context *get_p_PLATFORM_gfx_context_from__gfx_context(

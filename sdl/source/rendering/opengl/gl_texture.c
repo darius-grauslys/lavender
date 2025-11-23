@@ -154,6 +154,7 @@ PLATFORM_Texture *GL_allocate_texture_with__path(
         SDL_release_texture(
                 &__SDL_Gfx_Context,
                 p_PLATFORM_texture);
+        debug_warning("path: %s", path);
         debug_error("SDL::GL::PLATFORM_allocate_texture__with__path failed. (stbi_load)");
         return 0;
     }

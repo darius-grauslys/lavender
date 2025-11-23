@@ -123,4 +123,12 @@ Sprite_Animation_Group_Set
         the_kind_of__sprite_animation_group];
 }
 
+static inline
+bool is_graphics_window__owning_this__sprite_manager(
+        Graphics_Window *p_graphics_window,
+        Sprite_Manager *p_sprite_manager) {
+    return p_sprite_manager->uuid_of__owning_graphics_window 
+        == GET_UUID_P(p_graphics_window);
+}
+
 #endif

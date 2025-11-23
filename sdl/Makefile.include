@@ -13,6 +13,7 @@ export CFILES_PLATFORM = $(CFILES_SDL)
 export OFILES_SDL := $(CFILES_SDL:.c=.o)
 export OFILES_PLATFORM = $(OFILES_SDL)
 
+# may not be needed
 export SHARED_SPRITE_FILES := $(foreach sprite_dir,$(SPRITE_DIRS),$(sprite_dir)/GFX_$(shell basename $(sprite_dir)).o)
 
 ifeq ($(OS),Windows_NT)
@@ -21,5 +22,6 @@ else
 export PLATFORM_LIBS	+= -lGL -lGLEW -lSDL2 -lcglm
 endif
 
+export AS := as
 export CC := clang
 export LD := $(CC)

@@ -116,6 +116,8 @@ if not os.path.exists(sys.argv[1]):
 
 config = Config(sys.argv[1])
 
+symbol_table = {}
+
 modification_time = os.path.getmtime(config.source_xml)
 
 p_ui_manager="p_ui_manager"
@@ -220,6 +222,13 @@ class Context:
 
 class RectangleSpec:
     def __init__(self, xml_element, context_stack):
+        if xml_element is None or context_stack is None:
+            self.x = 0
+            self.y = 0
+            self.width = 0
+            self.height = 0
+            self.color = (55,55,55)
+            return
         self.x = 0 \
                 if "x" not in xml_element.attrib \
                 else int(xml_element.attrib["x"])
@@ -235,15 +244,47 @@ class RectangleSpec:
         self.color = get_int_tuple_from_xml_or__use_this(\
                 xml_element, "color", (55,55,55))
 
+    @classmethod
+    def get_rectangle_spec__explicitly(
+            cls,
+            x, y,
+            width, height,
+            color = None):
+        rectangle_spec = RectangleSpec(None, None)
+        rectangle_spec.x = x
+        rectangle_spec.y = y
+        rectangle_spec.width = width
+        rectangle_spec.height = height
+        if not (color is None):
+            rectangle_spec.color = color
+            
+    @classmethod
+    def get_rectangle_spec__explicitly_at__parent_position(
+            cls,
+            xml_element,
+            context_stack,
+            width, height,
+            color = None):
+        rectangle_spec = RectangleSpec(xml_element, context_stack)
+        rectangle_spec.width = width
+        rectangle_spec.height = height
+        if not (color is None):
+            rectangle_spec.color = color
+
 def generate_source_h__with_literal(literal):
     global source_h
     source_h += literal
 
+def get_source_h__named_ui_index(name, unique_id):
+    return "{0}_{1}_{2}".format(\
+            config.source_name.upper(),\
+            name.upper(),\
+            unique_id)
+
 def generate_source_h__named_ui_index(name, unique_id):
     generate_source_h__with_literal(\
-            "#define {0}_{1}_{2} {2}".format(\
-                config.source_name.upper(),\
-                name.upper(),\
+            "#define {0} {1}".format(\
+                get_source_h__named_ui_index(name, unique_id),\
                 unique_id))
 
 def generate_source_c__tabs(quantity_of__tabs):
@@ -283,7 +324,10 @@ def generate_source_h__arguments(args):
 
 def generate_source_c__signature(signature, args):
     global source_c
-    source_c += signature.c_signatures[0]
+    if isinstance(signature, UI_Signature):
+        source_c += signature.c_signatures[0]
+    else:
+        source_c += signature
     generate_source_c__arguments(args)
 
 def generate_source_c__new_line():
@@ -321,8 +365,11 @@ def generate_source_c__include(include):
     generate_source_c__with_literal("#include <{}>".format(include.path))
 
 def generate_source_h__named_ui_index_if__has_name(xml_element):
+    global symbol_table
+
     name = get_str_from_xml_or__use_this(xml_element, "name", None)
     if name is not None:
+        symbol_table[name] = get_source_h__named_ui_index(name, current_element_id)
         generate_source_h__named_ui_index(name, current_element_id)
         generate_source_h__with_literal("\n")
 
@@ -345,11 +392,76 @@ def allocate_many_squares_with__context_stack(rectangle_spec, context_stack):
                 rectangle_spec.height, \
                 rectangle_spec.color)
 
-def allocate_ui(signature, xml_element, context_stack):
+def set_texture_of__ui_element(
+        xml_element,
+        context_stack,
+        name_of__ui_element=None):
+    if name_of__ui_element is None:
+        get_name_of__ui_element(context_stack)
+    name_of__texture_field = f"texture_for__{name_of__ui_element}"
+
+    generate_source_c__with_literal(f"Texture {name_of__texture_field};")
+    generate_source_c__new_line()
+    generate_source_c__signature(
+            "get_texture_by__alias",
+            [ "get_p_aliased_texture_manager_from__game(p_game)",
+             get_str_from_xml_or__use_this(
+                 xml_element,
+                 "name_of__texture",
+                 "MISSING_TEXTURE_NAME"),
+             f"&{name_of__texture_field}" ])
+    generate_source_c__new_line()
+    return name_of__texture_field
+
+def set_sprite_of__ui_element(
+        xml_element,
+        context_stack,
+        name_of__ui_element=None,
+        name_of__texture=None):
+    if name_of__ui_element is None:
+        get_name_of__ui_element(context_stack)
+    name_of__sprite_field = f"p_sprite_for__{name_of__ui_element}"
+
+    generate_source_c__with_literal(f"Sprite *{name_of__sprite_field} =")
+
+    generate_source_c__signature(
+            "allocate_sprite_from__sprite_manager",
+            [ "get_p_gfx_context_from__game(p_game)",
+             "get_p_sprite_manager_from__graphics_window(p_gfx_window)",
+             "p_gfx_window",
+             f"GET_UUID_P({name_of__ui_element})",
+             name_of__texture,
+             "TEXTURE_FLAG__SIZE_{}".format(
+                 get_str_from_xml_or__use_this(
+                     xml_element,
+                     "size_of__texture",
+                     "8x8") )])
+    generate_source_c__new_line()
+
+    generate_source_c__signature(
+            "set_frame_index_of__sprite",
+            [ name_of__sprite_field,
+             get_str_from_xml_or__use_this(
+                 xml_element,
+                 "index_of__sprite_frame",
+                 "0") ])
+    generate_source_c__new_line()
+
+    generate_source_c__signature(
+            "set_ui_element_as__using_sprite",
+            [ name_of__ui_element ])
+    generate_source_c__new_line()
+
+def allocate_ui(signature, xml_element, context_stack, name_of__ui_element=None):
     global current_element_id
+    if signature == "" or signature is None:
+        signature = "allocate_ui_element_from__ui_manager"
     context_stack.append(Context.allocate_context_from__xml_element(\
             xml_element, context_stack))
-    name = get_str_from_xml_or__use_this(xml_element, "name", p_ui_iterator)
+    if name_of__ui_element is None:
+        name = get_str_from_xml_or__use_this(xml_element, "name", p_ui_iterator)
+    else:
+        name = name_of__ui_element
     generate_source_h__named_ui_index_if__has_name(xml_element)
     generate_source_c__tabs(context_stack[-1].indentation_level)
     if name != p_ui_iterator:
@@ -420,7 +532,7 @@ def alloc_child(signature, xml_element, context_stack):
     context_stack[-1].index_of__element -= 1
     generate_source_c__tabs(context_stack[-1].indentation_level)
     generate_source_c__local_assignment__iterator_with__literal("_child")
-    generate_source_c__signature(signature, [p_ui_manager, p_ui_iterator])
+    generate_source_c__signature(signature, ["p_game", "p_gfx_window", p_ui_manager, p_ui_iterator])
     generate_source_c__new_line()
     context_stack[-1].p_ui_element = "{}{}".format(p_ui_iterator, "_child")
     for sub_xml_element in xml_element:
@@ -506,6 +618,107 @@ def get_vector_3i32_argument(\
                 z_offset) \
             )\
 
+def set_ui_element_as__the_parent_of__this_ui_element(
+        name_of__parent,
+        name_of__child):
+    generate_source_c__signature(
+            "set_ui_element_as__the_parent_of__this_ui_element",
+            ["p_ui_manager", name_of__parent, name_of__child])
+
+def allocate_hitbox_for__ui_element(xml_element, context_stack, name_of__ui_element=None):
+    rectangle_spec = RectangleSpec(xml_element, context_stack)
+    allocate_hitbox_for__ui_element_with__this_rectangle_spec(
+        xml_element,
+        context_stack,
+        rectangle_spec,
+        name_of__ui_element)
+
+    generate_source_c__new_line()
+    return rectangle_spec
+
+def allocate_hitbox_for__ui_element_with__this_rectangle_spec(xml_element, context_stack, rectangle_spec, name_of__ui_element=None):
+    if name_of__ui_element is None:
+        name_of__ui_element = get_name_of__ui_element(context_stack)
+    rectangle_spec = RectangleSpec(xml_element, context_stack)
+
+    args = []
+    args.append("p_game")
+    args.append("p_gfx_window")
+    args.append(name_of__ui_element)
+    args += get_rect_spec_args(context_stack, rectangle_spec)
+
+    generate_source_c__signature(
+            "allocate_hitbox_for__ui_element",
+            args);
+
+    generate_source_c__new_line()
+    return rectangle_spec
+
+
+def set_tile_span(xml_element, context_stack):
+    name_of__ui_element = context_stack[-1].p_ui_element
+    name_of__ui_span_argument = "ui_tile_span__{}"\
+            .format(name_of__ui_element)
+    generate_source_c__with_literal(f"UI_Tile_Span {name_of__ui_span_argument};")
+    generate_source_c__new_line()
+    generate_source_c__signature(
+            get_str_from_xml_or__use_this(
+                xml_element,
+                "span",
+                "MISSING_FUNCTION_IN_XML"),
+            [ f"&{name_of__ui_span_argument}" ])
+    generate_source_c__new_line()
+
+    generate_source_c__signature(
+            "set_ui_tile_span_of__ui_element",
+            [ name_of__ui_element, f"&{name_of__ui_span_argument}" ]) 
+    generate_source_c__new_line()
+
+def get_name_of__ui_element(context_stack):
+    return context_stack[-1].p_ui_element
+
+def set_transform_handler(xml_element, context_stack):
+    centering_style = get_str_from_xml_or__use_this(
+            xml_element,
+            "transform_handler",
+            "0")
+    generate_source_c__signature(
+            "set_ui_element__transformed_handler",
+            [ get_name_of__ui_element(context_stack), centering_style ])
+    generate_source_c__new_line()
+
+def set_text(xml_element, context_stack):
+    name_of__text_ui_element = f"text_for__{context_stack[-1].p_ui_element}"
+    text_argument = get_str_from_xml_or__use_this(
+            xml_element,
+            "text",
+            "")
+    if text_argument == "":
+        return
+
+    expression_to_get__font = get_str_from_xml_or__use_this(
+            xml_element,
+            "font_expression",
+            "MISSING_FONT_EXPRESSION_IN_XML")
+
+    generate_source_c__signature(
+            "initialize_ui_element_as__text_with__const_c_str",
+            [ name_of__text_ui_element, 
+             expression_to_get__font,
+             text_argument, 
+             f"strnlen({text_argument}, 32)"]) #TODO: max string len
+    generate_source_c__new_line()
+
+    set_transform_handler(xml_element, context_stack)
+
+    allocate_hitbox_for__ui_element(xml_element, context_stack, 
+                                    name_of__ui_element=name_of__text_ui_element)
+
+    set_ui_element_as__the_parent_of__this_ui_element(
+            get_name_of__ui_element,
+            name_of__text_ui_element)
+
+
 def background(signature, xml_element, context_stack):
     rectangle_spec = RectangleSpec(xml_element, context_stack)
 
@@ -531,7 +744,6 @@ def button(signature, xml_element, context_stack):
 
     args = []
     args.append(context_stack[-1].p_ui_element)
-    args += get_rect_spec_args(context_stack, rectangle_spec)
     args.append(\
             get_str_from_xml_or__use_this(\
                 xml_element, \
@@ -551,16 +763,27 @@ def button(signature, xml_element, context_stack):
     generate_source_c__signature(\
             signature,\
             args)
+
+    set_text(xml_element, context_stack)
     
     generate_source_c__new_line()
+
+    allocate_hitbox_for__ui_element(xml_element, context_stack)
+
     allocate_many_squares_with__context_stack(rectangle_spec, context_stack)
 
 def slider(signature, xml_element, context_stack):
-    rectangle_spec = RectangleSpec(xml_element, context_stack)
+    name_of__ui_element = get_name_of__ui_element(context_stack)
+
+    rectangle_spec = allocate_hitbox_for__ui_element(
+            xml_element,
+            context_stack,
+            name_of__ui_element)
+
+    set_tile_span(xml_element, context_stack)
 
     args = []
-    args.append(context_stack[-1].p_ui_element)
-    args += get_rect_spec_args(context_stack, rectangle_spec)
+    args.append(name_of__ui_element)
     args.append(get_vector_3i32_argument(\
             context_stack,\
             xml_element,\
@@ -582,16 +805,48 @@ def slider(signature, xml_element, context_stack):
     generate_source_c__signature(\
             signature,\
             args)
+    generate_source_c__new_line()
+
+    allocate_many_squares_with__context_stack(rectangle_spec, context_stack)
+
+    name_of__slider_button = f"{name_of__ui_element}__slider_button"
+    allocate_ui(None, xml_element, context_stack, name_of__slider_button)
+    name_of__texture_field = set_texture_of__ui_element(xml_element, context_stack, name_of__slider_button)
+    set_sprite_of__ui_element(xml_element, context_stack, name_of__slider_button, name_of__texture_field)
+
+    size_of__slider_button = get_str_from_xml_or__use_this(
+            xml_element,
+            "size_of__texture",
+            "8x8")
+    dimensions_of__slider_button = size_of__slider_button.split('x')
+    rectangle_spec = RectangleSpec\
+            .get_rectangle_spec__explicitly_at__parent_position(
+                    xml_element,
+                    context_stack,
+                    dimensions_of__slider_button[0],
+                    dimensions_of__slider_button[1]) # TODO: optional color arg
+
+    rectangle_spec = allocate_hitbox_for__ui_element_with__this_rectangle_spec(
+            xml_element,
+            context_stack,
+            rectangle_spec,
+            name_of__slider_button)
+
+    set_ui_element_as__the_parent_of__this_ui_element(
+            name_of__ui_element,
+            name_of__slider_button)
     
     generate_source_c__new_line()
     allocate_many_squares_with__context_stack(rectangle_spec, context_stack)
 
 def draggable(signature, xml_element, context_stack):
+    name_of__ui_element = get_name_of__ui_element(context_stack)
     rectangle_spec = RectangleSpec(xml_element, context_stack)
 
+    allocate_hitbox_for__ui_element(xml_element, context_stack, name_of__ui_element)
+
     args = []
-    args.append(context_stack[-1].p_ui_element)
-    args += get_rect_spec_args(context_stack, rectangle_spec)
+    args.append(name_of__ui_element)
     args.append(\
             get_str_from_xml_or__use_this(\
                 xml_element, \
@@ -607,10 +862,12 @@ def draggable(signature, xml_element, context_stack):
 
 def drop_zone(signature, xml_element, context_stack):
     rectangle_spec = RectangleSpec(xml_element, context_stack)
+    name_of__ui_element = get_name_of__ui_element(context_stack)
+
+    allocate_hitbox_for__ui_element(xml_element, context_stack, name_of__ui_element)
 
     args = []
-    args.append(context_stack[-1].p_ui_element)
-    args += get_rect_spec_args(context_stack, rectangle_spec)
+    args.append(name_of__ui_element)
     args.append(\
             get_str_from_xml_or__use_this(\
                 xml_element, \
@@ -631,6 +888,16 @@ def code(signature, xml_element, context_stack):
     if 1 == len(statements):
         return
     for statement in statements[1:]:
+        if '$' in statement:
+            regex_tokens = re.findall(r'[^();]+|[();]{1}', statement)
+            tokens = [regex_token.strip() for regex_token in regex_tokens if regex_token.strip()]
+            for index_of__token in range(len(tokens)):
+                if '$' in tokens[index_of__token]:
+                    try:
+                        tokens[index_of__token] = symbol_table[tokens[index_of__token][1:]]
+                    except KeyError:
+                        tokens[index_of__token] = "SYMBOL_NOT_FOUND"
+            statement = ' '.join(tokens)
         generate_source_c__tabs(context_stack[-1].indentation_level)
         generate_source_c__with_literal(statement.format(context_stack[-1].p_ui_element))
         generate_source_c__with_literal("\n")

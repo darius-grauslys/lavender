@@ -1,0 +1,48 @@
+#!/bin/sh
+
+# This tool will invoke grit for generation of tile maps.
+#    @cd $@ && grit $(shell find $(PWD_DIR)/core/$@ -iname *.png) \
+#        -ff$(PWD_DIR)/nds/$@/$(shell basename $@).grit
+
+print_usage() {
+    printf \
+    "Usage: run_ui_builder.sh <-b BACKEND> [-f UI_FILE_NAME]
+        run_ui_builder.sh will use tools/ui_builder.py to generate .c and .h
+        files based on the [-f UI_FILE_NAME].xml configuration.
+
+            -b\ttarget backend
+            -f\tspecific ui directories (.png) to generate outputs (.grit) from."
+            -g\tgrit argument
+}
+
+PWD_DIR=$(pwd)
+BACKEND='sdl'
+FILE_SEARCH='./assets/*'
+GRIT_ARG=''
+
+while getopts 'b:f:g:\?' flag; do
+    case "$flag" in
+        f) FILE_SEARCH="$OPTARG" ;;
+        b) BACKEND="$OPTARG" ;;
+        g) GRIT_ARG="$OPTARG" ;;
+        \?) ;;
+        *) print_usage
+            exit 1 ;;
+    esac
+done
+
+echo $GRIT_ARG
+
+grit_files=$(find ./assets -iname "*.grit")
+for grit_file in $grit_files; do
+    output_dir=$PWD_DIR/lav_gen/grit/$(dirname $grit_file)
+    grit_file_name=$PWD_DIR/$grit_file
+    grit_dir=$PWD_DIR/$(dirname $grit_file)
+    mkdir -p $output_dir 
+    cd $output_dir
+    grit $(find $grit_dir -maxdepth 1 -iname '*.png' | xargs echo) -ff $grit_file_name $GRIT_ARG &
+done
+
+wait
+
+cd $PWD_DIR

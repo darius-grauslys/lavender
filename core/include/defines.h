@@ -5,6 +5,7 @@
 #include "platform_defaults.h"
 #include "types/implemented/chunk_generator_kind.h"
 #include "types/implemented/entity_kind.h"
+#include "types/implemented/graphics_window_kind.h"
 #include "types/implemented/scene_kind.h"
 #include "types/implemented/sprite_animation_group_kind.h"
 #include "util/bitmap/bitmap.h"
@@ -673,6 +674,20 @@ typedef struct Sprite_Manager_t {
     Sprite_Animation_Group_Set sprite_animation_groups[
         Sprite_Animation_Group_Kind__Unknown];
     Sprite_Render_Record *p_sprite_render_record__last;
+
+    ///
+    /// Sprite_Manager can ONLY be freed when the
+    /// provided Graphics_Window in release is the
+    /// owning graphics_window.
+    ///
+    /// This is so raw shared pointers for the Sprite_Manager
+    /// between graphics windows do not accidentally release
+    /// a Sprite_Manager they own.
+    ///
+    /// Under NO CIRCUMSTANCE should you try and bypass this.
+    /// Doing so is undefined behavior.
+    ///
+    Identifier__u32 uuid_of__owning_graphics_window;
 } Sprite_Manager;
 
 #define SPRITE_FRAME__32x32__OFFSET (32 * 32)
@@ -1490,7 +1505,7 @@ typedef uint8_t UI_Button_Flags__u8;
 #define UI_BUTTON_FLAGS__BIT_IS_TOGGLED \
     BIT(UI_BUTTON_FLAGS__BIT_SHIFT_IS_TOGGLED)
 
-#include "types/implemented/ui_element_data.h"
+#include <types/implemented/ui_element_data.h>
 #ifndef DEFINE_UI_ELEMENT_DATA
 typedef struct UI_Element_Data_t {
 
@@ -1607,14 +1622,20 @@ typedef bool (*f_UI_Window__Close)(
         Game *p_game,
         UI_Manager *p_ui_manager);
 
+typedef struct UI_Window_Record_t {
+    f_UI_Window__Load f_ui_window__load;
+    f_UI_Window__Close f_ui_window__close;
+} UI_Window_Record;
+
+#ifndef MAX_QUANTITY_OF__UI_MANAGERS
 #define MAX_QUANTITY_OF__UI_MANAGERS 8
+#endif
 
 typedef struct UI_Context_t {
     UI_Manager *pM_ui_managers[
         MAX_QUANTITY_OF__UI_MANAGERS];
-    f_UI_Window__Load F_ui_window__loaders[
-        Graphics_Window_Kind__Unknown];
-    f_UI_Window__Close F_ui_window__closers[
+
+    UI_Window_Record ui_window_record[
         Graphics_Window_Kind__Unknown];
 } UI_Context;
 
@@ -2374,6 +2395,10 @@ typedef struct Gfx_Context_t {
     UI_Tile_Map_Manager ui_tile_map_manager;
     Font_Manager font_manager;
     PLATFORM_Gfx_Context *p_PLATFORM_gfx_context;
+    // TODO: do a POST_ENGINE_CONFIG import for the backend
+    // that allows the backend to override any developer set
+    // maximum for sprite managers. This is to avoid overloading
+    // the hardware.
     Sprite_Manager *PM_sprite_managers[
         MAX_QUANTITY_OF__SPRITE_MANAGERS];
 } Gfx_Context;

@@ -197,7 +197,8 @@ void release_graphics_window_from__graphics_window_manager(
     if (p_sprite_manager) {
         release_sprite_manager_from__gfx_context(
                 p_gfx_context,
-                p_sprite_manager);
+                p_sprite_manager,
+                p_graphics_window);
     }
     if (is_ui_tile_map__wrapper__valid(
                 get_ui_tile_map_from__graphics_window(

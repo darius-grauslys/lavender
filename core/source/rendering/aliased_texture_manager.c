@@ -1,4 +1,5 @@
 #include "rendering/aliased_texture_manager.h"
+#include "debug/debug.h"
 #include "defines_weak.h"
 #include "game.h"
 #include "platform.h"
@@ -127,6 +128,7 @@ bool load_texture_from__path_with__alias(
     if (!p_OUT_texture)
         p_OUT_texture = &__tmp_texture;
     if (!name_of__texture__c_str[0]) {
+        debug_warning("texture: %s", name_of__texture__c_str);
         debug_error("load_texture_from__path_with__alias, alias cannot be empty.");
         return true;
     }
@@ -140,6 +142,7 @@ bool load_texture_from__path_with__alias(
                     Lavender_Type__Aliased_Texture,
                     0));
     if (!p_aliased_texture__available) {
+        debug_warning("texture: %s", name_of__texture__c_str);
         debug_error("load_texture_from__path_with__alias, too many aliased textures are allocated.");
         return true;
     }
@@ -152,6 +155,7 @@ bool load_texture_from__path_with__alias(
         PLATFORM_get_base_directory(full_path);
     if (MAX_LENGTH_OF__IO_PATH 
             <= length_of__base_directory) {
+        debug_warning("texture: %s", name_of__texture__c_str);
         debug_error("load_texture_from__path_with__alias, game directory exceeds MAX_LENGTH_OF__IO_PATH.");
         return true;
     }
@@ -167,6 +171,7 @@ bool load_texture_from__path_with__alias(
                 texture_flags,
                 full_path,
                 p_OUT_texture)) {
+        debug_warning("texture: %s", name_of__texture__c_str);
         debug_error("load_texture_from__path_with__alias, failed to allocate texture.");
         return true;
     }

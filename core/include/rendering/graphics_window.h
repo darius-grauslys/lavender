@@ -2,6 +2,7 @@
 #define GRAPHICS_WINDOW_H
 
 #include "defines_weak.h"
+#include "types/implemented/graphics_window_kind.h"
 #include "vectors.h"
 #include <defines.h>
 
@@ -266,6 +267,12 @@ bool is_graphics_window_a__child_of__this_graphics_window(
 }
 
 static inline
+Graphics_Window_Kind get_kind_of__p_graphics_window(
+        Graphics_Window *p_graphics_window) {
+    return p_graphics_window->the_kind_of__window;
+}
+
+static inline
 bool is_graphics_window_of__this_kind(
         Graphics_Window *p_graphics_window,
         Graphics_Window_Kind the_kind_of__graphics_window) {
@@ -275,7 +282,7 @@ bool is_graphics_window_of__this_kind(
         return false;
     }
 #endif
-    return p_graphics_window->the_kind_of__window
+    return get_kind_of__p_graphics_window(p_graphics_window)
         == the_kind_of__graphics_window;
 }
 
@@ -387,6 +394,14 @@ Identifier__u32 get_uuid_of__ui_tile_map__texture_from__gfx_window(
     }
 #endif
     return p_gfx_window->ui_tile_map__texture__uuid;
+}
+
+static inline
+void share_sprite_manager_with__graphics_window(
+        Graphics_Window *p_graphics_window,
+        Sprite_Manager *p_sprite_manager) {
+    p_graphics_window->p_sprite_manager =
+        p_sprite_manager;
 }
 
 #endif

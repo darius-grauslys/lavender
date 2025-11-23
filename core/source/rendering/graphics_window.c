@@ -81,7 +81,8 @@ void allocate_sprite_manager_for__graphics_window(
         Graphics_Window *p_graphics_window) {
     p_graphics_window->p_sprite_manager =
         allocate_sprite_manager_from__gfx_context(
-                p_gfx_context);
+                p_gfx_context,
+                p_graphics_window);
 }
 
 void set_position_3i32_of__graphics_window(
