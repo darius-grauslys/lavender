@@ -8,6 +8,7 @@
 /// Only returns once sort is finished.
 ///
 void heap_sort__opaque(
+        void *p_context, // This is maybe p_game, or a manager.
         void *p_ptr_array,
         Quantity__u32 size_of__type,
         Quantity__u32 size_of__array,

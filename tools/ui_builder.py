@@ -425,9 +425,9 @@ def set_sprite_of__ui_element(
     generate_source_c__with_literal(f"Sprite *{name_of__sprite_field} =")
 
     generate_source_c__signature(
-            "allocate_sprite_from__sprite_manager",
+            "allocate_sprite_from__sprite_pool",
             [ "get_p_gfx_context_from__game(p_game)",
-             "get_p_sprite_manager_from__graphics_window(p_gfx_window)",
+             "get_p_sprite_pool_from__graphics_window(p_game, p_gfx_window)",
              "p_gfx_window",
              f"GET_UUID_P({name_of__ui_element})",
              name_of__texture,

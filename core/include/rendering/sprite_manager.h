@@ -3,34 +3,42 @@
 
 #include "defines.h"
 #include "defines_weak.h"
-#include "rendering/sprite.h"
-#include "types/implemented/sprite_animation_group_kind.h"
-#include "types/implemented/sprite_animation_kind.h"
+#include "serialization/hashing.h"
 
 void initialize_sprite_manager(
         Sprite_Manager *p_sprite_manager);
 
-Sprite *allocate_sprite_from__sprite_manager(
-        Gfx_Context *p_gfx_context,
+bool allocate_sprite_pools_from__sprite_manager(
         Sprite_Manager *p_sprite_manager,
-        Graphics_Window *p_gfx_window,
-        Identifier__u32 uuid__u32,
-        Texture texture_to__sample_by__sprite,
-        Texture_Flags texture_flags_for__sprite);
+        Quantity__u8 quantity_of__sprite_pools);
 
-void release_sprite_from__sprite_manager(
-        Gfx_Context *p_gfx_context,
-        Sprite_Manager *p_sprite_manager,
-        Sprite *p_sprite);
+void release_sprite_pools_from__sprite_manager(
+        Sprite_Manager *p_sprite_manager);
 
-Sprite *get_p_sprite_by__uuid_from__sprite_manager(
+Sprite_Pool *allocate_sprite_pool_from__sprite_manager(
         Sprite_Manager *p_sprite_manager,
-        Identifier__u32 uuid__u32);
+        Identifier__u32 uuid_of__sprite_pool,
+        Quantity__u32 max_quantity_of__sprites_in__sprite_pool);
 
-void render_sprites_in__sprite_manager(
-        Game *p_game,
+void release_sprite_pool_from__sprite_manager(
         Sprite_Manager *p_sprite_manager,
-        Graphics_Window *p_gfx_window);
+        Sprite_Pool *p_sprite_pool);
+
+static inline
+bool is_sprite_pools_allocated_in__sprite_manager(
+        Sprite_Manager *p_sprite_manager) {
+    return p_sprite_manager->pM_sprite_pools;
+}
+
+static inline
+Sprite_Pool *get_p_sprite_pool_by__uuid_from__sprite_manager(
+        Sprite_Manager *p_sprite_manager,
+        Identifier__u32 uuid_of__sprite_pool) {
+    return (Sprite_Pool*)dehash_identitier_u32_in__contigious_array(
+            (Serialization_Header*)p_sprite_manager->pM_sprite_pools, 
+            p_sprite_manager->max_quantity_of__sprite_pools, 
+            uuid_of__sprite_pool);
+}
 
 static inline
 void register_sprite_animation_into__sprite_manager(
@@ -121,14 +129,6 @@ Sprite_Animation_Group_Set
 #endif
     return &p_sprite_manager->sprite_animation_groups[
         the_kind_of__sprite_animation_group];
-}
-
-static inline
-bool is_graphics_window__owning_this__sprite_manager(
-        Graphics_Window *p_graphics_window,
-        Sprite_Manager *p_sprite_manager) {
-    return p_sprite_manager->uuid_of__owning_graphics_window 
-        == GET_UUID_P(p_graphics_window);
 }
 
 #endif

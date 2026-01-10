@@ -10,6 +10,7 @@
 #include "rendering/graphics_window.h"
 #include "rendering/sprite.h"
 #include "rendering/sprite_manager.h"
+#include "rendering/sprite_pool.h"
 #include "serialization/serialization_header.h"
 #include "ui/ui_button.h"
 #include "ui/ui_draggable.h"
@@ -94,22 +95,23 @@ void m_ui_element__dispose_handler__default(
                 p_hitbox_aabb);
     }
 
-    Sprite_Manager *p_sprite_manager =
-        get_p_sprite_manager_from__graphics_window(
+    Sprite_Pool *p_sprite_pool =
+        get_p_sprite_pool_from__graphics_window(
+                p_game,
                 p_graphics_window);
-    if (!p_sprite_manager)
+    if (!p_sprite_pool)
         return;
     if (does_ui_element_have__sprite(
-                p_sprite_manager,
+                p_sprite_pool,
                 p_this_ui_element)) {
         Sprite *p_sprite =
-            get_p_sprite_by__uuid_from__sprite_manager(
-                    p_sprite_manager,
+            get_p_sprite_by__uuid_from__sprite_pool(
+                    p_sprite_pool,
                     GET_UUID_P(p_this_ui_element));
         if (p_sprite) {
-            release_sprite_from__sprite_manager(
+            release_sprite_from__sprite_pool(
                     get_p_gfx_context_from__game(p_game), 
-                    p_sprite_manager,
+                    p_sprite_pool,
                     p_sprite);
         }
     }
@@ -312,15 +314,16 @@ void set_ui_element__hitbox(
 }
 
 void release_ui_element__sprite(
-        Gfx_Context *p_gfx_context,
+        Game *p_game,
         Graphics_Window *p_graphics_window,
         UI_Element *p_ui_element) {
-    Sprite_Manager *p_sprite_manager =
-        get_p_sprite_manager_from__graphics_window(
+    Sprite_Pool *p_sprite_pool =
+        get_p_sprite_pool_from__graphics_window(
+                p_game,
                 p_graphics_window);
 #ifndef NDEBUG
     if (!does_ui_element_have__sprite(
-                p_sprite_manager,
+                p_sprite_pool,
                 p_ui_element)) {
         debug_error("release_ui_element__PLATFORM_sprite, p_PLATFORM_sprite is null.");
         return;
@@ -328,14 +331,14 @@ void release_ui_element__sprite(
 #endif
 
     Sprite *p_sprite =
-        get_p_sprite_by__uuid_from__sprite_manager(
-                p_sprite_manager,
+        get_p_sprite_by__uuid_from__sprite_pool(
+                p_sprite_pool,
                 GET_UUID_P(p_ui_element));
 
     if (p_sprite) {
-        release_sprite_from__sprite_manager(
-                p_gfx_context, 
-                p_sprite_manager,
+        release_sprite_from__sprite_pool(
+                get_p_gfx_context_from__game(p_game), 
+                p_sprite_pool,
                 p_sprite);
     }
 }
@@ -526,10 +529,10 @@ void m_ui_element__compose_handler__default_only_recursive(
 }
 
 bool does_ui_element_have__sprite(
-        Sprite_Manager *p_sprite_manager,
+        Sprite_Pool *p_sprite_pool,
         UI_Element *p_ui_element) {
-    return get_p_sprite_by__uuid_from__sprite_manager(
-            p_sprite_manager, 
+    return get_p_sprite_by__uuid_from__sprite_pool(
+            p_sprite_pool, 
             GET_UUID_P(p_ui_element));
 }
 

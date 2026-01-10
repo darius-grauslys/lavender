@@ -317,6 +317,13 @@ typedef struct Typer_t Typer;
 ///
 /// This is an abstraction for a "sub-context" for graphics.
 ///
+typedef enum {
+    Graphics_Window__Sprite_Pool__Allocation_Scheme__None,
+    Graphics_Window__Sprite_Pool__Allocation_Scheme__Is_Allocating,
+    Graphics_Window__Sprite_Pool__Allocation_Scheme__Is_Using_Parent_Pool,
+    Graphics_Window__Sprite_Pool__Allocation_Scheme__Unknown,
+} Graphics_Window__Sprite_Pool__Allocation_Scheme;
+
 typedef struct PLATFORM_Graphics_Window_t PLATFORM_Graphics_Window;
 typedef struct Graphics_Window_t Graphics_Window;
 

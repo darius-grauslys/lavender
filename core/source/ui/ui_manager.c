@@ -18,42 +18,46 @@
 
 bool does_ui_manager_have__focused_ui_element(
         UI_Manager *p_ui_manager) {
-    if (p_ui_manager->p_ui_element__focused
+    UI_Manager_Data *p_ui_manager_data = p_ui_manager->pM_ui_manager_data;
+    if (p_ui_manager_data->p_ui_element__focused
             && is_ui_element__focused(
-                p_ui_manager->p_ui_element__focused)) {
+                p_ui_manager_data->p_ui_element__focused)) {
         return true;
     }
-    p_ui_manager->p_ui_element__focused = 0;
+    p_ui_manager_data->p_ui_element__focused = 0;
     return false;
 }
 
 UI_Element *get_p_ui_element__focused_of__ui_manager(
         UI_Manager *p_ui_manager) {
-    if (p_ui_manager->p_ui_element__focused
+    UI_Manager_Data *p_ui_manager_data = p_ui_manager->pM_ui_manager_data;
+    if (p_ui_manager_data->p_ui_element__focused
             && !is_ui_element__focused(
-                p_ui_manager->p_ui_element__focused)) {
-        p_ui_manager->p_ui_element__focused = 0;
+                p_ui_manager_data->p_ui_element__focused)) {
+        p_ui_manager_data->p_ui_element__focused = 0;
     }
-    return p_ui_manager->p_ui_element__focused;
+    return p_ui_manager_data->p_ui_element__focused;
 }
 
 static inline
 void set_p_ui_element_as__focused_in__ui_manager(
         UI_Manager *p_ui_manager,
         UI_Element *p_ui_element) {
-    p_ui_manager->p_ui_element__focused =
+    UI_Manager_Data *p_ui_manager_data = p_ui_manager->pM_ui_manager_data;
+    p_ui_manager_data->p_ui_element__focused =
         p_ui_element;
 }
 
 static inline
 void drop_ui_element_focus_for__ui_manager(
         UI_Manager *p_ui_manager) {
-    if (p_ui_manager->p_ui_element__focused) {
+    UI_Manager_Data *p_ui_manager_data = p_ui_manager->pM_ui_manager_data;
+    if (p_ui_manager_data->p_ui_element__focused) {
         set_ui_element_as__NOT_focused(
-                p_ui_manager
+                p_ui_manager_data
                 ->p_ui_element__focused);
     }
-    p_ui_manager
+    p_ui_manager_data
         ->p_ui_element__focused = 0;
 }
 
@@ -126,23 +130,25 @@ void initialize_ui_manager(
         return;
     }
 #endif
-    memset(p_ui_manager,
+    UI_Manager_Data *p_ui_manager_data = p_ui_manager->pM_ui_manager_data;
+    memset(p_ui_manager_data,
             0,
-            sizeof(UI_Manager));
+            sizeof(UI_Manager_Data));
     initialize_serialization_header__contiguous_array(
             (Serialization_Header *)
-            p_ui_manager->ui_elements, 
+            p_ui_manager_data->ui_elements, 
             MAX_QUANTITY_OF__UI_ELEMENTS, 
             sizeof(UI_Element));
-    p_ui_manager->p_ptr_of__ui_element__latest_in_ptr_array =
-        p_ui_manager->ptr_array_of__ui_elements;
+    p_ui_manager_data->p_ptr_of__ui_element__latest_in_ptr_array =
+        p_ui_manager_data->ptr_array_of__ui_elements;
 }
 
 UI_Element *get_p_ui_element_by__uuid_from__ui_manager(
         UI_Manager *p_ui_manager,
         Identifier__u32 uuid__u32) {
+    UI_Manager_Data *p_ui_manager_data = p_ui_manager->pM_ui_manager_data;
     return (UI_Element*)dehash_identitier_u32_in__contigious_array(
-            (Serialization_Header *)p_ui_manager->ui_elements, 
+            (Serialization_Header *)p_ui_manager_data->ui_elements, 
             MAX_QUANTITY_OF__UI_ELEMENTS, 
             uuid__u32);
 }
@@ -151,6 +157,7 @@ UI_Element *get_highest_priority_ui_element_thats__under_this_ui_element(
         UI_Manager *p_ui_manager,
         Hitbox_AABB_Manager *p_hitbox_aabb_manager,
         UI_Element *p_ui_element__above) {
+    UI_Manager_Data *p_ui_manager_data = p_ui_manager->pM_ui_manager_data;
     Vector__3i32 vector_of__element_above__3i32 =
         get_position_3i32_from__p_ui_element(
                 p_hitbox_aabb_manager, 
@@ -160,7 +167,7 @@ UI_Element *get_highest_priority_ui_element_thats__under_this_ui_element(
             < MAX_QUANTITY_OF__UI_ELEMENTS;
             index_of__ui_element++) {
         UI_Element *p_ui_element =
-            p_ui_manager->ptr_array_of__ui_elements[index_of__ui_element];
+            p_ui_manager_data->ptr_array_of__ui_elements[index_of__ui_element];
         if (!p_ui_element)
             break;
         if (p_ui_element == p_ui_element__above)
@@ -190,6 +197,7 @@ UI_Element *get_highest_priority_ui_element_thats__under_this_ui_element(
 UI_Element *get_highest_priority_ui_element_thats__under_the_cursor(
         UI_Manager *p_ui_manager,
         Game *p_game) {
+    UI_Manager_Data *p_ui_manager_data = p_ui_manager->pM_ui_manager_data;
     Input *p_input =
         get_p_input_from__game(p_game);
     Vector__3i32 cursor_position =
@@ -202,7 +210,7 @@ UI_Element *get_highest_priority_ui_element_thats__under_the_cursor(
             < MAX_QUANTITY_OF__UI_ELEMENTS;
             index_of__ui_element++) {
         UI_Element *p_ui_element =
-            p_ui_manager->ptr_array_of__ui_elements[index_of__ui_element];
+            p_ui_manager_data->ptr_array_of__ui_elements[index_of__ui_element];
         if (!p_ui_element)
             break;
         if (!is_ui_element__enabled(p_ui_element)) {
@@ -309,6 +317,7 @@ void poll_ui_manager__update_for__drag(
         Game *p_game,
         Graphics_Window *p_graphics_window,
         UI_Manager *p_ui_manager) {
+    UI_Manager_Data *p_ui_manager_data = p_ui_manager->pM_ui_manager_data;
     UI_Element *p_ui_element__focused =
         detect_focus_in__ui_manager(
                 p_ui_manager, 
@@ -334,7 +343,7 @@ void poll_ui_manager__update_for__drag(
     }
     p_ui_element__focused
         ->m_ui_dragged_handler(
-                p_ui_manager
+                p_ui_manager_data
                 ->p_ui_element__focused,
                 p_game,
                 p_graphics_window);
@@ -344,6 +353,7 @@ void poll_ui_manager__update_for__held(
         Game *p_game,
         Graphics_Window *p_graphics_window,
         UI_Manager *p_ui_manager) {
+    UI_Manager_Data *p_ui_manager_data = p_ui_manager->pM_ui_manager_data;
     UI_Element *p_ui_element__focused =
         detect_focus_in__ui_manager(
                 p_ui_manager, 
@@ -364,7 +374,7 @@ void poll_ui_manager__update_for__held(
     }
     p_ui_element__focused
         ->m_ui_held_handler(
-                p_ui_manager
+                p_ui_manager_data
                 ->p_ui_element__focused,
                 p_game,
                 p_graphics_window);
@@ -375,6 +385,7 @@ void handle_drop_in__ui_manager(
         Graphics_Window *p_graphics_window,
         UI_Manager *p_ui_manager,
         UI_Element *p_ui_element__focused) {
+    UI_Manager_Data *p_ui_manager_data = p_ui_manager->pM_ui_manager_data;
     if (!p_ui_element__focused)
         return;
     set_ui_element_as__dropped(
@@ -389,7 +400,7 @@ void handle_drop_in__ui_manager(
         get_highest_priority_ui_element_thats__under_this_ui_element(
             p_ui_manager,
             get_p_hitbox_aabb_manager_from__game(p_game),
-            p_ui_manager->p_ui_element__focused);
+            p_ui_manager_data->p_ui_element__focused);
     p_ui_element__receiving_drop =
         get_ui_parent_or__child_with__receive_drop_handler(
                 p_ui_element__receiving_drop);
@@ -397,14 +408,14 @@ void handle_drop_in__ui_manager(
         p_ui_element__receiving_drop
             ->m_ui_receive_drop_handler(
                     p_ui_element__receiving_drop,
-                    p_ui_manager->p_ui_element__focused,
+                    p_ui_manager_data->p_ui_element__focused,
                     p_game,
                     p_graphics_window);
     }
 
     p_ui_element__focused
         ->m_ui_dropped_handler(
-                p_ui_manager
+                p_ui_manager_data
                 ->p_ui_element__focused,
                 p_game,
                 p_graphics_window);
@@ -524,20 +535,23 @@ void poll_ui_manager__update(
 
 UI_Element *allocate_ui_element_from__ui_manager(
         UI_Manager *p_ui_manager) {
-    if (p_ui_manager->p_ptr_of__ui_element__latest_in_ptr_array
-            - p_ui_manager->ptr_array_of__ui_elements
+    UI_Manager_Data *p_ui_manager_data = p_ui_manager->pM_ui_manager_data;
+    if (p_ui_manager_data->p_ptr_of__ui_element__latest_in_ptr_array
+            - p_ui_manager_data->ptr_array_of__ui_elements
             >= MAX_QUANTITY_OF__UI_ELEMENTS) {
         debug_error("allocate_ui_element_from__ui_manager, failed to allocate ui_element (full).");
     }
 
     UI_Element *p_ui_element =
         (UI_Element*)allocate_serialization_header_with__uuid_branding(
-                (Serialization_Header *)p_ui_manager->ui_elements, 
+                (Serialization_Header *)p_ui_manager_data->ui_elements, 
                 MAX_QUANTITY_OF__UI_ELEMENTS, 
-                &p_ui_manager->randomizer, 
+                &p_ui_manager_data->randomizer, 
                 GET_UUID_BRANDING(
                     Lavender_Type__UI_Element, 
-                    0b111111 & p_ui_manager->ui_manager__allocation_index));
+                    0b111111 & p_ui_manager->_serialization_header.uuid));
+                // TODO: it is not impossible for a uuid collision to still occur if two ui managers share
+                // TODO: the 6 least significant bits in their respective uuids. Pretty unlikely. 
 
 #ifndef NDEBUG
     if (!p_ui_element) {
@@ -546,8 +560,8 @@ UI_Element *allocate_ui_element_from__ui_manager(
     }
 #endif
 
-    *p_ui_manager->p_ptr_of__ui_element__latest_in_ptr_array = p_ui_element;
-    p_ui_manager->p_ptr_of__ui_element__latest_in_ptr_array++;
+    *p_ui_manager_data->p_ptr_of__ui_element__latest_in_ptr_array = p_ui_element;
+    p_ui_manager_data->p_ptr_of__ui_element__latest_in_ptr_array++;
 
     initialize_ui_element(
             p_ui_element, 
@@ -625,11 +639,12 @@ UI_Element *allocate_many_ui_elements_from__ui_manager_in__succession(
 UI_Element **get_p_ptr_ui_element_from__ptr_array_in__ui_manager(
         UI_Manager *p_ui_manager,
         UI_Element *p_ui_element) {
+    UI_Manager_Data *p_ui_manager_data = p_ui_manager->pM_ui_manager_data;
     for (Index__u16 index_of__ptr = 0;
             index_of__ptr < MAX_QUANTITY_OF__UI_ELEMENTS;
             index_of__ptr++) {
         UI_Element **p_ptr_ui_element =
-            &p_ui_manager->ptr_array_of__ui_elements[index_of__ptr];
+            &p_ui_manager_data->ptr_array_of__ui_elements[index_of__ptr];
         if (!*p_ptr_ui_element)
             return 0;
         if (*p_ptr_ui_element == p_ui_element)
@@ -664,6 +679,7 @@ void release__ui_element_from__ui_manager(
         Graphics_Window *p_graphics_window,
         UI_Manager *p_ui_manager,
         UI_Element *p_ui_element) {
+    UI_Manager_Data *p_ui_manager_data = p_ui_manager->pM_ui_manager_data;
 #ifndef NDEBUG
     if (!p_ui_manager) {
         debug_error("release__ui_element_from__ui_manager, p_ui_manager == 0.");
@@ -677,7 +693,7 @@ void release__ui_element_from__ui_manager(
         debug_error("release__ui_element_from__ui_manager, p_game == 0.");
         return;
     }
-    if (p_ui_element - p_ui_manager->ui_elements
+    if (p_ui_element - p_ui_manager_data->ui_elements
             >= MAX_QUANTITY_OF__UI_ELEMENTS) {
         debug_error("release__ui_element_from__ui_manager, p_ui_element is not allocated with this manager.");
         return;
@@ -709,10 +725,10 @@ void release__ui_element_from__ui_manager(
     }
 #endif
 
-    p_ui_manager->p_ptr_of__ui_element__latest_in_ptr_array--;
+    p_ui_manager_data->p_ptr_of__ui_element__latest_in_ptr_array--;
     *p_ptr_ui_element =
-        *p_ui_manager->p_ptr_of__ui_element__latest_in_ptr_array;
-    *p_ui_manager->p_ptr_of__ui_element__latest_in_ptr_array = 0;
+        *p_ui_manager_data->p_ptr_of__ui_element__latest_in_ptr_array;
+    *p_ui_manager_data->p_ptr_of__ui_element__latest_in_ptr_array = 0;
 }
 
 void release_all__ui_elements_from__ui_manager(
@@ -733,12 +749,13 @@ void release_all__ui_elements_from__ui_manager(
 Quantity__u16 get_ui_element__priority(
         UI_Manager *p_ui_manager,
         UI_Element *p_ui_element) {
+    UI_Manager_Data *p_ui_manager_data = p_ui_manager->pM_ui_manager_data;
     UI_Element **p_ptr_ui_element =
         get_p_ptr_ui_element_from__ptr_array_in__ui_manager(
                 p_ui_manager, 
                 p_ui_element);
     return p_ptr_ui_element
-        - p_ui_manager->ptr_array_of__ui_elements;
+        - p_ui_manager_data->ptr_array_of__ui_elements;
 }
 
 void swap_priority_of__ui_elenents_within__ui_manager(

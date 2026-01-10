@@ -104,7 +104,7 @@ void m_ui_element__transformed_handler__default(
         Graphics_Window *p_graphics_window);
 
 bool does_ui_element_have__sprite(
-        Sprite_Manager *p_sprite_manager,
+        Sprite_Pool *p_sprite_pool,
         UI_Element *p_ui_element);
 
 void set_child_of__ui_element(

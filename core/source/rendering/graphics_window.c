@@ -1,7 +1,13 @@
 #include "rendering/graphics_window.h"
+#include "debug/debug.h"
 #include "defines.h"
 #include "defines_weak.h"
+#include "game.h"
 #include "rendering/gfx_context.h"
+#include "rendering/graphics_window_manager.h"
+#include "rendering/sprite_manager.h"
+#include "rendering/sprite_pool.h"
+#include "serialization/identifiers.h"
 #include "serialization/serialization_header.h"
 #include "ui/ui_context.h"
 #include "ui/ui_tile_map.h"
@@ -13,6 +19,7 @@ void initialize_graphics_window(
     memset((u8*)p_graphics_window + sizeof(Serialization_Header),
             0,
             sizeof(Graphics_Window) - sizeof(Serialization_Header));
+    p_graphics_window->graphics_window__parent__uuid = IDENTIFIER__UNKNOWN__u32;
 }
 
 void initialize_graphics_window_as__allocated(
@@ -21,7 +28,7 @@ void initialize_graphics_window_as__allocated(
         Graphics_Window_Kind the_kind_of__graphics_window) {
     p_graphics_window->p_PLATFORM_gfx_window = 
         p_PLATFORM_gfx_window;
-    p_graphics_window->p_child__graphics_window = 0;
+    p_graphics_window->graphics_window__parent__uuid = IDENTIFIER__UNKNOWN__u32;
     p_graphics_window->origin_of__gfx_window =
         VECTOR__3i32__0_0_0;
     p_graphics_window->position_of__gfx_window =
@@ -36,6 +43,8 @@ void initialize_graphics_window_as__allocated(
         the_kind_of__graphics_window;
     p_graphics_window->graphics_window__flags =
         GRAPHICS_WINDOW__FLAGS__NONE;
+    p_graphics_window->graphics_window__parent__uuid =
+        IDENTIFIER__UNKNOWN__u32;
 }
 
 void update_graphics_window__ui_tiles(
@@ -68,21 +77,22 @@ void set_graphics_window__ui_tile_map(
         ui_tile_map_wrapper;
 }
 
-void allocate_ui_manager_for__graphics_window(
+UI_Manager *allocate_ui_manager_for__graphics_window(
         Gfx_Context *p_gfx_context,
         Graphics_Window *p_graphics_window) {
-    p_graphics_window->p_ui_manager =
-        allocate_p_ui_manager_from__ui_context(
-                get_p_ui_context_from__gfx_context(p_gfx_context));
+    return allocate_p_ui_manager_from__ui_context(
+            get_p_ui_context_from__gfx_context(p_gfx_context), 
+            GET_UUID_P(p_graphics_window));
 }
 
-void allocate_sprite_manager_for__graphics_window(
+void allocate_sprite_pool_for__graphics_window(
         Gfx_Context *p_gfx_context,
-        Graphics_Window *p_graphics_window) {
-    p_graphics_window->p_sprite_manager =
-        allocate_sprite_manager_from__gfx_context(
-                p_gfx_context,
-                p_graphics_window);
+        Graphics_Window *p_graphics_window,
+        Quantity__u32 max_quantity_of__sprites_in__sprite_pool) {
+    allocate_sprite_pool_from__sprite_manager(
+            get_p_sprite_manager_from__gfx_context(p_gfx_context), 
+            GET_UUID_P(p_graphics_window),
+            max_quantity_of__sprites_in__sprite_pool);
 }
 
 void set_position_3i32_of__graphics_window(
@@ -96,10 +106,12 @@ void set_position_3i32_of__graphics_window(
     }
 #endif
     if (is_graphics_window_with__ui_manager(
+                p_game,
                 p_graphics_window)) {
         update_ui_manager_origin__relative_to(
                 p_game,
                 get_p_ui_manager_from__graphics_window(
+                    p_game,
                     p_graphics_window),
                 get_position_3i32_of__graphics_window(
                     p_graphics_window),
@@ -121,10 +133,12 @@ void set_position_3i32_of__graphics_window__relative_to(
     }
 #endif
     if (is_graphics_window_with__ui_manager(
+                p_game,
                 p_graphics_window)) {
         update_ui_manager_origin__relative_to(
                 p_game,
                 get_p_ui_manager_from__graphics_window(
+                    p_game,
                     p_graphics_window),
                 position__old__3i32,
                 position__new__3i32);
@@ -194,3 +208,53 @@ void set_position_3i32_of__graphics_window__relative_to(
                 texture_flags)
             / TILE_WIDTH__IN_PIXELS);
  */
+
+Sprite *allocate_p_sprite_from__graphics_window(
+        Game *p_game,
+        Graphics_Window *p_graphics_window,
+        Identifier__u32 uuid__u32, 
+        Texture texture_to__sample_by__sprite, 
+        Texture_Flags texture_flags_for__sprite) {
+    Sprite_Pool *p_sprite_pool = 0;
+    Graphics_Window *p_graphics_window_used_in__allocation_call = p_graphics_window;
+    switch (p_graphics_window->graphics_window__sprite_pool__allocation_scheme) {
+        case Graphics_Window__Sprite_Pool__Allocation_Scheme__Unknown:
+        case Graphics_Window__Sprite_Pool__Allocation_Scheme__None:
+            debug_warning("Did you forget to include a sprite pool allocation scheme for your graphics window?");
+            debug_error("allocate_p_sprite_from__graphics_window, this window is not allocated to handle sprites.");
+            return 0;
+        case Graphics_Window__Sprite_Pool__Allocation_Scheme__Is_Allocating:
+            p_sprite_pool =
+                get_p_sprite_pool_from__graphics_window(
+                        p_game,
+                        p_graphics_window);
+            break;
+        case Graphics_Window__Sprite_Pool__Allocation_Scheme__Is_Using_Parent_Pool:
+#ifndef NDEBUG
+            if (is_identifier_u32__invalid(p_graphics_window->graphics_window__parent__uuid)) {
+                debug_error("allocate_p_sprite_from__graphics_window, graphics_window parent uuid is invalid.");
+            }
+#endif
+            p_graphics_window_used_in__allocation_call =
+                get_p_graphics_window_by__uuid_from__graphics_window_manager(
+                        get_p_graphics_window_manager_from__gfx_context(
+                            get_p_gfx_context_from__game(p_game)), 
+                        p_graphics_window->graphics_window__parent__uuid);
+            p_sprite_pool =
+                get_p_sprite_pool_by__uuid_from__sprite_manager(
+                        get_p_sprite_manager_from__gfx_context(
+                            get_p_gfx_context_from__game(p_game)),
+                        p_graphics_window->graphics_window__parent__uuid);
+            break;
+    }
+    if (!p_sprite_pool) {
+        debug_error("allocate_p_sprite_from__graphics_window, sprite pool is not allocated.");
+        return 0;
+    }
+    return allocate_sprite_from__sprite_pool(
+            get_p_gfx_context_from__game(p_game), p_sprite_pool, 
+            p_graphics_window_used_in__allocation_call, 
+            uuid__u32, 
+            texture_to__sample_by__sprite, 
+            texture_flags_for__sprite);
+}

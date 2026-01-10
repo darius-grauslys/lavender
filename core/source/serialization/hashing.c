@@ -1,3 +1,4 @@
+#include "debug/debug.h"
 #include "defines.h"
 #include "defines_weak.h"
 #include "numerics.h"
@@ -123,7 +124,8 @@ Serialization_Header *dehash_identitier_u32_in__contigious_array(
                 identifier__u32,
                 INDEX__UNKNOWN__u32);
     if (is_index_u32__out_of_bounds(index__initial__u32)) {
-        debug_error("dehash_identitier_u64_in__contigious_array, identifier not present.");
+        // TODO: this should be extremely verbose.
+        debug_warning__verbose("dehash_identitier_u32_in__contigious_array, identifier not present.");
         return 0;
     }
     Index__u32 index__u32 = index__initial__u32;
@@ -161,7 +163,8 @@ Serialization_Header__UUID_64 *dehash_identitier_u64_in__contigious_array(
                 identifier__u64,
                 INDEX__UNKNOWN__u32);
     if (is_index_u32__out_of_bounds(index__initial__u32)) {
-        debug_error("dehash_identitier_u64_in__contigious_array, identifier not present.");
+        // TODO: this should be extremely verbose.
+        debug_warning__verbose("dehash_identitier_u64_in__contigious_array, identifier not present.");
         return 0;
     }
     Index__u32 index__u32 = index__initial__u32;

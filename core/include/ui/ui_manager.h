@@ -112,7 +112,7 @@ void compose_all_ui_elements_in__ui_manager(
 static inline
 bool is_ui_manager__empty(
         UI_Manager *p_ui_manager) {
-    return !p_ui_manager->ptr_array_of__ui_elements[0];
+    return !p_ui_manager->pM_ui_manager_data->ptr_array_of__ui_elements[0];
 }
 
 ///
@@ -134,7 +134,10 @@ UI_Element *get_p_ui_element_by__index_from__ui_manager(
         return 0;
     }
 #endif
-    return p_ui_manager->ptr_array_of__ui_elements[index_of__ui_element];
+    return p_ui_manager
+        ->pM_ui_manager_data
+        ->ptr_array_of__ui_elements[index_of__ui_element]
+        ;
 }
 
 static inline

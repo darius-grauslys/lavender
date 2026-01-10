@@ -1,6 +1,7 @@
 #include "ui/ui_window.h"
 #include "rendering/gfx_context.h"
 #include "rendering/graphics_window_manager.h"
+#include "serialization/serialization_header.h"
 #include "ui/ui_context.h"
 
 bool f_ui_window__close__default(
@@ -10,9 +11,7 @@ bool f_ui_window__close__default(
         UI_Manager *p_ui_manager) {
     release_p_ui_manager_from__ui_context(
             p_game, 
-            get_p_ui_context_from__gfx_context(p_gfx_context), 
-            p_gfx_window, 
-            p_ui_manager);
+            GET_UUID_P(p_gfx_window));
     release_graphics_window_from__graphics_window_manager(
             p_game, 
             p_gfx_window);

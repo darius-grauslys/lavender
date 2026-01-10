@@ -2,6 +2,7 @@
 #include "defines_weak.h"
 
 void heap_sort__opaque(
+        void *p_context, // This is maybe p_game, or a manager.
         void *p_array,
         Quantity__u32 length_of__array,
         Quantity__u32 size_of__type,
@@ -24,15 +25,18 @@ void heap_sort__opaque(
             // Select the larger child
             if (child + 1 < length_of__array 
                     && f_sort_heuristic__void(
+                        p_context,
                         &p_byte_array[size_of__type * child], 
                         &p_byte_array[size_of__type * (child + 1)]) < 0) {
                 child += 1;
             }
 
             if (f_sort_heuristic__void(
+                        p_context,
                         &p_byte_array[size_of__type * root], 
                         &p_byte_array[size_of__type * child]) < 0) {
                 f_sort_swap__void(
+                        p_context,
                         &p_byte_array[size_of__type * root], 
                         &p_byte_array[size_of__type * child]);
                 root = child;
@@ -45,7 +49,7 @@ void heap_sort__opaque(
     // Sort down phase
     for (Quantity__u32 i = length_of__array - 1; i > 0; --i) {
         // Swap the root(max) with the last element
-        f_sort_swap__void(p_byte_array, &p_byte_array[size_of__type * i]);
+        f_sort_swap__void(p_context, p_byte_array, &p_byte_array[size_of__type * i]);
 
         Quantity__u32 root = 0;
         while (1) {
@@ -54,15 +58,18 @@ void heap_sort__opaque(
 
             if (child + 1 < i &&
                 f_sort_heuristic__void(
+                    p_context,
                     &p_byte_array[size_of__type * child], 
                     &p_byte_array[size_of__type * (child + 1)]) < 0) {
                 child += 1;
             }
 
             if (f_sort_heuristic__void(
+                        p_context,
                         &p_byte_array[size_of__type * root], 
                         &p_byte_array[size_of__type * child]) < 0) {
                 f_sort_swap__void(
+                        p_context,
                         &p_byte_array[size_of__type * root], 
                         &p_byte_array[size_of__type * child]);
                 root = child;

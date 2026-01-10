@@ -32,6 +32,7 @@ void m_ui_drop_zone__receive_drop_handler__default(
 
     UI_Manager *p_ui_manager =
         get_p_ui_manager_from__graphics_window(
+                p_game,
                 p_graphics_window);
 
 #ifndef NDEBUG

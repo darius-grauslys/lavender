@@ -608,6 +608,7 @@ typedef uint8_t Sprite_Animation_Flags__u3;
 #define SPRITE_ANIMATION_FLAG__IS_NOT_LOOPING BIT(0)
 #define SPRITE_ANIMATION_FLAG__IS_OFFSET_BY__DIRECTION BIT(1)
 
+typedef struct Sprite_Pool_t Sprite_Pool;
 typedef struct Sprite_Manager_t Sprite_Manager;
 
 ///
@@ -665,29 +666,21 @@ typedef struct Sprite_Render_Record_t {
     Sprite *p_sprite;
 } Sprite_Render_Record;
 
+typedef struct Sprite_Pool_t {
+    Serialization_Header _serialization_header;
+    Sprite *pM_pool_of__sprites;
+    Sprite_Render_Record *pM_sprite_render_records;
+    Sprite_Render_Record *p_sprite_render_record__last;
+    Quantity__u32 max_quantity_of__sprites;
+} Sprite_Pool;
+
 typedef struct Sprite_Manager_t {
-    Sprite sprites[MAX_QUANTITY_OF__SPRITES];
-    Sprite_Render_Record sprite_render_records[
-        MAX_QUANTITY_OF__SPRITES];
     Sprite_Animation sprite_animations[
         Sprite_Animation_Kind__Unknown];
+    Sprite_Pool *pM_sprite_pools;
     Sprite_Animation_Group_Set sprite_animation_groups[
         Sprite_Animation_Group_Kind__Unknown];
-    Sprite_Render_Record *p_sprite_render_record__last;
-
-    ///
-    /// Sprite_Manager can ONLY be freed when the
-    /// provided Graphics_Window in release is the
-    /// owning graphics_window.
-    ///
-    /// This is so raw shared pointers for the Sprite_Manager
-    /// between graphics windows do not accidentally release
-    /// a Sprite_Manager they own.
-    ///
-    /// Under NO CIRCUMSTANCE should you try and bypass this.
-    /// Doing so is undefined behavior.
-    ///
-    Identifier__u32 uuid_of__owning_graphics_window;
+    Quantity__u8 max_quantity_of__sprite_pools;
 } Sprite_Manager;
 
 #define SPRITE_FRAME__32x32__OFFSET (32 * 32)
@@ -1253,10 +1246,12 @@ typedef Signed_Quantity__i32 (*f_Sort_Heuristic)(
 /// if you need the results in a single frame.
 ///
 typedef Signed_Quantity__i32 (*f_Sort_Heuristic__i32)(
+        void *p_context, // This is maybe p_game, or a manager.
         void *p_one,
         void *p_two);
 
 typedef void (*f_Sort_Swap__Void)(
+        void *p_context, // This is maybe p_game, or a manager.
         void *p_one,
         void *p_two);
 
@@ -1583,6 +1578,8 @@ typedef void (*f_Foreach_UI_Element)(
         UI_Element *p_ui_element);
 
 ///
+/// TODO: is the below documentation still accurate?
+///
 /// UI_Manager is not apart of core data structures,
 /// and is instead apart of PLATFORM_Graphics_Window
 /// which is left to the backend to implement.
@@ -1599,13 +1596,17 @@ typedef void (*f_Foreach_UI_Element)(
 /// And if a PLATFORM doesn't keep UI_Managers in Gfx_Windows
 /// then it should constantly return the singleton.
 ///
-typedef struct UI_Manager_t {
+typedef struct UI_Manager_Data_t {
     UI_Element ui_elements[MAX_QUANTITY_OF__UI_ELEMENTS];
     UI_Element *ptr_array_of__ui_elements[MAX_QUANTITY_OF__UI_ELEMENTS];
     Repeatable_Psuedo_Random randomizer;
     UI_Element *p_ui_element__focused;
     UI_Element **p_ptr_of__ui_element__latest_in_ptr_array;
-    Index__u8 ui_manager__allocation_index;
+} UI_Manager_Data;
+
+typedef struct UI_Manager_t {
+    Serialization_Header _serialization_header;
+    UI_Manager_Data *pM_ui_manager_data;
 } UI_Manager;
 
 typedef struct UI_Context_t UI_Context;
@@ -1625,6 +1626,7 @@ typedef bool (*f_UI_Window__Close)(
 typedef struct UI_Window_Record_t {
     f_UI_Window__Load f_ui_window__load;
     f_UI_Window__Close f_ui_window__close;
+    Signed_Quantity__i32 signed_quantity_of__sprites;
 } UI_Window_Record;
 
 #ifndef MAX_QUANTITY_OF__UI_MANAGERS
@@ -1632,7 +1634,7 @@ typedef struct UI_Window_Record_t {
 #endif
 
 typedef struct UI_Context_t {
-    UI_Manager *pM_ui_managers[
+    UI_Manager ui_managers[
         MAX_QUANTITY_OF__UI_MANAGERS];
 
     UI_Window_Record ui_window_record[
@@ -2368,18 +2370,19 @@ typedef struct Graphics_Window_t {
     Quantity__u32 width_of__graphics_window__u32;
     Quantity__u32 height_of__graphics_window__u32;
     Camera *p_camera;
-    UI_Manager *p_ui_manager;
-    Sprite_Manager *p_sprite_manager;
     PLATFORM_Graphics_Window *p_PLATFORM_gfx_window;
-    struct Graphics_Window_t *p_child__graphics_window;
+    Identifier__u32 graphics_window__parent__uuid;
     Identifier__u32 ui_tile_map__texture__uuid;
     Graphics_Window_Kind the_kind_of__window;
     Index__u8 priority_of__window;
     Graphics_Window_Flags__u8 graphics_window__flags;
+    Graphics_Window__Sprite_Pool__Allocation_Scheme graphics_window__sprite_pool__allocation_scheme;
 } Graphics_Window;
 
 typedef struct Graphics_Window_Manager_t {
     Graphics_Window graphics_windows[
+        MAX_QUANTITY_OF__GRAPHICS_WINDOWS];
+    Graphics_Window *ptr_array_of__sorted_graphic_windows[
         MAX_QUANTITY_OF__GRAPHICS_WINDOWS];
     Repeatable_Psuedo_Random randomizer;
 } Graphics_Window_Manager;
@@ -2395,12 +2398,7 @@ typedef struct Gfx_Context_t {
     UI_Tile_Map_Manager ui_tile_map_manager;
     Font_Manager font_manager;
     PLATFORM_Gfx_Context *p_PLATFORM_gfx_context;
-    // TODO: do a POST_ENGINE_CONFIG import for the backend
-    // that allows the backend to override any developer set
-    // maximum for sprite managers. This is to avoid overloading
-    // the hardware.
-    Sprite_Manager *PM_sprite_managers[
-        MAX_QUANTITY_OF__SPRITE_MANAGERS];
+    Sprite_Manager sprite_manager;
 } Gfx_Context;
 
 typedef struct Game_Action_t Game_Action;

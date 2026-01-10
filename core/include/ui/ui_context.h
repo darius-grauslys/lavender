@@ -7,23 +7,23 @@
 void initialize_ui_context(UI_Context *p_ui_context);
 
 UI_Manager *allocate_p_ui_manager_from__ui_context(
-        UI_Context *p_ui_context);
+        UI_Context *p_ui_context,
+        Identifier__u32 uuid_of__ui_manager__u32);
 
-UI_Manager *get_p_ui_manager_from__ui_context(
+UI_Manager *get_p_ui_manager_by__uuid_from__ui_context(
         UI_Context *p_ui_context,
         Identifier__u32 uuid_of__ui_manager);
 
 void release_p_ui_manager_from__ui_context(
         Game *p_game,
-        UI_Context *p_ui_context,
-        Graphics_Window *p_graphics_window,
-        UI_Manager *p_ui_manager);
+        Identifier__u32 uuid_of__ui_manager__u32);
 
 void register_ui_window_into__ui_context(
         UI_Context *p_ui_context,
         f_UI_Window__Load f_ui_window__load,
         f_UI_Window__Close f_ui_window__close,
-        Graphics_Window_Kind the_kind_of__window);
+        Graphics_Window_Kind the_kind_of__window,
+        Signed_Quantity__i32 signed_quantity_of__sprites);
 
 ///
 /// the sprite_manager can be null. If so open_ui_window
@@ -33,7 +33,6 @@ void register_ui_window_into__ui_context(
 ///
 Graphics_Window *open_ui_window(
         Game *p_game,
-        Sprite_Manager *p_OPTIONAL_sprite_manager,
         Graphics_Window_Kind the_kind_of__window_to__open);
 
 ///

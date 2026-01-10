@@ -7,9 +7,13 @@
 #include "rendering/gfx_context.h"
 #include "rendering/graphics_window.h"
 #include "rendering/graphics_window_manager.h"
+#include "rendering/sprite_manager.h"
+#include "serialization/hashing.h"
 #include "serialization/serialization_header.h"
 #include "types/implemented/graphics_window_kind.h"
 #include "ui/ui_manager.h"
+#include "ui/ui_window_record.h"
+#include <string.h>
 
 static inline
 UI_Window_Record *get_p_ui_window_record_from__ui_context(
@@ -22,103 +26,117 @@ UI_Window_Record *get_p_ui_window_record_from__ui_context(
     return &p_ui_context->ui_window_record[the_kind_of__graphics_window];
 }
 
-static inline
-bool is_ui_window_record__valid(
-        UI_Window_Record *p_ui_window_record) {
-    return p_ui_window_record->f_ui_window__load 
-        && p_ui_window_record->f_ui_window__close;
-}
-
 void initialize_ui_context(UI_Context *p_ui_context) {
     memset(
             p_ui_context,
             0,
             sizeof(UI_Context));
+    initialize_serialization_header__contiguous_array(
+            (Serialization_Header *)p_ui_context->ui_managers, 
+            MAX_QUANTITY_OF__UI_MANAGERS, 
+            sizeof(UI_Manager));
+
+}
+
+void set_p_ui_manager_as__allocated(
+        UI_Manager *p_ui_manager,
+        UI_Manager_Data *pM_ui_manager_data,
+        Identifier__u32 uuid_of__ui_manager) {
+    ALLOCATE_P(p_ui_manager,
+            uuid_of__ui_manager);
+    p_ui_manager->pM_ui_manager_data = pM_ui_manager_data;
 }
 
 UI_Manager *allocate_p_ui_manager_from__ui_context(
-        UI_Context *p_ui_context) {
-    for (Index__u32 index_of__ui_manager = 0;
-            index_of__ui_manager
-            < MAX_QUANTITY_OF__UI_MANAGERS;
-            index_of__ui_manager++) {
-        UI_Manager *p_ui_manager =
-            p_ui_context->pM_ui_managers[index_of__ui_manager];
-        if (p_ui_manager) {
-            continue;
-        }
+        UI_Context *p_ui_context,
+        Identifier__u32 uuid_of__ui_manager) {
+    UI_Manager *p_ui_manager =
+        (UI_Manager*)get_next_available__allocation_in__contiguous_array(
+                (Serialization_Header*)p_ui_context->ui_managers, 
+                MAX_QUANTITY_OF__UI_MANAGERS, 
+                uuid_of__ui_manager);
 
-        p_ui_manager =
-            malloc(sizeof(UI_Manager));
-
-        initialize_ui_manager(p_ui_manager);
-        p_ui_manager->ui_manager__allocation_index =
-            index_of__ui_manager;
-
-        p_ui_context->pM_ui_managers[index_of__ui_manager] =
-            p_ui_manager;
-
-        return p_ui_manager;
+    if (!p_ui_manager) {
+        debug_error("allocate_p_ui_manager_from__ui_context, failed to allocate ui manager (maximum reached.)");
+        return 0;
     }
 
-    debug_error("allocate_pM_ui_manager_from__ui_context, too many managers allocated.");
-    return 0;
+    UI_Manager_Data *pM_ui_manager_data = malloc(sizeof(UI_Manager_Data));
+    if (!pM_ui_manager_data) {
+        debug_error("allocate_p_ui_manager_from__ui_context, failed to dynamically allocate ui manager (malloc null.)");
+        return 0;
+    }
+
+    set_p_ui_manager_as__allocated(
+            p_ui_manager,
+            pM_ui_manager_data,
+            uuid_of__ui_manager);
+
+    initialize_ui_manager(p_ui_manager);
+    
+    return p_ui_manager;
+}
+
+UI_Manager 
+*get_p_ui_manager_by__uuid_from__ui_context(
+        UI_Context *p_ui_context,
+        Identifier__u32 uuid_of__ui_manager__u32) {
+    return (UI_Manager*)
+        dehash_identitier_u32_in__contigious_array(
+            (Serialization_Header *)p_ui_context->ui_managers, 
+            MAX_QUANTITY_OF__UI_MANAGERS,
+            uuid_of__ui_manager__u32);
 }
 
 void release_p_ui_manager_from__ui_context(
         Game *p_game,
-        UI_Context *p_ui_context,
-        Graphics_Window *p_graphics_window,
-        UI_Manager *p_ui_manager) {
+        Identifier__u32 uuid_of__ui_manager__u32) {
 #ifndef NDEBUG
     if (!p_game) {
         debug_error("release_p_ui_manager_from__ui_context, p_game == 0.");
         return;
     }
-    if (!p_ui_context) {
-        debug_error("release_p_ui_manager_from__ui_context, p_ui_context == 0.");
-        return;
-    }
-    if (!p_graphics_window) {
-        debug_error("release_p_ui_manager_from__ui_context, p_graphics_window == 0.");
-        return;
-    }
-    if (!p_ui_manager) {
-        debug_error("release_p_ui_manager_from__ui_context, p_ui_manager == 0.");
-        return;
-    }
-    if (p_ui_manager != get_p_ui_manager_from__graphics_window(
-                p_graphics_window)) {
-        debug_error("release_p_ui_manager_from__ui_context, p_ui_manager is not owned by this graphics window");
-        return;
-    }
 #endif
 
-    for (Index__u32 index_of__ui_manager = 0;
-            index_of__ui_manager
-            < MAX_QUANTITY_OF__UI_MANAGERS;
-            index_of__ui_manager++) {
-        if (p_ui_context->pM_ui_managers[index_of__ui_manager]
-                == p_ui_manager) {
-            release_all__ui_elements_from__ui_manager(
-                    p_game, 
-                    p_graphics_window, 
-                    p_ui_manager);
-            DEALLOCATE_P(p_ui_context->pM_ui_managers[index_of__ui_manager]);
-            free(p_ui_context->pM_ui_managers[index_of__ui_manager]);
-            p_ui_context->pM_ui_managers[index_of__ui_manager] = 0;
-            return;
-        }
+    UI_Manager *p_ui_manager =
+        get_p_ui_manager_by__uuid_from__ui_context(
+                get_p_ui_context_from__gfx_context(
+                    get_p_gfx_context_from__game(p_game)), 
+                uuid_of__ui_manager__u32);
+
+    if (!p_ui_manager) {
+        debug_error("release_p_ui_manager_from__ui_context, ui manager was not found.");
+        return;
     }
 
-    debug_error("release_p_ui_manager_from__ui_context, ui_manager not allocated from this ui_context.");
+    Graphics_Window *p_graphics_window =
+        get_p_graphics_window_by__uuid_from__graphics_window_manager(
+                get_p_graphics_window_manager_from__gfx_context(
+                    get_p_gfx_context_from__game(p_game)), 
+                uuid_of__ui_manager__u32);
+
+    if (!p_graphics_window) {
+        // We have to abort here because a memory leak may be occuring.
+        debug_abort("release_p_ui_manager_from__ui_context, ui manager is not paired with a graphics_window.");
+        return;
+    }
+
+    release_all__ui_elements_from__ui_manager(
+            p_game, 
+            p_graphics_window,
+            p_ui_manager);
+
+    DEALLOCATE_P(p_ui_manager);
+    free(p_ui_manager->pM_ui_manager_data);
+    p_ui_manager->pM_ui_manager_data = 0;
 }
 
 void register_ui_window_into__ui_context(
         UI_Context *p_ui_context,
         f_UI_Window__Load f_ui_window__load,
         f_UI_Window__Close f_ui_window__close,
-        Graphics_Window_Kind the_kind_of__graphics_window) {
+        Graphics_Window_Kind the_kind_of__graphics_window,
+        Signed_Quantity__i32 signed_quantity_of__sprites) {
 #ifndef NDEBUG
     if (!p_ui_context) {
         debug_error("register_ui_window_into__ui_context, p_ui_context == 0.");
@@ -140,11 +158,12 @@ void register_ui_window_into__ui_context(
 
     p_ui_window_record->f_ui_window__load = f_ui_window__load;
     p_ui_window_record->f_ui_window__close = f_ui_window__close;
+    p_ui_window_record->signed_quantity_of__sprites = 
+        signed_quantity_of__sprites;
 }
 
 Graphics_Window *open_ui_window(
         Game *p_game,
-        Sprite_Manager *p_OPTIONAL_sprite_manager,
         Graphics_Window_Kind the_kind_of__graphics_window_to__open) {
 #ifndef NDEBUG
     if (!p_game) {
@@ -186,16 +205,18 @@ Graphics_Window *open_ui_window(
         return false;
     }
     
-    if (p_OPTIONAL_sprite_manager) {
-        share_sprite_manager_with__graphics_window(
-                p_graphics_window, 
-                p_OPTIONAL_sprite_manager);
-    } else {
-        Sprite_Manager *p_sprite_manager =
-            allocate_sprite_manager_from__gfx_context(
-                    p_gfx_context, 
-                    p_graphics_window);
-        if (!p_sprite_manager) {
+    if (is_ui_window_record__allocating_a_sprite_pool(p_ui_window_record)) {
+        // Use the sprite pool of the parent window.
+        // TODO: check all other children of the parent and see if the abs(sprite_quant) sum of
+        // TODO: all negative quantities of children exceed the parent maximum.
+        // 
+        // TODO: also, maybe FORCE child windows to use parent sprite pool UNLESS maximum is exceeded.
+        Sprite_Pool *p_sprite_pool =
+            allocate_sprite_pool_from__sprite_manager(
+                    get_p_sprite_manager_from__gfx_context(p_gfx_context),
+                    GET_UUID_P(p_graphics_window),
+                    p_ui_window_record->signed_quantity_of__sprites);
+        if (!p_sprite_pool) {
             debug_error("open_ui_window, p_sprite_manager == 0.");
             release_graphics_window_from__graphics_window_manager(
                     p_game, 
@@ -206,7 +227,8 @@ Graphics_Window *open_ui_window(
 
     UI_Manager *p_ui_manager =
         allocate_p_ui_manager_from__ui_context(
-                p_ui_context);
+                p_ui_context,
+                GET_UUID_P(p_graphics_window));
 
     if (!p_ui_manager) {
         debug_error("open_ui_window, p_ui_manager == 0.");
@@ -216,15 +238,22 @@ Graphics_Window *open_ui_window(
         return false;
     }
 
-    set_p_ui_manager_of__graphics_window(
-            p_graphics_window, 
-            p_ui_manager);
-
     p_ui_window_record->f_ui_window__load(
             p_gfx_context,
             p_graphics_window,
             p_game,
             p_ui_manager);
+
+    if (p_ui_window_record->signed_quantity_of__sprites < 0) {
+        p_graphics_window->graphics_window__sprite_pool__allocation_scheme =
+            Graphics_Window__Sprite_Pool__Allocation_Scheme__Is_Using_Parent_Pool;
+    } else if (p_ui_window_record->signed_quantity_of__sprites == 0) {
+        p_graphics_window->graphics_window__sprite_pool__allocation_scheme =
+            Graphics_Window__Sprite_Pool__Allocation_Scheme__None;
+    } else {
+        p_graphics_window->graphics_window__sprite_pool__allocation_scheme =
+            Graphics_Window__Sprite_Pool__Allocation_Scheme__Is_Allocating;
+    }
 
     set_graphics_window_as__enabled(p_graphics_window);
     set_graphics_window_as__in_need_of__composition(
@@ -264,6 +293,7 @@ void close_ui_window(
 
     UI_Manager *p_ui_manager =
         get_p_ui_manager_from__graphics_window(
+                p_game,
                 p_graphics_window);
 
     if (!p_ui_manager) {
@@ -296,5 +326,7 @@ void close_ui_window(
             p_game,
             p_ui_manager);
 
-    // TODO: ensure that window is deallocated?
+    release_graphics_window_from__graphics_window_manager(
+            p_game, 
+            p_graphics_window);
 }
