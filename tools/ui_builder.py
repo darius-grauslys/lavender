@@ -111,7 +111,7 @@ if len(sys.argv) < 2:
     quit()
 
 if not os.path.exists(sys.argv[1]):
-    print("Cannot find source xml.")
+    print("Cannot find source xml: {}".format(sys.argv[1]))
     quit()
 
 config = Config(sys.argv[1])
@@ -129,6 +129,9 @@ source_h=""
 tab="    "
 error=""
 current_element_id=0
+
+def get_current_element_id__source_string():
+    return "({} + index_of__ui_element_offset__u16)".format(current_element_id);
 
 def set_error(msg):
     global error
@@ -425,9 +428,9 @@ def set_sprite_of__ui_element(
     generate_source_c__with_literal(f"Sprite *{name_of__sprite_field} =")
 
     generate_source_c__signature(
-            "allocate_sprite_from__sprite_pool",
+            "allocate_sprite_from__sprite_manager",
             [ "get_p_gfx_context_from__game(p_game)",
-             "get_p_sprite_pool_from__graphics_window(p_game, p_gfx_window)",
+             "get_p_sprite_manager_from__graphics_window(p_game, p_gfx_window)",
              "p_gfx_window",
              f"GET_UUID_P({name_of__ui_element})",
              name_of__texture,
@@ -772,6 +775,32 @@ def button(signature, xml_element, context_stack):
 
     allocate_many_squares_with__context_stack(rectangle_spec, context_stack)
 
+def window_element(signature, xml_element, context_stack):
+    rectangle_spec = RectangleSpec(xml_element, context_stack)
+
+    args = []
+    args.append(context_stack[-1].p_ui_element)
+    args.append("p_game")
+    args.append(\
+            get_str_from_xml_or__use_this(\
+                xml_element, \
+                "window_kind", \
+                "Graphics_Window_Kind__Unknown"))
+    args.append("GET_UUID_P(p_gfx_window)")
+    
+
+    generate_source_c__signature(\
+            signature,\
+            args)
+
+    set_text(xml_element, context_stack)
+    
+    generate_source_c__new_line()
+
+    allocate_hitbox_for__ui_element(xml_element, context_stack)
+
+    allocate_many_squares_with__context_stack(rectangle_spec, context_stack)
+
 def slider(signature, xml_element, context_stack):
     name_of__ui_element = get_name_of__ui_element(context_stack)
 
@@ -894,7 +923,9 @@ def code(signature, xml_element, context_stack):
             for index_of__token in range(len(tokens)):
                 if '$' in tokens[index_of__token]:
                     try:
-                        tokens[index_of__token] = symbol_table[tokens[index_of__token][1:]]
+                        tokens[index_of__token] = \
+                                "({} + index_of__ui_element_offset__u16)" \
+                                .format(symbol_table[tokens[index_of__token][1:]])
                     except KeyError:
                         tokens[index_of__token] = "SYMBOL_NOT_FOUND"
             statement = ' '.join(tokens)
@@ -932,7 +963,7 @@ def generate_source__ui(xml_node__ui):
     generate_source_h__with_literal(\
             "\nbool allocate_ui_for__{}".format(\
             config.source_name))
-    generate_source_h__arguments(["Gfx_Context *p_gfx_context, Graphics_Window *p_gfx_window, Game *p_game, UI_Manager *p_ui_manager"])
+    generate_source_h__arguments(["Gfx_Context *p_gfx_context, Graphics_Window *p_gfx_window, Game *p_game, UI_Manager *p_ui_manager, Identifier__u16 index_of__ui_element_offset__u16"])
     generate_source_h__with_literal(";\n")
 
     generate_source_c__with_literal(\
@@ -940,7 +971,7 @@ def generate_source__ui(xml_node__ui):
     generate_source_c__with_literal(\
             "\nbool allocate_ui_for__{}".format(\
             config.source_name))
-    generate_source_c__arguments(["Gfx_Context *p_gfx_context, Graphics_Window *p_gfx_window, Game *p_game, UI_Manager *p_ui_manager"])
+    generate_source_c__arguments(["Gfx_Context *p_gfx_context, Graphics_Window *p_gfx_window, Game *p_game, UI_Manager *p_ui_manager, Identifier__u16 index_of__ui_element_offset__u16"])
     generate_source_c__with_literal("{\n")
 
     context_stack = deque()

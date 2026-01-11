@@ -27,6 +27,7 @@ void m_ui_slider__dragged_handler__gfx_window__default(
 void m_ui_slider__transformed_handler__default(
         UI_Element *p_this_ui_element,
         Hitbox_AABB *p_hitbox_aabb,
+        Vector__3i32 position_NEW_of__hitbox__3i32,
         Game *p_game,
         Graphics_Window *p_graphics_window);
 

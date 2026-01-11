@@ -5,8 +5,8 @@
 #include "game.h"
 #include "rendering/gfx_context.h"
 #include "rendering/graphics_window_manager.h"
+#include "rendering/sprite_context.h"
 #include "rendering/sprite_manager.h"
-#include "rendering/sprite_pool.h"
 #include "serialization/identifiers.h"
 #include "serialization/serialization_header.h"
 #include "ui/ui_context.h"
@@ -79,20 +79,22 @@ void set_graphics_window__ui_tile_map(
 
 UI_Manager *allocate_ui_manager_for__graphics_window(
         Gfx_Context *p_gfx_context,
-        Graphics_Window *p_graphics_window) {
+        Graphics_Window *p_graphics_window,
+        Quantity__u16 max_quantity_of__ui_elements) {
     return allocate_p_ui_manager_from__ui_context(
             get_p_ui_context_from__gfx_context(p_gfx_context), 
-            GET_UUID_P(p_graphics_window));
+            GET_UUID_P(p_graphics_window),
+            max_quantity_of__ui_elements);
 }
 
 void allocate_sprite_pool_for__graphics_window(
         Gfx_Context *p_gfx_context,
         Graphics_Window *p_graphics_window,
-        Quantity__u32 max_quantity_of__sprites_in__sprite_pool) {
-    allocate_sprite_pool_from__sprite_manager(
-            get_p_sprite_manager_from__gfx_context(p_gfx_context), 
+        Quantity__u32 max_quantity_of__sprites_in__sprite_manager) {
+    allocate_sprite_manager_from__sprite_context(
+            get_p_sprite_context_from__gfx_context(p_gfx_context), 
             GET_UUID_P(p_graphics_window),
-            max_quantity_of__sprites_in__sprite_pool);
+            max_quantity_of__sprites_in__sprite_manager);
 }
 
 void set_position_3i32_of__graphics_window(
@@ -215,21 +217,21 @@ Sprite *allocate_p_sprite_from__graphics_window(
         Identifier__u32 uuid__u32, 
         Texture texture_to__sample_by__sprite, 
         Texture_Flags texture_flags_for__sprite) {
-    Sprite_Pool *p_sprite_pool = 0;
+    Sprite_Manager *p_sprite_manager = 0;
     Graphics_Window *p_graphics_window_used_in__allocation_call = p_graphics_window;
-    switch (p_graphics_window->graphics_window__sprite_pool__allocation_scheme) {
-        case Graphics_Window__Sprite_Pool__Allocation_Scheme__Unknown:
-        case Graphics_Window__Sprite_Pool__Allocation_Scheme__None:
+    switch (p_graphics_window->graphics_window__sprite_manager__allocation_scheme) {
+        case Graphics_Window__Sprite_Manager__Allocation_Scheme__Unknown:
+        case Graphics_Window__Sprite_Manager__Allocation_Scheme__None:
             debug_warning("Did you forget to include a sprite pool allocation scheme for your graphics window?");
             debug_error("allocate_p_sprite_from__graphics_window, this window is not allocated to handle sprites.");
             return 0;
-        case Graphics_Window__Sprite_Pool__Allocation_Scheme__Is_Allocating:
-            p_sprite_pool =
-                get_p_sprite_pool_from__graphics_window(
+        case Graphics_Window__Sprite_Manager__Allocation_Scheme__Is_Allocating:
+            p_sprite_manager =
+                get_p_sprite_manager_from__graphics_window(
                         p_game,
                         p_graphics_window);
             break;
-        case Graphics_Window__Sprite_Pool__Allocation_Scheme__Is_Using_Parent_Pool:
+        case Graphics_Window__Sprite_Manager__Allocation_Scheme__Is_Using_Parent_Pool:
 #ifndef NDEBUG
             if (is_identifier_u32__invalid(p_graphics_window->graphics_window__parent__uuid)) {
                 debug_error("allocate_p_sprite_from__graphics_window, graphics_window parent uuid is invalid.");
@@ -240,19 +242,19 @@ Sprite *allocate_p_sprite_from__graphics_window(
                         get_p_graphics_window_manager_from__gfx_context(
                             get_p_gfx_context_from__game(p_game)), 
                         p_graphics_window->graphics_window__parent__uuid);
-            p_sprite_pool =
-                get_p_sprite_pool_by__uuid_from__sprite_manager(
-                        get_p_sprite_manager_from__gfx_context(
+            p_sprite_manager =
+                get_p_sprite_manager_by__uuid_from__sprite_context(
+                        get_p_sprite_context_from__gfx_context(
                             get_p_gfx_context_from__game(p_game)),
                         p_graphics_window->graphics_window__parent__uuid);
             break;
     }
-    if (!p_sprite_pool) {
+    if (!p_sprite_manager) {
         debug_error("allocate_p_sprite_from__graphics_window, sprite pool is not allocated.");
         return 0;
     }
-    return allocate_sprite_from__sprite_pool(
-            get_p_gfx_context_from__game(p_game), p_sprite_pool, 
+    return allocate_sprite_from__sprite_manager(
+            get_p_gfx_context_from__game(p_game), p_sprite_manager, 
             p_graphics_window_used_in__allocation_call, 
             uuid__u32, 
             texture_to__sample_by__sprite, 

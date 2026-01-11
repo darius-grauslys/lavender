@@ -117,6 +117,10 @@ Serialization_Header *dehash_identitier_u32_in__contigious_array(
         Serialization_Header *p_serialization_headers,
         Quantity__u32 length_of__p_serialization_headers,
         Identifier__u32 identifier__u32) {
+    if (is_identifier_u32__invalid(identifier__u32)) {
+        debug_warning__verbose("dehash_identitier_u32_in__contigious_array, identifier is invalid.");
+        return 0;
+    }
     Index__u32 index__initial__u32 = 
         poll_for__uuid_collision(
                 p_serialization_headers, 

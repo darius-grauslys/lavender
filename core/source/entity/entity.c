@@ -6,7 +6,7 @@
 #include "entity/entity_manager.h"
 #include "game.h"
 #include "platform.h"
-#include "rendering/sprite_pool.h"
+#include "rendering/sprite_manager.h"
 #include "serialization/serialization_header.h"
 #include "world/chunk_vectors.h"
 #include "world/local_space_manager.h"
@@ -21,16 +21,16 @@ void m_entity_dispose_handler__default(
         Game *p_game,
         World *p_world) {
     Sprite *p_sprite =
-        get_p_sprite_by__uuid_from__sprite_pool(
-                get_p_sprite_pool_from__graphics_window(
+        get_p_sprite_by__uuid_from__sprite_manager(
+                get_p_sprite_manager_from__graphics_window(
                     p_game,
                     get_p_graphics_window_from__world(
                         p_world)), 
                 GET_UUID_P(p_this_entity));
     if (p_sprite) {
-        release_sprite_from__sprite_pool(
+        release_sprite_from__sprite_manager(
                 get_p_gfx_context_from__game(p_game), 
-                get_p_sprite_pool_from__graphics_window(
+                get_p_sprite_manager_from__graphics_window(
                     p_game,
                     get_p_graphics_window_from__world(
                         p_world)), 

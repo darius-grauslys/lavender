@@ -608,8 +608,8 @@ typedef uint8_t Sprite_Animation_Flags__u3;
 #define SPRITE_ANIMATION_FLAG__IS_NOT_LOOPING BIT(0)
 #define SPRITE_ANIMATION_FLAG__IS_OFFSET_BY__DIRECTION BIT(1)
 
-typedef struct Sprite_Pool_t Sprite_Pool;
 typedef struct Sprite_Manager_t Sprite_Manager;
+typedef struct Sprite_Context_t Sprite_Context;
 
 ///
 /// Returns true if sprite now needs gfx update
@@ -617,7 +617,7 @@ typedef struct Sprite_Manager_t Sprite_Manager;
 typedef void (*m_Sprite_Animation_Handler)(
         Sprite *p_this_sprite,
         Game *p_game,
-        Sprite_Manager *p_sprite_manager);
+        Sprite_Context *p_sprite_context);
 
 typedef struct Sprite_Animation_t {
     Sprite_Animation_Kind the_kind_of_animation__this_sprite_has;
@@ -666,22 +666,22 @@ typedef struct Sprite_Render_Record_t {
     Sprite *p_sprite;
 } Sprite_Render_Record;
 
-typedef struct Sprite_Pool_t {
+typedef struct Sprite_Manager_t {
     Serialization_Header _serialization_header;
     Sprite *pM_pool_of__sprites;
     Sprite_Render_Record *pM_sprite_render_records;
     Sprite_Render_Record *p_sprite_render_record__last;
     Quantity__u32 max_quantity_of__sprites;
-} Sprite_Pool;
+} Sprite_Manager;
 
-typedef struct Sprite_Manager_t {
+typedef struct Sprite_Context_t {
     Sprite_Animation sprite_animations[
         Sprite_Animation_Kind__Unknown];
-    Sprite_Pool *pM_sprite_pools;
+    Sprite_Manager *pM_sprite_managers;
     Sprite_Animation_Group_Set sprite_animation_groups[
         Sprite_Animation_Group_Kind__Unknown];
-    Quantity__u8 max_quantity_of__sprite_pools;
-} Sprite_Manager;
+    Quantity__u8 max_quantity_of__sprite_managers;
+} Sprite_Context;
 
 #define SPRITE_FRAME__32x32__OFFSET (32 * 32)
 #define SPRITE_FRAME__16x16__OFFSET (16 * 16)
@@ -1458,6 +1458,7 @@ typedef void (*m_UI_Compose)(
 typedef void (*m_UI_Transformed)(
         UI_Element *p_this_ui_element,
         Hitbox_AABB *p_hitbox_aabb,
+        Vector__3i32 position_NEW_of__hitbox__3i32,
         Game *p_game,
         Graphics_Window *p_gfx_window);
 
@@ -1522,6 +1523,11 @@ typedef struct UI_Element_t {
     /// DO NOT INVOKE
     m_UI_Typed              m_ui_typed_handler;
     /// DO NOT INVOKE
+    /// NOTE: For positional data on initialization, assume the position is
+    /// unknown and the first call of this transform to be the initial position.
+    /// You can check for this by ensuring the hitbox is dirty, or that the
+    /// position argument == hitbox position (meaning it was already set prior
+    /// to this handler invocation.)
     m_UI_Transformed        m_ui_transformed_handler;
     /// DO NOT INVOKE
     m_UI_Compose            m_ui_compose_handler;
@@ -1577,36 +1583,14 @@ typedef void (*f_Foreach_UI_Element)(
         Graphics_Window *p_gfx_window,
         UI_Element *p_ui_element);
 
-///
-/// TODO: is the below documentation still accurate?
-///
-/// UI_Manager is not apart of core data structures,
-/// and is instead apart of PLATFORM_Graphics_Window
-/// which is left to the backend to implement.
-///
-/// Why? This is because by keeping a singleton UI_Manager
-/// in Game_t and designing everything around that, it
-/// then makes it difficult to seperate UI_Elements
-/// in different Gfx_Windows. Some PLATFORMs can support
-/// more than one window, some PLATFORMs don't even correlate
-/// UI_Elements to a Gfx_Window... it varies.
-///
-/// So it's best to delegate the reponsibility to PLATFORM.
-/// CORE logic should leverate PLATFORM_get_ui_manager_from__gfx_window(...)
-/// And if a PLATFORM doesn't keep UI_Managers in Gfx_Windows
-/// then it should constantly return the singleton.
-///
-typedef struct UI_Manager_Data_t {
-    UI_Element ui_elements[MAX_QUANTITY_OF__UI_ELEMENTS];
-    UI_Element *ptr_array_of__ui_elements[MAX_QUANTITY_OF__UI_ELEMENTS];
+typedef struct UI_Manager_t {
+    Serialization_Header _serialization_header;
+    UI_Element *pM_ui_element_pool;
+    UI_Element **pM_ptr_array_of__ui_elements;
     Repeatable_Psuedo_Random randomizer;
     UI_Element *p_ui_element__focused;
     UI_Element **p_ptr_of__ui_element__latest_in_ptr_array;
-} UI_Manager_Data;
-
-typedef struct UI_Manager_t {
-    Serialization_Header _serialization_header;
-    UI_Manager_Data *pM_ui_manager_data;
+    Quantity__u16 max_quantity_of__ui_elements;
 } UI_Manager;
 
 typedef struct UI_Context_t UI_Context;
@@ -1615,7 +1599,8 @@ typedef bool (*f_UI_Window__Load)(
         Gfx_Context *p_gfx_context,
         Graphics_Window *p_gfx_window,
         Game *p_game,
-        UI_Manager *p_ui_manager);
+        UI_Manager *p_ui_manager,
+        Index__u16 index_of__ui_element_offset__u16);
 
 typedef bool (*f_UI_Window__Close)(
         Gfx_Context *p_gfx_context,
@@ -1627,6 +1612,7 @@ typedef struct UI_Window_Record_t {
     f_UI_Window__Load f_ui_window__load;
     f_UI_Window__Close f_ui_window__close;
     Signed_Quantity__i32 signed_quantity_of__sprites;
+    Signed_Quantity__i16 signed_quantity_of__ui_elements;
 } UI_Window_Record;
 
 #ifndef MAX_QUANTITY_OF__UI_MANAGERS
@@ -2376,7 +2362,8 @@ typedef struct Graphics_Window_t {
     Graphics_Window_Kind the_kind_of__window;
     Index__u8 priority_of__window;
     Graphics_Window_Flags__u8 graphics_window__flags;
-    Graphics_Window__Sprite_Pool__Allocation_Scheme graphics_window__sprite_pool__allocation_scheme;
+    Graphics_Window__Sprite_Manager__Allocation_Scheme graphics_window__sprite_manager__allocation_scheme;
+    Graphics_Window__UI_Manager__Allocation_Scheme graphics_window__ui_manager__allocation_scheme;
 } Graphics_Window;
 
 typedef struct Graphics_Window_Manager_t {
@@ -2398,7 +2385,7 @@ typedef struct Gfx_Context_t {
     UI_Tile_Map_Manager ui_tile_map_manager;
     Font_Manager font_manager;
     PLATFORM_Gfx_Context *p_PLATFORM_gfx_context;
-    Sprite_Manager sprite_manager;
+    Sprite_Context sprite_context;
 } Gfx_Context;
 
 typedef struct Game_Action_t Game_Action;

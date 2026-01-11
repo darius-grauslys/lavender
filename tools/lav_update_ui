@@ -25,16 +25,7 @@ fi
 
 BACKEND=$(echo $BACKEND | tr '[:upper:]' '[:lower:]')
 
-$LAVENDER_DIR/tools/lav_ui_builder -d "is_visualizing false" -b ${BACKEND} -f ui_window__game__equip
-$LAVENDER_DIR/tools/lav_ui_builder -d "is_visualizing false" -b ${BACKEND} -f ui_window__game__hud
-$LAVENDER_DIR/tools/lav_ui_builder -d "is_visualizing false" -b ${BACKEND} -f ui_window__game__idle
-$LAVENDER_DIR/tools/lav_ui_builder -d "is_visualizing false" -b ${BACKEND} -f ui_window__game__labor
-$LAVENDER_DIR/tools/lav_ui_builder -d "is_visualizing false" -b ${BACKEND} -f ui_window__game__settings
-$LAVENDER_DIR/tools/lav_ui_builder -d "is_visualizing false" -b ${BACKEND} -f ui_window__game__station
-$LAVENDER_DIR/tools/lav_ui_builder -d "is_visualizing false" -b ${BACKEND} -f ui_window__game__trade
-$LAVENDER_DIR/tools/lav_ui_builder -d "is_visualizing false" -b ${BACKEND} -f ui_window__game__typer
-
-$LAVENDER_DIR/tools/lav_ui_builder -d "is_visualizing false" -b ${BACKEND} -f ui_window__menu__main
-$LAVENDER_DIR/tools/lav_ui_builder -d "is_visualizing false" -b ${BACKEND} -f ui_window__menu__multiplayer
-$LAVENDER_DIR/tools/lav_ui_builder -d "is_visualizing false" -b ${BACKEND} -f ui_window__menu__singleplayer
-$LAVENDER_DIR/tools/lav_ui_builder -d "is_visualizing false" -b ${BACKEND} -f ui_window__menu__settings
+for file in $(find ./assets/ui/xml/$BACKEND/ -type f -iname "*.xml"); do
+    BASENAME=$(basename $file)
+    $LAVENDER_DIR/tools/lav_ui_builder -d "is_visualizing false" -b ${BACKEND} -f $BASENAME
+done

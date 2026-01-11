@@ -8,7 +8,8 @@ void initialize_ui_context(UI_Context *p_ui_context);
 
 UI_Manager *allocate_p_ui_manager_from__ui_context(
         UI_Context *p_ui_context,
-        Identifier__u32 uuid_of__ui_manager__u32);
+        Identifier__u32 uuid_of__ui_manager,
+        Quantity__u16 max_quantity_of__ui_elements);
 
 UI_Manager *get_p_ui_manager_by__uuid_from__ui_context(
         UI_Context *p_ui_context,
@@ -23,17 +24,27 @@ void register_ui_window_into__ui_context(
         f_UI_Window__Load f_ui_window__load,
         f_UI_Window__Close f_ui_window__close,
         Graphics_Window_Kind the_kind_of__window,
-        Signed_Quantity__i32 signed_quantity_of__sprites);
+        Signed_Quantity__i32 signed_quantity_of__sprites,
+        Signed_Quantity__i16 signed_quantity_of__ui_elements);
 
-///
-/// the sprite_manager can be null. If so open_ui_window
-/// will attempt to allocate a new one.
-///
-/// NOTE: the sprite_manager will be shared if non-null.
-///
-Graphics_Window *open_ui_window(
+
+Graphics_Window *open_ui_window_with__this_uuid_and__parent_uuid(
         Game *p_game,
-        Graphics_Window_Kind the_kind_of__window_to__open);
+        Graphics_Window_Kind the_kind_of__graphics_window_to__open,
+        Identifier__u32 uuid_of__graphics_window__u32,
+        Identifier__u32 uuid_of__parent_for__graphics_window__u32);
+
+static inline
+Graphics_Window *open_ui_window_with__this_uuid(
+        Game *p_game,
+        Graphics_Window_Kind the_kind_of__graphics_window_to__open,
+        Identifier__u32 uuid__u32) {
+    return open_ui_window_with__this_uuid_and__parent_uuid(
+            p_game, 
+            the_kind_of__graphics_window_to__open, 
+            uuid__u32, 
+            IDENTIFIER__UNKNOWN__u32);
+}
 
 ///
 /// Will only close the given Graphics_Window uuid if
@@ -42,5 +53,16 @@ Graphics_Window *open_ui_window(
 void close_ui_window(
         Game *p_game,
         Identifier__u32 uuid_of__graphics_window);
+
+static inline
+Graphics_Window *open_ui_window(
+        Game *p_game,
+        Graphics_Window_Kind the_kind_of__window_to__open) {
+    return open_ui_window_with__this_uuid(
+            p_game, 
+            the_kind_of__window_to__open, 
+            IDENTIFIER__UNKNOWN__u32);
+}
+
 
 #endif

@@ -100,11 +100,12 @@ void m_ui_element__compose_handler__default_only_recursive(
 void m_ui_element__transformed_handler__default(
         UI_Element *p_this_ui_element,
         Hitbox_AABB *p_hitbox_aabb,
+        Vector__3i32 position_NEW_of__hitbox__3i32,
         Game *p_game,
         Graphics_Window *p_graphics_window);
 
 bool does_ui_element_have__sprite(
-        Sprite_Pool *p_sprite_pool,
+        Sprite_Manager *p_sprite_manager,
         UI_Element *p_ui_element);
 
 void set_child_of__ui_element(

@@ -12,15 +12,15 @@
 void m_sprite_animation_handler__default(
         Sprite *p_this_sprite,
         Game *p_game,
-        Sprite_Manager *p_sprite_manager);
+        Sprite_Context *p_sprite_context);
 
 void poll_sprite_for__animation(
         Game *p_game,
         Sprite *p_sprite,
-        Sprite_Manager *p_sprite_manager);
+        Sprite_Context *p_sprite_context);
 
 void set_sprite_animation(
-        Sprite_Manager *p_sprite_manager,
+        Sprite_Context *p_sprite_context,
         Sprite *p_sprite,
         Sprite_Animation_Kind the_kind_of__sprite_animation);
 

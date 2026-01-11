@@ -7,7 +7,7 @@
 #include "rendering/texture.h"
 #include "serialization/serialization_header.h"
 #include <rendering/sprite.h>
-#include <rendering/sprite_manager.h>
+#include <rendering/sprite_context.h>
 #include <defines.h>
 #include "timer.h"
 #include "types/implemented/sprite_animation_group_kind.h"
@@ -15,7 +15,7 @@
 #include "world/world.h"
 
 void poll_sprite_animation_loop(
-        Sprite_Manager *p_sprite_manager,
+        Sprite_Context *p_sprite_context,
         Sprite *p_sprite) {
     if (is_sprite_animation__NOT_looping(
                 get_p_sprite_animation_from__sprite(
@@ -41,8 +41,8 @@ void poll_sprite_animation_loop(
         default:
             ;
             Sprite_Animation_Group_Set *p_sprite_animation_group =
-                get_p_sprite_animation_group_from__sprite_manager(
-                        p_sprite_manager,
+                get_p_sprite_animation_group_from__sprite_context(
+                        p_sprite_context,
                         get_the_kind_of__sprite_animation_group_of__this_sprite(
                             p_sprite));
             Index__u8 quantity_of__columns =
@@ -85,14 +85,14 @@ void poll_sprite_animation_loop(
 void m_sprite_animation_handler__default(
         Sprite *p_this_sprite,
         Game *p_game,
-        Sprite_Manager *p_sprite_manager) {
+        Sprite_Context *p_sprite_context) {
     Sprite_Animation *p_sprite_animation =
         get_p_sprite_animation_from__sprite(p_this_sprite);
     if (poll_timer_u8(
                 &p_sprite_animation->animation_timer__u8)) {
         reset_timer_u8(&p_sprite_animation->animation_timer__u8);
         poll_sprite_animation_loop(
-                p_sprite_manager, 
+                p_sprite_context, 
                 p_this_sprite);
         return;
     }
@@ -101,7 +101,7 @@ void m_sprite_animation_handler__default(
 void poll_sprite_for__animation(
         Game *p_game,
         Sprite *p_sprite,
-        Sprite_Manager *p_sprite_manager) {
+        Sprite_Context *p_sprite_context) {
     if (!is_sprite__enabled(p_sprite)
             || !p_sprite->m_sprite_animation_handler) {
         return;
@@ -109,11 +109,11 @@ void poll_sprite_for__animation(
     p_sprite->m_sprite_animation_handler(
             p_sprite,
             p_game,
-            p_sprite_manager);
+            p_sprite_context);
 }
 
 void set_sprite_animation(
-        Sprite_Manager *p_sprite_manager,
+        Sprite_Context *p_sprite_context,
         Sprite *p_sprite,
         Sprite_Animation_Kind the_kind_of__sprite_animation) {
     if (p_sprite->animation.the_kind_of_animation__this_sprite_has
@@ -121,7 +121,7 @@ void set_sprite_animation(
         return;
     }
     p_sprite->animation =
-        get_sprite_animation_from__sprite_manager(
-                p_sprite_manager, 
+        get_sprite_animation_from__sprite_context(
+                p_sprite_context, 
                 the_kind_of__sprite_animation);
 }

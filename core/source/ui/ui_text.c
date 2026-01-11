@@ -299,12 +299,12 @@ void m_ui_element__compose_handler__text(
 void m_ui_element__transformed_handler__text(
         UI_Element *p_this_ui_element,
         Hitbox_AABB *p_hitbox_aabb,
+        Vector__3i32 position_NEW_of__hitbox__3i32,
         Game *p_game,
         Graphics_Window *p_graphics_window) {
     set_typer__position(
             get_p_typer_of__ui_text(p_this_ui_element),
-            get_position_3i32_of__hitbox_aabb(
-                p_hitbox_aabb));
+            position_NEW_of__hitbox__3i32);
 
     set_typer__bounding_box_size(
             get_p_typer_of__ui_text(p_this_ui_element),
@@ -315,13 +315,13 @@ void m_ui_element__transformed_handler__text(
 void m_ui_element__transformed_handler__text__centered(
         UI_Element *p_this_ui_element,
         Hitbox_AABB *p_hitbox_aabb,
+        Vector__3i32 position_NEW_of__hitbox__3i32,
         Game *p_game,
         Graphics_Window *p_graphics_window) {
     set_typer__position(
             get_p_typer_of__ui_text(p_this_ui_element),
             add_vectors__3i32(
-                get_position_3i32_of__hitbox_aabb(
-                p_hitbox_aabb),
+                position_NEW_of__hitbox__3i32,
                 get_vector__3i32(
                     (get_width_u32_of__hitbox_aabb(p_hitbox_aabb) >> 1)
                     - (p_this_ui_element->size_of__char_buffer

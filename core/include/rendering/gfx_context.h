@@ -43,9 +43,9 @@ Font_Manager *get_p_font_manager_from__gfx_context(
 }
 
 static inline
-Sprite_Manager *get_p_sprite_manager_from__gfx_context(
+Sprite_Context *get_p_sprite_context_from__gfx_context(
         Gfx_Context *p_gfx_context) {
-    return &p_gfx_context->sprite_manager;
+    return &p_gfx_context->sprite_context;
 }
 
 #endif

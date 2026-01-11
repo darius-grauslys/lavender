@@ -5,8 +5,8 @@
 #include "platform.h"
 #include "rendering/gfx_context.h"
 #include "rendering/graphics_window.h"
+#include "rendering/sprite_context.h"
 #include "rendering/sprite_manager.h"
-#include "rendering/sprite_pool.h"
 #include "rendering/texture.h"
 #include "serialization/hashing.h"
 #include "serialization/identifiers.h"
@@ -296,14 +296,14 @@ void release_graphics_window_from__graphics_window_manager(
                 p_game,
                 GET_UUID_P(p_graphics_window));
     }
-    Sprite_Pool *p_sprite_pool =
-        get_p_sprite_pool_from__graphics_window(
+    Sprite_Manager *p_sprite_manager =
+        get_p_sprite_manager_from__graphics_window(
                 p_game,
                 p_graphics_window);
-    if (p_sprite_pool) {
-        release_sprite_pool_from__sprite_manager(
-                get_p_sprite_manager_from__gfx_context(p_gfx_context),
-                p_sprite_pool);
+    if (p_sprite_manager) {
+        release_sprite_manager_from__sprite_context(
+                get_p_sprite_context_from__gfx_context(p_gfx_context),
+                p_sprite_manager);
     }
     if (is_ui_tile_map__wrapper__valid(
                 get_ui_tile_map_from__graphics_window(
@@ -370,8 +370,8 @@ void render_graphics_window(
         Game *p_game,
         Gfx_Context *p_gfx_context,
         Graphics_Window *p_gfx_window) {
-    Sprite_Pool *p_sprite_pool =
-        get_p_sprite_pool_from__graphics_window(
+    Sprite_Manager *p_sprite_manager =
+        get_p_sprite_manager_from__graphics_window(
                 p_game,
                 p_gfx_window);
 
@@ -383,11 +383,11 @@ void render_graphics_window(
                 p_gfx_window);
     }
 
-    if (p_sprite_pool) {
-        render_sprites_in__sprite_pool(
+    if (p_sprite_manager) {
+        render_sprites_in__sprite_manager(
                 p_game,
-                get_p_sprite_manager_from__gfx_context(p_gfx_context),
-                p_sprite_pool, 
+                get_p_sprite_context_from__gfx_context(p_gfx_context),
+                p_sprite_manager, 
                 p_gfx_window);
     }
 

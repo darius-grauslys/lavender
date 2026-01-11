@@ -9,8 +9,8 @@
 #include "rendering/gfx_context.h"
 #include "rendering/graphics_window.h"
 #include "rendering/sprite.h"
+#include "rendering/sprite_context.h"
 #include "rendering/sprite_manager.h"
-#include "rendering/sprite_pool.h"
 #include "serialization/serialization_header.h"
 #include "ui/ui_button.h"
 #include "ui/ui_draggable.h"
@@ -95,23 +95,23 @@ void m_ui_element__dispose_handler__default(
                 p_hitbox_aabb);
     }
 
-    Sprite_Pool *p_sprite_pool =
-        get_p_sprite_pool_from__graphics_window(
+    Sprite_Manager *p_sprite_manager =
+        get_p_sprite_manager_from__graphics_window(
                 p_game,
                 p_graphics_window);
-    if (!p_sprite_pool)
+    if (!p_sprite_manager)
         return;
     if (does_ui_element_have__sprite(
-                p_sprite_pool,
+                p_sprite_manager,
                 p_this_ui_element)) {
         Sprite *p_sprite =
-            get_p_sprite_by__uuid_from__sprite_pool(
-                    p_sprite_pool,
+            get_p_sprite_by__uuid_from__sprite_manager(
+                    p_sprite_manager,
                     GET_UUID_P(p_this_ui_element));
         if (p_sprite) {
-            release_sprite_from__sprite_pool(
+            release_sprite_from__sprite_manager(
                     get_p_gfx_context_from__game(p_game), 
-                    p_sprite_pool,
+                    p_sprite_manager,
                     p_sprite);
         }
     }
@@ -159,6 +159,9 @@ void allocate_hitbox_for__ui_element(
             width_of__hitbox__u32, 
             height_of__hitbox__u32);
 
+    // Set position of hitbox here before transform handler
+    // since the current position is unknown.
+    // See defines.h transform handler under UI_Element_t.
     set_hitbox__position_with__3i32(
             p_hitbox_aabb, 
             position_of__hitbox__3i32);
@@ -171,6 +174,7 @@ void allocate_hitbox_for__ui_element(
             p_ui_element)(
                 p_ui_element,
                 p_hitbox_aabb,
+                position_of__hitbox__3i32,
                 p_game,
                 p_graphics_window);
 }
@@ -229,18 +233,19 @@ void set_position_3i32_of__ui_element(
                         p_hitbox_aabb)));
     }
 
-    set_hitbox__position_with__3i32(
-            p_hitbox_aabb, 
-            position__3i32);
-
     if (does_ui_element_have__transformed_handler(
                 p_ui_element)) {
         p_ui_element->m_ui_transformed_handler(
                 p_ui_element,
                 p_hitbox_aabb,
+                position__3i32,
                 p_game,
                 p_graphics_window);
     }
+
+    set_hitbox__position_with__3i32(
+            p_hitbox_aabb, 
+            position__3i32);
 
     if (!does_ui_element_have__child(p_ui_element)) {
         return;
@@ -275,6 +280,7 @@ void set_ui_element__size(
         p_ui_element->m_ui_transformed_handler(
                 p_ui_element,
                 p_hitbox_aabb,
+                get_position_3i32_of__hitbox_aabb(p_hitbox_aabb),
                 p_game,
                 p_graphics_window);
     }
@@ -308,6 +314,7 @@ void set_ui_element__hitbox(
         p_ui_element->m_ui_transformed_handler(
                 p_ui_element,
                 p_hitbox_aabb,
+                position__3i32,
                 p_game,
                 p_graphics_window);
     }
@@ -317,13 +324,13 @@ void release_ui_element__sprite(
         Game *p_game,
         Graphics_Window *p_graphics_window,
         UI_Element *p_ui_element) {
-    Sprite_Pool *p_sprite_pool =
-        get_p_sprite_pool_from__graphics_window(
+    Sprite_Manager *p_sprite_manager =
+        get_p_sprite_manager_from__graphics_window(
                 p_game,
                 p_graphics_window);
 #ifndef NDEBUG
     if (!does_ui_element_have__sprite(
-                p_sprite_pool,
+                p_sprite_manager,
                 p_ui_element)) {
         debug_error("release_ui_element__PLATFORM_sprite, p_PLATFORM_sprite is null.");
         return;
@@ -331,14 +338,14 @@ void release_ui_element__sprite(
 #endif
 
     Sprite *p_sprite =
-        get_p_sprite_by__uuid_from__sprite_pool(
-                p_sprite_pool,
+        get_p_sprite_by__uuid_from__sprite_manager(
+                p_sprite_manager,
                 GET_UUID_P(p_ui_element));
 
     if (p_sprite) {
-        release_sprite_from__sprite_pool(
+        release_sprite_from__sprite_manager(
                 get_p_gfx_context_from__game(p_game), 
-                p_sprite_pool,
+                p_sprite_manager,
                 p_sprite);
     }
 }
@@ -414,6 +421,7 @@ const UI_Tile_Span *get_ui_tile_span_of__ui_element(
 void m_ui_element__transformed_handler__default(
         UI_Element *p_this_ui_element,
         Hitbox_AABB *p_hitbox_aabb,
+        Vector__3i32 position_NEW_of__hitbox__3i32,
         Game *p_game,
         Graphics_Window *p_graphics_window) {
     if (does_ui_element_have__child(
@@ -422,8 +430,7 @@ void m_ui_element__transformed_handler__default(
                 p_game, 
                 p_graphics_window, 
                 get_child_of__ui_element(p_this_ui_element), 
-                get_position_3i32_of__hitbox_aabb(
-                    p_hitbox_aabb));
+                position_NEW_of__hitbox__3i32);
     }
 }
 
@@ -529,10 +536,10 @@ void m_ui_element__compose_handler__default_only_recursive(
 }
 
 bool does_ui_element_have__sprite(
-        Sprite_Pool *p_sprite_pool,
+        Sprite_Manager *p_sprite_manager,
         UI_Element *p_ui_element) {
-    return get_p_sprite_by__uuid_from__sprite_pool(
-            p_sprite_pool, 
+    return get_p_sprite_by__uuid_from__sprite_manager(
+            p_sprite_manager, 
             GET_UUID_P(p_ui_element));
 }
 

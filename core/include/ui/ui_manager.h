@@ -7,6 +7,16 @@
 
 void initialize_ui_manager(UI_Manager *p_ui_manager);
 
+bool allocate_ui_manager__members(
+        UI_Manager *p_ui_manager,
+        Quantity__u16 max_quantity_of__ui_elements);
+
+void release_ui_manager__members(
+        UI_Manager *p_ui_manager);
+
+Quantity__u16 get_quantity_of__ui_elements_in__ui_manager(
+        UI_Manager *p_ui_manager);
+
 void poll_ui_manager__update(
         UI_Manager *p_ui_manager,
         Game *p_game,
@@ -112,7 +122,7 @@ void compose_all_ui_elements_in__ui_manager(
 static inline
 bool is_ui_manager__empty(
         UI_Manager *p_ui_manager) {
-    return !p_ui_manager->pM_ui_manager_data->ptr_array_of__ui_elements[0];
+    return !p_ui_manager->pM_ptr_array_of__ui_elements[0];
 }
 
 ///
@@ -135,8 +145,7 @@ UI_Element *get_p_ui_element_by__index_from__ui_manager(
     }
 #endif
     return p_ui_manager
-        ->pM_ui_manager_data
-        ->ptr_array_of__ui_elements[index_of__ui_element]
+        ->pM_ptr_array_of__ui_elements[index_of__ui_element]
         ;
 }
 

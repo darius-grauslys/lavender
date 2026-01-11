@@ -5,6 +5,7 @@
 #include "game.h"
 #include "rendering/gfx_context.h"
 #include "rendering/graphics_window_manager.h"
+#include "rendering/sprite_context.h"
 #include "rendering/sprite_manager.h"
 #include "serialization/serialization_header.h"
 #include "types/implemented/graphics_window_kind.h"
@@ -31,7 +32,8 @@ void set_graphics_window__ui_tile_map(
 
 UI_Manager *allocate_ui_manager_for__graphics_window(
         Gfx_Context *p_gfx_context,
-        Graphics_Window *p_graphics_window);
+        Graphics_Window *p_graphics_window,
+        Quantity__u16 max_quantity_of__ui_elements);
 
 void allocate_sprite_pool_for__graphics_window(
         Gfx_Context *p_gfx_context,
@@ -59,16 +61,16 @@ Sprite *allocate_p_sprite_from__graphics_window(
 static inline
 bool is_graphics_window__allocating_a_sprite_pool(
         Graphics_Window *p_graphics_window) {
-    return p_graphics_window->graphics_window__sprite_pool__allocation_scheme
-        == Graphics_Window__Sprite_Pool__Allocation_Scheme__Is_Allocating
+    return p_graphics_window->graphics_window__sprite_manager__allocation_scheme
+        == Graphics_Window__Sprite_Manager__Allocation_Scheme__Is_Allocating
         ;
 }
 
 static inline
-bool is_graphics_window__using_parent_sprite_pool(
+bool is_graphics_window__using_parent_sprite_manager(
         Graphics_Window *p_graphics_window) {
-    return p_graphics_window->graphics_window__sprite_pool__allocation_scheme
-        == Graphics_Window__Sprite_Pool__Allocation_Scheme__Is_Using_Parent_Pool
+    return p_graphics_window->graphics_window__sprite_manager__allocation_scheme
+        == Graphics_Window__Sprite_Manager__Allocation_Scheme__Is_Using_Parent_Pool
         ;
 }
 
@@ -126,17 +128,17 @@ bool is_graphics_window_with__ui_manager(
 }
 
 static inline
-Sprite_Pool *get_p_sprite_pool_from__graphics_window(
+Sprite_Manager *get_p_sprite_manager_from__graphics_window(
         Game *p_game,
         Graphics_Window *p_graphics_window) {
 #ifndef NDEBUG
     if (!p_graphics_window) {
-        debug_error("get_p_sprite_pool_from__graphics_window, p_gfx_window == 0.");
+        debug_error("get_p_sprite_manager_from__graphics_window, p_gfx_window == 0.");
         return 0;
     }
 #endif
-    return get_p_sprite_pool_by__uuid_from__sprite_manager(
-            get_p_sprite_manager_from__gfx_context(
+    return get_p_sprite_manager_by__uuid_from__sprite_context(
+            get_p_sprite_context_from__gfx_context(
                 get_p_gfx_context_from__game(p_game)), 
             GET_UUID_P(p_graphics_window));
 }

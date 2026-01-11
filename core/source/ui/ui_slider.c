@@ -94,6 +94,7 @@ void m_ui_slider__dragged_handler__default(
     m_ui_slider__transformed_handler__default(
             p_this_draggable, 
             p_hitbox_aabb, 
+            p_input->cursor__3i32,
             p_game, 
             p_graphics_window);
 }
@@ -101,6 +102,7 @@ void m_ui_slider__dragged_handler__default(
 void m_ui_slider__transformed_handler__default(
         UI_Element *p_this_ui_element,
         Hitbox_AABB *p_hitbox_aabb,
+        Vector__3i32 position_NEW_of__hitbox__3i32,
         Game *p_game,
         Graphics_Window *p_graphics_window) {
     if (!does_ui_element_have__child(p_this_ui_element)) {
@@ -113,27 +115,26 @@ void m_ui_slider__transformed_handler__default(
                 p_graphics_window, 
                 get_child_of__ui_element(p_this_ui_element), 
                 add_vectors__3i32(
-                    get_position_3i32_of__hitbox_aabb(p_hitbox_aabb), 
+                    position_NEW_of__hitbox__3i32, 
                     get_vector__3i32(
                         p_this_ui_element
                         ->slider__distance__u32
                         + (get_width_u32_of__hitbox_aabb(p_hitbox_aabb) >> 1),
                         0, 0)));
-        return;
+    } else {
+        set_position_3i32_of__ui_element(
+                p_game, 
+                p_graphics_window, 
+                get_child_of__ui_element(p_this_ui_element), 
+                add_vectors__3i32(
+                    position_NEW_of__hitbox__3i32, 
+                    get_vector__3i32(
+                        0,
+                        (get_height_u32_of__hitbox_aabb(p_hitbox_aabb) >> 1)
+                        - p_this_ui_element
+                        ->slider__distance__u32,
+                        0)));
     }
-
-    set_position_3i32_of__ui_element(
-            p_game, 
-            p_graphics_window, 
-            get_child_of__ui_element(p_this_ui_element), 
-            add_vectors__3i32(
-                get_position_3i32_of__hitbox_aabb(p_hitbox_aabb), 
-                get_vector__3i32(
-                    0,
-                    (get_height_u32_of__hitbox_aabb(p_hitbox_aabb) >> 1)
-                    - p_this_ui_element
-                    ->slider__distance__u32,
-                    0)));
 }
 
 void m_ui_slider__dragged_handler__gfx_window__default(

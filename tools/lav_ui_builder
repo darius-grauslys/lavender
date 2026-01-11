@@ -41,12 +41,19 @@ fi
 BASENAME=$(basename $FILE_SEARCH)
 
 BACKEND=$(echo $BACKEND | tr '[:upper:]' '[:lower:]')
+FULLPATH="./assets/ui/xml/$BACKEND/${FILE_SEARCH#*"$BACKEND"/}"
 
-XML=$(find ./assets/ui/xml/$BACKEND -iname $BASENAME.xml)
+XML=$(find ./assets/ui/xml/$BACKEND -iname $BASENAME)
 
 if [ -z "$XML" ]; then
-    echo Could not find $BASENAME.xml
-    exit 1
+    if [ ! -f "$FULLPATH" ]; then
+        cp $LAVENDER_DIR/tools/_ui_sample.xml $FULLPATH
+        UPPER_BACKEND=$(echo $BACKEND | tr '[:lower:]' '[:upper:]')
+        sed -i "s/_REPLACE_FILE_NAME/${BASENAME%.*}/g" $FULLPATH
+        sed -i "s/_REPLACE_BACKEND/$UPPER_BACKEND/g" $FULLPATH
+    else
+        XML=$FULLPATH
+    fi
 fi
 
 python $LAVENDER_DIR/tools/ui_builder.py $XML $ARGS &

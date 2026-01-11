@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<root>
+    <config>
+        <include sub_dir="ui/implemented/generated/game/">
+            <header path="ui/implemented/generated/game/_REPLACE_FILE_NAME.h"/>
+            <header path="ui/ui_context.h"/>
+            <header path="ui/ui_element.h"/>
+            <header path="ui/ui_button.h"/>
+            <header path="ui/ui_drop_zone.h"/>
+            <header path="ui/ui_draggable.h"/>
+            <header path="ui/ui_slider.h"/>
+            <header path="ui/ui_manager.h"/>
+            <header path="vectors.h"/>
+            <header path="defines.h"/>
+            <header path="game.h"/>
+            <header path="ui/ui_ag__slider.h"/>
+            <header path="ui/ui_ag__element.h"/>
+        </include>
+        <output base_dir="./" c_path="./source/ui/implemented/generated/game/_REPLACE_FILE_NAME.c" h_path="./include/ui/implemented/generated/game/_REPLACE_FILE_NAME.h"/>
+        <platform target="_REPLACE_BACKEND" size="256,256"/>
+        <ui_func_signature for="grid"/>
+        <ui_func_signature for="group"/>
+        <ui_func_signature for="alloc_child" c_signatures="allocate_ui_element_from__ui_manager_as__child"/>
+        <ui_func_signature for="allocate_ui" c_signatures="allocate_ui_element_from__ui_manager"/>
+        <ui_func_signature for="allocate_ui_container" c_signatures="allocate_many_ui_elements_from__ui_manager_in__succession"/>
+        <ui_func_signature for="code"/>
+        <ui_func_signature for="background" c_signatures="SDL_initialize_ui_element_as__background"/>
+        <ui_func_signature for="button" c_signatures="initialize_ui_element_as__button"/>
+        <ui_func_signature for="slider" c_signatures="initialize_ui_element_as__slider"/>
+        <ui_func_signature for="draggable" c_signatures="initialize_ui_element_as__draggable"/>
+        <ui_func_signature for="drop_zone" c_signatures="initialize_ui_element_as__drop_zone"/>
+    </config>
+    <ui offset_of__ui_index="0">
+    </ui>
+</root>
+
+
