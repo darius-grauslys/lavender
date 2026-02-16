@@ -10,11 +10,11 @@ void SDL_initialize_gfx_window(
         PLATFORM_Graphics_Window *p_PLATFORM_gfx_window);
 
 void SDL_compose_gfx_window(
-        Gfx_Context *p_gfx_context,
+        Game *p_game,
         Graphics_Window *p_gfx_window);
 
 void SDL_render_gfx_window(
-        Gfx_Context *p_gfx_context,
+        Game *p_game,
         Graphics_Window *p_gfx_window);
 
 static inline

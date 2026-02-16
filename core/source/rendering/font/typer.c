@@ -146,3 +146,4 @@ void put_c_string_in__typer(
     } while (--max_length_of__c_string
             && *(++c_string));
 }
+

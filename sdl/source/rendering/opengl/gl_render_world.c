@@ -2,10 +2,13 @@
 #include "client.h"
 #include "defines.h"
 #include "defines_weak.h"
+#include "game.h"
 #include "numerics.h"
 #include "platform_defaults.h"
 #include "platform_defines.h"
+#include "rendering/aliased_texture_manager.h"
 #include "rendering/gfx_context.h"
+#include "rendering/graphics_window_manager.h"
 #include "rendering/opengl/gl_chunk_texture_manager.h"
 #include "rendering/opengl/gl_defines.h"
 #include "rendering/opengl/gl_framebuffer.h"
@@ -242,21 +245,65 @@ void GL_compose_chunk(
 }
 
 void GL_compose_world(
-        Gfx_Context *p_gfx_context,
-        Graphics_Window **p_ptr_array_of__gfx_windows,
-        Local_Space_Manager *p_local_space_manager,
-        Texture *array_of__sample_textures,
-        Quantity__u32 quantity_of__gfx_windows,
-        f_Tile_Render_Kernel f_tile_render_kernel) {
+        Game *p_game,
+        Graphics_Window *p_graphics_window) {
+    Gfx_Context *p_gfx_context = 
+        get_p_gfx_context_from__game(p_game);
+
+    Graphics_Window_Manager *p_graphics_window_manager =
+        get_p_graphics_window_manager_from__gfx_context(
+                get_p_gfx_context_from__game(p_game));
+
+    Local_Space_Manager *p_local_space_manager =
+        get_p_local_space_manager_from__client(
+                get_p_local_client_by__from__game(p_game));
+
+    f_Tile_Render_Kernel f_tile_render_kernel =
+        get_f_tile_render_kernel_of__world(get_p_world_from__game(p_game));
+
+    Quantity__u32 quantity_of__child_windows = 0;
+    Index__u32 index_of__graphics_window_in_ptr_array = 
+        get_index_in_ptr_array_of__gfx_window_and__quantity_of__descendants(
+                p_graphics_window_manager, 
+                p_graphics_window, 
+                &quantity_of__child_windows);
+    if (index_of__graphics_window_in_ptr_array
+            == MAX_QUANTITY_OF__GRAPHICS_WINDOWS) {
+        debug_abort("GL::GL_compose_world, could not find graphics window in manager pointer array.");
+        return;
+    }
+
+    Graphics_Window **p_ptr_array_of__gfx_windows =
+        &p_graphics_window_manager
+        ->ptr_array_of__sorted_graphic_windows[
+            index_of__graphics_window_in_ptr_array];
 
     Camera *p_camera =
         p_ptr_array_of__gfx_windows[0]
         ->p_camera;
 
+    Texture array_of__sample_textures[quantity_of__child_windows + 1];
+    for (Index__u32 subindex_of__gfx_window 
+            = 0;
+            subindex_of__gfx_window
+            <= quantity_of__child_windows;
+            subindex_of__gfx_window++) {
+        Graphics_Window *p_graphics_window =
+            p_ptr_array_of__gfx_windows[subindex_of__gfx_window];
+        get_texture_by__uuid(
+                get_p_aliased_texture_manager_from__gfx_context(
+                    p_gfx_context), 
+                p_graphics_window
+                ->tile_map__texture__uuid, 
+                &array_of__sample_textures[
+                    subindex_of__gfx_window]);
+    }
+
     Chunk_Vector__3i32 chunk_vector__3i32 =
         vector_3i32F4_to__chunk_vector_3i32(
                 get_position_3i32F4_of__camera(
                     p_camera));
+
     Local_Space *p_local_space__north_west =
         p_local_space_manager
         ->p_local_space__north_west;
@@ -296,13 +343,14 @@ void GL_compose_world(
                 get_p_PLATFORM_gfx_context_from__gfx_context(
                     p_gfx_context));
 
-    for (Index__u32 index_of__gfx_window = 0;
-            index_of__gfx_window
-            < quantity_of__gfx_windows;
-            index_of__gfx_window++) {
+    for (Index__u32 subindex_of__gfx_window 
+            = 0;
+            subindex_of__gfx_window
+            <= quantity_of__child_windows;
+            subindex_of__gfx_window++) {
         Graphics_Window *p_gfx_window =
             p_ptr_array_of__gfx_windows[
-                index_of__gfx_window];
+                subindex_of__gfx_window];
         GL_Framebuffer *p_GL_framebuffer =
             (GL_Framebuffer*)p_gfx_window
             ->p_PLATFORM_gfx_window
@@ -390,7 +438,7 @@ void GL_compose_world(
                         p_local_space__current_sub, 
                         array_of__textures, 
                         array_of__sample_textures, 
-                        quantity_of__gfx_windows, 
+                        quantity_of__child_windows + 1,  // including parent!
                         f_tile_render_kernel);
                 set_chunk_as__visually_committed( // TODO change dog shit name
                         get_p_chunk_from__local_space(
@@ -408,16 +456,18 @@ void GL_compose_world(
                         ->p_global_space
                         ->chunk_vector__3i32);
 
-            for (Index__u16 index_of__gfx_window = 0;
-                    index_of__gfx_window < quantity_of__gfx_windows;
-                    index_of__gfx_window++) {
+            for (Index__u16 subindex_of__gfx_window 
+                    = 0;
+                    subindex_of__gfx_window 
+                    <= quantity_of__child_windows;
+                    subindex_of__gfx_window++) {
                 PLATFORM_use_texture(
                         get_p_PLATFORM_gfx_context_from__gfx_context(p_gfx_context),
-                        array_of__textures[index_of__gfx_window]);
+                        array_of__textures[subindex_of__gfx_window]);
 
                 GL_Framebuffer *p_GL_framebuffer =
                     (GL_Framebuffer*)p_ptr_array_of__gfx_windows[
-                        index_of__gfx_window]
+                        subindex_of__gfx_window]
                     ->p_PLATFORM_gfx_window
                     ->p_SDL_graphics_window__data;
                 GL_push_framebuffer_onto__framebuffer_manager(
@@ -426,7 +476,7 @@ void GL_compose_world(
                 GL_bind_texture_to__framebuffer(
                         p_GL_framebuffer, 
                         p_ptr_array_of__gfx_windows[
-                            index_of__gfx_window]
+                            subindex_of__gfx_window]
                         ->p_PLATFORM_gfx_window
                         ->SDL_graphics_window__texture
                         .p_PLATFORM_texture);
@@ -453,13 +503,13 @@ void GL_compose_world(
                         0,
                         0,
                         p_ptr_array_of__gfx_windows[
-                            index_of__gfx_window]
+                            subindex_of__gfx_window]
                         ->p_PLATFORM_gfx_window
                         ->SDL_graphics_window__texture
                         .p_PLATFORM_texture
                         ->width,
                         p_ptr_array_of__gfx_windows[
-                            index_of__gfx_window]
+                            subindex_of__gfx_window]
                         ->p_PLATFORM_gfx_window
                         ->SDL_graphics_window__texture
                         .p_PLATFORM_texture

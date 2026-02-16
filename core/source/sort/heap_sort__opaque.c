@@ -27,14 +27,16 @@ void heap_sort__opaque(
                     && f_sort_heuristic__void(
                         p_context,
                         &p_byte_array[size_of__type * child], 
-                        &p_byte_array[size_of__type * (child + 1)]) < 0) {
+                        &p_byte_array[size_of__type * (child + 1)]) 
+                    < 0) {
                 child += 1;
             }
 
             if (f_sort_heuristic__void(
                         p_context,
                         &p_byte_array[size_of__type * root], 
-                        &p_byte_array[size_of__type * child]) < 0) {
+                        &p_byte_array[size_of__type * child]) 
+                    < 0) {
                 f_sort_swap__void(
                         p_context,
                         &p_byte_array[size_of__type * root], 

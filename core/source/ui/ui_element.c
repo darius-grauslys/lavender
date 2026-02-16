@@ -463,6 +463,14 @@ void m_ui_element__compose_handler__default(
             index_x__u32,
             index_y__u32);
 
+    PLATFORM_compose_ui_span_in__gfx_window(
+            p_game, 
+            p_graphics_window,
+            width_of__ui_tile_span,
+            height_of__ui_tile_span,
+            index_x__u32,
+            index_y__u32);
+
     if (!does_ui_element_have__child(
                 p_ui_element)) {
         return;

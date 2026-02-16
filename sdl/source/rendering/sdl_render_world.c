@@ -4,16 +4,13 @@
 #include "rendering/gfx_context.h"
 #include "sdl_defines.h"
 #include "world/world.h"
+#include "game.h"
 
 void PLATFORM_compose_world(
-        Gfx_Context *p_gfx_context,
-        Graphics_Window **p_ptr_array_of__gfx_windows,
-        Local_Space_Manager *p_local_space_manager,
-        Texture *array_of__textures,
-        Quantity__u32 quantity_of__gfx_windows,
-        f_Tile_Render_Kernel f_tile_render_kernel) {
+        Game *p_game,
+        Graphics_Window *p_graphics_window) {
     f_SDL_Compose_World f_SDL_compose_world =
-        p_gfx_context
+        get_p_gfx_context_from__game(p_game)
         ->p_PLATFORM_gfx_context
         ->SDL_gfx_sub_context__wrapper
         .f_SDL_compose_world;
@@ -24,10 +21,6 @@ void PLATFORM_compose_world(
     }
 
     f_SDL_compose_world(
-            p_gfx_context,
-            p_ptr_array_of__gfx_windows,
-            p_local_space_manager,
-            array_of__textures,
-            quantity_of__gfx_windows,
-            f_tile_render_kernel);
+            p_game,
+            p_graphics_window);
 }

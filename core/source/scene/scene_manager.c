@@ -2,12 +2,20 @@
 #include "defines.h"
 #include "defines_weak.h"
 #include "platform_defines.h"
+#include "serialization/serialization_header.h"
+#include "types/implemented/scene_kind.h"
 #include <scene/scene.h>
 #include <scene/scene_manager.h>
 
 void initialize_scene_manager(
         Scene_Manager *p_scene_manager) {
+    initialize_serialization_header__contiguous_array(
+            (Serialization_Header *)p_scene_manager->scenes, 
+            Scene_Kind__Unknown, 
+            sizeof(Scene));
+
     p_scene_manager->p_active_scene = 0;
+
     for (Quantity__u8 scene_index=0;
             scene_index
             <Scene_Kind__Unknown;

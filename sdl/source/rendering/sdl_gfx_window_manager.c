@@ -30,6 +30,8 @@ PLATFORM_Graphics_Window *SDL_get_p_PLATFORM_gfx_window_by__index_from__manager(
         ->SDL_gfx_windows[index_of__gfx_window];
 }
 
+PLATFORM_Graphics_Window *_p_PLATFORM_gfx_window__backbuffer = 0;
+
 void SDL_initialize_gfx_window_manager(
         SDL_Gfx_Window_Manager *p_SDL_gfx_window_manager) {
     for (Index__u32 index_of__gfx_window = 0;
@@ -44,6 +46,41 @@ void SDL_initialize_gfx_window_manager(
         SDL_initialize_gfx_window(
                 p_PLATFORM_gfx_window);
     }
+}
+
+Quantity__u32 PLATFORM_get_provided_windows(
+        Gfx_Context *p_gfx_context,
+        PLATFORM_Graphics_Window **ptr_array_of__PLATFORM_graphics_windows,
+        Texture_Flags *array_of__texture_flags,
+        Quantity__u32 quantity_of__ptrs_in_buffer__u32,
+        Index__u32 index_of__offset__u32)  {
+    if (!quantity_of__ptrs_in_buffer__u32)
+        return 1;
+
+    memset(ptr_array_of__PLATFORM_graphics_windows,
+            0, 
+            sizeof(PLATFORM_Graphics_Window*)
+            * quantity_of__ptrs_in_buffer__u32);
+
+    Texture_Flags texture_flags =
+        TEXTURE_FLAGS(
+            TEXTURE_FLAG__SIZE_256x256,
+            0,
+            TEXTURE_FLAG__FORMAT__RGBA8888
+            );
+
+    if (!_p_PLATFORM_gfx_window__backbuffer) {
+        _p_PLATFORM_gfx_window__backbuffer =
+            PLATFORM_allocate_gfx_window(
+                    p_gfx_context, 
+                    texture_flags);
+    }
+
+    ptr_array_of__PLATFORM_graphics_windows[0] =
+        _p_PLATFORM_gfx_window__backbuffer;
+    array_of__texture_flags[0] = texture_flags;
+
+    return 0;
 }
 
 PLATFORM_Graphics_Window *PLATFORM_allocate_gfx_window(
@@ -123,9 +160,13 @@ void SDL_release_PLATFORM_gfx_window_from__manager(
         return;
     }
 #endif
-
     SDL_initialize_gfx_window(
             p_PLATFORM_gfx_window);
+    if (p_PLATFORM_gfx_window
+            == _p_PLATFORM_gfx_window__backbuffer) {
+        p_PLATFORM_gfx_window
+            ->is_allocated = true;
+    }
 }
 
 // TODO: move alloc/release into a manager, and take

@@ -108,6 +108,9 @@ bool _SDL_link_opengl_3_0(
         ->f_SDL_compose_gfx_window =
         GL_compose_gfx_window;
     p_SDL_gfx_sub_context__wrapper
+        ->f_SDL_compose_ui_span_in__gfx_window =
+        GL_compose_ui_span_in__gfx_window;
+    p_SDL_gfx_sub_context__wrapper
         ->f_SDL_render_gfx_window =
         GL_render_gfx_window;
 

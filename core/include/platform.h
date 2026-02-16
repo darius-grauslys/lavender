@@ -202,20 +202,67 @@ void PLATFORM_release_gfx_window(
         Gfx_Context *p_gfx_context,
         Graphics_Window *p_graphics_window);
 
+///
+/// Fills the buffer with provided PLATFORM_Graphics_Windows
+/// and returns a non-zero number if any windows were omitted
+/// from the buffer due to overflow.
+///
+/// The offset index is used to get the overflowed windows in
+/// a sequential call.
+///
+/// for buffer size 8
+/// call 1 -> index:0, returns 5 (8/13 windows acquired)
+/// call 2 -> index:8, returns 0 (last 5 acquired)
+///
+Quantity__u32 PLATFORM_get_provided_windows(
+        Gfx_Context *p_gfx_context,
+        PLATFORM_Graphics_Window **ptr_array_of__PLATFORM_graphics_windows,
+        Texture_Flags *array_of__texture_flags,
+        Quantity__u32 quantity_of__ptrs_in_buffer__u32,
+        Index__u32 index_of__offset__u32);
+
+///
+/// This renders the window buffer (or equivalent there of) via tiles.
+/// TODO: add a LAVENDER_FEATURE__GFX_WINDOW__COMPOSE platform flag to see if
+/// TODO: the feature is supported/enabled.
+///
 void PLATFORM_compose_gfx_window(
-        Gfx_Context *p_gfx_context, 
+        Game *p_game,
         Graphics_Window *p_gfx_window);
 
+///
+/// TODO: header 
+///
+void PLATFORM_compose_ui_span_in__gfx_window(
+        Game *p_game,
+        Graphics_Window *p_gfx_window,
+        Quantity__u32 width_of__ui_tile_span,
+        Quantity__u32 height_of__ui_tile_span,
+        Index__u32 index_x__u32,
+        Index__u32 index_y__u32);
+
+///
+/// This renders the window buffer (or equivalent there of) via tiles and local player world data.
+/// LAVENDER_FEATURE__GFX_WINDOW__COMPOSE_WORLD
+///
 void PLATFORM_compose_world(
-        Gfx_Context *p_gfx_context,
-        Graphics_Window **p_ptr_array_of__gfx_windows,
-        Local_Space_Manager *p_local_space_manager,
-        Texture *ptr_array_of__textures,
-        Quantity__u32 quantity_of__gfx_windows,
-        f_Tile_Render_Kernel f_tile_render_kernel);
+        Game *p_game,
+        Graphics_Window *p_gfx_window);
+
+///
+/// This renders the window buffer (or equivalent there of) via 3D projection.
+/// TODO: add a LAVENDER_FEATURE__GFX_WINDOW__PROJECTION
+///
+void PLATFORM_project_gfx_window(
+        Game *p_game,
+        Graphics_Window *p_gfx_window);
+
+void PLATFORM_project_world(
+        Game *p_game,
+        Graphics_Window *p_gfx_window);
 
 void PLATFORM_render_gfx_window(
-        Gfx_Context *p_gfx_context,
+        Game *p_game,
         Graphics_Window *p_gfx_window);
 
 ///

@@ -85,8 +85,7 @@ void initialize_world(
 }
 
 void manage_world(
-        Game *p_game,
-        Graphics_Window *p_gfx_window) {
+        Game *p_game) {
     World *p_world = 
         get_p_world_from__game(p_game);
 
@@ -123,21 +122,6 @@ void manage_world(
 
         if (!p_hitbox_aabb) {
             continue;
-        }
-
-        // TODO: this is being invoked twice a frame
-        // now... we need to do better.
-        //
-        // Being properly invoked in graphics_window_manager.c
-        //
-        // but we need to hackily invoke here now too
-        if (p_gfx_window && p_gfx_window->p_camera) {
-            if (p_gfx_window->p_camera->m_camera_handler) {
-                p_gfx_window->p_camera->m_camera_handler(
-                        p_gfx_window->p_camera,
-                        p_game,
-                        p_gfx_window);
-            }
         }
 
         poll_local_space_for__scrolling(

@@ -8,9 +8,8 @@ void initialize_world(
         Game *p_game,
         World *p_world);
 
-void manage_world(
-        Game *p_game,
-        Graphics_Window *p_gfx_window);
+void manage_world(Game *p_game);
+
 void manage_world__entities(Game *p_game);
 
 Entity *allocate_entity_into__world(
@@ -136,6 +135,19 @@ void set_spawn_point_of__world(
 static inline
 Vector__3i32F4 get_spawn_point_of__world(World *p_world) {
     return p_world->spawn_point;
+}
+
+static inline
+void set_f_tile_render_kernel_of__world(
+        World *p_world,
+        f_Tile_Render_Kernel f_tile_render_kernel) {
+    p_world->f_tile_render_kernel =
+        f_tile_render_kernel;
+}
+
+static inline
+f_Tile_Render_Kernel get_f_tile_render_kernel_of__world(World *p_world) {
+    return p_world->f_tile_render_kernel;
 }
 
 #endif

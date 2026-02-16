@@ -116,10 +116,17 @@ typedef void (*f_SDL_Release_Gfx_Window)(
         PLATFORM_Graphics_Window *p_PLATFORM_graphics_window);
 
 typedef void (*f_SDL_Compose_Gfx_Window)(
-        Gfx_Context *p_gfx_context,
+        Game *p_game,
         Graphics_Window *p_gfx_window);
+typedef void (*f_SDL_Compose_UI_Span_In__Gfx_Window)(
+        Game *p_game,
+        Graphics_Window *p_gfx_window,
+        Quantity__u32 width_of__ui_tile_span,
+        Quantity__u32 height_of__ui_tile_span,
+        Index__u32 index_x__u32,
+        Index__u32 index_y__u32);
 typedef void (*f_SDL_Render_Gfx_Window)(
-        Gfx_Context *p_gfx_context,
+        Game *p_game,
         Graphics_Window *p_gfx_window);
 
 typedef PLATFORM_Texture *(*f_SDL_Allocate_Texture)(
@@ -175,12 +182,8 @@ typedef void (*f_SDL_Render_Entity)(
 
 
 typedef void (*f_SDL_Compose_World)(
-        Gfx_Context *p_gfx_context,
-        Graphics_Window **p_ptr_array_of__gfx_windows,
-        Local_Space_Manager *p_local_space_manager,
-        Texture *array_of__textures,
-        Quantity__u32 quantity_of__gfx_windows,
-        f_Tile_Render_Kernel f_tile_render_kernel);
+        Game *p_game,
+        Graphics_Window *p_graphics_window);
 
 
 
@@ -237,10 +240,11 @@ typedef struct SDL_Gfx_Sub_Context__Wrapper_t {
     f_SDL_Initialize_Rendering__Worldspace
                                         f_SDL_initialize_rendering__worldspace;
 
-    f_SDL_Allocate_Gfx_Window           f_SDL_allocate_gfx_window;
-    f_SDL_Release_Gfx_Window            f_SDL_release_gfx_window;
-    f_SDL_Compose_Gfx_Window            f_SDL_compose_gfx_window;
-    f_SDL_Render_Gfx_Window             f_SDL_render_gfx_window;
+    f_SDL_Allocate_Gfx_Window            f_SDL_allocate_gfx_window;
+    f_SDL_Release_Gfx_Window             f_SDL_release_gfx_window;
+    f_SDL_Compose_Gfx_Window             f_SDL_compose_gfx_window;
+    f_SDL_Compose_UI_Span_In__Gfx_Window f_SDL_compose_ui_span_in__gfx_window;
+    f_SDL_Render_Gfx_Window              f_SDL_render_gfx_window;
 
     f_SDL_Clear_Screen                  f_SDL_clear_screen;
 

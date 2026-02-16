@@ -69,7 +69,7 @@ void GL_allocate_gfx_window(
 }
 
 void GL_compose_gfx_window(
-        Gfx_Context *p_gfx_context,
+        Game *p_game,
         Graphics_Window *p_gfx_window) {
 
     if (!is_graphics_window__enabled(p_gfx_window))
@@ -88,7 +88,7 @@ void GL_compose_gfx_window(
     }
 
     PLATFORM_Gfx_Context *p_PLATFORM_gfx_context =
-        get_p_PLATFORM_gfx_context_from__gfx_context(p_gfx_context);
+        get_p_PLATFORM_gfx_context_from__game(p_game);
      
     GL_Viewport_Stack *p_GL_viewport_stack =
         GL_get_p_viewport_stack_from__PLATFORM_gfx_context(
@@ -117,7 +117,7 @@ void GL_compose_gfx_window(
     Texture texture__ui_tilesheet;
     if (get_texture_by__uuid(
                 get_p_aliased_texture_manager_from__gfx_context(
-                    p_gfx_context), 
+                    get_p_gfx_context_from__game(p_game)), 
                 get_uuid_of__ui_tile_map__texture_from__gfx_window(
                     p_gfx_window),
                     &texture__ui_tilesheet)) {
@@ -204,6 +204,154 @@ void GL_compose_gfx_window(
                     UI_TILE__WIDTH_AND__HEIGHT_IN__PIXELS, 
                     UI_TILE__WIDTH_AND__HEIGHT_IN__PIXELS);
 
+            glDisable(GL_DEPTH_TEST);
+            GL_render_with__shader__passthrough_using__index_sampling(
+                    p_GL_shader__passthrough, 
+                    ui_tile_raw % 32, 
+                    (int)(ui_tile_raw / 32), 
+                    width_of__uv, 
+                    height_of__uv,
+                    false,
+                    false);
+            glEnable(GL_DEPTH_TEST);
+
+            GL_pop_viewport(p_GL_viewport_stack);
+        }
+    }
+
+    GL_pop_framebuffer_off_of__framebuffer_manager(
+            p_GL_framebuffer_manager);
+}
+
+void GL_compose_ui_span_in__gfx_window(
+        Game *p_game,
+        Graphics_Window *p_gfx_window,
+        Quantity__u32 width_of__ui_tile_span,
+        Quantity__u32 height_of__ui_tile_span,
+        Index__u32 index_x__u32,
+        Index__u32 index_y__u32) {
+
+    if (!is_graphics_window__enabled(p_gfx_window))
+        return;
+
+    GL_Framebuffer *p_GL_framebuffer =
+        (GL_Framebuffer*)p_gfx_window
+        ->p_PLATFORM_gfx_window
+        ->p_SDL_graphics_window__data;
+
+    if (!p_GL_framebuffer) {
+        debug_error("SDL::GL::GL_compose_gfx_window, missing framebuffer.");
+        set_graphics_window_as__disabled(p_gfx_window);
+        debug_warning("p_gfx_window disabled.");
+        return;
+    }
+
+    PLATFORM_Gfx_Context *p_PLATFORM_gfx_context =
+        get_p_PLATFORM_gfx_context_from__game(p_game);
+     
+    GL_Viewport_Stack *p_GL_viewport_stack =
+        GL_get_p_viewport_stack_from__PLATFORM_gfx_context(
+                p_PLATFORM_gfx_context);
+
+    GL_Shader_2D *p_GL_shader__passthrough=
+        GL_get_shader_from__shader_manager(
+                GL_get_p_shader_manager_from__PLATFORM_gfx_context(
+                    p_PLATFORM_gfx_context), 
+                shader_string__passthrough);
+
+    if (!p_GL_shader__passthrough) {
+        debug_error("SDL::GL::GL_compose_gfx_window, p_GL_shader__passthrough == 0.");
+        set_graphics_window_as__disabled(p_gfx_window);
+        debug_warning("p_gfx_window disabled.");
+        return;
+    }
+
+    UI_Tile_Map__Wrapper ui_tile_map__wrapper =
+        p_gfx_window->ui_tile_map__wrapper;
+
+    GL_Framebuffer_Manager *p_GL_framebuffer_manager =
+        GL_get_p_framebuffer_manager_from__PLATFORM_gfx_context(
+                p_PLATFORM_gfx_context);
+
+    Texture texture__ui_tilesheet;
+    if (get_texture_by__uuid(
+                get_p_aliased_texture_manager_from__gfx_context(
+                    get_p_gfx_context_from__game(p_game)), 
+                get_uuid_of__ui_tile_map__texture_from__gfx_window(
+                    p_gfx_window),
+                    &texture__ui_tilesheet)) {
+        debug_error("SDL::GL::GL_compose_gfx_window, p_PLATFORM_texture__ui_tilesheet == 0.");
+        set_graphics_window_as__disabled(p_gfx_window);
+        debug_warning("p_gfx_window disabled.");
+        return;
+    }
+
+    GL_push_framebuffer_onto__framebuffer_manager(
+            p_GL_framebuffer_manager,
+            p_GL_framebuffer);
+    GL_bind_texture_to__framebuffer(
+            p_GL_framebuffer, 
+            p_gfx_window
+            ->p_PLATFORM_gfx_window
+            ->SDL_graphics_window__texture
+            .p_PLATFORM_texture);
+
+    GL_Vertex_Object *p_GL_vertex_object =
+        &GL_get_p_gfx_sub_context_from__PLATFORM_gfx_context(
+                p_PLATFORM_gfx_context)
+        ->GL_vertex_object__unit_square;
+
+    use_shader_2d(
+            p_GL_shader__passthrough);
+
+    float width__f = 
+        (float)(texture__ui_tilesheet
+                .p_PLATFORM_texture
+        ->width
+        >> UI_TILE__WIDTH_AND__HEIGHT__BIT_SHIFT);
+        ;
+    float height__f = 
+        (float)(texture__ui_tilesheet
+                .p_PLATFORM_texture
+        ->height
+        >> UI_TILE__WIDTH_AND__HEIGHT__BIT_SHIFT);
+        ;
+
+    float width_of__uv  = 1.0 / (width__f);
+    float height_of__uv = 1.0 / (height__f);
+
+    use_vertex_object(p_GL_vertex_object);
+
+    PLATFORM_use_texture(
+            p_PLATFORM_gfx_context, 
+            texture__ui_tilesheet);
+
+    for (Index__u8 index_of__y_tile = index_y__u32;
+            index_of__y_tile 
+            < index_y__u32 + height_of__ui_tile_span;
+            index_of__y_tile++) {
+        for (Index__u8 index_of__x_tile = index_x__u32;
+                index_of__x_tile 
+                < index_x__u32 + width_of__ui_tile_span;
+                index_of__x_tile++) {
+            UI_Tile_Raw ui_tile_raw =
+                ui_tile_map__wrapper
+                .p_ui_tile_data[
+                index_of__x_tile
+                    + (ui_tile_map__wrapper.width_of__ui_tile_map 
+                            - 1 - index_of__y_tile) 
+                    * ui_tile_map__wrapper.width_of__ui_tile_map];
+            if (!ui_tile_raw)
+                continue;
+            ui_tile_raw--;
+
+            GL_push_viewport(
+                    p_GL_viewport_stack, 
+                    index_of__x_tile * UI_TILE__WIDTH_AND__HEIGHT_IN__PIXELS, 
+                    index_of__y_tile * UI_TILE__WIDTH_AND__HEIGHT_IN__PIXELS, 
+                    UI_TILE__WIDTH_AND__HEIGHT_IN__PIXELS, 
+                    UI_TILE__WIDTH_AND__HEIGHT_IN__PIXELS);
+
             GL_render_with__shader__passthrough_using__index_sampling(
                     p_GL_shader__passthrough, 
                     ui_tile_raw % 32, 
@@ -222,12 +370,13 @@ void GL_compose_gfx_window(
 }
 
 void GL_render_gfx_window(
-        Gfx_Context *p_gfx_context,
+        Game *p_game,
         Graphics_Window *p_gfx_window) {
 
     if (!is_graphics_window__enabled(p_gfx_window))
         return;
 
+    Gfx_Context *p_gfx_context = get_p_gfx_context_from__game(p_game);
     PLATFORM_Gfx_Context *p_PLATFORM_gfx_context =
         get_p_PLATFORM_gfx_context_from__gfx_context(p_gfx_context);
 

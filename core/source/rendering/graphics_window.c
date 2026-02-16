@@ -3,6 +3,7 @@
 #include "defines.h"
 #include "defines_weak.h"
 #include "game.h"
+#include "platform.h"
 #include "rendering/gfx_context.h"
 #include "rendering/graphics_window_manager.h"
 #include "rendering/sprite_context.h"
@@ -19,6 +20,11 @@ void initialize_graphics_window(
     memset((u8*)p_graphics_window + sizeof(Serialization_Header),
             0,
             sizeof(Graphics_Window) - sizeof(Serialization_Header));
+    p_graphics_window->f_PLATFORM_compose_gfx_window =
+        f_graphics_window__default_compose;
+    p_graphics_window->f_PLATFORM_render_gfx_window =
+        f_graphics_window__default_render;
+    p_graphics_window->tile_map__texture__uuid = IDENTIFIER__UNKNOWN__u32;
     p_graphics_window->graphics_window__parent__uuid = IDENTIFIER__UNKNOWN__u32;
 }
 
@@ -87,7 +93,7 @@ UI_Manager *allocate_ui_manager_for__graphics_window(
             max_quantity_of__ui_elements);
 }
 
-void allocate_sprite_pool_for__graphics_window(
+void allocate_sprite_manager_for__graphics_window(
         Gfx_Context *p_gfx_context,
         Graphics_Window *p_graphics_window,
         Quantity__u32 max_quantity_of__sprites_in__sprite_manager) {
@@ -259,4 +265,60 @@ Sprite *allocate_p_sprite_from__graphics_window(
             uuid__u32, 
             texture_to__sample_by__sprite, 
             texture_flags_for__sprite);
+}
+
+void f_graphics_window__default_compose(
+        Game *p_game,
+        Graphics_Window *p_gfx_window) {
+    set_graphics_window_as__no_longer_needing__composition(p_gfx_window);
+    UI_Manager *p_ui_manager = get_p_ui_manager_from__graphics_window(
+            p_game, 
+            p_gfx_window);
+    // Compose the background then let UI elements overlay.
+    PLATFORM_compose_gfx_window(
+            p_game, 
+            p_gfx_window);
+    if (p_ui_manager) {
+        compose_all_ui_elements_in__ui_manager(
+                p_ui_manager, 
+                p_game, 
+                p_gfx_window);
+    }
+}
+
+void f_graphics_window__default_render(
+        Game *p_game,
+        Graphics_Window *p_gfx_window) {
+    if (is_graphics_window_in_need_of__composition(
+                p_gfx_window)) {
+        p_gfx_window->f_PLATFORM_compose_gfx_window(
+                p_game,
+                p_gfx_window);
+    }
+
+    Sprite_Manager *p_sprite_manager =
+        get_p_sprite_manager_from__graphics_window(
+                p_game,
+                p_gfx_window);
+
+    if (p_gfx_window->p_camera
+            && p_gfx_window->p_camera->m_camera_handler) {
+        p_gfx_window->p_camera->m_camera_handler(
+                p_gfx_window->p_camera,
+                p_game,
+                p_gfx_window);
+    }
+
+    if (p_sprite_manager) {
+        render_sprites_in__sprite_manager(
+                p_game,
+                get_p_sprite_context_from__gfx_context(
+                    get_p_gfx_context_from__game(p_game)),
+                p_sprite_manager, 
+                p_gfx_window);
+    }
+
+    PLATFORM_render_gfx_window(
+            p_game, 
+            p_gfx_window);
 }

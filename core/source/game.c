@@ -17,6 +17,7 @@
 #include "process/process_manager.h"
 #include "rendering/aliased_texture_manager.h"
 #include "rendering/gfx_context.h"
+#include "rendering/graphics_window_manager.h"
 #include "rendering/sprite_manager.h"
 #include "scene/implemented/scene_registrar.h"
 #include "scene/scene.h"
@@ -139,6 +140,12 @@ void initialize_game(
             m_process__serialize_client__default);
 
     PLATFORM_initialize_game(p_game);
+    
+    // Note, it is fine if PLATFORM_initialize_game calls this
+    // for whatever reason - it can be called many times without
+    // wasting resources.
+    setup_platform_provided_graphics_windows(
+            get_p_gfx_context_from__game(p_game));
 }
 
 bool allocate_client_pool_for__game(

@@ -314,6 +314,16 @@ typedef struct Font_Letter_t Font_Letter;
 typedef struct Font_t Font;
 typedef struct Typer_t Typer;
 
+typedef u16 Graphics_Window__Usage_Hint_Flags__u16;
+
+#define GRAPHICS_WINDOW__USAGE_HINT_FLAGS__NONE 0
+#define GRAPHICS_WINDOW__USAGE_HINT_FLAG__WORLD BIT(0)
+#define GRAPHICS_WINDOW__USAGE_HINT_FLAG__UI BIT(1)
+// If this flag is set the provided graphics window CANNOT be released.
+// Doing so will cause instability.
+#define GRAPHICS_WINDOW__USAGE_HINT_FLAG__FIXED BIT(2)
+
+
 ///
 /// This is an abstraction for a "sub-context" for graphics.
 ///

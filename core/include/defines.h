@@ -428,8 +428,8 @@ typedef uint32_t Texture_Flags;
 ///
 /// TEXTURE_FLAGS:
 /// Bit orderings, from most significant to least:
-/// [32 <-> 14 bits,    PLATFORM specific flags]
-/// [13th bit,          is hidden]
+/// [32 <-> 20 bits,    PLATFORM specific flags]
+/// [20-13 bits,        CORE flags]
 /// [12-10 bits,        format]
 /// [9-7 bits,          render method] 
 /// [6-4 bits,          width] 
@@ -583,7 +583,17 @@ typedef uint32_t Texture_Flags;
 #define TEXTURE_FLAG__IS_READONLY \
     BIT(TEXTURE_FLAG__BIT_SHIFT__CORE_FLAGS + 1)
 #define TEXTURE_FLAG__CORE_RESERVED_0 \
-    BIT(TEXTURE_FLAG__BIT_SHIFT__CORE_FLAGS + 2)
+    BIT(TEXTURE_FLAG__BIT_SHIFT__CORE_FLAGS + 3)
+#define TEXTURE_FLAG__CORE_RESERVED_1 \
+    BIT(TEXTURE_FLAG__BIT_SHIFT__CORE_FLAGS + 3)
+#define TEXTURE_FLAG__CORE_RESERVED_2 \
+    BIT(TEXTURE_FLAG__BIT_SHIFT__CORE_FLAGS + 4)
+#define TEXTURE_FLAG__CORE_RESERVED_3 \
+    BIT(TEXTURE_FLAG__BIT_SHIFT__CORE_FLAGS + 5)
+#define TEXTURE_FLAG__CORE_RESERVED_4 \
+    BIT(TEXTURE_FLAG__BIT_SHIFT__CORE_FLAGS + 6)
+#define TEXTURE_FLAG__CORE_RESERVED_5 \
+    BIT(TEXTURE_FLAG__BIT_SHIFT__CORE_FLAGS + 7)
 
 #define TEXTURE_FLAG__BIT_SHIFT__GENERAL_FLAGS \
     (TEXTURE_FLAG__BIT_SHIFT__CORE_FLAGS \
@@ -1205,12 +1215,12 @@ typedef void (*m_Enter_Scene) (Scene *p_this_scene, Game* p_game);
 typedef void (*m_Unload_Scene)(Scene *p_this_scene, Game* p_game);
 
 typedef struct Scene_t {
+    Serialization_Header _serialization_header;
     Scene *p_parent_scene;
     m_Load_Scene m_load_scene_handler;
     m_Enter_Scene m_enter_scene_handler;
     m_Unload_Scene m_unload_scene_handler;
     void *p_scene_data;
-    Identifier__u16 scene__identifier_u16;
     bool is_active;
 } Scene;
 
@@ -2321,6 +2331,8 @@ typedef struct World_t {
     Item_Manager        item_manager;
 
     Camera camera;
+    f_Tile_Render_Kernel f_tile_render_kernel;
+
     World_Name_String name;
     Vector__3i32F4 spawn_point;
 
@@ -2346,6 +2358,10 @@ typedef uint8_t Graphics_Window_Flags__u8;
 
 #define GRAPHICS_WINDOW__FLAGS__NONE 0
 
+typedef void (*f_PLATFORM_render_gfx_window)(
+        Game *p_game,
+        Graphics_Window *p_gfx_window);
+
 typedef struct Graphics_Window_t {
     Serialization_Header _serialization_header;
     UI_Tile_Map__Wrapper ui_tile_map__wrapper;
@@ -2355,10 +2371,15 @@ typedef struct Graphics_Window_t {
     Vector__3i32 position_of__gfx_window__maximum;
     Quantity__u32 width_of__graphics_window__u32;
     Quantity__u32 height_of__graphics_window__u32;
+    f_PLATFORM_render_gfx_window f_PLATFORM_compose_gfx_window;
+    f_PLATFORM_render_gfx_window f_PLATFORM_render_gfx_window;
     Camera *p_camera;
     PLATFORM_Graphics_Window *p_PLATFORM_gfx_window;
     Identifier__u32 graphics_window__parent__uuid;
-    Identifier__u32 ui_tile_map__texture__uuid;
+    union {
+        Identifier__u32 ui_tile_map__texture__uuid;
+        Identifier__u32 tile_map__texture__uuid;
+    };
     Graphics_Window_Kind the_kind_of__window;
     Index__u8 priority_of__window;
     Graphics_Window_Flags__u8 graphics_window__flags;

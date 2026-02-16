@@ -23,5 +23,5 @@ export PLATFORM_LIBS	+= -lGL -lGLEW -lSDL2 -lcglm
 endif
 
 export AS := as
-export CC := clang
+export CC := clang-21
 export LD := $(CC)

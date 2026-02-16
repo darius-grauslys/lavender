@@ -35,7 +35,7 @@ UI_Manager *allocate_ui_manager_for__graphics_window(
         Graphics_Window *p_graphics_window,
         Quantity__u16 max_quantity_of__ui_elements);
 
-void allocate_sprite_pool_for__graphics_window(
+void allocate_sprite_manager_for__graphics_window(
         Gfx_Context *p_gfx_context,
         Graphics_Window *p_graphics_window,
         Quantity__u32 max_quantity_of__sprites_in__sprite_pool);
@@ -57,6 +57,14 @@ Sprite *allocate_p_sprite_from__graphics_window(
         Identifier__u32 uuid__u32, 
         Texture texture_to__sample_by__sprite,
         Texture_Flags texture_flags_for__sprite);
+
+void f_graphics_window__default_compose(
+        Game *p_game,
+        Graphics_Window *p_gfx_window);
+
+void f_graphics_window__default_render(
+        Game *p_game,
+        Graphics_Window *p_gfx_window);
 
 static inline
 bool is_graphics_window__allocating_a_sprite_pool(
@@ -400,6 +408,32 @@ void set_graphics_window_as__NOT_rendering_world(
     p_gfx_window->graphics_window__flags &=
         ~GRAPHICS_WINDOW__FLAG__IS_RENDERING_WORLD
         ;
+}
+
+static inline
+void set_graphics_window__tile_map__texture(
+        Graphics_Window *p_gfx_window,
+        Identifier__u32 uuid__u32) {
+#ifndef NDEBUG
+    if (!p_gfx_window) {
+        debug_error("set_graphics_window__tile_map__texture, p_gfx_window == 0.");
+        return;
+    }
+#endif
+    p_gfx_window->tile_map__texture__uuid =
+        uuid__u32;
+}
+
+static inline
+Identifier__u32 get_uuid_of__tile_map__texture_from__gfx_window(
+        Graphics_Window *p_gfx_window) {
+#ifndef NDEBUG
+    if (!p_gfx_window) {
+        debug_error("get_uuid_of__tile_map__texture_from__gfx_window, p_gfx_window == 0.");
+        return IDENTIFIER__UNKNOWN__u32;
+    }
+#endif
+    return p_gfx_window->tile_map__texture__uuid;
 }
 
 static inline
