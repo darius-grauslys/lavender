@@ -20,6 +20,16 @@ void set_graphics_window_as__parent_to__this_graphics_window(
         Graphics_Window *p_graphics_window__parent,
         Graphics_Window *p_graphics_window__child);
 
+void reset_platform_provided_graphics_windows(
+        Game *p_game,
+        bool is_releasing_unprovided_children);
+
+void reset_children_of__graphics_window_from__graphics_window_manager(
+        Game *p_game,
+        Graphics_Window_Manager *p_graphics_window_manager,
+        Graphics_Window *p_graphics_window,
+        bool is_releasing_unprovided_children);
+
 void release_graphics_window_from__graphics_window_manager(
         Game *p_game,
         Graphics_Window *p_graphics_window);
@@ -85,6 +95,9 @@ Graphics_Window *get_graphics_window__p_root_parent(
         Graphics_Window_Manager *p_graphics_window_manager,
         Graphics_Window *p_graphics_window,
         Quantity__u32 *p_OUT_depth_to_search);
+
+void sort_graphic_windows_in__graphic_window_manager(
+        Graphics_Window_Manager *p_graphics_window_manager);
 
 static inline
 bool is_graphics_window_a__parent(

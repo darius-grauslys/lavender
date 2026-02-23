@@ -3,6 +3,7 @@
 #include "defines_weak.h"
 #include "game.h"
 #include "input/input.h"
+#include "rendering/graphics_window.h"
 #include "ui/ui_element.h"
 #include "ui/ui_text.h"
 
@@ -178,6 +179,8 @@ void m_ui_element__typed_handler__text_box(
         return;
     }
     append_symbol_into__ui_text_box(
+            get_p_ui_manager_from__graphics_window(
+                p_game, p_graphics_window),
             p_this_ui_text_box, 
             symbol);    
 }
@@ -196,6 +199,8 @@ void m_ui_element__typed_handler__text_box__numeric(
     if (symbol < '0' || symbol > '9')
         return;
     append_symbol_into__ui_text_box(
+            get_p_ui_manager_from__graphics_window(
+                p_game, p_graphics_window),
             p_this_ui_text_box, 
             symbol);    
 }
@@ -217,6 +222,8 @@ void m_ui_element__typed_handler__text_box__alphanumeric(
         return;
     }
     append_symbol_into__ui_text_box(
+            get_p_ui_manager_from__graphics_window(
+                p_game, p_graphics_window),
             p_this_ui_text_box, 
             symbol);    
 }

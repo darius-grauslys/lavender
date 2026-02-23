@@ -778,6 +778,10 @@ def button(signature, xml_element, context_stack):
 def window_element(signature, xml_element, context_stack):
     rectangle_spec = RectangleSpec(xml_element, context_stack)
 
+    offset_window__x = get_int_from_xml_or__use_this(xml_element, "offset_window__x", 0)
+    offset_window__y = get_int_from_xml_or__use_this(xml_element, "offset_window__y", 0)
+    offset_window__z = get_int_from_xml_or__use_this(xml_element, "offset_window__z", 0)
+
     args = []
     args.append(context_stack[-1].p_ui_element)
     args.append("p_game")
@@ -787,7 +791,12 @@ def window_element(signature, xml_element, context_stack):
                 "window_kind", \
                 "Graphics_Window_Kind__Unknown"))
     args.append("GET_UUID_P(p_gfx_window)")
-    
+    args.append(f"get_vector__3i32({offset_window__x},{offset_window__y},{offset_window__z})")
+
+    layer = get_int_from_xml_or__use_this(xml_element, "layer", None)
+    if layer is not None:
+        config.backgrounds[layer].x = rectangle_spec.x - offset_window__x
+        config.backgrounds[layer].y = offset_window__y - rectangle_spec.y
 
     generate_source_c__signature(\
             signature,\
@@ -942,6 +951,15 @@ def construct_ui_from__xml_element(xml_element, context_stack):
     matched_signature[0].callback(matched_signature[0], xml_element, context_stack)
     context_stack[-1].index_of__element += 1
 
+def allocate_ui_tile_map(xml_graphics_window):
+    args = []
+    args.append(name_of__ui_element)
+    args.append(\
+            get_str_from_xml_or__use_this(\
+                xml_element, \
+                "m_Dragged_Handler", \
+                "m_ui_draggable__dragged_handler__default"))
+
 def generate_source__ui(xml_node__ui):
     global current_element_id
     print("GEN: " + config.associated_header_sub_dir_in__include_folder + "\\" + config.source_name)
@@ -994,6 +1012,44 @@ def generate_source__ui(xml_node__ui):
     generate_source_c__with_literal("0")
     generate_source_c__new_line()
     current_element_id = get_int_from_xml_or__use_this(xml_node__ui, "offset_of__ui_index", 0)
+    ui_tile_map_size = get_str_from_xml_or__use_this(xml_node__ui, "ui_tile_map__size", "UI_Tile_Map_Size__None")
+    is_ui_tile_map_size__provided = ui_tile_map_size != "UI_Tile_Map_Size__None"
+    if is_ui_tile_map_size__provided:
+        generate_source_c__with_literal("p_gfx_window->ui_tile_map__wrapper = allocate_ui_tile_map_with__ui_tile_map_manager")
+        generate_source_c__arguments(["get_p_ui_tile_map_manager_from__gfx_context(p_gfx_context)", ui_tile_map_size])
+        generate_source_c__new_line()
+    ui_tile_map__aliased_texture = get_str_from_xml_or__use_this(xml_node__ui, "ui_tile_map__aliased_texture", "UI_Tile_Map__Aliased_Texture")
+    if ui_tile_map__aliased_texture != "UI_Tile_Map__Aliased_Texture":
+        if is_ui_tile_map_size__provided:
+            generate_source_c__with_literal("Identifier__u32 uuid_of__aliased_texture = get_uuid_of__aliased_texture")
+            generate_source_c__arguments([
+                "get_p_aliased_texture_manager_from__game(p_game)", 
+                '"{}"'.format(ui_tile_map__aliased_texture)])
+            generate_source_c__new_line()
+            generate_source_c__with_literal("set_graphics_window__ui_tile_map__texture")
+            generate_source_c__arguments(["p_gfx_window", "uuid_of__aliased_texture"])
+            generate_source_c__new_line()
+        else:
+            print('MISSING UI_TILE_MAP_SIZE - ui_tile_map__aliased_texture')
+    ui_tile_map = get_str_from_xml_or__use_this(xml_node__ui, "ui_tile_map", "None")
+    ui_tile_map__length = get_str_from_xml_or__use_this(xml_node__ui, "ui_tile_map__length", "0")
+    ui_tile_map__offset = get_str_from_xml_or__use_this(xml_node__ui, "ui_tile_map__offset", "0")
+    if ui_tile_map != "None":
+        if is_ui_tile_map_size__provided:
+            generate_source_c__with_literal("copy_into_ui_tile_map")
+            generate_source_c__arguments([
+                "get_p_ui_tile_map_from__graphics_window(p_gfx_window)", 
+                ui_tile_map,
+                ui_tile_map__offset,
+                ui_tile_map__length])
+            generate_source_c__new_line()
+        else:
+            print('MISSING UI_TILE_MAP_SIZE - ui_tile_map')
+    ui_position = get_str_from_xml_or__use_this(xml_node__ui, "ui_position", None)
+    if ui_position is not None:
+        generate_source_c__with_literal("set_position_3i32_of__graphics_window")
+        generate_source_c__arguments(["p_game", "p_gfx_window", "get_vector__3i32({})".format(ui_position)])
+        generate_source_c__new_line()
     for element in xml_node__ui:
         construct_ui_from__xml_element(element, context_stack)
     generate_source_c__with_literal("return true;\n")

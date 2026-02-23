@@ -118,12 +118,14 @@ void set_parent_of__ui_element(
 
 void update_ui_element_origin__relative_to__recursively(
         Game *p_game,
+        UI_Manager *p_ui_manager,
         UI_Element *p_ui_element,
         Vector__3i32 position__old__3i32,
         Vector__3i32 position__new__3i32);
 
 void update_ui_element_origin__relative_to(
         Game *p_game,
+        UI_Manager *p_ui_manager,
         UI_Element *p_ui_element,
         Vector__3i32 position__old__3i32,
         Vector__3i32 position__new__3i32);
@@ -312,11 +314,6 @@ bool is_ui_element__focused(UI_Element *p_ui_element) {
 static inline
 bool is_ui_element__non_interactive(UI_Element *p_ui_element) {
     return (bool)(p_ui_element->ui_flags & UI_FLAGS__BIT_IS_NON_INTERACTIVE);
-}
-
-static inline
-bool is_ui_element__in_needing_update(UI_Element *p_ui_element) {
-    return (bool)(p_ui_element->ui_flags & UI_FLAGS__BIT_IS_NEEDING_UPDATE);
 }
 
 static inline

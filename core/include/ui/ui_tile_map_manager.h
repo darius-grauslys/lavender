@@ -12,6 +12,6 @@ UI_Tile_Map__Wrapper allocate_ui_tile_map_with__ui_tile_map_manager(
 
 void release_ui_tile_map_with__ui_tile_map_manager(
         UI_Tile_Map_Manager *p_ui_tile_map_manager,
-        UI_Tile_Map__Wrapper ui_tile_map__wrapper);
+        UI_Tile_Map__Wrapper *p_ui_tile_map__wrapper);
 
 #endif

@@ -5,7 +5,9 @@
 #include "game.h"
 #include "numerics.h"
 #include "rendering/font/typer.h"
+#include "rendering/graphics_window.h"
 #include "ui/ui_element.h"
+#include "ui/ui_manager.h"
 
 static inline
 void initialize_ui_text__default_handlers(
@@ -162,9 +164,11 @@ void free_pM_text_of__ui_text(
 }
 
 void set_c_str_of__ui_text_with__const_c_str(
+        UI_Manager *p_ui_manager,
         UI_Element *p_ui_text,
         const char *p_text__const_c_str,
         Quantity__u32 size_of__text) {
+    set_ui_manager_as__dirty(p_ui_manager);
     free_pM_text_of__ui_text(p_ui_text);
     p_ui_text->pM_char_buffer = malloc(size_of__text);
     if (!p_ui_text->pM_char_buffer) {
@@ -179,9 +183,11 @@ void set_c_str_of__ui_text_with__const_c_str(
 }
 
 void set_c_str_of__ui_text_with__pM_c_str(
+        UI_Manager *p_ui_manager,
         UI_Element *p_ui_text,
         char *pM_text__c_str,
         Quantity__u32 size_of__text) {
+    set_ui_manager_as__dirty(p_ui_manager);
     free_pM_text_of__ui_text(p_ui_text);
     p_ui_text->pM_char_buffer = pM_text__c_str; 
     p_ui_text->size_of__char_buffer = 
@@ -192,8 +198,10 @@ void set_c_str_of__ui_text_with__pM_c_str(
 }
 
 void buffer_c_str_of__ui_text(
+        UI_Manager *p_ui_manager,
         UI_Element *p_ui_text,
         Quantity__u32 size_of__text) {
+    set_ui_manager_as__dirty(p_ui_manager);
     free_pM_text_of__ui_text(p_ui_text);
     if (!size_of__text) {
         p_ui_text->size_of__char_buffer = 0;
@@ -207,7 +215,9 @@ void buffer_c_str_of__ui_text(
 }
 
 void clear_c_str_of__ui_text(
+        UI_Manager *p_ui_manager,
         UI_Element *p_ui_text) {
+    set_ui_manager_as__dirty(p_ui_manager);
 #warning TODO: clamp c_str size based on config.
     memset(p_ui_text->pM_char_buffer,
             0,
@@ -226,6 +236,7 @@ void set_cursor_of__ui_text(
 }
 
 void append_symbol_into__ui_text(
+        UI_Manager *p_ui_manager,
         UI_Element *p_ui_text,
         char symbol) {
     if (p_ui_text->index_of__cursor_in__char_buffer
@@ -233,15 +244,18 @@ void append_symbol_into__ui_text(
         debug_warning__verbose("append_symbol_into__ui_text, text buffer is full.");
         return;
     }
+    set_ui_manager_as__dirty(p_ui_manager);
 
     p_ui_text->pM_char_buffer[
         p_ui_text->index_of__cursor_in__char_buffer++] = symbol;
 }
 
 void append_c_str_into__ui_text(
+        UI_Manager *p_ui_manager,
         UI_Element *p_ui_text,
         const char *p_text__const_c_str,
         Quantity__u32 size_of__text) {
+    set_ui_manager_as__dirty(p_ui_manager);
     Quantity__u32 clamp__u32 =
         min__u32(
                 size_of__text, 
@@ -255,6 +269,7 @@ void append_c_str_into__ui_text(
 }
 
 void insert_c_str_into__ui_text(
+        UI_Manager *p_ui_manager,
         UI_Element *p_ui_text,
         const char *p_text__const_c_str,
         Quantity__u32 size_of__text,
@@ -264,6 +279,7 @@ void insert_c_str_into__ui_text(
         debug_error("insert_c_str_into__ui_text, index out of bounds.");
         return;
     }
+    set_ui_manager_as__dirty(p_ui_manager);
 
     Quantity__u32 clamp =
         min__u32(
@@ -285,6 +301,10 @@ void m_ui_element__compose_handler__text(
         UI_Element *p_this_ui_element,
         Game *p_game,
         Graphics_Window *p_graphics_window) {
+    set_ui_manager_as__dirty(
+            get_p_ui_manager_from__graphics_window(
+                p_game, 
+                p_graphics_window));
     set_PLATFORM_graphics_window_target_for__typer(
             get_p_typer_of__ui_text(p_this_ui_element), 
             p_graphics_window->p_PLATFORM_gfx_window);
@@ -302,6 +322,10 @@ void m_ui_element__transformed_handler__text(
         Vector__3i32 position_NEW_of__hitbox__3i32,
         Game *p_game,
         Graphics_Window *p_graphics_window) {
+    set_ui_manager_as__dirty(
+            get_p_ui_manager_from__graphics_window(
+                p_game, 
+                p_graphics_window));
     set_typer__position(
             get_p_typer_of__ui_text(p_this_ui_element),
             position_NEW_of__hitbox__3i32);
@@ -318,6 +342,10 @@ void m_ui_element__transformed_handler__text__centered(
         Vector__3i32 position_NEW_of__hitbox__3i32,
         Game *p_game,
         Graphics_Window *p_graphics_window) {
+    set_ui_manager_as__dirty(
+            get_p_ui_manager_from__graphics_window(
+                p_game, 
+                p_graphics_window));
     set_typer__position(
             get_p_typer_of__ui_text(p_this_ui_element),
             add_vectors__3i32(

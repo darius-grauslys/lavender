@@ -330,10 +330,14 @@ void GL_compose_ui_span_in__gfx_window(
             index_of__y_tile 
             < index_y__u32 + height_of__ui_tile_span;
             index_of__y_tile++) {
+            if (index_of__y_tile >= ui_tile_map__wrapper.height_of__ui_tile_map)
+                continue;
         for (Index__u8 index_of__x_tile = index_x__u32;
                 index_of__x_tile 
                 < index_x__u32 + width_of__ui_tile_span;
                 index_of__x_tile++) {
+            if (index_of__x_tile >= ui_tile_map__wrapper.width_of__ui_tile_map)
+                continue;
             UI_Tile_Raw ui_tile_raw =
                 ui_tile_map__wrapper
                 .p_ui_tile_data[

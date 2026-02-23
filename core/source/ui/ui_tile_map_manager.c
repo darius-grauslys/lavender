@@ -154,15 +154,15 @@ UI_Tile_Map__Wrapper allocate_ui_tile_map_with__ui_tile_map_manager(
 
 void release_ui_tile_map_with__ui_tile_map_manager(
         UI_Tile_Map_Manager *p_ui_tile_map_manager,
-        UI_Tile_Map__Wrapper ui_tile_map__wrapper) {
+        UI_Tile_Map__Wrapper *p_ui_tile_map__wrapper) {
     if (!is_ui_tile_map__wrapper__valid(
-                ui_tile_map__wrapper)) {
+                p_ui_tile_map__wrapper)) {
         debug_error("release_ui_tile_map_with__ui_tile_map_manager, ui_tile_map__wrapper is invalid.");
         return;
     }
 
-    switch (get_catagory_size_of__ui_tile_map__wrapper(
-                ui_tile_map__wrapper)) {
+    switch (get_catagory_size_of__p_ui_tile_map__wrapper(
+                p_ui_tile_map__wrapper)) {
         default:
             debug_info("release_ui_tile_map_with__ui_tile_map_manager, unsupported catagory size.");
             break;
@@ -183,11 +183,11 @@ void release_ui_tile_map_with__ui_tile_map_manager(
 
                 if (p_ui_tile_map__large
                         ->ui_tile_data__large
-                        == ui_tile_map__wrapper
-                        .p_ui_tile_data) {
+                        == p_ui_tile_map__wrapper
+                        ->p_ui_tile_data) {
                     initialize_ui_tile_map__large_as__deallocated(
                             p_ui_tile_map__large);
-                    return;
+                    goto invalidate_wrapper;
                 }
             }
             break;
@@ -208,11 +208,11 @@ void release_ui_tile_map_with__ui_tile_map_manager(
 
                 if (p_ui_tile_map__medium
                         ->ui_tile_data__medium
-                        == ui_tile_map__wrapper
-                        .p_ui_tile_data) {
+                        == p_ui_tile_map__wrapper
+                        ->p_ui_tile_data) {
                     initialize_ui_tile_map__medium_as__deallocated(
                             p_ui_tile_map__medium);
-                    return;
+                    goto invalidate_wrapper;
                 }
             }
             break;
@@ -233,14 +233,17 @@ void release_ui_tile_map_with__ui_tile_map_manager(
 
                 if (p_ui_tile_map__small
                         ->ui_tile_data__small
-                        == ui_tile_map__wrapper
-                        .p_ui_tile_data) {
+                        == p_ui_tile_map__wrapper
+                        ->p_ui_tile_data) {
                     initialize_ui_tile_map__small_as__deallocated(
                             p_ui_tile_map__small);
-                    return;
+                    goto invalidate_wrapper;
                 }
             }
             break;
     }
     debug_error("release_ui_tile_map_with__ui_tile_map_manager, ui_tile_map__wrapper does not wrap fields managed from this manager. Was it even allocated from this manager?");
+    return;
+invalidate_wrapper:
+    p_ui_tile_map__wrapper->p_ui_tile_data = 0;
 }

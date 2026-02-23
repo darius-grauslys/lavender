@@ -214,8 +214,20 @@ Graphics_Window *_open_ui_window(
         return false;
     }
 
-    p_graphics_window->graphics_window__parent__uuid =
-        uuid_of__parent_for__graphics_window__u32;
+    Graphics_Window *p_graphics_window__parent =
+        get_p_graphics_window_by__uuid_from__graphics_window_manager(
+                get_p_graphics_window_manager_from__gfx_context(
+                    get_p_gfx_context_from__game(p_game)), 
+                uuid_of__parent_for__graphics_window__u32);
+    if (p_graphics_window__parent) {
+        set_graphics_window_as__parent_to__this_graphics_window(
+                get_p_graphics_window_manager_from__gfx_context(
+                    get_p_gfx_context_from__game(p_game)), 
+                p_graphics_window__parent, 
+                p_graphics_window);
+    } else {
+        debug_error("_open_ui_window, p_graphics_window__parent == 0.");
+    }
 
     if (p_ui_window_record->signed_quantity_of__sprites < 0) {
         p_graphics_window->graphics_window__sprite_manager__allocation_scheme =
@@ -228,7 +240,67 @@ Graphics_Window *_open_ui_window(
             Graphics_Window__Sprite_Manager__Allocation_Scheme__Is_Allocating;
     }
 
-    Sprite_Manager *p_sprite_manager = 0;
+    populate_window_with__ui(
+            p_game, 
+            p_graphics_window, 
+            the_kind_of__graphics_window_to__open, 
+            index_of__ui_element_offset__u16);
+
+    return p_graphics_window;
+}
+
+bool populate_window_with__ui(
+        Game *p_game,
+        Graphics_Window *p_graphics_window,
+        Graphics_Window_Kind the_kind_of__graphics_window_to__populate_as,
+        Index__u16 index_of__ui_element_offset__u16) {
+    if (!p_graphics_window) {
+        debug_error("populate_window_with__ui, p_graphics_window == 0.");
+        return false;
+    }
+
+    Gfx_Context *p_gfx_context =
+        get_p_gfx_context_from__game(p_game);
+    UI_Context *p_ui_context =
+        get_p_ui_context_from__gfx_context(p_gfx_context);
+    
+    UI_Window_Record *p_ui_window_record =
+        get_p_ui_window_record_from__ui_context(
+                p_ui_context, 
+                the_kind_of__graphics_window_to__populate_as);
+
+    if (!p_ui_window_record) {
+        debug_error("populate_window_with__ui, p_ui_window_record == 0.");
+        return false;
+    }
+
+    if (!is_ui_window_record__valid(p_ui_window_record)) {
+        debug_warning("Did you forget to register the ui window?");
+        debug_error("populate_window_with__ui, p_ui_window_record is invalid.");
+        return false;
+    }
+
+    p_graphics_window->the_kind_of__window =
+        the_kind_of__graphics_window_to__populate_as;
+
+    if (p_ui_window_record->signed_quantity_of__sprites < 0) {
+        p_graphics_window->graphics_window__sprite_manager__allocation_scheme =
+            Graphics_Window__Sprite_Manager__Allocation_Scheme__Is_Using_Parent_Pool;
+    } else if (p_ui_window_record->signed_quantity_of__sprites == 0) {
+        p_graphics_window->graphics_window__sprite_manager__allocation_scheme =
+            Graphics_Window__Sprite_Manager__Allocation_Scheme__None;
+    } else {
+        p_graphics_window->graphics_window__sprite_manager__allocation_scheme =
+            Graphics_Window__Sprite_Manager__Allocation_Scheme__Is_Allocating;
+    }
+
+    Sprite_Manager *p_sprite_manager = 
+        get_p_sprite_manager_from__graphics_window(
+                p_game,
+                p_graphics_window);
+    if (p_sprite_manager)
+        goto check_ui_manager;
+
     switch (p_graphics_window->graphics_window__sprite_manager__allocation_scheme) {
         default:
             // TODO: add parent usage case and ensure there is available room.
@@ -246,7 +318,7 @@ Graphics_Window *_open_ui_window(
                         GET_UUID_P(p_graphics_window),
                         p_ui_window_record->signed_quantity_of__sprites);
             if (!p_sprite_manager) {
-                debug_error("_open_ui_window, p_sprite_manager == 0.");
+                debug_error("populate_window_with__ui, p_sprite_manager == 0.");
                 release_graphics_window_from__graphics_window_manager(
                         p_game, 
                         p_graphics_window);
@@ -255,6 +327,7 @@ Graphics_Window *_open_ui_window(
             break;
     }
 
+check_ui_manager:
     if (p_ui_window_record->signed_quantity_of__ui_elements < 0) {
         p_graphics_window->graphics_window__ui_manager__allocation_scheme =
             Graphics_Window__UI_Manager__Allocation_Scheme__Is_Using_Parent_Pool;
@@ -266,7 +339,12 @@ Graphics_Window *_open_ui_window(
             Graphics_Window__UI_Manager__Allocation_Scheme__Is_Allocating;
     }
 
-    UI_Manager *p_ui_manager = 0;
+    UI_Manager *p_ui_manager = 
+        get_p_ui_manager_from__graphics_window(
+            p_game, 
+            p_graphics_window);
+    if (p_ui_manager)
+        goto populate_window;
     switch (p_graphics_window->graphics_window__ui_manager__allocation_scheme) {
         default:
             break;
@@ -285,7 +363,7 @@ Graphics_Window *_open_ui_window(
                     p_ui_window_record->signed_quantity_of__ui_elements);
 
             if (!p_ui_manager) {
-                debug_error("_open_ui_window, p_ui_manager == 0.");
+                debug_error("populate_window_with__ui, p_ui_manager == 0.");
                 release_graphics_window_from__graphics_window_manager(
                         p_game,
                         p_graphics_window);
@@ -295,18 +373,19 @@ Graphics_Window *_open_ui_window(
             break;
     }
 
+populate_window:
     p_ui_window_record->f_ui_window__load(
             p_gfx_context,
             p_graphics_window,
             p_game,
             p_ui_manager,
-            index_of__ui_element_offset__u16);
+            0);
 
     set_graphics_window_as__enabled(p_graphics_window);
     set_graphics_window_as__in_need_of__composition(
             p_graphics_window);
 
-    return p_graphics_window;
+    return true;
 }
 
 Graphics_Window *open_ui_window_with__this_uuid_and__parent_uuid(

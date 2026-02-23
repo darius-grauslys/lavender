@@ -67,16 +67,23 @@ void _m_ui_window_element__transformed_handler(
         set_ui_element_as__disabled(p_this_ui_element);
         return;
     }
+    i32 z_i32_of__graphics_window = p_graphics_window->position_of__gfx_window.z__i32;
     set_position_3i32_of__graphics_window(
             p_game, 
             p_graphics_window, 
-            position_NEW_of__hitbox__3i32);
+            get_vector__3i32(
+                position_NEW_of__hitbox__3i32.x__i32
+                    - p_graphics_window->origin_of__gfx_window.x__i32,
+                position_NEW_of__hitbox__3i32.y__i32
+                    - p_graphics_window->origin_of__gfx_window.y__i32,
+                z_i32_of__graphics_window));
 }
 void initialize_ui_element_as__window_element_and__open_window(
         UI_Element *p_ui_window_element,
         Game *p_game,
         Graphics_Window_Kind the_kind_of__graphics_window_to__open,
-        Identifier__u32 uuid_of__parent_window__u32) {
+        Identifier__u32 uuid_of__parent_window__u32,
+        Vector__3i32 origin_of__gfx_window__3i32) {
     Graphics_Window *p_graphics_window =
         open_ui_window_with__this_uuid_and__parent_uuid(
                 p_game, 
@@ -94,6 +101,9 @@ void initialize_ui_element_as__window_element_and__open_window(
         debug_error("initialize_ui_element_as__window_element_and__open_window, p_graphics_window == 0.");
         return;
     }
+    set_origin_3i32_of__graphics_window(
+            p_graphics_window, 
+            origin_of__gfx_window__3i32);
     set_ui_element__clicked_handler(
             p_ui_window_element, 
             _m_ui_window_element__update);

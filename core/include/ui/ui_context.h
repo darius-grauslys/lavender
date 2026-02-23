@@ -3,6 +3,7 @@
 
 #include "defines.h"
 #include "defines_weak.h"
+#include "types/implemented/graphics_window_kind.h"
 
 void initialize_ui_context(UI_Context *p_ui_context);
 
@@ -33,6 +34,14 @@ Graphics_Window *open_ui_window_with__this_uuid_and__parent_uuid(
         Graphics_Window_Kind the_kind_of__graphics_window_to__open,
         Identifier__u32 uuid_of__graphics_window__u32,
         Identifier__u32 uuid_of__parent_for__graphics_window__u32);
+
+
+bool populate_window_with__ui(
+        Game *p_game,
+        Graphics_Window *p_graphics_window,
+        Graphics_Window_Kind the_kind_of__graphics_window_to__populate_as,
+        Index__u16 index_of__ui_element_offset__u16);
+
 
 static inline
 Graphics_Window *open_ui_window_with__this_uuid(

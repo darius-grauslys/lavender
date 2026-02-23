@@ -1,8 +1,8 @@
+#include "ui/ui_tile_map.h"
 #include "defines.h"
 #include "defines_weak.h"
 #include "platform_defines.h"
 #include "ui/ui_tile.h"
-#include "ui/ui_tile_map.h"
 #include "ui/ui_tile_span.h"
 
 void initialize_ui_tile_map__small_as__deallocated(
@@ -65,8 +65,8 @@ void set_ui_tile_map__wrapper__utilized_size(
         Quantity__u32 width__u32,
         Quantity__u32 height__u32) {
     Quantity__u32 area_of__allocation = 0;
-    switch(get_catagory_size_of__ui_tile_map__wrapper(
-                *p_ui_tile_map__wrapper)) {
+    switch(get_catagory_size_of__p_ui_tile_map__wrapper(
+                p_ui_tile_map__wrapper)) {
         default:
             debug_error("set_ui_tile_map__wrapper__utilized_size, ui_tile_map__wrapper is invalid.");
             return;
@@ -101,29 +101,29 @@ void set_ui_tile_map__wrapper__utilized_size(
 }
 
 void fill_ui_tile_map(
-        UI_Tile_Map__Wrapper ui_tile_map__wrapper,
+        UI_Tile_Map__Wrapper *p_ui_tile_map__wrapper,
         UI_Tile ui_tile) {
     for (Index__u32 index_of__y = 0;
             index_of__y
-            < ui_tile_map__wrapper.height_of__ui_tile_map;
+            < p_ui_tile_map__wrapper->height_of__ui_tile_map;
             index_of__y++) {
         for (Index__u32 index_of__x = 0;
                 index_of__x
-                < ui_tile_map__wrapper.width_of__ui_tile_map;
+                < p_ui_tile_map__wrapper->width_of__ui_tile_map;
                 index_of__x++) {
-            ui_tile_map__wrapper
-                .p_ui_tile_data[
+            p_ui_tile_map__wrapper
+                ->p_ui_tile_data[
                 index_of__x
                     + index_of__y
-                    * ui_tile_map__wrapper
-                        .width_of__ui_tile_map] =
+                    * p_ui_tile_map__wrapper
+                        ->width_of__ui_tile_map] =
                         get_ui_tile_raw_from__ui_tile(&ui_tile);
         }
     }
 }
 
 void fill_ui_tile_map_in__this_region(
-        UI_Tile_Map__Wrapper ui_tile_map__wrapper,
+        UI_Tile_Map__Wrapper *p_ui_tile_map__wrapper,
         UI_Tile ui_tile,
         Index__u32 index_x__start,
         Index__u32 index_y__start,
@@ -135,7 +135,7 @@ void fill_ui_tile_map_in__this_region(
         Index__u32 y = 
             index_of__y
             + index_y__start;
-        if (y > ui_tile_map__wrapper.height_of__ui_tile_map)
+        if (y > p_ui_tile_map__wrapper->height_of__ui_tile_map)
             break;
         for (Index__u32 index_of__x = 0;
                 index_of__x < width;
@@ -143,20 +143,20 @@ void fill_ui_tile_map_in__this_region(
             Index__u32 x = 
                 index_of__x
                 + index_x__start;
-            if (x > ui_tile_map__wrapper.width_of__ui_tile_map)
+            if (x > p_ui_tile_map__wrapper->width_of__ui_tile_map)
                 break;
-            ui_tile_map__wrapper
-                .p_ui_tile_data[
+            p_ui_tile_map__wrapper
+                ->p_ui_tile_data[
                 x + y
-                * ui_tile_map__wrapper
-                    .width_of__ui_tile_map] =
+                * p_ui_tile_map__wrapper
+                    ->width_of__ui_tile_map] =
                     get_ui_tile_raw_from__ui_tile(&ui_tile);
         }
     }
 }
 
 void generate_ui_span_in__ui_tile_map(
-        UI_Tile_Map__Wrapper ui_tile_map__wrapper,
+        UI_Tile_Map__Wrapper *p_ui_tile_map__wrapper,
         const UI_Tile_Span *p_ui_tile_span,
         Quantity__u32 width_of__ui_tile_span__u32,
         Quantity__u32 height_of__ui_tile_span__u32,
@@ -167,14 +167,14 @@ void generate_ui_span_in__ui_tile_map(
             < height_of__ui_tile_span__u32;
             index_y_of__ui_tile_span__u32++) {
         u32 y = 
-            get_height_of__ui_tile_map__wrapper(
-                    ui_tile_map__wrapper)
+            get_height_of__p_ui_tile_map__wrapper(
+                    p_ui_tile_map__wrapper)
             - (index_y__u32
             + index_y_of__ui_tile_span__u32)
             - 1
             ;
-        if (y >= get_height_of__ui_tile_map__wrapper(
-                    ui_tile_map__wrapper)) {
+        if (y >= get_height_of__p_ui_tile_map__wrapper(
+                    p_ui_tile_map__wrapper)) {
             continue;
         }
         for (Index__u32 index_x_of__ui_tile_span__u32 = 0;
@@ -185,8 +185,8 @@ void generate_ui_span_in__ui_tile_map(
                 index_x__u32
                 + index_x_of__ui_tile_span__u32
                 ;
-            if (x >= get_width_of__ui_tile_map__wrapper(
-                        ui_tile_map__wrapper)) {
+            if (x >= get_width_of__p_ui_tile_map__wrapper(
+                        p_ui_tile_map__wrapper)) {
                 continue;
             }
 
@@ -199,11 +199,24 @@ void generate_ui_span_in__ui_tile_map(
                             index_x_of__ui_tile_span__u32, 
                             index_y_of__ui_tile_span__u32));
 
-            ui_tile_map__wrapper.p_ui_tile_data[
+            p_ui_tile_map__wrapper->p_ui_tile_data[
                 x + y
-                    * get_width_of__ui_tile_map__wrapper(
-                            ui_tile_map__wrapper)] =
+                    * get_width_of__p_ui_tile_map__wrapper(
+                            p_ui_tile_map__wrapper)] =
                     ui_tile_raw;
         }
     }
+}
+
+void copy_into_ui_tile_map(
+        UI_Tile_Map__Wrapper *p_ui_tile_map__wrapper,
+        const UI_Tile_Raw *p_ui_tile__data,
+        Index__u32 offset,
+        Quantity__u32 length) {
+    memcpy(
+            ((u8*)p_ui_tile_map__wrapper
+            ->p_ui_tile_data)
+            + offset,
+            (u8*)(p_ui_tile__data),
+            length);
 }

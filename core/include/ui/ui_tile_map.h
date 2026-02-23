@@ -23,7 +23,7 @@ void initialize_ui_tile_map__wrapper(
         UI_Tile_Map_Size catagory_size_of__ui_tile_map);
 
 void generate_ui_span_in__ui_tile_map(
-        UI_Tile_Map__Wrapper ui_tile_map__wrapper,
+        UI_Tile_Map__Wrapper *p_ui_tile_map__wrapper,
         const UI_Tile_Span *p_ui_tile_span,
         Quantity__u32 width_of__ui_tile_span,
         Quantity__u32 height_of__ui_tile_span,
@@ -39,16 +39,22 @@ void set_ui_tile_map__wrapper__utilized_size(
         Quantity__u32 height__u32);
 
 void fill_ui_tile_map(
-        UI_Tile_Map__Wrapper ui_tile_map__wrapper,
+        UI_Tile_Map__Wrapper *p_ui_tile_map__wrapper,
         UI_Tile ui_tile);
 
 void fill_ui_tile_map_in__this_region(
-        UI_Tile_Map__Wrapper ui_tile_map__wrapper,
+        UI_Tile_Map__Wrapper *p_ui_tile_map__wrapper,
         UI_Tile ui_tile,
         Index__u32 index_x__start,
         Index__u32 index_y__start,
         Quantity__u32 width,
         Quantity__u32 height);
+
+void copy_into_ui_tile_map(
+        UI_Tile_Map__Wrapper *p_ui_tile_map__wrapper,
+        const UI_Tile_Raw *p_ui_tile__data,
+        Index__u32 offset,
+        Quantity__u32 length);
 
 static inline
 bool is_ui_tile_map_flags__allocated(
@@ -76,43 +82,43 @@ void set_ui_tile_map_flags_as__deallocated(
 
 static inline
 bool is_ui_tile_map__wrapper_with__data(
-        UI_Tile_Map__Wrapper ui_tile_map__wrapper) {
-    return ui_tile_map__wrapper
-        .p_ui_tile_data;
+        UI_Tile_Map__Wrapper *p_ui_tile_map__wrapper) {
+    return p_ui_tile_map__wrapper
+        ->p_ui_tile_data;
 }
 
 static inline
 bool is_ui_tile_map__wrapper_with__valid_size_catagory(
-        UI_Tile_Map__Wrapper ui_tile_map__wrapper) {
-    return ui_tile_map__wrapper
-        .catagory_size_of__ui_tile_map
+        UI_Tile_Map__Wrapper *p_ui_tile_map__wrapper) {
+    return p_ui_tile_map__wrapper
+        ->catagory_size_of__ui_tile_map
         > UI_Tile_Map_Size__None
-        && ui_tile_map__wrapper
-        .catagory_size_of__ui_tile_map
+        && p_ui_tile_map__wrapper
+        ->catagory_size_of__ui_tile_map
         < UI_Tile_Map_Size__Unknown
         ;
 }
 
 static inline
 bool is_ui_tile_map__wrapper_with__valid_size(
-        UI_Tile_Map__Wrapper ui_tile_map__wrapper) {
-    return ui_tile_map__wrapper
-        .width_of__ui_tile_map > 0
-        && ui_tile_map__wrapper
-        .height_of__ui_tile_map > 0
+        UI_Tile_Map__Wrapper *p_ui_tile_map__wrapper) {
+    return p_ui_tile_map__wrapper
+        ->width_of__ui_tile_map > 0
+        && p_ui_tile_map__wrapper
+        ->height_of__ui_tile_map > 0
         && is_ui_tile_map__wrapper_with__valid_size_catagory(
-                ui_tile_map__wrapper);
+                p_ui_tile_map__wrapper);
         ;
 }
 
 static inline
 bool is_ui_tile_map__wrapper__valid(
-        UI_Tile_Map__Wrapper ui_tile_map__wrapper) {
+        UI_Tile_Map__Wrapper *p_ui_tile_map__wrapper) {
     return 
         is_ui_tile_map__wrapper_with__data(
-                ui_tile_map__wrapper)
+                p_ui_tile_map__wrapper)
         && is_ui_tile_map__wrapper_with__valid_size(
-                ui_tile_map__wrapper)
+                p_ui_tile_map__wrapper)
         ;
 }
 
@@ -165,24 +171,24 @@ UI_Tile_Map__Wrapper ui_tile_map__large_to__ui_tile_map_wrapper(
 }
 
 static inline
-UI_Tile_Map_Size get_catagory_size_of__ui_tile_map__wrapper(
-        UI_Tile_Map__Wrapper ui_tile_map__wrapper) {
-    return ui_tile_map__wrapper
-        .catagory_size_of__ui_tile_map;
+UI_Tile_Map_Size get_catagory_size_of__p_ui_tile_map__wrapper(
+        UI_Tile_Map__Wrapper *p_ui_tile_map__wrapper) {
+    return p_ui_tile_map__wrapper
+        ->catagory_size_of__ui_tile_map;
 }
 
 static inline
-Quantity__u32 get_width_of__ui_tile_map__wrapper(
-        UI_Tile_Map__Wrapper ui_tile_map__wraper) {
-    return ui_tile_map__wraper
-        .width_of__ui_tile_map;
+Quantity__u32 get_width_of__p_ui_tile_map__wrapper(
+        UI_Tile_Map__Wrapper *p_ui_tile_map__wraper) {
+    return p_ui_tile_map__wraper
+        ->width_of__ui_tile_map;
 }
 
 static inline
-Quantity__u32 get_height_of__ui_tile_map__wrapper(
-        UI_Tile_Map__Wrapper ui_tile_map__wraper) {
-    return ui_tile_map__wraper
-        .height_of__ui_tile_map;
+Quantity__u32 get_height_of__p_ui_tile_map__wrapper(
+        UI_Tile_Map__Wrapper *p_ui_tile_map__wraper) {
+    return p_ui_tile_map__wraper
+        ->height_of__ui_tile_map;
 }
 
 #endif

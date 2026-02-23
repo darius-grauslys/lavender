@@ -353,6 +353,7 @@ void update_ui_manager_origin__relative_to(
 
         update_ui_element_origin__relative_to(
                 p_game,
+                p_ui_manager,
                 p_ui_element,
                 position__old__3i32,
                 position__new__3i32);
@@ -614,6 +615,7 @@ UI_Element *allocate_ui_element_from__ui_manager(
             UI_FLAGS__NONE);
 
     set_ui_element_as__enabled(p_ui_element);
+    set_ui_manager_as__dirty(p_ui_manager);
 
     return p_ui_element;
 }
@@ -751,6 +753,7 @@ void release__ui_element_from__ui_manager(
     }
 
     set_ui_element_as__disabled(p_ui_element);
+    set_ui_manager_as__dirty(p_ui_manager);
 
     DEALLOCATE_P(p_ui_element);
     UI_Element **p_ptr_ui_element =

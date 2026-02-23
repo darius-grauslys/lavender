@@ -58,6 +58,34 @@ Sprite *allocate_p_sprite_from__graphics_window(
         Texture texture_to__sample_by__sprite,
         Texture_Flags texture_flags_for__sprite);
 
+void release_graphics_window_ui_manager(
+        Game *p_game,
+        Graphics_Window *p_graphics_window);
+
+void release_graphics_window_sprite_manager(
+        Game *p_game,
+        Graphics_Window *p_graphics_window);
+
+///
+/// In particular, this should be called for graphics windows
+/// which are provided for by a PLATFORM when exiting a scene.
+///
+/// Unprovided children are child windows which are not
+/// PLATFORM provided.
+///
+void reset_graphics_window(
+        Game *p_game,
+        Graphics_Window *p_graphics_window,
+        bool is_releasing_unprovided_children);
+
+bool is_graphics_window_in_need_of__composition(
+        Game *p_game,
+        Graphics_Window *p_gfx_window);
+
+void set_graphics_window_as__no_longer_needing__composition(
+        Game *p_game,
+        Graphics_Window *p_gfx_window);
+
 void f_graphics_window__default_compose(
         Game *p_game,
         Graphics_Window *p_gfx_window);
@@ -83,15 +111,15 @@ bool is_graphics_window__using_parent_sprite_manager(
 }
 
 static inline
-UI_Tile_Map__Wrapper get_ui_tile_map_from__graphics_window(
+UI_Tile_Map__Wrapper *get_p_ui_tile_map_from__graphics_window(
         Graphics_Window *p_graphics_window) {
 #ifndef NDEBUG
     if (!p_graphics_window) {
-        debug_error("get_ui_tile_map_from__graphics_window, p_gfx_window == 0.");
-        return (UI_Tile_Map__Wrapper){0};
+        debug_error("get_p_ui_tile_map_from__graphics_window, p_gfx_window == 0.");
+        return 0;
     }
 #endif
-    return p_graphics_window->ui_tile_map__wrapper;
+    return &p_graphics_window->ui_tile_map__wrapper;
 }
 
 static inline
@@ -152,20 +180,6 @@ Sprite_Manager *get_p_sprite_manager_from__graphics_window(
 }
 
 static inline
-bool is_graphics_window_in_need_of__composition(
-        Graphics_Window *p_gfx_window) {
-#ifndef NDEBUG
-    if (!p_gfx_window) {
-        debug_error("is_graphics_window_in_need_of__composition, p_gfx_window == 0.");
-        return false;
-    }
-#endif
-    return p_gfx_window->graphics_window__flags
-        & GRAPHICS_WINDOW__FLAG__COMPOSE__DIRTY
-        ;
-}
-
-static inline
 void set_graphics_window_as__in_need_of__composition(
         Graphics_Window *p_gfx_window) {
 #ifndef NDEBUG
@@ -176,20 +190,6 @@ void set_graphics_window_as__in_need_of__composition(
 #endif
     p_gfx_window->graphics_window__flags |=
         GRAPHICS_WINDOW__FLAG__COMPOSE__DIRTY
-        ;
-}
-
-static inline
-void set_graphics_window_as__no_longer_needing__composition(
-        Graphics_Window *p_gfx_window) {
-#ifndef NDEBUG
-    if (!p_gfx_window) {
-        debug_error("set_graphics_window_as__no_longer_needing__composition, p_gfx_window == 0.");
-        return;
-    }
-#endif
-    p_gfx_window->graphics_window__flags &=
-        ~GRAPHICS_WINDOW__FLAG__COMPOSE__DIRTY
         ;
 }
 
@@ -234,6 +234,20 @@ Vector__3i32 get_origin_3i32_of__graphics_window(
     }
 #endif
     return p_graphics_window->origin_of__gfx_window;
+}
+
+static inline
+void set_origin_3i32_of__graphics_window(
+        Graphics_Window *p_graphics_window,
+        Vector__3i32 origin__3i32) {
+#ifndef NDEBUG
+    if (!p_graphics_window) {
+        debug_error("set_origin_3i32_of__graphics_window, p_gfx_window == 0.");
+        return;
+    }
+#endif
+    p_graphics_window->origin_of__gfx_window =
+        origin__3i32;
 }
 
 static inline
@@ -369,44 +383,44 @@ void set_graphics_window_as__disabled(
 }
 
 static inline
-bool is_graphics_window__rendering_world(
+bool is_graphics_window__platform_provided(
         Graphics_Window *p_gfx_window) {
 #ifndef NDEBUG
     if (!p_gfx_window) {
-        debug_error("is_graphics_window__rendering_world, p_gfx_window == 0.");
+        debug_error("is_graphics_window__platform_provided, p_gfx_window == 0.");
         return false;
     }
 #endif
     return p_gfx_window->graphics_window__flags
-        & GRAPHICS_WINDOW__FLAG__IS_RENDERING_WORLD
+        & GRAPHICS_WINDOW__FLAG__IS_PLATFORM_PROVIDED
         ;
 }
 
 static inline
-void set_graphics_window_as__rendering_world(
+void set_graphics_window_as__platform_provided(
         Graphics_Window *p_gfx_window) {
 #ifndef NDEBUG
     if (!p_gfx_window) {
-        debug_error("set_graphics_window_as__rendering_world, p_gfx_window == 0.");
+        debug_error("set_graphics_window_as__platform_provided, p_gfx_window == 0.");
         return;
     }
 #endif
     p_gfx_window->graphics_window__flags |=
-        GRAPHICS_WINDOW__FLAG__IS_RENDERING_WORLD
+        GRAPHICS_WINDOW__FLAG__IS_PLATFORM_PROVIDED
         ;
 }
 
 static inline
-void set_graphics_window_as__NOT_rendering_world(
+void set_graphics_window_as__no_longer__platform_provided(
         Graphics_Window *p_gfx_window) {
 #ifndef NDEBUG
     if (!p_gfx_window) {
-        debug_error("set_graphics_window_as__NOT_rendering_world, p_gfx_window == 0.");
+        debug_error("set_graphics_window_as__no_longer__platform_provided, p_gfx_window == 0.");
         return;
     }
 #endif
     p_gfx_window->graphics_window__flags &=
-        ~GRAPHICS_WINDOW__FLAG__IS_RENDERING_WORLD
+        ~GRAPHICS_WINDOW__FLAG__IS_PLATFORM_PROVIDED
         ;
 }
 

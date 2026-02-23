@@ -1,3 +1,4 @@
+#include "ui/ui_element.h"
 #include "collisions/hitbox_aabb.h"
 #include "collisions/hitbox_aabb_manager.h"
 #include "debug/debug.h"
@@ -14,9 +15,9 @@
 #include "serialization/serialization_header.h"
 #include "ui/ui_button.h"
 #include "ui/ui_draggable.h"
+#include "ui/ui_manager.h"
 #include "ui/ui_slider.h"
 #include "ui/ui_tile_map.h"
-#include <ui/ui_element.h>
 #include <vectors.h>
 #include <game.h>
 #include <wctype.h>
@@ -58,6 +59,10 @@ void m_ui_element__dispose_handler__default(
         UI_Element *p_this_ui_element,
         Game *p_game,
         Graphics_Window *p_graphics_window) {
+    set_ui_manager_as__dirty(
+            get_p_ui_manager_from__graphics_window(
+                p_game, 
+                p_graphics_window));
     if (does_ui_element_have__child(p_this_ui_element)) {
         UI_Element *p_child =
             get_child_of__ui_element(p_this_ui_element);
@@ -438,38 +443,10 @@ void m_ui_element__compose_handler__default(
         UI_Element *p_ui_element,
         Game *p_game,
         Graphics_Window *p_graphics_window) {
-    Hitbox_AABB_Manager *p_hitbox_aabb_manager =
-        get_p_hitbox_aabb_manager_from__game(p_game);
-    Quantity__u32 width_of__ui_tile_span; 
-    Quantity__u32 height_of__ui_tile_span;
-    Index__u32 index_x__u32; 
-    Index__u32 index_y__u32;
-    const UI_Tile_Span *p_const_ui_tile_span =
-        get_ui_tile_span_of__ui_element(
-                p_hitbox_aabb_manager,
-                p_graphics_window,
-                p_ui_element,
-                &width_of__ui_tile_span,
-                &height_of__ui_tile_span,
-                &index_x__u32,
-                &index_y__u32);
-
-    generate_ui_span_in__ui_tile_map(
-            get_ui_tile_map_from__graphics_window(
-                p_graphics_window),
-            p_const_ui_tile_span,
-            width_of__ui_tile_span,
-            height_of__ui_tile_span,
-            index_x__u32,
-            index_y__u32);
-
-    PLATFORM_compose_ui_span_in__gfx_window(
-            p_game, 
-            p_graphics_window,
-            width_of__ui_tile_span,
-            height_of__ui_tile_span,
-            index_x__u32,
-            index_y__u32);
+    m_ui_element__compose_handler__default_non_recursive(
+        p_ui_element,
+        p_game,
+        p_graphics_window);
 
     if (!does_ui_element_have__child(
                 p_ui_element)) {
@@ -494,6 +471,11 @@ void m_ui_element__compose_handler__default_non_recursive(
         UI_Element *p_ui_element,
         Game *p_game,
         Graphics_Window *p_graphics_window) {
+    set_ui_manager_as__dirty(
+            get_p_ui_manager_from__graphics_window(
+                p_game, 
+                p_graphics_window));
+
     Hitbox_AABB_Manager *p_hitbox_aabb_manager =
         get_p_hitbox_aabb_manager_from__game(p_game);
     Quantity__u32 width_of__ui_tile_span; 
@@ -511,13 +493,22 @@ void m_ui_element__compose_handler__default_non_recursive(
                 &index_y__u32);
 
     generate_ui_span_in__ui_tile_map(
-            get_ui_tile_map_from__graphics_window(
+            get_p_ui_tile_map_from__graphics_window(
                 p_graphics_window),
             p_const_ui_tile_span,
             width_of__ui_tile_span,
             height_of__ui_tile_span,
             index_x__u32,
             index_y__u32);
+
+    PLATFORM_compose_ui_span_in__gfx_window(
+            p_game, 
+            p_graphics_window,
+            width_of__ui_tile_span,
+            height_of__ui_tile_span,
+            index_x__u32,
+            index_y__u32);
+
 }
 
 void m_ui_element__compose_handler__default_only_recursive(
@@ -528,6 +519,11 @@ void m_ui_element__compose_handler__default_only_recursive(
                 p_ui_element)) {
         return;
     }
+
+    set_ui_manager_as__dirty(
+            get_p_ui_manager_from__graphics_window(
+                p_game, 
+                p_graphics_window));
 
     UI_Element *p_ui_element__child =
         get_child_of__ui_element(p_ui_element__child);
@@ -578,6 +574,7 @@ void set_parent_of__ui_element(
 
 void update_ui_element_origin__relative_to__recursively(
         Game *p_game,
+        UI_Manager *p_ui_manager,
         UI_Element *p_ui_element,
         Vector__3i32 position__old__3i32,
         Vector__3i32 position__new__3i32) {
@@ -589,6 +586,7 @@ void update_ui_element_origin__relative_to__recursively(
 #endif
     update_ui_element_origin__relative_to(
             p_game,
+                p_ui_manager,
             p_ui_element, 
             position__old__3i32, 
             position__new__3i32);
@@ -596,6 +594,7 @@ void update_ui_element_origin__relative_to__recursively(
                 p_ui_element)) {
         update_ui_element_origin__relative_to__recursively(
                 p_game,
+                p_ui_manager,
                 get_child_of__ui_element(p_ui_element), 
                 position__old__3i32, 
                 position__new__3i32);
@@ -604,6 +603,7 @@ void update_ui_element_origin__relative_to__recursively(
                 p_ui_element)) {
         update_ui_element_origin__relative_to__recursively(
                 p_game,
+                p_ui_manager,
                 get_next__ui_element(p_ui_element), 
                 position__old__3i32, 
                 position__new__3i32);
@@ -612,6 +612,7 @@ void update_ui_element_origin__relative_to__recursively(
 
 void update_ui_element_origin__relative_to(
         Game *p_game,
+        UI_Manager *p_ui_manager,
         UI_Element *p_ui_element,
         Vector__3i32 position__old__3i32,
         Vector__3i32 position__new__3i32) {
@@ -629,6 +630,8 @@ void update_ui_element_origin__relative_to(
     if (!p_hitbox_aabb) {
         return;
     }
+
+    set_ui_manager_as__dirty(p_ui_manager);
 
     Vector__3i32 position_final__3i32 =
         add_vectors__3i32(

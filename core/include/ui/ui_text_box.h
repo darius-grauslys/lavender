@@ -55,10 +55,12 @@ void m_ui_element__typed_handler__text_box__alphanumeric(
 
 static inline
 void set_c_str_of__ui_text_box_with__const_c_str(
+        UI_Manager *p_ui_manager,
         UI_Element *p_ui_text_box,
         const char *p_text__const_c_str,
         Quantity__u32 size_of__text) {
     set_c_str_of__ui_text_with__const_c_str(
+            p_ui_manager,
             p_ui_text_box, 
             p_text__const_c_str, 
             size_of__text);
@@ -66,10 +68,12 @@ void set_c_str_of__ui_text_box_with__const_c_str(
 
 static inline
 void set_c_str_of__ui_text_box_with__pM_c_str(
+        UI_Manager *p_ui_manager,
         UI_Element *p_ui_text_box,
         char *pM_text__c_str,
         Quantity__u32 size_of__text) {
     set_c_str_of__ui_text_with__pM_c_str(
+            p_ui_manager,
             p_ui_text_box,
             pM_text__c_str,
             size_of__text);
@@ -77,17 +81,21 @@ void set_c_str_of__ui_text_box_with__pM_c_str(
 
 static inline
 void buffer_c_str_of__ui_text_box(
+        UI_Manager *p_ui_manager,
         UI_Element *p_ui_text_box,
         Quantity__u32 size_of__text) {
     buffer_c_str_of__ui_text(
+            p_ui_manager,
             p_ui_text_box,
             size_of__text);
 }
 
 static inline
 void clear_c_str_of__ui_text_box(
+        UI_Manager *p_ui_manager,
         UI_Element *p_ui_text_box) {
     clear_c_str_of__ui_text(
+            p_ui_manager,
             p_ui_text_box);
 }
 
@@ -102,19 +110,23 @@ void set_cursor_of__ui_text_box(
 
 static inline
 void append_symbol_into__ui_text_box(
+        UI_Manager *p_ui_manager,
         UI_Element *p_ui_text_box,
         char symbol) {
     append_symbol_into__ui_text(
+            p_ui_manager,
             p_ui_text_box,
             symbol);
 }
 
 static inline
 void append_c_str_into__ui_text_box(
+        UI_Manager *p_ui_manager,
         UI_Element *p_ui_text_box,
         const char *p_text__const_c_str,
         Quantity__u32 size_of__text) {
     append_c_str_into__ui_text(
+            p_ui_manager,
             p_ui_text_box,
             p_text__const_c_str,
             size_of__text);
@@ -122,11 +134,13 @@ void append_c_str_into__ui_text_box(
 
 static inline
 void insert_c_str_into__ui_text_box(
+        UI_Manager *p_ui_manager,
         UI_Element *p_ui_text_box,
         const char *p_text__const_c_str,
         Quantity__u32 size_of__text,
         Index__u32 index_to__insert_at) {
     insert_c_str_into__ui_text(
+            p_ui_manager,
             p_ui_text_box,
             p_text__const_c_str,
             size_of__text,

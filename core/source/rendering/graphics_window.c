@@ -1,4 +1,5 @@
 #include "rendering/graphics_window.h"
+#include "rendering/graphics_window_manager.h"
 #include "debug/debug.h"
 #include "defines.h"
 #include "defines_weak.h"
@@ -13,6 +14,7 @@
 #include "ui/ui_context.h"
 #include "ui/ui_tile_map.h"
 #include "ui/ui_manager.h"
+#include "ui/ui_tile_map_manager.h"
 #include "vectors.h"
 
 void initialize_graphics_window(
@@ -58,7 +60,7 @@ void update_graphics_window__ui_tiles(
         const UI_Tile_Raw *p_ui_tiles,
         Quantity__u32 size_of__p_ui_tiles) {
     if (!is_ui_tile_map__wrapper__valid(
-                p_gfx_window->ui_tile_map__wrapper)) {
+                &p_gfx_window->ui_tile_map__wrapper)) {
         debug_error("update_graphics_window__ui_tiles, p_gfx_window lacks ui_tile_map data.");
         return;
     }
@@ -75,7 +77,7 @@ void set_graphics_window__ui_tile_map(
         Graphics_Window *p_gfx_window,
         UI_Tile_Map__Wrapper ui_tile_map_wrapper) {
     if (is_ui_tile_map__wrapper__valid(
-                p_gfx_window->ui_tile_map__wrapper)) {
+                &p_gfx_window->ui_tile_map__wrapper)) {
         debug_warning("set_graphics_window__ui_tile_map, ui_tile_map already assigned.");
     }
 
@@ -127,6 +129,9 @@ void set_position_3i32_of__graphics_window(
     }
     p_graphics_window->position_of__gfx_window =
         position_of__gfx_window__3i32;
+    sort_graphic_windows_in__graphic_window_manager(
+            get_p_graphics_window_manager_from__gfx_context(
+                get_p_gfx_context_from__game(p_game)));
 }
 
 void set_position_3i32_of__graphics_window__relative_to(
@@ -160,6 +165,10 @@ void set_position_3i32_of__graphics_window__relative_to(
             &p_graphics_window
             ->position_of__gfx_window, 
             &position__new__3i32);
+
+    sort_graphic_windows_in__graphic_window_manager(
+            get_p_graphics_window_manager_from__gfx_context(
+                get_p_gfx_context_from__game(p_game)));
 }
 
 /* TODO: pulled from SDL back end, needed?
@@ -267,13 +276,145 @@ Sprite *allocate_p_sprite_from__graphics_window(
             texture_flags_for__sprite);
 }
 
+void release_graphics_window_ui_manager(
+        Game *p_game,
+        Graphics_Window *p_graphics_window) {
+#ifndef NEBUG
+    if (!p_game) {
+        debug_error("release_graphics_window_ui_manager, p_game == 0.");
+        return;
+    }
+#endif
+#ifndef NDEBUG
+    if (!p_graphics_window) {
+        debug_error("release_graphics_window_ui_manager, p_graphics_window == 0.");
+        return;
+    }
+#endif
+
+    UI_Manager *p_ui_manager =
+        get_p_ui_manager_from__graphics_window(
+                p_game, 
+                p_graphics_window);
+
+    if (!p_ui_manager)
+        return;
+
+    release_p_ui_manager_from__ui_context(
+            p_game, 
+            GET_UUID_P(p_ui_manager));
+}
+
+void release_graphics_window_sprite_manager(
+        Game *p_game,
+        Graphics_Window *p_graphics_window) {
+#ifndef NEBUG
+    if (!p_game) {
+        debug_error("release_graphics_window_sprite_manager, p_game == 0.");
+        return;
+    }
+#endif
+#ifndef NDEBUG
+    if (!p_graphics_window) {
+        debug_error("release_graphics_window_sprite_manager, p_graphics_window == 0.");
+        return;
+    }
+#endif
+
+    Sprite_Manager *p_sprite_manager =
+        get_p_sprite_manager_from__graphics_window(
+                p_game, 
+                p_graphics_window);
+
+    if (!p_sprite_manager)
+        return;
+
+    release_sprite_manager_from__sprite_context(
+            get_p_sprite_context_from__gfx_context(
+                get_p_gfx_context_from__game(p_game)), 
+            p_sprite_manager);
+}
+
+void reset_graphics_window(
+        Game *p_game,
+        Graphics_Window *p_graphics_window,
+        bool is_releasing_unprovided_children) {
+    if (is_ui_tile_map__wrapper__valid(
+                get_p_ui_tile_map_from__graphics_window(
+                    p_graphics_window))) {
+        release_ui_tile_map_with__ui_tile_map_manager(
+                get_p_ui_tile_map_manager_from__gfx_context(
+                    get_p_gfx_context_from__game(p_game)), 
+                &p_graphics_window->ui_tile_map__wrapper);
+    }
+    release_graphics_window_ui_manager(
+            p_game, 
+            p_graphics_window);
+    release_graphics_window_sprite_manager(
+            p_game, 
+            p_graphics_window);
+
+    reset_children_of__graphics_window_from__graphics_window_manager(
+            p_game, 
+            get_p_graphics_window_manager_from__gfx_context(
+                get_p_gfx_context_from__game(p_game)), 
+            p_graphics_window,
+            is_releasing_unprovided_children);
+}
+
+bool is_graphics_window_in_need_of__composition(
+        Game *p_game,
+        Graphics_Window *p_gfx_window) {
+#ifndef NDEBUG
+    if (!p_gfx_window) {
+        debug_error("is_graphics_window_in_need_of__composition, p_gfx_window == 0.");
+        return false;
+    }
+#endif
+    UI_Manager *p_ui_manager =
+        get_p_ui_manager_from__graphics_window(
+                p_game, 
+                p_gfx_window);
+    if (p_ui_manager && is_ui_manager__dirty(p_ui_manager)) {
+        set_graphics_window_as__in_need_of__composition(p_gfx_window);
+    }
+    return p_gfx_window->graphics_window__flags
+        & GRAPHICS_WINDOW__FLAG__COMPOSE__DIRTY
+        ;
+}
+
+
+void set_graphics_window_as__no_longer_needing__composition(
+        Game *p_game,
+        Graphics_Window *p_gfx_window) {
+#ifndef NDEBUG
+    if (!p_gfx_window) {
+        debug_error("set_graphics_window_as__no_longer_needing__composition, p_gfx_window == 0.");
+        return;
+    }
+#endif
+    UI_Manager *p_ui_manager =
+        get_p_ui_manager_from__graphics_window(
+                p_game, 
+                p_gfx_window);
+    if (p_ui_manager) {
+        set_ui_manager_as__NOT_dirty(p_ui_manager);
+    }
+    p_gfx_window->graphics_window__flags &=
+        ~GRAPHICS_WINDOW__FLAG__COMPOSE__DIRTY
+        ;
+}
+
 void f_graphics_window__default_compose(
         Game *p_game,
         Graphics_Window *p_gfx_window) {
-    set_graphics_window_as__no_longer_needing__composition(p_gfx_window);
+    set_graphics_window_as__no_longer_needing__composition(
+            p_game,
+            p_gfx_window);
     UI_Manager *p_ui_manager = get_p_ui_manager_from__graphics_window(
             p_game, 
             p_gfx_window);
+    
     // Compose the background then let UI elements overlay.
     PLATFORM_compose_gfx_window(
             p_game, 
@@ -290,6 +431,7 @@ void f_graphics_window__default_render(
         Game *p_game,
         Graphics_Window *p_gfx_window) {
     if (is_graphics_window_in_need_of__composition(
+                p_game,
                 p_gfx_window)) {
         p_gfx_window->f_PLATFORM_compose_gfx_window(
                 p_game,
@@ -322,3 +464,4 @@ void f_graphics_window__default_render(
             p_game, 
             p_gfx_window);
 }
+

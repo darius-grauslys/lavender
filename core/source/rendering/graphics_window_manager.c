@@ -277,6 +277,82 @@ void set_graphics_window_as__parent_to__this_graphics_window(
             p_graphics_window_manager);
 }
 
+void reset_platform_provided_graphics_windows(
+        Game *p_game,
+        bool is_releasing_unprovided_children) {
+    Graphics_Window_Manager *p_graphics_window_manager =
+        get_p_graphics_window_manager_from__gfx_context(
+                get_p_gfx_context_from__game(p_game));
+
+    Graphics_Window *ptr_array_of__graphics_windows[
+        MAX_QUANTITY_OF__GRAPHICS_WINDOWS];
+
+    Index__u32 index_of__current_acquisition = 0;
+    Quantity__u32 quantity_overflowed__u32;
+    do {
+        bool acquisition_success = 
+            allocate_or_get__platform_provided_graphics_windows(
+                    get_p_gfx_context_from__game(p_game), 
+                    p_graphics_window_manager, 
+                    ptr_array_of__graphics_windows, 
+                    MAX_QUANTITY_OF__GRAPHICS_WINDOWS, 
+                    &quantity_overflowed__u32, 
+                    index_of__current_acquisition);
+        if (!acquisition_success) {
+            debug_error("reset_platform_provided_graphics_windows, failure on window acquisition.");
+            return;
+        }
+        for (Index__u32 index_of__gfx_window = 0;
+                index_of__gfx_window < MAX_QUANTITY_OF__GRAPHICS_WINDOWS;
+                index_of__gfx_window++) {
+            Graphics_Window *p_graphics_window =
+                ptr_array_of__graphics_windows[index_of__gfx_window];
+            if (!p_graphics_window)
+                break;
+            reset_graphics_window(
+                    p_game, 
+                    p_graphics_window, 
+                    is_releasing_unprovided_children);
+        }
+        index_of__current_acquisition += quantity_overflowed__u32;
+    } while (quantity_overflowed__u32);
+}
+
+void reset_children_of__graphics_window_from__graphics_window_manager(
+        Game *p_game,
+        Graphics_Window_Manager *p_graphics_window_manager,
+        Graphics_Window *p_graphics_window,
+        bool is_releasing_unprovided_children) {
+    for (Index__u32 index_of__graphics_window = 0;
+            index_of__graphics_window < MAX_QUANTITY_OF__GRAPHICS_WINDOWS;
+            index_of__graphics_window++) {
+        Graphics_Window *p_graphics_window__child =
+            get_p_graphics_window_by__index_from__manager(
+                    p_graphics_window_manager, 
+                    index_of__graphics_window);
+        if (!p_graphics_window__child 
+                || !is_graphics_window__allocated(p_graphics_window__child))
+            continue;
+        if (!is_graphics_window_a__child_of__this_graphics_window(
+                    p_graphics_window__child, 
+                    p_graphics_window))
+            continue;
+        // NOTE: This is potentially recursive.
+        if (is_releasing_unprovided_children
+                && !is_graphics_window__platform_provided(
+                    p_graphics_window)) {
+            release_graphics_window_from__graphics_window_manager(
+                    p_game, 
+                    p_graphics_window);
+        } else {
+            reset_graphics_window(
+                    p_game, 
+                    p_graphics_window__child,
+                    is_releasing_unprovided_children);
+        }
+    }
+}
+
 void release_children_of__graphics_window_from__graphics_window_manager(
         Game *p_game,
         Graphics_Window_Manager *p_graphics_window_manager,
@@ -344,12 +420,12 @@ void release_graphics_window_from__graphics_window_manager(
                 p_sprite_manager);
     }
     if (is_ui_tile_map__wrapper__valid(
-                get_ui_tile_map_from__graphics_window(
+                get_p_ui_tile_map_from__graphics_window(
                     p_graphics_window))) {
         release_ui_tile_map_with__ui_tile_map_manager(
                 get_p_ui_tile_map_manager_from__gfx_context(
                     p_gfx_context), 
-                get_ui_tile_map_from__graphics_window(
+                get_p_ui_tile_map_from__graphics_window(
                     p_graphics_window));
     }
     DEALLOCATE_P(p_graphics_window);
@@ -735,6 +811,7 @@ void compose_graphic_windows_in__graphics_window_manager(
             break;
         }
         if (!is_graphics_window_in_need_of__composition(
+                    p_game,
                     p_gfx_window)) {
             continue;
         }
@@ -925,6 +1002,8 @@ bool allocate_or_get__platform_provided_graphics_windows(
             }
 
 assign_window:
+            set_graphics_window_as__platform_provided(
+                    p_graphics_window_possessing_this__PLATFORM_graphics_window);
             ptr_array_of__graphics_windows[
                 index_of__graphics_window__u32] = 
                     p_graphics_window_possessing_this__PLATFORM_graphics_window;

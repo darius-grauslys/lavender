@@ -9,6 +9,7 @@ void initialize_ui_element_as__window_element_and__open_window(
         UI_Element *p_ui_window_element,
         Game *p_game,
         Graphics_Window_Kind the_kind_of__graphics_window_to__open,
-        Identifier__u32 uuid_of__parent_window__u32);
+        Identifier__u32 uuid_of__parent_window__u32,
+        Vector__3i32 origin_of__gfx_window__3i32);
 
 #endif

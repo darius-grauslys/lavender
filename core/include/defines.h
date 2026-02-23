@@ -428,7 +428,7 @@ typedef uint32_t Texture_Flags;
 ///
 /// TEXTURE_FLAGS:
 /// Bit orderings, from most significant to least:
-/// [32 <-> 20 bits,    PLATFORM specific flags]
+/// [32 <-> 21 bits,    PLATFORM specific flags]
 /// [20-13 bits,        CORE flags]
 /// [12-10 bits,        format]
 /// [9-7 bits,          render method] 
@@ -459,6 +459,8 @@ typedef uint32_t Texture_Flags;
         TEXTURE_FLAG__LENGTH_x128)  //0b101
 #define TEXTURE_FLAG__LENGTH_x512   (1+\
         TEXTURE_FLAG__LENGTH_x256)  //0b110
+#define TEXTURE_FLAG__LENGTH_x1024   (1+\
+        TEXTURE_FLAG__LENGTH_x512)  //0b111
 
 // Texture size specifiers
 // Add these combinations in as needed:
@@ -525,6 +527,36 @@ typedef uint32_t Texture_Flags;
 #define TEXTURE_FLAG__SIZE_512x512 \
     TEXTURE_FLAG__LENGTH_x512 \
     | (TEXTURE_FLAG__LENGTH_x512 << \
+            TEXTURE_FLAG__LENGTH__BIT_COUNT)
+#define TEXTURE_FLAG__SIZE_512x1024 \
+    TEXTURE_FLAG__LENGTH_x512 \
+    | (TEXTURE_FLAG__LENGTH_x1024 << \
+            TEXTURE_FLAG__LENGTH__BIT_COUNT)
+#define TEXTURE_FLAG__SIZE_1024x512 \
+    TEXTURE_FLAG__LENGTH_x1024 \
+    | (TEXTURE_FLAG__LENGTH_x512 << \
+            TEXTURE_FLAG__LENGTH__BIT_COUNT)
+#define TEXTURE_FLAG__SIZE_1024x1024 \
+    TEXTURE_FLAG__LENGTH_x1024 \
+    | (TEXTURE_FLAG__LENGTH_x1024 << \
+            TEXTURE_FLAG__LENGTH__BIT_COUNT)
+///
+/// The following texture sizes are mapped:
+/// 8x256  -> 2048x2048
+/// 8x512  -> 4096x4096
+/// 0x1024 -> 8192x8192
+///
+#define TEXTURE_FLAG__SIZE_2048x2048 \
+    TEXTURE_FLAG__LENGTH_x8 \
+    | (TEXTURE_FLAG__LENGTH_x256 << \
+            TEXTURE_FLAG__LENGTH__BIT_COUNT)
+#define TEXTURE_FLAG__SIZE_4096x4096 \
+    TEXTURE_FLAG__LENGTH_x8 \
+    | (TEXTURE_FLAG__LENGTH_x512 << \
+            TEXTURE_FLAG__LENGTH__BIT_COUNT)
+#define TEXTURE_FLAG__SIZE_8192x8192 \
+    TEXTURE_FLAG__LENGTH_x8 \
+    | (TEXTURE_FLAG__LENGTH_x1024 << \
             TEXTURE_FLAG__LENGTH__BIT_COUNT)
 
 // We support up to 8 texture render methods 
@@ -1483,11 +1515,10 @@ typedef uint8_t UI_Button_Flags__u8;
 #define UI_FLAGS__BIT_IS_ENABLED BIT(0)
 #define UI_FLAGS__BIT_IS_FOCUSED BIT(1)
 #define UI_FLAGS__BIT_IS_NON_INTERACTIVE BIT(2)
-#define UI_FLAGS__BIT_IS_NEEDING_UPDATE BIT(3)
-#define UI_FLAGS__BIT_IS_BEING_HELD BIT(4)
-#define UI_FLAGS__BIT_IS_BEING_DRAGGED BIT(5)
-#define UI_FLAGS__BIT_IS_SNAPPED_X_OR_Y_AXIS BIT(6)
-#define UI_FLAGS__BIT_IS_USING__SPRITE_OR_UI_TILE_SPAN BIT(7)
+#define UI_FLAGS__BIT_IS_BEING_HELD BIT(3)
+#define UI_FLAGS__BIT_IS_BEING_DRAGGED BIT(4)
+#define UI_FLAGS__BIT_IS_SNAPPED_X_OR_Y_AXIS BIT(5)
+#define UI_FLAGS__BIT_IS_USING__SPRITE_OR_UI_TILE_SPAN BIT(6)
 #define UI_FLAGS__BIT_RESERVED_0 BIT(8)
 #define UI_FLAGS__BIT_RESERVED_1 BIT(9)
 #define UI_FLAGS__BIT_RESERVED_2 BIT(10)
@@ -1593,6 +1624,16 @@ typedef void (*f_Foreach_UI_Element)(
         Graphics_Window *p_gfx_window,
         UI_Element *p_ui_element);
 
+typedef u8 UI_Manager_Flags__u8;
+
+#define UI_MANAGER_FLAGS__NONE 0
+
+///
+/// This flag informs the graphics window to perform
+/// a composition.
+/// 
+#define UI_MANAGER_FLAG__IS_DIRTY BIT(0)
+
 typedef struct UI_Manager_t {
     Serialization_Header _serialization_header;
     UI_Element *pM_ui_element_pool;
@@ -1601,6 +1642,7 @@ typedef struct UI_Manager_t {
     UI_Element *p_ui_element__focused;
     UI_Element **p_ptr_of__ui_element__latest_in_ptr_array;
     Quantity__u16 max_quantity_of__ui_elements;
+    UI_Manager_Flags__u8 ui_manager_flags__u8;
 } UI_Manager;
 
 typedef struct UI_Context_t UI_Context;
@@ -2353,8 +2395,8 @@ typedef struct World_t {
 typedef uint8_t Graphics_Window_Flags__u8;
 
 #define GRAPHICS_WINDOW__FLAG__IS_ENABLED BIT(0)
-#define GRAPHICS_WINDOW__FLAG__IS_RENDERING_WORLD BIT(1)
-#define GRAPHICS_WINDOW__FLAG__COMPOSE__DIRTY BIT(2)
+#define GRAPHICS_WINDOW__FLAG__COMPOSE__DIRTY BIT(1)
+#define GRAPHICS_WINDOW__FLAG__IS_PLATFORM_PROVIDED BIT(2)
 
 #define GRAPHICS_WINDOW__FLAGS__NONE 0
 

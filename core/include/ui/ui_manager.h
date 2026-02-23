@@ -158,4 +158,21 @@ UI_Element *allocate_ui_element_from__ui_manager_in__succession(
     return p_predecessor->p_next;
 }
 
+static inline
+bool is_ui_manager__dirty(UI_Manager *p_ui_manager) {
+    return p_ui_manager->ui_manager_flags__u8
+        & UI_MANAGER_FLAG__IS_DIRTY
+        ;
+}
+
+static inline
+void set_ui_manager_as__dirty(UI_Manager *p_ui_manager) {
+    p_ui_manager->ui_manager_flags__u8 |= UI_MANAGER_FLAG__IS_DIRTY;
+}
+
+static inline
+void set_ui_manager_as__NOT_dirty(UI_Manager *p_ui_manager) {
+    p_ui_manager->ui_manager_flags__u8 &= ~UI_MANAGER_FLAG__IS_DIRTY;
+}
+
 #endif
