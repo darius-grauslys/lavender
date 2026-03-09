@@ -190,8 +190,8 @@ World *get_p_world_from__game(Game *p_game) {
 }
 
 static inline
-Hitbox_AABB_Manager *get_p_hitbox_aabb_manager_from__game(Game *p_game) {
-    return &p_game->hitbox_aabb_manager;
+Hitbox_Context *get_p_hitbox_context_from__game(Game *p_game) {
+    return &p_game->hitbox_context;
 }
 
 static inline 

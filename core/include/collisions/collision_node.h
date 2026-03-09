@@ -12,10 +12,12 @@ void initialize_collision_node(
 ///
 /// Returns false if failure.
 ///
+# error TODO: update to match sig
 bool add_entry_to__collision_node(
         Collision_Node_Pool *p_collision_node_pool,
         Collision_Node *p_collision_node,
-        Hitbox_AABB *p_hitbox);
+        Chunk_Vector__3i32 gsv__3i32,
+        Identifier__u32 uuid_u32_of__entry);
 
 void remove_entry_from__collision_node(
         Collision_Node_Pool *p_collision_node_pool,

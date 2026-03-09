@@ -39,6 +39,12 @@ Game_Action_Kind get_kind_of__game_action(
 }
 
 static inline
+Vector__3i32F4 get_broadcast_point_of__game_action(
+        Game_Action *p_game_action) {
+    return p_game_action->vector_3i32F4__broadcast_point;
+}
+
+static inline
 bool is_game_action__allocated(Game_Action *p_game_action) {
     return p_game_action 
         && p_game_action->game_action_flags

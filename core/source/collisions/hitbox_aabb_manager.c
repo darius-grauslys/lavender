@@ -7,6 +7,7 @@
 #include "numerics.h"
 #include "serialization/hashing.h"
 #include "serialization/serialization_header.h"
+#include "types/implemented/hitbox_manager_type.h"
 #include "vectors.h"
 #include "world/chunk_vectors.h"
 #include "world/global_space.h"
@@ -23,7 +24,70 @@ Hitbox_AABB *get_p_hitbox_aabb_by__index_from__pool_of__hitbox_aabb_manager(
         return 0;
     }
 #endif
-    return &p_hitbox_aabb_manager->hitboxes[index_of__hitbox];
+    return &p_hitbox_aabb_manager->pM_pool_of__hitboxes[index_of__hitbox];
+}
+
+void *f_hitbox_manager__allocator_AABB(
+        Hitbox_Manager_Type the_type_of__hitbox_manager_to__allocate,
+        Quantity__u32 quantity_of__hitboxes_to__pool) {
+    void *pM_hitbox_manager = malloc(sizeof(Hitbox_AABB_Manager));
+    if (!pM_hitbox_manager) {
+        debug_error("f_hitbox_manager__allocator_AABB, failed to allocate manager.");
+        return 0;
+    }
+
+    void *pM_pool_of__hitboxes = 
+        malloc(sizeof(Hitbox_AABB) * quantity_of__hitboxes_to__pool);
+    if (!pM_pool_of__hitboxes) {
+        debug_error("f_hitbox_manager__allocator_AABB, failed to allocate hitbox pool.");
+        free(pM_hitbox_manager);
+        return 0;
+    }
+
+    void *pM_ptr_array_of__hitbox_records = 
+        malloc(sizeof(Hitbox_AABB*) * quantity_of__hitboxes_to__pool);
+    if (!pM_ptr_array_of__hitbox_records) {
+        debug_error("f_hitbox_manager__allocator_AABB, failed to allocate hitbox pointer array.");
+        free(pM_hitbox_manager);
+        free(pM_pool_of__hitboxes);
+        return 0;
+    }
+
+    Hitbox_AABB_Manager *p_hitbox_manager__aabb =
+        (Hitbox_AABB_Manager*)pM_hitbox_manager;
+
+    p_hitbox_manager__aabb->pM_pool_of__hitboxes =
+        (Hitbox_AABB*)pM_pool_of__hitboxes;
+    p_hitbox_manager__aabb->pM_ptr_array_of__hitbox_records =
+        (Hitbox_AABB**)pM_ptr_array_of__hitbox_records;
+    p_hitbox_manager__aabb->quantity_of__hitboxes =
+        quantity_of__hitboxes_to__pool;
+
+    return pM_hitbox_manager;
+}
+
+void f_hitbox_manager__deallocator_AABB(
+        void *pM_hitbox_manager,
+        Hitbox_Manager_Type the_type_of__hitbox_manager_to__deallocate) {
+    if (!pM_hitbox_manager) {
+        debug_error("f_hitbox_manager__deallocator_AABB, pM_hitbox_manager == 0.");
+        return;
+    }
+
+#ifndef NDEBUG
+    if (Hitbox_Manager_Type__AABB
+            != the_type_of__hitbox_manager_to__deallocate) {
+        debug_error("f_hitbox_manager__deallocator_AABB, incompatible type.");
+        return;
+    }
+#endif
+
+    Hitbox_AABB_Manager *p_hitbox_manager__aabb = 
+        (Hitbox_AABB_Manager*)pM_hitbox_manager;
+
+    free(p_hitbox_manager__aabb->pM_pool_of__hitboxes);
+    free(p_hitbox_manager__aabb->pM_ptr_array_of__hitbox_records);
+    free(p_hitbox_manager__aabb);
 }
 
 void initialize_hitbox_aabb_manager(
@@ -32,8 +96,8 @@ void initialize_hitbox_aabb_manager(
             0,
             sizeof(Hitbox_AABB_Manager));
     initialize_serialization_header__contiguous_array(
-            (Serialization_Header*)p_hitbox_aabb_manager->hitboxes, 
-            MAX_QUANTITY_OF__HITBOX_AABB, 
+            (Serialization_Header*)p_hitbox_aabb_manager->pM_pool_of__hitboxes, 
+            p_hitbox_aabb_manager->quantity_of__hitboxes, 
             sizeof(Hitbox_AABB));
 }
 
@@ -41,15 +105,15 @@ Hitbox_AABB *allocate_hitbox_aabb_from__hitbox_aabb_manager(
         Hitbox_AABB_Manager *p_hitbox_aabb_manager,
         Identifier__u32 uuid__u32) {
     if (p_hitbox_aabb_manager
-            ->index_of__next_hitbox_aabb_in__ptr_array
-            >= MAX_QUANTITY_OF__HITBOX_AABB) {
+            ->index_of__next_hitbox_aabb_in__records
+            >= p_hitbox_aabb_manager->quantity_of__hitboxes) {
         debug_error("allocate_hitbox_aabb_from__hitbox_aabb_manager, hitbox_manager is full.");
         return 0;
     }
     Index__u32 index_of__hitbox =
         poll_for__uuid_collision(
-                (Serialization_Header *)p_hitbox_aabb_manager->hitboxes, 
-                MAX_QUANTITY_OF__HITBOX_AABB, 
+                (Serialization_Header *)p_hitbox_aabb_manager->pM_pool_of__hitboxes, 
+                p_hitbox_aabb_manager->quantity_of__hitboxes, 
                 uuid__u32,
                 INDEX__UNKNOWN__u32);
     if (is_index_u32__out_of_bounds(index_of__hitbox)) {
@@ -68,9 +132,9 @@ Hitbox_AABB *allocate_hitbox_aabb_from__hitbox_aabb_manager(
         return 0;
     }
 
-    p_hitbox_aabb_manager->ptr_array_of__active_hitboxes[
+    p_hitbox_aabb_manager->pM_ptr_array_of__hitbox_records[
         p_hitbox_aabb_manager
-            ->index_of__next_hitbox_aabb_in__ptr_array++] =
+            ->index_of__next_hitbox_aabb_in__records++] =
             p_hitbox_aabb;
 
     initialize_serialization_header(
@@ -86,15 +150,15 @@ void release_hitbox_aabb_from__hitbox_aabb_manager(
         Hitbox_AABB *p_hitbox_aabb) {
 #ifndef NDEBUG
     u32 index = p_hitbox_aabb
-        - p_hitbox_aabb_manager->hitboxes;
-    if (index >= MAX_QUANTITY_OF__HITBOX_AABB) {
+        - p_hitbox_aabb_manager->pM_pool_of__hitboxes;
+    if (index >= p_hitbox_aabb_manager->quantity_of__hitboxes) {
         debug_error("release_hitbox_aabb_from__hitbox_aabb_manager, p_hitbox is not allocated with this manager.");
         return;
     }
 #endif
 
     for (Index__u32 index_of__hitbox = 0;
-            index_of__hitbox < MAX_QUANTITY_OF__HITBOX_AABB;
+            index_of__hitbox < p_hitbox_aabb_manager->quantity_of__hitboxes;
             index_of__hitbox++) {
         Hitbox_AABB *p_hitbox_aabb__in_ptr_array =
             get_p_hitbox_aabb_by__index_from__hitbox_aabb_manager(
@@ -107,14 +171,14 @@ void release_hitbox_aabb_from__hitbox_aabb_manager(
         }
 
         if (p_hitbox_aabb__in_ptr_array == p_hitbox_aabb) {
-            p_hitbox_aabb_manager->ptr_array_of__active_hitboxes[
+            p_hitbox_aabb_manager->pM_ptr_array_of__hitbox_records[
                 index_of__hitbox] =
-                    p_hitbox_aabb_manager->ptr_array_of__active_hitboxes[
+                    p_hitbox_aabb_manager->pM_ptr_array_of__hitbox_records[
                     --p_hitbox_aabb_manager
-                        ->index_of__next_hitbox_aabb_in__ptr_array];
-            p_hitbox_aabb_manager->ptr_array_of__active_hitboxes[
+                        ->index_of__next_hitbox_aabb_in__records];
+            p_hitbox_aabb_manager->pM_ptr_array_of__hitbox_records[
                 p_hitbox_aabb_manager
-                    ->index_of__next_hitbox_aabb_in__ptr_array] = 0;
+                    ->index_of__next_hitbox_aabb_in__records] = 0;
             break;
         }
     }
@@ -144,8 +208,8 @@ Hitbox_AABB *get_p_hitbox_aabb_by__uuid_u32_from__hitbox_aabb_manager(
         Hitbox_AABB_Manager *p_hitbox_aabb_manager,
         Identifier__u32 uuid__u32) {
     return (Hitbox_AABB*)dehash_identitier_u32_in__contigious_array(
-            (Serialization_Header *)p_hitbox_aabb_manager->hitboxes, 
-            MAX_QUANTITY_OF__HITBOX_AABB, 
+            (Serialization_Header *)p_hitbox_aabb_manager->pM_pool_of__hitboxes, 
+            p_hitbox_aabb_manager->quantity_of__hitboxes, 
             uuid__u32);
 }
 
@@ -154,7 +218,7 @@ void poll_hitbox_manager_for__movement(
         Hitbox_AABB_Manager *p_hitbox_aabb_manager) {
     for (Index__u32 index_of__hitbox = 0;
             index_of__hitbox
-            < MAX_QUANTITY_OF__HITBOX_AABB;
+            < p_hitbox_aabb_manager->quantity_of__hitboxes;
             index_of__hitbox++) {
         Hitbox_AABB *p_hitbox_aabb =
             get_p_hitbox_aabb_by__index_from__hitbox_aabb_manager(

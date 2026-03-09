@@ -6,6 +6,7 @@
 #include "types/implemented/chunk_generator_kind.h"
 #include "types/implemented/entity_kind.h"
 #include "types/implemented/graphics_window_kind.h"
+#include "types/implemented/hitbox_kind.h"
 #include "types/implemented/scene_kind.h"
 #include "types/implemented/sprite_animation_group_kind.h"
 #include "util/bitmap/bitmap.h"
@@ -358,17 +359,95 @@ typedef void (*f_Hitbox_AABB_Tile_Touch_Handler)(
         World *p_world,
         Hitbox_AABB *p_hitbox_aabb,
         Tile *p_tile,
-        Signed_Index__i32 x__i32,
+    Signed_Index__i32 x__i32,
         Signed_Index__i32 y__i32);
 
+#ifndef MAX_QUANTITY_OF__HITBOX_AABB
 #define MAX_QUANTITY_OF__HITBOX_AABB 256
+#endif
 
 typedef struct Hitbox_AABB_Manager_t {
-    Hitbox_AABB hitboxes[MAX_QUANTITY_OF__HITBOX_AABB];
-    Hitbox_AABB *ptr_array_of__active_hitboxes[
-        MAX_QUANTITY_OF__HITBOX_AABB];
-    Index__u32 index_of__next_hitbox_aabb_in__ptr_array;
+    Quantity__u32 quantity_of__hitboxes;
+    Hitbox_AABB *pM_pool_of__hitboxes;
+    Hitbox_AABB **pM_ptr_array_of__hitbox_records;
+    Index__u32 index_of__next_hitbox_aabb_in__records;
 } Hitbox_AABB_Manager;
+
+#include <types/implemented/hitbox_manager_type.h>
+#ifndef DEFINE_HITBOX_MANAGER_TYPE
+typedef enum Hitbox_Manager_Type_t {
+    Hitbox_Manager_Type__Default,
+    Hitbox_Manager_Type__AABB = Hitbox_Manager_Type__Default,
+    Hitbox_Manager_Type__AAABBB,
+    Hitbox_Manager_Type__Unknown
+} Hitbox_Manager_Type;
+#endif
+
+typedef struct Hitbox_Manager_Instance_t {
+    Serialization_Header _serialization_header;
+    void *pM_hitbox_manager;
+    Hitbox_Manager_Type type_of__hitbox_manager;
+} Hitbox_Manager_Instance;
+
+#ifndef MAX_QUANTITY_OF__HITBOX
+// The collective quantity of hitboxes among all allocated pools
+// cannot exceed this limit.
+#define MAX_QUANTITY_OF__HITBOX 256
+#endif
+
+#ifndef MAX_QUANTITY_OF__HITBOX_MANAGERS
+#define MAX_QUANTITY_OF__HITBOX_MANAGERS 8
+#endif
+
+typedef void *(*f_hitbox_manager__allocator)(
+        Hitbox_Manager_Type the_type_of__hitbox_manager_to__allocate,
+        Quantity__u32 quantity_of__hitboxes_to__pool);
+
+typedef void (*f_hitbox_manager__deallocator)(
+        void *pM_hitbox_manager,
+        Hitbox_Manager_Type the_type_of__hitbox_manager_to__deallocate);
+
+///
+/// Relatively expensive call, better to get the underlying hitbox type
+/// and hold onto it if possible.
+///
+/// NOTE: if you are implementing a handler for this signature
+/// you SHOULD assume the hitbox is now dirty EVEN IF the callee
+/// only reads the values (thus further adding performance overhead
+/// by doing this opaque-ptr call).
+///
+/// Should only be used on infrequent code that is not limited to a
+/// specific hitbox manager type.
+///
+/// Any optional argument that is not null will not be assigned to.
+///
+typedef void (*f_hitbox_manager__get_ptrs_to_properties_of__hitbox)(
+        void *pV_hitbox,
+        Vector__3i32 **p_ptr_OPTIONAL_dimensions__3i32,
+        Vector__3i32F4 **p_ptr_OPTIONAL_position__3i32F4,
+        Vector__3i32F4 **p_ptr_OPTIONAL_velocity__3i32F4,
+        Vector__3i32F4 **p_ptr_OPTIONAL_acceleration__3i32F4);
+
+typedef void *(*f_hitbox_manager__allocate_hitbox)(
+        void *pV_hitbox_manager,
+        Identifier__u32 uuid_of__hitbox__u32,
+        Vector__3i32 dimensions__3i32,
+        Vector__3i32F4 position__3i32F4,
+        Vector__3i32F4 velocity__3i32F4,
+        Vector__3i32F4 acceleration__3i32F4);
+
+typedef struct Hitbox_Manager_Instance__Invocation_Table_t {
+    f_hitbox_manager__allocator f_hitbox_manager__allocator;
+    f_hitbox_manager__deallocator f_hitbox_manager__deallocator;
+    f_hitbox_manager__get_ptrs_to_properties_of__hitbox f_hitbox_manager__get_properties_of__hitbox;
+} Hitbox_Manager_Instance__Invocation_Table;
+
+typedef struct Hitbox_Context_t {
+    Hitbox_Manager_Instance hitbox_manager_instances[
+        MAX_QUANTITY_OF__HITBOX_MANAGERS];
+    Hitbox_Manager_Instance__Invocation_Table hitbox_manager_instance__invocation_table[
+        Hitbox_Manager_Type__Unknown];
+} Hitbox_Context;
 
 /// When checking the distance between two collisions along each axis
 /// anything equal to or less than this value is ignored when determining
@@ -2156,6 +2235,11 @@ typedef struct Game_Action_t {
                 ///
                 /// Set to out of bounds for a global broadcast
                 ///
+#warning ...........
+#warning ..
+#warning broadcast point is set by game.c, needs to be done in init game_action
+#warning ..
+#warning ...........
                 Vector__3i32F4 vector_3i32F4__broadcast_point;
             };
             Game_Action_Kind the_kind_of_game_action__this_action_is;
@@ -2256,21 +2340,42 @@ typedef struct Game_Action_t {
         /// ---------------------
 
         /// ---------------------
-        ///     Hitbox_AABB
+        ///     Hitbox
         /// ---------------------
 
         union {
             struct {
                 Identifier__u32 
                     ga_kind__hitbox__uuid_of__target; 
-                Vector__3i32F4 
-                    ga_kind__hitbox__position__3i32F4;
-                Vector__3i32F4 
-                    ga_kind__hitbox__velocity__3i32F4;
-                Vector__3i16F8 
-                    ga_kind__hitbox__acceleration__3i16F8;
-            }; // Hitbox__Set_Position
-        }; // Hitbox_AABB
+                union {
+                    struct { // components 3i32
+                        Vector__3i32
+                            ga_kind__hitbox__position__3i32;
+                        Vector__3i32 
+                            ga_kind__hitbox__velocity__3i32;
+                    }; // components 3i32
+                    struct { // components 3i32F4
+                        Vector__3i32F4 
+                            ga_kind__hitbox__position__3i32F4;
+                        Vector__3i32F4 
+                            ga_kind__hitbox__velocity__3i32F4;
+                    }; // components 3i32F4
+                };
+                union {
+                    struct { // components 3i16
+                        Vector__3i16 
+                            ga_kind__hitbox__acceleration__3i16;
+                    }; // components 3i16
+                    struct { // components 3i16F4
+                    }; // components 3i16F4
+                    struct { // components 3i16F8
+                        Vector__3i16F8 
+                            ga_kind__hitbox__acceleration__3i16F8;
+                    }; // components 3i16F8
+                };
+                Hitbox_Kind ga_kind__hitbox__the_kind_of__hitbox;
+            }; // Hitbox__Update
+        }; // Hitbox
 
         /// ---------------------
         /// </   Hitbox_AABB   >
@@ -2464,9 +2569,9 @@ typedef u32 Game_Flags__u32;
 #define GAME_FLAGS__NONE 0
 
 typedef struct Game_t {
-    Input input; // TODO: should memory condense this later
+    Input input; // TODO: should memory condense these fields later
     Scene_Manager scene_manager;
-    Hitbox_AABB_Manager hitbox_aabb_manager;
+    Hitbox_Context hitbox_context;
 
     World *pM_world;
 

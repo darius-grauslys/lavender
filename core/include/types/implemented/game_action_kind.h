@@ -3,6 +3,13 @@
 
 #define DEFINE_GAME_ACTION_KIND
 
+//
+// All Game_Action_Kinds present in this file must
+// remain under modification.
+//
+// In otherwords, only add and remove added Game_Actions.
+//
+
 typedef enum Game_Action_Kind {
     Game_Action_Kind__None = 0,
     Game_Action_Kind__Bad_Request,
@@ -23,8 +30,21 @@ typedef enum Game_Action_Kind {
     Game_Action_Kind__Entity__Spawn,
     Game_Action_Kind__Entity__Get,
     Game_Action_Kind__Sprite,
+    
+    // Opaque pointer hitbox, abstracts to any other
+    // hitbox. Least performant.
     Game_Action_Kind__Hitbox,
-    Game_Action_Kind__Input,
+    Game_Action_Kind__Hitbox__AABB,
+    // TODO: impl:
+    // Game_Action_Kind__Hitbox__AAABBB,
+    // Game_Action_Kind__Hitbox__Ball,
+    // Game_Action_Kind__Hitbox__Sphere,
+
+    // Not a hitbox, delimits the enum end of hitboxes
+    Game_Action_Kind__Hitbox__End,
+
+    // Reuse enum end value
+    Game_Action_Kind__Input = Game_Action_Kind__Hitbox__End,
     Game_Action_Kind__Custom,
 
     ///

@@ -24,7 +24,7 @@ void get_aa_bb_as__vectors_3i32_from__hitbox(
 /// registered to the collision system, DO NOT invoke this.
 /// Instead invoke using game_action.h .
 ///
-void set_hitbox__position_with__3i32F4(
+void set_hitbox_aabb__position_with__3i32F4(
         Hitbox_AABB *hitbox,
         Vector__3i32F4 position__3i32F4);
 
@@ -32,7 +32,7 @@ void set_hitbox__position_with__3i32F4(
 /// registered to the collision system, DO NOT invoke this.
 /// Instead invoke using game_action.h .
 ///
-void set_hitbox__position_with__3i32(
+void set_hitbox_aabb__position_with__3i32(
         Hitbox_AABB *hitbox,
         Vector__3i32 position__3i32);
 
@@ -466,7 +466,7 @@ void set_z_acceleration_to__hitbox(
 }
 
 static inline
-void set_velocity_to__hitbox(
+void set_velocity_to__hitbox_aabb(
         Hitbox_AABB *p_hitbox_aabb,
         Vector__3i32F4 velocity) {
 #ifndef NDEBUG
@@ -482,7 +482,7 @@ void set_velocity_to__hitbox(
 }
 
 static inline
-void set_acceleration_to__hitbox(
+void set_acceleration_to__hitbox_aabb(
         Hitbox_AABB *p_hitbox_aabb,
         Vector__3i16F8 acceleration) {
 #ifndef NDEBUG

@@ -43,6 +43,12 @@ void set_name_of__world(
         World *p_world,
         World_Name_String name_of__world);
 
+bool poll_for_collision_node_update(
+        Game *p_game,
+        Vector__3i32F4 position_old__3i32F4,
+        Vector__3i32F4 position_new__3i32F4,
+        Identifier__u32 uuid_u32_of__entry);
+
 static inline
 Camera *get_p_camera_from__world(World *p_world) {
     return &p_world->camera;

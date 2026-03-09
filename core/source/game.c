@@ -1,5 +1,6 @@
 #include "client.h"
 #include "collisions/hitbox_aabb_manager.h"
+#include "collisions/hitbox_context.h"
 #include "defines.h"
 #include "defines_weak.h"
 #include "game_action/core/world/game_action__world__load_client.h"
@@ -98,8 +99,8 @@ void initialize_game(
             get_p_process_manager_from__game(p_game));
     initialize_sort_list_manager(
             get_p_sort_list_manager_from__game(p_game));
-    initialize_hitbox_aabb_manager(
-            get_p_hitbox_aabb_manager_from__game(p_game));
+    initialize_hitbox_context(
+            get_p_hitbox_context_from__game(p_game));
 
     initialize_aliased_texture_manager(
             get_p_aliased_texture_manager_from__game(p_game));
@@ -570,8 +571,7 @@ Process *save_client(
 ///
 void broadcast_game_action(
         Game *p_game,
-        Game_Action *p_game_action,
-        Global_Space_Vector__3i32 global_space__vector__3i32) {
+        Game_Action *p_game_action) {
     dispatch_game_action_for__client(
             get_p_local_client_by__from__game(p_game), 
             p_game, 
@@ -597,7 +597,9 @@ void broadcast_game_action(
         Local_Space *p_local_space =
             get_p_local_space_from__local_space_manager(
                     get_p_local_space_manager_from__client(p_client), 
-                    global_space__vector__3i32);
+                    vector_3i32F4_to__chunk_vector_3i32(
+                        get_broadcast_point_of__game_action(
+                        p_game_action)));
         if (!p_local_space)
             continue; // broadcast out of bounds.
 
@@ -775,19 +777,9 @@ bool m_game_action_handler__dispatch__multiplayer(
     }
 
     if (is_game_action__broadcasted(p_game_action)) {
-        Global_Space_Vector__3i32 gsv_3i32 = VECTOR__3i32__0_0_0;
-        Hitbox_AABB *p_hitbox_aabb =
-            get_p_hitbox_aabb_by__uuid_u32_from__hitbox_aabb_manager(
-                    get_p_hitbox_aabb_manager_from__game(p_game), 
-                    GET_UUID_P(p_client));
-        if (p_hitbox_aabb) {
-            gsv_3i32 = vector_3i32F4_to__chunk_vector_3i32(
-                    get_position_3i32F4_of__hitbox_aabb(p_hitbox_aabb));
-        }
         broadcast_game_action(
                 p_game, 
-                p_game_action, 
-                gsv_3i32);
+                p_game_action);
         // TODO: is this sufficent to handle errors?
         return is_game_action__bad_request(p_game_action);
     }

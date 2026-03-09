@@ -5,6 +5,14 @@
 #include "defines_weak.h"
 #include "serialization/hashing.h"
 
+void *f_hitbox_manager__allocator_AABB(
+        Hitbox_Manager_Type the_type_of__hitbox_manager_to__allocate,
+        Quantity__u32 quantity_of__hitboxes_to__pool);
+
+void f_hitbox_manager__deallocator_AABB(
+        void *pM_hitbox_manager,
+        Hitbox_Manager_Type the_type_of__hitbox_manager_to__deallocate);
+
 void initialize_hitbox_aabb_manager(
         Hitbox_AABB_Manager *p_hitbox_aabb_manager);
 
@@ -39,13 +47,13 @@ Hitbox_AABB *get_p_hitbox_aabb_by__index_from__hitbox_aabb_manager(
         Hitbox_AABB_Manager *p_hitbox_aabb_manager,
         Index__u32 index_of__hitbox) {
 #ifndef NDEBUG
-    if (index_of__hitbox >= MAX_QUANTITY_OF__HITBOX_AABB) {
+    if (index_of__hitbox >= p_hitbox_aabb_manager->quantity_of__hitboxes) {
         debug_error("get_p_hitbox_aabb_by__index_from__hitbox_aabb_manager, index_of__hitbox out of bounds.");
         return 0;
     }
 #endif
     return p_hitbox_aabb_manager
-        ->ptr_array_of__active_hitboxes[
+        ->pM_ptr_array_of__hitbox_records[
         index_of__hitbox];
 }
 

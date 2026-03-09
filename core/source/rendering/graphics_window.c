@@ -1,4 +1,5 @@
 #include "rendering/graphics_window.h"
+#include "collisions/hitbox_context.h"
 #include "rendering/graphics_window_manager.h"
 #include "debug/debug.h"
 #include "defines.h"
@@ -103,6 +104,18 @@ void allocate_sprite_manager_for__graphics_window(
             get_p_sprite_context_from__gfx_context(p_gfx_context), 
             GET_UUID_P(p_graphics_window),
             max_quantity_of__sprites_in__sprite_manager);
+}
+
+void allocate_hitbox_manager_for__graphics_window(
+        Hitbox_Context *p_hitbox_context,
+        Graphics_Window *p_graphics_window,
+        Hitbox_Manager_Type the_type_of__hitbox_manager_to__allocate,
+        Quantity__u32 max_quantity_of__hitboxes_in__hitbox_pool) {
+    allocate_hitbox_manager_from__hitbox_context(
+            p_hitbox_context, 
+            GET_UUID_P(p_graphics_window), 
+            the_type_of__hitbox_manager_to__allocate, 
+            max_quantity_of__hitboxes_in__hitbox_pool);
 }
 
 void set_position_3i32_of__graphics_window(

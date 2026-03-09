@@ -9,8 +9,10 @@
 #include "rendering/sprite_manager.h"
 #include "serialization/serialization_header.h"
 #include "types/implemented/graphics_window_kind.h"
+#include "types/implemented/hitbox_manager_type.h"
 #include "ui/ui_context.h"
 #include "vectors.h"
+#include "collisions/hitbox_context.h"
 #include <defines.h>
 
 void initialize_graphics_window(
@@ -39,6 +41,12 @@ void allocate_sprite_manager_for__graphics_window(
         Gfx_Context *p_gfx_context,
         Graphics_Window *p_graphics_window,
         Quantity__u32 max_quantity_of__sprites_in__sprite_pool);
+
+void allocate_hitbox_manager_for__graphics_window(
+        Hitbox_Context *p_hitbox_context,
+        Graphics_Window *p_graphics_window,
+        Hitbox_Manager_Type the_type_of__hitbox_manager_to__allocate,
+        Quantity__u32 max_quantity_of__hitboxes_in__hitbox_pool);
 
 void set_position_3i32_of__graphics_window(
         Game *p_game,
@@ -176,6 +184,24 @@ Sprite_Manager *get_p_sprite_manager_from__graphics_window(
     return get_p_sprite_manager_by__uuid_from__sprite_context(
             get_p_sprite_context_from__gfx_context(
                 get_p_gfx_context_from__game(p_game)), 
+            GET_UUID_P(p_graphics_window));
+}
+
+static inline
+Hitbox_Manager_Instance *get_hitbox_manager_instance_from__graphics_window(
+        Game *p_game,
+        Graphics_Window *p_graphics_window) {
+    return get_p_hitbox_manager_instance_using__uuid_from__hitbox_context(
+            get_p_hitbox_context_from__game(p_game),
+            GET_UUID_P(p_graphics_window));
+}
+
+static inline
+Hitbox_AABB_Manager *get_p_hitbox_manager_aabb_from__graphics_window(
+        Game *p_game,
+        Graphics_Window *p_graphics_window) {
+    return get_p_hitbox_aabb_manager_from__hitbox_context(
+            get_p_hitbox_context_from__game(p_game), 
             GET_UUID_P(p_graphics_window));
 }
 

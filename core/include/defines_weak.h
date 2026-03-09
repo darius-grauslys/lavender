@@ -84,6 +84,14 @@ typedef struct Vector__3i32F20_t {
 ///
 /// Mainly used for acceleration
 ///
+typedef struct Vector__3i16_t {
+    i16 x__i16, y__i16, z__i16;
+} Vector__3i16;
+
+typedef struct Vector__3i16F4_t {
+    i16F4 x__i16F4, y__i16F4, z__i16F4;
+} Vector__3i16F4;
+
 typedef struct Vector__3i16F8_t {
     i16F8 x__i16F8, y__i16F8, z__i16F8;
 } Vector__3i16F8;
