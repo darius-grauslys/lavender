@@ -5,6 +5,7 @@
 #include <defines.h>
 #include <vectors.h>
 #include <world/chunk_vectors.h>
+#include "collisions/hitbox.h"
 
 Direction__u8 is_hitbox__colliding(
         Hitbox_AABB *hitbox__checking,
@@ -101,44 +102,32 @@ bool is_this_hitbox__fully_inside_this_hitbox__without_velocity(
 
 static inline
 bool is_hitbox_aabb__dirty(Hitbox_AABB *p_hitbox_aabb) {
-    return p_hitbox_aabb->hitbox_aabb_flags__u8
-        & HITBOX_AABB_FLAG__IS_DIRTY
-        ;
+    return is_hitbox_flags__dirty(&p_hitbox_aabb->hitbox_aabb_flags__u8);
 }
 
 static inline
 bool set_hitbox_aabb_as__dirty(Hitbox_AABB *p_hitbox_aabb) {
-    return p_hitbox_aabb->hitbox_aabb_flags__u8 |=
-        HITBOX_AABB_FLAG__IS_DIRTY
-        ;
+    return set_hitbox_flags_as__dirty(&p_hitbox_aabb->hitbox_aabb_flags__u8);
 }
 
 static inline
 bool set_hitbox_aabb_as__not_dirty(Hitbox_AABB *p_hitbox_aabb) {
-    return p_hitbox_aabb->hitbox_aabb_flags__u8 &=
-        ~HITBOX_AABB_FLAG__IS_DIRTY
-        ;
+    return set_hitbox_flags_as__not_dirty(&p_hitbox_aabb->hitbox_aabb_flags__u8);
 }
 
 static inline
 bool is_hitbox_aabb__active(Hitbox_AABB *p_hitbox_aabb) {
-    return p_hitbox_aabb->hitbox_aabb_flags__u8
-        & HITBOX_AABB_FLAG__IS_ACTIVE
-        ;
+    return is_hitbox_flags__active(&p_hitbox_aabb->hitbox_aabb_flags__u8);
 }
 
 static inline
 bool set_hitbox_aabb_as__active(Hitbox_AABB *p_hitbox_aabb) {
-    return p_hitbox_aabb->hitbox_aabb_flags__u8 |=
-        HITBOX_AABB_FLAG__IS_ACTIVE
-        ;
+    return set_hitbox_flags_as__active(&p_hitbox_aabb->hitbox_aabb_flags__u8);
 }
 
 static inline
 bool set_hitbox_aabb_as__disabled(Hitbox_AABB *p_hitbox_aabb) {
-    return p_hitbox_aabb->hitbox_aabb_flags__u8 &=
-        ~HITBOX_AABB_FLAG__IS_ACTIVE
-        ;
+    return set_hitbox_flags_as__disabled(&p_hitbox_aabb->hitbox_aabb_flags__u8);
 }
 
 static inline

@@ -18,6 +18,7 @@
 #include "world/chunk_generator_table.h"
 #include "world/chunk_pool.h"
 #include "world/chunk_vectors.h"
+#include "world/global_space.h"
 #include "world/global_space_manager.h"
 #include "world/local_space_manager.h"
 #include "world/serialization/world_directory.h"
@@ -322,4 +323,59 @@ void set_name_of__world(
     memset(p_world->name, 0, WORLD_NAME_MAX_SIZE_OF);
     strncpy(p_world->name, name_of__world, WORLD_NAME_MAX_SIZE_OF);
     p_world->length_of__world_name = strnlen(p_world->name, WORLD_NAME_MAX_SIZE_OF);
+}
+
+///
+/// Returns false if an error occurs.
+///
+bool poll_for_collision_node_update(
+        Game *p_game,
+        Vector__3i32F4 position_old__3i32F4,
+        Vector__3i32F4 position_new__3i32F4,
+        Identifier__u32 uuid_u32_of__entry) {
+    Chunk_Vector__3i32 gsv__old__3i32 =
+        vector_3i32F4_to__chunk_vector_3i32(
+                position_old__3i32F4);
+
+    Chunk_Vector__3i32 gsv__current__3i32 =
+                vector_3i32F4_to__chunk_vector_3i32(
+                    position_new__3i32F4);
+
+    if (!is_chunk_vectors_3i32__equal(
+                gsv__old__3i32, 
+                gsv__current__3i32)) {
+        Global_Space *p_global_space__old =
+            get_p_global_space_from__global_space_manager(
+                    get_p_global_space_manager_from__game(
+                        p_game), 
+                    gsv__old__3i32);
+        if (!p_global_space__old) {
+            debug_error("poll_for_collision_node_update, p_global_space__old == 0.");
+            return false;
+        }
+        remove_entry_from__collision_node(
+                get_p_collision_node_pool_from__world(
+                    get_p_world_from__game(p_game)), 
+                get_p_collision_node_from__global_space(
+                    p_global_space__old), 
+                uuid_u32_of__entry);
+        Global_Space *p_global_space__new =
+            get_p_global_space_from__global_space_manager(
+                    get_p_global_space_manager_from__game(
+                        p_game), 
+                    gsv__current__3i32);
+        if (!p_global_space__new) {
+            debug_error("poll_for_collision_node_update, p_global_space__new == 0.");
+            return false;
+        }
+        add_entry_to__collision_node(
+                get_p_collision_node_pool_from__world(
+                    get_p_world_from__game(
+                        p_game)), 
+                get_p_collision_node_from__global_space(
+                    p_global_space__new), 
+                gsv__current__3i32,
+                uuid_u32_of__entry);
+    }
+    return true;
 }

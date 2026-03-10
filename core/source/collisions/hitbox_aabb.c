@@ -32,7 +32,7 @@ void initialize_hitbox_as__allocated(
     hitbox->velocity__3i32F4.x__i32F4 = 0;
     hitbox->velocity__3i32F4.y__i32F4 = 0;
     hitbox->velocity__3i32F4.z__i32F4 = 0;
-    set_hitbox__position_with__3i32F4(hitbox, 
+    set_hitbox_aabb__position_with__3i32F4(hitbox, 
             position__3i32F4);
 }
 

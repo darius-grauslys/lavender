@@ -8,9 +8,9 @@ void initialize_hitbox_context(Hitbox_Context *p_hitbox_context);
 
 void register_hitbox_manager(
         Hitbox_Context *p_hitbox_context,
-        f_hitbox_manager__allocator f_hitbox_manager__allocator,
-        f_hitbox_manager__deallocator f_hitbox_manager__deallocator,
-        f_hitbox_manager__get_ptrs_to_properties_of__hitbox 
+        f_Hitbox_Manager__Allocator f_hitbox_manager__allocator,
+        f_Hitbox_Manager__Deallocator f_hitbox_manager__deallocator,
+        f_Hitbox_Manager__Get_Ptrs_To_Properties_Of__Hitbox 
             f_hitbox_manager__get_properties_of__hitbox,
         Hitbox_Manager_Type the_type_of__hitbox_manager_to__register);
 
@@ -31,7 +31,8 @@ bool get_ptrs_to_properties_of__hitbox(
         Vector__3i32 **p_ptr_OPTIONAL_dimensions__3i32,
         Vector__3i32F4 **p_ptr_OPTIONAL_position__3i32F4,
         Vector__3i32F4 **p_ptr_OPTIONAL_velocity__3i32F4,
-        Vector__3i32F4 **p_ptr_OPTIONAL_acceleration__3i32F4);
+        Vector__3i16F8 **p_ptr_OPTIONAL_acceleration__3i16F8,
+        Hitbox_Flags__u8 **p_ptr_OPTIONAL_hitbox_flags__u8);
 
 ///
 /// Returns an invalid Hitbox_Manager_Instance when failing to find.

@@ -34,8 +34,8 @@ typedef enum Game_Action_Kind {
     // Opaque pointer hitbox, abstracts to any other
     // hitbox. Least performant.
     Game_Action_Kind__Hitbox,
-    Game_Action_Kind__Hitbox__AABB,
     // TODO: impl:
+    // Game_Action_Kind__Hitbox__AABB,
     // Game_Action_Kind__Hitbox__AAABBB,
     // Game_Action_Kind__Hitbox__Ball,
     // Game_Action_Kind__Hitbox__Sphere,

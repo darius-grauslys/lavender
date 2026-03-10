@@ -40,6 +40,10 @@ void m_process__game_action__hitbox__aabb(
                 p_game_action
                 ->ga_kind__hitbox__uuid_of__target);
 
+    Vector__3i32F4 position_old__3i32F4 =
+        get_position_3i32F4_of__hitbox_aabb(
+                p_hitbox_aabb);
+
     set_hitbox_aabb__position_with__3i32F4(
             p_hitbox_aabb, 
             p_game_action
@@ -52,5 +56,21 @@ void m_process__game_action__hitbox__aabb(
             p_hitbox_aabb, 
             p_game_action
             ->ga_kind__hitbox__acceleration__3i16F8);
+    
+    bool is_successful =
+        poll_for_collision_node_update(
+                p_game,
+                position_old__3i32F4,
+                p_game_action
+                ->ga_kind__hitbox__position__3i32F4,
+                GET_UUID_P(p_hitbox_aabb));
+
+    if (!is_successful) {
+        debug_error( "m_process__game_action__hitbox__aabb, failed to update collision node." );
+        fail_process(p_this_process);
+        return;
+    }
+
+    complete_process(p_this_process);
 }
 #endif

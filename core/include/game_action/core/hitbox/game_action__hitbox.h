@@ -5,6 +5,7 @@
 #include "defines.h"
 #include "defines_weak.h"
 #include "game.h"
+#include "types/implemented/hitbox_kind.h"
 
 void register_game_action__hitbox_for__server(
         Game_Action_Logic_Table *p_game_action_logic_table);
@@ -24,7 +25,8 @@ void initialize_game_action_for__hitbox(
         Identifier__u32 uuid_of__target__u32,
         Vector__3i32F4 position__3i32F4,
         Vector__3i32F4 velocity__3i32F4,
-        Vector__3i16F8 acceleration__3i16F8);
+        Vector__3i16F8 acceleration__3i16F8,
+        Hitbox_Kind the_kind_of__hitbox);
 
 static inline
 bool dispatch_game_action__hitbox(
@@ -32,14 +34,16 @@ bool dispatch_game_action__hitbox(
         Identifier__u32 uuid_of__target__u32,
         Vector__3i32F4 position__3i32F4,
         Vector__3i32F4 velocity__3i32F4,
-        Vector__3i16F8 acceleration__3i16F8) {
+        Vector__3i16F8 acceleration__3i16F8,
+        Hitbox_Kind the_kind_of__hitbox) {
     Game_Action ga_resolve;
     initialize_game_action_for__hitbox(
             &ga_resolve,
             uuid_of__target__u32,
             position__3i32F4,
             velocity__3i32F4,
-            acceleration__3i16F8);
+            acceleration__3i16F8,
+            the_kind_of__hitbox);
     return dispatch_game_action_to__server(
             p_game, 
             &ga_resolve);

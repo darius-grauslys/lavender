@@ -26,9 +26,9 @@ void initialize_hitbox_context(Hitbox_Context *p_hitbox_context) {
 
 void register_hitbox_manager(
         Hitbox_Context *p_hitbox_context,
-        f_hitbox_manager__allocator f_hitbox_manager__allocator,
-        f_hitbox_manager__deallocator f_hitbox_manager__deallocator,
-        f_hitbox_manager__get_ptrs_to_properties_of__hitbox 
+        f_Hitbox_Manager__Allocator f_hitbox_manager__allocator,
+        f_Hitbox_Manager__Deallocator f_hitbox_manager__deallocator,
+        f_Hitbox_Manager__Get_Ptrs_To_Properties_Of__Hitbox 
             f_hitbox_manager__get_properties_of__hitbox,
         Hitbox_Manager_Type the_type_of__hitbox_manager_to__register) {
 #ifndef NDEBUG
@@ -77,11 +77,11 @@ Hitbox_Manager_Instance *allocate_hitbox_manager_from__hitbox_context(
     Hitbox_Manager_Instance *p_hitbox_manager_instance =
         (Hitbox_Manager_Instance*)p_allocation;
 
-    f_hitbox_manager__allocator f_hitbox_manager__allocator_selected =
+    f_Hitbox_Manager__Allocator f_hitbox_manager__allocator_selected =
         p_hitbox_context->hitbox_manager_instance__invocation_table[
             the_type_of__hitbox_manager_to__allocate]
                 .f_hitbox_manager__allocator;
-    f_hitbox_manager__deallocator f_hitbox_manager__deallocator_selected =
+    f_Hitbox_Manager__Deallocator f_hitbox_manager__deallocator_selected =
         p_hitbox_context->hitbox_manager_instance__invocation_table[
             the_type_of__hitbox_manager_to__allocate]
                 .f_hitbox_manager__deallocator;
@@ -181,7 +181,8 @@ bool get_ptrs_to_properties_of__hitbox(
         Vector__3i32 **p_ptr_OPTIONAL_dimensions__3i32,
         Vector__3i32F4 **p_ptr_OPTIONAL_position__3i32F4,
         Vector__3i32F4 **p_ptr_OPTIONAL_velocity__3i32F4,
-        Vector__3i32F4 **p_ptr_OPTIONAL_acceleration__3i32F4) {
+        Vector__3i16F8 **p_ptr_OPTIONAL_acceleration__3i16F8,
+        Hitbox_Flags__u8 **p_ptr_OPTIONAL_hitbox_flags__u8) {
     Hitbox_Manager_Instance *p_hitbox_manager_instance =
         get_p_hitbox_manager_instance_using__uuid_from__hitbox_context(
                 p_hitbox_context, 
@@ -208,7 +209,8 @@ bool get_ptrs_to_properties_of__hitbox(
                     p_ptr_OPTIONAL_dimensions__3i32,
                     p_ptr_OPTIONAL_position__3i32F4,
                     p_ptr_OPTIONAL_velocity__3i32F4,
-                    p_ptr_OPTIONAL_acceleration__3i32F4);
+                    p_ptr_OPTIONAL_acceleration__3i16F8,
+                    p_ptr_OPTIONAL_hitbox_flags__u8);
 
     return true;
 }
@@ -282,7 +284,7 @@ void release_hitbox_manager_from__hitbox_context(
         return;
     }
 
-    f_hitbox_manager__deallocator f_hitbox_manager__deallocator_selected =
+    f_Hitbox_Manager__Deallocator f_hitbox_manager__deallocator_selected =
         p_hitbox_context->hitbox_manager_instance__invocation_table[
             p_hitbox_manager_instance->type_of__hitbox_manager]
                 .f_hitbox_manager__deallocator;

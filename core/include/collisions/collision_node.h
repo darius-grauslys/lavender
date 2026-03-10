@@ -12,7 +12,6 @@ void initialize_collision_node(
 ///
 /// Returns false if failure.
 ///
-# error TODO: update to match sig
 bool add_entry_to__collision_node(
         Collision_Node_Pool *p_collision_node_pool,
         Collision_Node *p_collision_node,

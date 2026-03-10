@@ -11,6 +11,7 @@ typedef struct Entity_Functions_t {
     ///
     m_Entity_Handler    m_entity_dispose_handler;
     m_Entity_Handler    m_entity_update_handler;
+    m_Entity_Handler    m_entity_disable_handler;
     m_Entity_Serialization_Handler  m_entity_serialize_handler;
     m_Entity_Deserialization_Handler  m_entity_deserialize_handler;
 

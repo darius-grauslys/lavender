@@ -2,10 +2,12 @@
 #include "collisions/collision_node_pool.h"
 #include "collisions/hitbox_aabb.h"
 #include "collisions/hitbox_aabb_manager.h"
+#include "collisions/hitbox_context.h"
 #include "defines.h"
 #include "defines_weak.h"
 #include "entity/entity_manager.h"
 #include "game.h"
+#include "serialization/identifiers.h"
 #include "serialization/serialization_header.h"
 #include "world/world.h"
 
@@ -22,7 +24,8 @@ void initialize_collision_node(
 bool add_entry_to__collision_node(
         Collision_Node_Pool *p_collision_node_pool,
         Collision_Node *p_collision_node,
-        Hitbox_AABB *p_hitbox) {
+        Chunk_Vector__3i32 gsv__3i32,
+        Identifier__u32 uuid_u32_of__entry) {
 #ifndef NDEBUG
     if (!p_collision_node_pool) {
         debug_error("add_entry_to__collision_node, p_collision_node_pool == 0.");
@@ -32,13 +35,14 @@ bool add_entry_to__collision_node(
         debug_error("add_entry_to__collision_node, p_collision_node == 0.");
         return false;
     }
-    if (!p_hitbox) {
-        debug_error("add_entry_to__collision_node, p_hitbox == 0.");
+    if (is_identifier_u32__invalid(uuid_u32_of__entry)) {
+        debug_error("add_entry_to__collision_node, invalid uuid.");
         return false;
     }
 #endif
     Collision_Node_Entry *p_collision_node_entry =
-        allocate_collision_node_entry_from__collision_node_pool(p_collision_node_pool);
+        allocate_collision_node_entry_from__collision_node_pool(
+                p_collision_node_pool);
 
     if (!p_collision_node_entry) {
         debug_error("add_entry_to__collision_node, p_collision_node_entry == 0.");
@@ -46,7 +50,7 @@ bool add_entry_to__collision_node(
     }
 
     p_collision_node_entry->uuid_of__hitbox__u32 =
-        GET_UUID_P(p_hitbox);
+        uuid_u32_of__entry;
 
     p_collision_node_entry->p_previous_entry =
         p_collision_node->p_linked_list__collision_node_entries__tail;
@@ -157,11 +161,19 @@ void poll_for__collisions_within_this__collision_node(
     Collision_Node_Entry *p_collision_node_entry =
         p_collision_node->p_linked_list__collision_node_entries__tail;
 
+    Hitbox_AABB_Manager *p_hitbox_aabb_manager =
+        get_p_hitbox_aabb_manager_from__hitbox_context(
+                get_p_hitbox_context_from__game(p_game), 
+                GET_UUID_P(get_p_world_from__game(p_game)));
+
     while (p_collision_node_entry) {
+        Identifier__u32 uuid_of__hitbox__u32 =
+            p_collision_node_entry->uuid_of__hitbox__u32;
+
         Hitbox_AABB *p_hitbox_aabb__other =
             get_p_hitbox_aabb_by__uuid_u32_from__hitbox_aabb_manager(
-                    get_p_hitbox_aabb_manager_from__game(p_game), 
-                    p_collision_node_entry->uuid_of__hitbox__u32);
+                    p_hitbox_aabb_manager, 
+                    uuid_of__hitbox__u32);
 
         if (p_hitbox_aabb__other 
                 && p_hitbox_aabb__other

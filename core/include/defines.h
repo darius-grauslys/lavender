@@ -5,6 +5,7 @@
 #include "platform_defaults.h"
 #include "types/implemented/chunk_generator_kind.h"
 #include "types/implemented/entity_kind.h"
+#include "types/implemented/game_action_kind.h"
 #include "types/implemented/graphics_window_kind.h"
 #include "types/implemented/hitbox_kind.h"
 #include "types/implemented/scene_kind.h"
@@ -331,12 +332,12 @@ typedef struct Audio_Effect_t {
 /// SECTION_collisions
 ///
 
-typedef u8 Hitbox_AABB_Flags__u8;
+typedef u8 Hitbox_Flags__u8;
 
-#define HITBOX_AABB_FLAG__IS_ACTIVE BIT(0)
-#define HITBOX_AABB_FLAG__IS_DIRTY BIT(1)
+#define HITBOX_FLAG__IS_ACTIVE BIT(0)
+#define HITBOX_FLAG__IS_DIRTY BIT(1)
 
-#define HITBOX_AABB_FLAGS__NONE 0;
+#define HITBOX_FLAGS__NONE 0;
 
 typedef struct Hitbox_AABB_t {
     Serialization_Header _serialization_header;
@@ -345,7 +346,7 @@ typedef struct Hitbox_AABB_t {
     Vector__3i16F8 acceleration__3i16F8;
     Quantity__u32 width__quantity_u32;
     Quantity__u32 height__quantity_u32;
-    Hitbox_AABB_Flags__u8 hitbox_aabb_flags__u8;
+    Hitbox_Flags__u8 hitbox_aabb_flags__u8;
 } Hitbox_AABB;
 
 typedef void (*f_Hitbox_AABB_Collision_Handler)(
@@ -399,11 +400,11 @@ typedef struct Hitbox_Manager_Instance_t {
 #define MAX_QUANTITY_OF__HITBOX_MANAGERS 8
 #endif
 
-typedef void *(*f_hitbox_manager__allocator)(
+typedef void *(*f_Hitbox_Manager__Allocator)(
         Hitbox_Manager_Type the_type_of__hitbox_manager_to__allocate,
         Quantity__u32 quantity_of__hitboxes_to__pool);
 
-typedef void (*f_hitbox_manager__deallocator)(
+typedef void (*f_Hitbox_Manager__Deallocator)(
         void *pM_hitbox_manager,
         Hitbox_Manager_Type the_type_of__hitbox_manager_to__deallocate);
 
@@ -421,12 +422,13 @@ typedef void (*f_hitbox_manager__deallocator)(
 ///
 /// Any optional argument that is not null will not be assigned to.
 ///
-typedef void (*f_hitbox_manager__get_ptrs_to_properties_of__hitbox)(
+typedef void (*f_Hitbox_Manager__Get_Ptrs_To_Properties_Of__Hitbox)(
         void *pV_hitbox,
         Vector__3i32 **p_ptr_OPTIONAL_dimensions__3i32,
         Vector__3i32F4 **p_ptr_OPTIONAL_position__3i32F4,
         Vector__3i32F4 **p_ptr_OPTIONAL_velocity__3i32F4,
-        Vector__3i32F4 **p_ptr_OPTIONAL_acceleration__3i32F4);
+        Vector__3i16F8 **p_ptr_OPTIONAL_acceleration__3i16F8,
+        Hitbox_Flags__u8 **p_ptr_OPTIONAL_hitbox_flags__u8);
 
 typedef void *(*f_hitbox_manager__allocate_hitbox)(
         void *pV_hitbox_manager,
@@ -437,9 +439,9 @@ typedef void *(*f_hitbox_manager__allocate_hitbox)(
         Vector__3i32F4 acceleration__3i32F4);
 
 typedef struct Hitbox_Manager_Instance__Invocation_Table_t {
-    f_hitbox_manager__allocator f_hitbox_manager__allocator;
-    f_hitbox_manager__deallocator f_hitbox_manager__deallocator;
-    f_hitbox_manager__get_ptrs_to_properties_of__hitbox f_hitbox_manager__get_properties_of__hitbox;
+    f_Hitbox_Manager__Allocator f_hitbox_manager__allocator;
+    f_Hitbox_Manager__Deallocator f_hitbox_manager__deallocator;
+    f_Hitbox_Manager__Get_Ptrs_To_Properties_Of__Hitbox f_hitbox_manager__get_properties_of__hitbox;
 } Hitbox_Manager_Instance__Invocation_Table;
 
 typedef struct Hitbox_Context_t {
@@ -1082,6 +1084,7 @@ typedef struct Entity_Data_t {
 typedef struct Entity_Functions_t {
     m_Entity_Handler                m_entity_dispose_handler;
     m_Entity_Handler                m_entity_update_handler;
+    m_Entity_Handler                m_entity_disable_handler;
     m_Entity_Serialization_Handler  m_entity_serialize_handler;
     m_Entity_Serialization_Handler  m_entity_deserialize_handler;
 } Entity_Functions;

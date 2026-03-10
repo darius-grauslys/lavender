@@ -343,6 +343,26 @@ Vector__3i32F4 vector_3i16F8_to__vector_3i32F4(
 }
 
 static inline 
+Vector__3i16F8 add_vectors__3i16F8(
+        Vector__3i16F8 vector_one,
+        Vector__3i16F8 vector_two) {
+    return (Vector__3i16F8) {
+        vector_one.x__i16F8 + vector_two.x__i16F8,
+        vector_one.y__i16F8 + vector_two.y__i16F8,
+        vector_one.z__i16F8 + vector_two.z__i16F8,
+    };
+}
+
+static inline 
+void add_p_vectors__3i16F8(
+        Vector__3i16F8 *p_vector_one,
+        Vector__3i16F8 *p_vector_two) {
+    p_vector_one->x__i16F8 += p_vector_two->x__i16F8;
+    p_vector_one->y__i16F8 += p_vector_two->y__i16F8;
+    p_vector_one->z__i16F8 += p_vector_two->z__i16F8;
+}
+
+static inline 
 Vector__3u8 get_vector__3u8(
         u8 x,
         u8 y,
