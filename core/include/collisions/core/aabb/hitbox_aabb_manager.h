@@ -13,6 +13,15 @@ void f_hitbox_manager__deallocator_AABB(
         void *pM_hitbox_manager,
         Hitbox_Manager_Type the_type_of__hitbox_manager_to__deallocate);
 
+bool f_hitbox_manager__opaque_property_access_of__hitbox_AABB(
+        void *pV_hitbox,
+        void *pV_OPTIONAL_dimensions,
+        void *pV_OPTIONAL_position,
+        void *pV_OPTIONAL_velocity,
+        void *pV_OPTIONAL_acceleration,
+        Hitbox_Flags__u8 *p_OPTIONAL_hitbox_flags__u8,
+        bool is_setting_or__getting);
+
 void initialize_hitbox_aabb_manager(
         Hitbox_AABB_Manager *p_hitbox_aabb_manager);
 

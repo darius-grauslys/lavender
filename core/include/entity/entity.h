@@ -14,6 +14,11 @@ void m_entity_dispose_handler__default(
         Game *p_game,
         World *p_world);
 
+void m_entity_enable_handler__default(
+        Entity *p_this_entity,
+        Game *p_game,
+        World *p_world);
+
 void m_entity_disable_handler__default(
         Entity *p_this_entity,
         Game *p_game,

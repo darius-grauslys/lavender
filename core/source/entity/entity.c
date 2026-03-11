@@ -1,10 +1,10 @@
+#include "entity/entity.h"
 #include "client.h"
-#include "collisions/hitbox_aabb.h"
-#include "collisions/hitbox_aabb_manager.h"
+#include "collisions/core/aabb/hitbox_aabb.h"
+#include "collisions/core/aabb/hitbox_aabb_manager.h"
 #include "collisions/hitbox_context.h"
 #include "defines.h"
 #include "defines_weak.h"
-#include "entity/entity.h"
 #include "entity/entity_manager.h"
 #include "game.h"
 #include "platform.h"
@@ -63,6 +63,31 @@ void m_entity_dispose_handler__default(
     }
 }
 
+void m_entity_enable_handler__default(
+        Entity *p_this_entity,
+        Game *p_game,
+        World *p_world) {
+#warning TODO(tech-debt): replace with opaque hitbox pointer for default handler
+    Hitbox_AABB_Manager *p_hitbox_aabb_manager =
+        get_p_hitbox_aabb_manager_from__hitbox_context(
+                get_p_hitbox_context_from__game(p_game), 
+                GET_UUID_P(p_world));
+#ifndef NDEBUG
+    if (!p_hitbox_aabb_manager) {
+        debug_error("m_entity_dispose_handler__default, p_hitbox_aabb_manager == 0.");
+        return;
+    }
+#endif
+    Hitbox_AABB *p_hitbox_aabb =
+        get_p_hitbox_aabb_by__entity_from__hitbox_aabb_manager(
+                p_hitbox_aabb_manager, 
+                p_this_entity);
+
+    if (p_hitbox_aabb) {
+        set_hitbox_aabb_as__active(p_hitbox_aabb);
+    }
+}
+
 void m_entity_disable_handler__default(
         Entity *p_this_entity,
         Game *p_game,
@@ -100,6 +125,8 @@ void initialize_entity(
         m_entity_dispose_handler__default;
     p_entity->entity_functions.m_entity_disable_handler =
         m_entity_disable_handler__default;
+    p_entity->entity_functions.m_entity_enable_handler =
+        m_entity_enable_handler__default;
 }
 
 PLATFORM_Write_File_Error serialize_entity(
@@ -192,10 +219,13 @@ PLATFORM_Write_File_Error m_entity_serialization_handler__default(
         PLATFORM_File_System_Context *p_PLATFORM_file_system_context,
         World *p_world,
         Serialization_Request *p_serialization_request) {
+    Hitbox_AABB_Manager *p_hitbox_aabb_manager =
+        get_p_hitbox_aabb_manager_from__hitbox_context(
+                get_p_hitbox_context_from__game(p_game), 
+                GET_UUID_P(p_world));
     Hitbox_AABB *p_hitbox_aabb =
         get_p_hitbox_aabb_by__uuid_u32_from__hitbox_aabb_manager(
-                get_p_hitbox_aabb_manager_from__game(
-                    p_game), 
+                p_hitbox_aabb_manager,
                 GET_UUID_P(p_entity_self));
 
     if (p_hitbox_aabb) {
@@ -282,10 +312,13 @@ PLATFORM_Read_File_Error m_entity_deserialization_handler__default(
 
     if (p_this_entity->entity_data.entity_flags
             & ENTITY_FLAG__IS_WITH_HITBOX__SERIALIZATION) {
+        Hitbox_AABB_Manager *p_hitbox_aabb_manager =
+            get_p_hitbox_aabb_manager_from__hitbox_context(
+                    get_p_hitbox_context_from__game(p_game), 
+                    GET_UUID_P(p_world));
         Hitbox_AABB *p_hitbox_aabb =
             allocate_hitbox_aabb_from__hitbox_aabb_manager(
-                    get_p_hitbox_aabb_manager_from__game(
-                        p_game), 
+                    p_hitbox_aabb_manager,
                     GET_UUID_P(p_this_entity));
 
         if (!p_hitbox_aabb) {

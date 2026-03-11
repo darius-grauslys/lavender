@@ -15,12 +15,13 @@ void initialize_hitbox_manager_instance_as__allocated(
         Hitbox_Manager_Type the_type_of__hitbox_manager__allocated);
 
 static inline
-bool is_hitbox_manager_instance__valid(
-        Hitbox_Manager_Instance hitbox_manager_instance) {
+bool is_p_hitbox_manager_instance__valid(
+        Hitbox_Manager_Instance *p_hitbox_manager_instance) {
     return 
-        !is_identifier_u32__invalid(hitbox_manager_instance
-                ._serialization_header.uuid)
-        && hitbox_manager_instance.pM_hitbox_manager != 0
+        p_hitbox_manager_instance
+        && !is_identifier_u32__invalid(p_hitbox_manager_instance
+                ->_serialization_header.uuid)
+        && p_hitbox_manager_instance->pVM_hitbox_manager != 0
         ;
 }
 

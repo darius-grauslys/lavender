@@ -1,12 +1,15 @@
-#include "collisions/hitbox_aabb_manager.h"
+#include "collisions/core/aabb/hitbox_aabb_manager.h"
+#include "collisions/core/aabb/hitbox_aabb.h"
+#include "collisions/hitbox.h"
+#include "defines_weak.h"
+#include "game_action/core/hitbox/game_action__hitbox.h"
 #include "collisions/collision_node.h"
-#include "collisions/hitbox_aabb.h"
 #include "defines.h"
 #include "game.h"
-#include "game_action/core/hitbox/game_action__hitbox.h"
 #include "numerics.h"
 #include "serialization/hashing.h"
 #include "serialization/serialization_header.h"
+#include "types/implemented/hitbox_kind.h"
 #include "types/implemented/hitbox_manager_type.h"
 #include "vectors.h"
 #include "world/chunk_vectors.h"
@@ -88,6 +91,71 @@ void f_hitbox_manager__deallocator_AABB(
     free(p_hitbox_manager__aabb->pM_pool_of__hitboxes);
     free(p_hitbox_manager__aabb->pM_ptr_array_of__hitbox_records);
     free(p_hitbox_manager__aabb);
+}
+
+bool f_hitbox_manager__opaque_property_access_of__hitbox_AABB(
+        void *pV_hitbox, 
+        void *pV_OPTIONAL_dimensions, 
+        void *pV_OPTIONAL_position, 
+        void *pV_OPTIONAL_velocity, 
+        void *pV_OPTIONAL_acceleration, 
+        Hitbox_Flags__u8 *p_OPTIONAL_hitbox_flags__u8, 
+        bool is_setting_or__getting) {
+    if (!pV_hitbox) {
+        debug_error("f_hitbox_manager__opaque_property_access_of__hitbox_AABB, pV_hitbox == 0.");
+        return false;
+    }
+
+    Hitbox_AABB *p_hitbox_aabb = pV_hitbox;
+
+    if (is_setting_or__getting) {
+        // Set values of the hitbox
+        if (p_OPTIONAL_hitbox_flags__u8)
+            p_hitbox_aabb->hitbox_aabb_flags__u8 = *p_OPTIONAL_hitbox_flags__u8;
+
+        if (pV_OPTIONAL_dimensions) {
+            u32 *p_dimentions = pV_OPTIONAL_dimensions;
+            p_hitbox_aabb->width__quantity_u32 = 
+                p_dimentions[0];
+            p_hitbox_aabb->height__quantity_u32 = 
+                p_dimentions[1];
+        }
+        if (pV_OPTIONAL_position)
+            p_hitbox_aabb->position__3i32F4 = 
+                *(Vector__3i32F4*)pV_OPTIONAL_position;
+        if (pV_OPTIONAL_velocity)
+            p_hitbox_aabb->velocity__3i32F4 = 
+                *(Vector__3i32F4*)pV_OPTIONAL_velocity;
+        if (pV_OPTIONAL_acceleration)
+            p_hitbox_aabb->acceleration__3i16F8 = 
+                *(Vector__3i16F8*)pV_OPTIONAL_acceleration;
+
+        set_hitbox_flags_as__dirty(&p_hitbox_aabb->hitbox_aabb_flags__u8);
+    } else {
+        // Get values of the hitbox
+        if (p_OPTIONAL_hitbox_flags__u8)
+            *p_OPTIONAL_hitbox_flags__u8 = p_hitbox_aabb->hitbox_aabb_flags__u8;
+
+        if (pV_OPTIONAL_dimensions) {
+            u32 *p_dimensions = pV_OPTIONAL_dimensions;
+            p_dimensions[0] = p_hitbox_aabb->width__quantity_u32;
+            p_dimensions[1] = p_hitbox_aabb->height__quantity_u32;
+        }
+
+        if (pV_OPTIONAL_position)
+            *(Vector__3i32F4 *)pV_OPTIONAL_position =
+                p_hitbox_aabb->position__3i32F4;
+
+        if (pV_OPTIONAL_velocity)
+            *(Vector__3i32F4 *)pV_OPTIONAL_velocity =
+                p_hitbox_aabb->velocity__3i32F4;
+
+        if (pV_OPTIONAL_acceleration)
+            *(Vector__3i16F8 *)pV_OPTIONAL_acceleration =
+                p_hitbox_aabb->acceleration__3i16F8;
+    }
+
+    return true;
 }
 
 void initialize_hitbox_aabb_manager(
@@ -240,6 +308,7 @@ void poll_hitbox_manager_for__movement(
                     get_velocity_3i32F4_of__hitbox_aabb(p_hitbox_aabb), 
                     vector_3i16F8_to__vector_3i32F4(
                         get_acceleration_3i16F8_of__hitbox_aabb(p_hitbox_aabb))),
-                VECTOR__3i16F8__0_0_nGRAVITY_PER_TICK);
+                VECTOR__3i16F8__0_0_nGRAVITY_PER_TICK,
+                Hitbox_Kind__AABB);
     }
 }

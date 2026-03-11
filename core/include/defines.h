@@ -51,6 +51,7 @@ typedef int32_t     i32;
 typedef int16_t     i16;
 typedef int8_t      i8;
 
+#define FRACTIONAL_PERCISION_0__BIT_SIZE 0
 #define FRACTIONAL_PERCISION_4__BIT_SIZE 4
 #define FRACTIONAL_PERCISION_8__BIT_SIZE 8
 #define FRACTIONAL_PERCISION_12__BIT_SIZE 12
@@ -339,41 +340,6 @@ typedef u8 Hitbox_Flags__u8;
 
 #define HITBOX_FLAGS__NONE 0;
 
-typedef struct Hitbox_AABB_t {
-    Serialization_Header _serialization_header;
-    Vector__3i32F4 position__3i32F4;
-    Vector__3i32F4 velocity__3i32F4;
-    Vector__3i16F8 acceleration__3i16F8;
-    Quantity__u32 width__quantity_u32;
-    Quantity__u32 height__quantity_u32;
-    Hitbox_Flags__u8 hitbox_aabb_flags__u8;
-} Hitbox_AABB;
-
-typedef void (*f_Hitbox_AABB_Collision_Handler)(
-        Game *p_game,
-        World *p_world,
-        Hitbox_AABB *p_hitbox_aabb__colliding,
-        Hitbox_AABB *p_hitbox_aabb__collided);
-
-typedef void (*f_Hitbox_AABB_Tile_Touch_Handler)(
-        Game *p_game,
-        World *p_world,
-        Hitbox_AABB *p_hitbox_aabb,
-        Tile *p_tile,
-    Signed_Index__i32 x__i32,
-        Signed_Index__i32 y__i32);
-
-#ifndef MAX_QUANTITY_OF__HITBOX_AABB
-#define MAX_QUANTITY_OF__HITBOX_AABB 256
-#endif
-
-typedef struct Hitbox_AABB_Manager_t {
-    Quantity__u32 quantity_of__hitboxes;
-    Hitbox_AABB *pM_pool_of__hitboxes;
-    Hitbox_AABB **pM_ptr_array_of__hitbox_records;
-    Index__u32 index_of__next_hitbox_aabb_in__records;
-} Hitbox_AABB_Manager;
-
 #include <types/implemented/hitbox_manager_type.h>
 #ifndef DEFINE_HITBOX_MANAGER_TYPE
 typedef enum Hitbox_Manager_Type_t {
@@ -384,11 +350,46 @@ typedef enum Hitbox_Manager_Type_t {
 } Hitbox_Manager_Type;
 #endif
 
+///
+/// If a pointer to your Hitbox_Manager cannot be safely
+/// cast to this instrinsic struct then it is not an
+/// acceptable Hitbox_Manager to use with CORE.
+///
+/// Attempting to use an invalid hitbox_manager with CORE
+/// WILL lead to undefined behavior!
+///
+typedef struct Hitbox_Manager_Intrinsic_t {
+    Serialization_Header _serialization_header;
+    Quantity__u32 quantity_of__hitboxes;
+    Serialization_Header *p_array_of__hitboxes;
+} Hitbox_Manager_Intrinsic;
+
+// Macros exists to provide clarity when reading
+// register invocations.
+#define QUANTITY_OF__HITBOX_COMPONENTS(description, n) (n)
+#define SIZE_OF__HITBOX_COMPONENTS(description, n) (n)
+// NOTE: use FRACTIONAL_PERCISION_[N]__BIT_SIZE
+#define FRACTIONAL_PERCISION_OF__HITBOX_COMPONENTS(description, n) (n)
+
 typedef struct Hitbox_Manager_Instance_t {
     Serialization_Header _serialization_header;
-    void *pM_hitbox_manager;
+    void *pVM_hitbox_manager;
     Hitbox_Manager_Type type_of__hitbox_manager;
 } Hitbox_Manager_Instance;
+
+typedef struct Hitbox_Manager_Registration_Record_t {
+    ///
+    /// Provides context to opaque pointer access.
+    ///
+    u8 size_of__components__dimensions;
+    u8 size_of__components__pos_vel;
+    u8 size_of__components__acceleration;
+    u8 quantity_of__components__dimensions;
+    u8 quantity_of__components__pos_vel_acc;
+    u8 fractional_percision_of__dimensions;
+    u8 fractional_percision_of__pos_vel;
+    u8 fractional_percision_of__acceleration;
+} Hitbox_Manager_Registration_Record;
 
 #ifndef MAX_QUANTITY_OF__HITBOX
 // The collective quantity of hitboxes among all allocated pools
@@ -422,15 +423,16 @@ typedef void (*f_Hitbox_Manager__Deallocator)(
 ///
 /// Any optional argument that is not null will not be assigned to.
 ///
-typedef void (*f_Hitbox_Manager__Get_Ptrs_To_Properties_Of__Hitbox)(
+typedef bool (*f_Hitbox_Manager__Opaque_Property_Access_Of__Hitbox)(
         void *pV_hitbox,
-        Vector__3i32 **p_ptr_OPTIONAL_dimensions__3i32,
-        Vector__3i32F4 **p_ptr_OPTIONAL_position__3i32F4,
-        Vector__3i32F4 **p_ptr_OPTIONAL_velocity__3i32F4,
-        Vector__3i16F8 **p_ptr_OPTIONAL_acceleration__3i16F8,
-        Hitbox_Flags__u8 **p_ptr_OPTIONAL_hitbox_flags__u8);
+        void *pV_OPTIONAL_dimensions,
+        void *pV_OPTIONAL_position,
+        void *pV_OPTIONAL_velocity,
+        void *pV_OPTIONAL_acceleration,
+        Hitbox_Flags__u8 *p_OPTIONAL_hitbox_flags__u8,
+        bool is_setting_or__getting);
 
-typedef void *(*f_hitbox_manager__allocate_hitbox)(
+typedef void *(*f_Hitbox_Manager__Allocate_Hitbox)(
         void *pV_hitbox_manager,
         Identifier__u32 uuid_of__hitbox__u32,
         Vector__3i32 dimensions__3i32,
@@ -441,7 +443,7 @@ typedef void *(*f_hitbox_manager__allocate_hitbox)(
 typedef struct Hitbox_Manager_Instance__Invocation_Table_t {
     f_Hitbox_Manager__Allocator f_hitbox_manager__allocator;
     f_Hitbox_Manager__Deallocator f_hitbox_manager__deallocator;
-    f_Hitbox_Manager__Get_Ptrs_To_Properties_Of__Hitbox f_hitbox_manager__get_properties_of__hitbox;
+    f_Hitbox_Manager__Opaque_Property_Access_Of__Hitbox f_hitbox_manager__get_properties_of__hitbox;
 } Hitbox_Manager_Instance__Invocation_Table;
 
 typedef struct Hitbox_Context_t {
@@ -449,18 +451,56 @@ typedef struct Hitbox_Context_t {
         MAX_QUANTITY_OF__HITBOX_MANAGERS];
     Hitbox_Manager_Instance__Invocation_Table hitbox_manager_instance__invocation_table[
         Hitbox_Manager_Type__Unknown];
+    Hitbox_Manager_Registration_Record hitbox_manager_registration_records[
+        Hitbox_Manager_Type__Unknown];
 } Hitbox_Context;
+
+typedef struct Hitbox_AABB_t {
+    Serialization_Header _serialization_header;
+    Vector__3i32F4 position__3i32F4;
+    Vector__3i32F4 velocity__3i32F4;
+    Vector__3i16F8 acceleration__3i16F8;
+    Quantity__u32 width__quantity_u32;
+    Quantity__u32 height__quantity_u32;
+    Hitbox_Flags__u8 hitbox_aabb_flags__u8;
+} Hitbox_AABB;
+
+typedef void (*f_Hitbox_AABB_Collision_Handler)(
+        Game *p_game,
+        World *p_world,
+        Hitbox_AABB *p_hitbox_aabb__colliding,
+        Hitbox_AABB *p_hitbox_aabb__collided);
+
+typedef void (*f_Hitbox_AABB_Tile_Touch_Handler)(
+        Game *p_game,
+        World *p_world,
+        Hitbox_AABB *p_hitbox_aabb,
+        Tile *p_tile,
+    Signed_Index__i32 x__i32,
+        Signed_Index__i32 y__i32);
+
+#ifndef MAX_QUANTITY_OF__HITBOX_AABB
+#define MAX_QUANTITY_OF__HITBOX_AABB 256
+#endif
+
+typedef struct Hitbox_AABB_Manager_t {
+    union {
+        Hitbox_Manager_Intrinsic _intrinsic;
+        struct {
+            Serialization_Header _serialization_header;
+            Quantity__u32 quantity_of__hitboxes;
+            Hitbox_AABB *pM_pool_of__hitboxes;
+        };
+    };
+    Hitbox_AABB **pM_ptr_array_of__hitbox_records;
+    Index__u32 index_of__next_hitbox_aabb_in__records;
+} Hitbox_AABB_Manager;
 
 /// When checking the distance between two collisions along each axis
 /// anything equal to or less than this value is ignored when determining
 /// displacement. This useful threshold is what allows a colliding player
 /// to move up while an entity is moving into them from the right.
 #define COLLISION_DELTA_THRESHOLD 4096
-
-typedef struct Collision_Node_Record_t {
-    Hitbox_AABB *p_hitbox;
-    Serialized_Field s_data;
-} Collision_Node_Record;
 
 typedef void f_Collision_Handler(
         Game *p_game,
@@ -1084,7 +1124,10 @@ typedef struct Entity_Data_t {
 typedef struct Entity_Functions_t {
     m_Entity_Handler                m_entity_dispose_handler;
     m_Entity_Handler                m_entity_update_handler;
+
+    m_Entity_Handler                m_entity_enable_handler;
     m_Entity_Handler                m_entity_disable_handler;
+
     m_Entity_Serialization_Handler  m_entity_serialize_handler;
     m_Entity_Serialization_Handler  m_entity_deserialize_handler;
 } Entity_Functions;

@@ -50,14 +50,16 @@ void m_process__game_action__hitbox(
     switch (the_kind_of__hitbox) {
         case Hitbox_Kind__Opaque:
         default:
-            get_ptrs_to_properties_of__hitbox(
+            opaque_access_to__hitbox(
                     get_p_hitbox_context_from__game(p_game), 
                     GET_UUID_P(get_p_world_from__game(p_game)), 
                     p_game_action->ga_kind__hitbox__uuid_of__target, 
-                    &p_dimenisons, 
-                    &p_position_of__hitbox__3i32F4,
-                    &p_velocity_of__hitbox__3i32F4,
-                    &p_acceleration_of__hitbox__3i16F8);
+                    p_dimenisons, 
+                    p_position_of__hitbox__3i32F4,
+                    p_velocity_of__hitbox__3i32F4,
+                    p_acceleration_of__hitbox__3i16F8,
+                    0,
+                    OPAQUE_HITBOX_ACCESS__SET);
 
             position_OLD_of__hitbox__3i32F4 =
                 *p_position_of__hitbox__3i32F4;
