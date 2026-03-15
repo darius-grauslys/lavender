@@ -20,7 +20,7 @@ void m_camera_handler__follow__default(
         Game *p_game,
         Graphics_Window *p_graphics_window) {
     Hitbox_AABB_Manager *p_hitbox_aabb_manager =
-        get_p_hitbox_aabb_manager_from__hitbox_context(
+        (Hitbox_AABB_Manager*)get_pV_hitbox_manager_from__hitbox_context(
                 get_p_hitbox_context_from__game(p_game),
                 GET_UUID_P(get_p_world_from__game(p_game)));
     Hitbox_AABB *p_hitbox_aabb =

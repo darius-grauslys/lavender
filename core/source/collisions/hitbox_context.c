@@ -322,13 +322,9 @@ void *get_pV_hitbox_from__hitbox_context(
         return 0;
     }
 
-    Serialization_Header *p_serialization_header =
-        (Serialization_Header*)p_hitbox_manager_instance->pVM_hitbox_manager;
-
-    return dehash_identitier_u32_in__contigious_array(
-            p_serialization_header, 
-            get_max_quantity_of__hitboxes_in__this_hitbox_manager(
-                p_hitbox_manager_instance->pVM_hitbox_manager), 
+    return get_pV_hitbox_from__this_hitbox_manager_in__hitbox_context(
+            p_hitbox_context, 
+            p_hitbox_manager_instance->pVM_hitbox_manager, 
             uuid_of__hitbox__u32);
 }
 
@@ -365,33 +361,5 @@ void release_hitbox_manager_from__hitbox_context(
             p_hitbox_manager_instance->type_of__hitbox_manager);
     initialize_hitbox_manager_instance_as__deallocated(
             p_hitbox_manager_instance);
-}
-
-///
-/// Returns null ptr when failing to find.
-///
-/// [ ------- ] Reports no error upon failure to find.
-/// [ !NDEBUG ] Reports an error upon invalid type found.
-///
-Hitbox_AABB_Manager *get_p_hitbox_aabb_manager_from__hitbox_context(
-        Hitbox_Context *p_hitbox_context,
-        Identifier__u32 uuid_of__hitbox_manager__u32) {
-    Hitbox_Manager_Instance *p_hitbox_manager_instance =
-        get_p_hitbox_manager_instance_using__uuid_from__hitbox_context(
-                p_hitbox_context, 
-                uuid_of__hitbox_manager__u32);
-
-    if (!p_hitbox_manager_instance)
-        return 0;
-
-#ifndef NDEBUG
-    if (Hitbox_Manager_Type__AABB 
-            != p_hitbox_manager_instance->type_of__hitbox_manager) {
-        debug_error("get_p_hitbox_aabb_manager_from__hitbox_context, invalid cast.");
-        return 0;
-    }
-#endif
-
-    return (Hitbox_AABB_Manager*)p_hitbox_manager_instance->pVM_hitbox_manager;
 }
 

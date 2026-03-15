@@ -162,7 +162,7 @@ void poll_for__collisions_within_this__collision_node(
         p_collision_node->p_linked_list__collision_node_entries__tail;
 
     Hitbox_AABB_Manager *p_hitbox_aabb_manager =
-        get_p_hitbox_aabb_manager_from__hitbox_context(
+        (Hitbox_AABB_Manager*)get_pV_hitbox_manager_from__hitbox_context(
                 get_p_hitbox_context_from__game(p_game), 
                 GET_UUID_P(get_p_world_from__game(p_game)));
 

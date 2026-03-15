@@ -245,7 +245,7 @@ UI_Element *get_highest_priority_ui_element_thats__under_the_cursor(
         UI_Manager *p_ui_manager,
         Game *p_game) {
     Hitbox_AABB_Manager *p_hitbox_aabb_manager =
-        get_p_hitbox_aabb_manager_from__hitbox_context(
+        (Hitbox_AABB_Manager*)get_pV_hitbox_manager_from__hitbox_context(
                 get_p_hitbox_context_from__game(p_game), 
                 GET_UUID_P(p_ui_manager));
 
@@ -316,7 +316,7 @@ UI_Element *detect_focus__strictly_under_cursor_in__ui_manager(
         UI_Manager *p_ui_manager, 
         Game *p_game) {
     Hitbox_AABB_Manager *p_hitbox_aabb_manager =
-        get_p_hitbox_aabb_manager_from__hitbox_context(
+        (Hitbox_AABB_Manager*)get_pV_hitbox_manager_from__hitbox_context(
                 get_p_hitbox_context_from__game(p_game), 
                 GET_UUID_P(p_ui_manager));
 
@@ -441,7 +441,7 @@ void handle_drop_in__ui_manager(
         UI_Manager *p_ui_manager,
         UI_Element *p_ui_element__focused) {
     Hitbox_AABB_Manager *p_hitbox_aabb_manager =
-        get_p_hitbox_aabb_manager_from__hitbox_context(
+        (Hitbox_AABB_Manager*)get_pV_hitbox_manager_from__hitbox_context(
                 get_p_hitbox_context_from__game(p_game), 
                 GET_UUID_P(p_ui_manager));
 
@@ -641,7 +641,7 @@ UI_Element *allocate_ui_element_from__ui_manager_as__child(
         UI_Manager *p_ui_manager,
         UI_Element *p_parent) {
     Hitbox_AABB_Manager *p_hitbox_aabb_manager =
-        get_p_hitbox_aabb_manager_from__hitbox_context(
+        (Hitbox_AABB_Manager*)get_pV_hitbox_manager_from__hitbox_context(
                 get_p_hitbox_context_from__game(p_game), 
                 GET_UUID_P(p_ui_manager));
     UI_Element *p_child =

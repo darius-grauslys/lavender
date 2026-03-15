@@ -171,7 +171,7 @@ TEST_FUNCTION(lsm_walk_post_teleport) {
                 &game, 
                 0);
     allocate_hitbox_aabb_from__hitbox_aabb_manager(
-            get_p_hitbox_aabb_manager_from__game(&game), 
+            (Hitbox_AABB_Manager*)get_pV_hitbox_manager_from__game(&game), 
             GET_UUID_P(p_client));
     initialize_client(
             p_client, 
@@ -217,7 +217,7 @@ TEST_FUNCTION(lsm_walk_post_teleport) {
                 vector_3i32F4_to__chunk_vector_3i32(
                     get_position_3i32F4_of__hitbox_aabb(
                         get_p_hitbox_aabb_by__uuid_u32_from__hitbox_aabb_manager(
-                            get_p_hitbox_aabb_manager_from__game(&game), 
+                            (Hitbox_AABB_Manager*)get_pV_hitbox_manager_from__game(&game), 
                             GET_UUID_P(p_client)))));
     munit_assert_not_null(p_local_space);
     __test_walks(

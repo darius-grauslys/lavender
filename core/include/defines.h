@@ -2571,11 +2571,16 @@ typedef struct Graphics_Window_t {
         Identifier__u32 ui_tile_map__texture__uuid;
         Identifier__u32 tile_map__texture__uuid;
     };
+
+    // Rare instance of resource sharing
+    // in Lavender. Hopefully the only exception:
+    Identifier__u32 uuid_of__sprite_manager;
+    Identifier__u32 uuid_of__ui_manager;
+    Identifier__u32 uuid_of__hitbox_manager;
+
     Graphics_Window_Kind the_kind_of__window;
     Index__u8 priority_of__window;
     Graphics_Window_Flags__u8 graphics_window__flags;
-    Graphics_Window__Sprite_Manager__Allocation_Scheme graphics_window__sprite_manager__allocation_scheme;
-    Graphics_Window__UI_Manager__Allocation_Scheme graphics_window__ui_manager__allocation_scheme;
 } Graphics_Window;
 
 typedef struct Graphics_Window_Manager_t {

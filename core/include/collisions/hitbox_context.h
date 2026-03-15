@@ -85,14 +85,15 @@ void release_hitbox_manager_from__hitbox_context(
         Hitbox_Context *p_hitbox_context,
         Identifier__u32 uuid_of__hitbox_manager__u32);
 
-///
-/// Returns null ptr when failing to find.
-///
-/// [ ------- ] Reports no error upon failure to find.
-/// [ !NDEBUG ] Reports an error upon invalid type found.
-///
-Hitbox_AABB_Manager *get_p_hitbox_aabb_manager_from__hitbox_context(
+static inline
+void *get_pV_hitbox_manager_from__hitbox_context(
         Hitbox_Context *p_hitbox_context,
-        Identifier__u32 uuid_of__hitbox_manager__u32);
+        Identifier__u32 uuid_of__hitbox_manager__u32) {
+    return get_p_hitbox_manager_instance_using__uuid_from__hitbox_context(
+            p_hitbox_context, 
+            uuid_of__hitbox_manager__u32)
+        ->pVM_hitbox_manager
+        ;
+}
 
 #endif

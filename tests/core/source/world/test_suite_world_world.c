@@ -70,7 +70,7 @@ TEST_FUNCTION(teleport_world) {
                 &game, 
                 0);
     allocate_hitbox_aabb_from__hitbox_aabb_manager(
-            get_p_hitbox_aabb_manager_from__game(&game), 
+            (Hitbox_AABB_Manager*)get_pV_hitbox_manager_from__game(&game), 
             GET_UUID_P(p_client));
     initialize_client(
             p_client, 

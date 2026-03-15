@@ -55,7 +55,7 @@ void m_ui_slider__dragged_handler__default(
         is_ui_element__snapped_x_or_y_axis(p_this_draggable);
 
     Hitbox_AABB_Manager *p_hitbox_aabb_manager =
-        get_p_hitbox_manager_aabb_from__graphics_window(
+        (Hitbox_AABB_Manager*)get_pV_hitbox_manager_from__graphics_window(
                 p_game, 
                 p_graphics_window);
 
@@ -148,7 +148,7 @@ void m_ui_slider__dragged_handler__gfx_window__default(
         Graphics_Window *p_graphics_window) {
 
     Hitbox_AABB_Manager *p_hitbox_aabb_manager =
-        get_p_hitbox_manager_aabb_from__graphics_window(
+        (Hitbox_AABB_Manager*)get_pV_hitbox_manager_from__graphics_window(
                 p_game, 
                 p_graphics_window);
 

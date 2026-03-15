@@ -92,13 +92,13 @@ void manage_world(
         get_p_world_from__game(p_game);
 
     Hitbox_AABB_Manager *p_hitbox_aabb_manager =
-        get_p_hitbox_aabb_manager_from__hitbox_context(
+        (Hitbox_AABB_Manager*)get_pV_hitbox_manager_from__hitbox_context(
                 get_p_hitbox_context_from__game(p_game), 
                 GET_UUID_P(p_world));
 
     poll_collision_resolver_aabb(
             p_game, 
-            get_p_hitbox_aabb_manager_from__hitbox_context(
+            (Hitbox_AABB_Manager*)get_pV_hitbox_manager_from__hitbox_context(
                 get_p_hitbox_context_from__game(p_game), 
                 GET_UUID_P(p_world)),
             p_world->f_hitbox_aabb_collision_handler, 
@@ -232,7 +232,7 @@ Entity *get_p_entity_from__world_using__3i32F4(
                 p_global_space->_serialization_header.uuid);
 
     Hitbox_AABB_Manager *p_hitbox_aabb_manager =
-        get_p_hitbox_aabb_manager_from__hitbox_context(
+        (Hitbox_AABB_Manager*)get_pV_hitbox_manager_from__hitbox_context(
                 get_p_hitbox_context_from__game(p_game), 
                 GET_UUID_P(p_world));
 

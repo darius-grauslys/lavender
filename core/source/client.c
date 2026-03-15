@@ -49,7 +49,7 @@ void m_process__teleport_client(
         Process *p_this_process,
         Game *p_game) {
     Hitbox_AABB_Manager *p_hitbox_aabb_manager =
-        get_p_hitbox_aabb_manager_from__hitbox_context(
+        (Hitbox_AABB_Manager*)get_pV_hitbox_manager_from__hitbox_context(
                 get_p_hitbox_context_from__game(p_game), 
                 GET_UUID_P(get_p_world_from__game(p_game)));
 
@@ -118,7 +118,7 @@ Process *teleport_client(
         Client *p_client,
         Vector__3i32F4 position__3i32F4) {
     Hitbox_AABB_Manager *p_hitbox_aabb_manager =
-        get_p_hitbox_aabb_manager_from__hitbox_context(
+        (Hitbox_AABB_Manager*)get_pV_hitbox_manager_from__hitbox_context(
                 get_p_hitbox_context_from__game(p_game), 
                 GET_UUID_P(get_p_world_from__game(p_game)));
 
@@ -406,7 +406,7 @@ void m_process__deserialize_client__default(
         Process *p_this_process,
         Game *p_game) {
     Hitbox_AABB_Manager *p_hitbox_aabb_manager =
-        get_p_hitbox_aabb_manager_from__hitbox_context(
+        (Hitbox_AABB_Manager*)get_pV_hitbox_manager_from__hitbox_context(
                 get_p_hitbox_context_from__game(p_game), 
                 GET_UUID_P(get_p_world_from__game(p_game)));
 
@@ -470,7 +470,7 @@ void m_process__serialize_client__default(
         Process *p_this_process,
         Game *p_game) {
     Hitbox_AABB_Manager *p_hitbox_aabb_manager =
-        get_p_hitbox_aabb_manager_from__hitbox_context(
+        (Hitbox_AABB_Manager*)get_pV_hitbox_manager_from__hitbox_context(
                 get_p_hitbox_context_from__game(p_game), 
                 GET_UUID_P(get_p_world_from__game(p_game)));
 

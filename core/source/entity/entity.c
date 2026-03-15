@@ -41,7 +41,7 @@ void m_entity_dispose_handler__default(
 
 #warning TODO(tech-debt): replace with opaque hitbox pointer for default handler
     Hitbox_AABB_Manager *p_hitbox_aabb_manager =
-        get_p_hitbox_aabb_manager_from__hitbox_context(
+        (Hitbox_AABB_Manager*)get_pV_hitbox_manager_from__hitbox_context(
                 get_p_hitbox_context_from__game(p_game), 
                 GET_UUID_P(p_world));
 #ifndef NDEBUG
@@ -69,7 +69,7 @@ void m_entity_enable_handler__default(
         World *p_world) {
 #warning TODO(tech-debt): replace with opaque hitbox pointer for default handler
     Hitbox_AABB_Manager *p_hitbox_aabb_manager =
-        get_p_hitbox_aabb_manager_from__hitbox_context(
+        (Hitbox_AABB_Manager*)get_pV_hitbox_manager_from__hitbox_context(
                 get_p_hitbox_context_from__game(p_game), 
                 GET_UUID_P(p_world));
 #ifndef NDEBUG
@@ -94,7 +94,7 @@ void m_entity_disable_handler__default(
         World *p_world) {
 #warning TODO(tech-debt): replace with opaque hitbox pointer for default handler
     Hitbox_AABB_Manager *p_hitbox_aabb_manager =
-        get_p_hitbox_aabb_manager_from__hitbox_context(
+        (Hitbox_AABB_Manager*)get_pV_hitbox_manager_from__hitbox_context(
                 get_p_hitbox_context_from__game(p_game), 
                 GET_UUID_P(p_world));
 #ifndef NDEBUG
@@ -220,7 +220,7 @@ PLATFORM_Write_File_Error m_entity_serialization_handler__default(
         World *p_world,
         Serialization_Request *p_serialization_request) {
     Hitbox_AABB_Manager *p_hitbox_aabb_manager =
-        get_p_hitbox_aabb_manager_from__hitbox_context(
+        (Hitbox_AABB_Manager*)get_pV_hitbox_manager_from__hitbox_context(
                 get_p_hitbox_context_from__game(p_game), 
                 GET_UUID_P(p_world));
     Hitbox_AABB *p_hitbox_aabb =
@@ -313,7 +313,7 @@ PLATFORM_Read_File_Error m_entity_deserialization_handler__default(
     if (p_this_entity->entity_data.entity_flags
             & ENTITY_FLAG__IS_WITH_HITBOX__SERIALIZATION) {
         Hitbox_AABB_Manager *p_hitbox_aabb_manager =
-            get_p_hitbox_aabb_manager_from__hitbox_context(
+            (Hitbox_AABB_Manager*)get_pV_hitbox_manager_from__hitbox_context(
                     get_p_hitbox_context_from__game(p_game), 
                     GET_UUID_P(p_world));
         Hitbox_AABB *p_hitbox_aabb =

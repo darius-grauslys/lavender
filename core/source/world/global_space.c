@@ -87,7 +87,7 @@ void m_process__serialize_entities_in__global_space(
 
         // Hitbox_AABB *p_hitbox_aabb =
         //     get_p_hitbox_aabb_by__entity_from__hitbox_aabb_manager(
-        //             get_p_hitbox_aabb_manager_from__game(p_game), 
+        //             (Hitbox_AABB_Manager*)get_pV_hitbox_manager_from__game(p_game), 
         //             p_entity);
 
         // TODO: this is a hack fix atm
@@ -346,7 +346,7 @@ void m_process__serialize_global_space(
     Process *p_process = 0;
 
     Hitbox_AABB_Manager *p_hitbox_aabb_manager =
-        get_p_hitbox_aabb_manager_from__hitbox_context(
+        (Hitbox_AABB_Manager*)get_pV_hitbox_manager_from__hitbox_context(
                 get_p_hitbox_context_from__game(p_game), 
                 GET_UUID_P(get_p_world_from__game(p_game)));
 

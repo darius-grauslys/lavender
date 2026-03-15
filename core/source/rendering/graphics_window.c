@@ -27,8 +27,11 @@ void initialize_graphics_window(
         f_graphics_window__default_compose;
     p_graphics_window->f_PLATFORM_render_gfx_window =
         f_graphics_window__default_render;
-    p_graphics_window->tile_map__texture__uuid = IDENTIFIER__UNKNOWN__u32;
+    p_graphics_window->tile_map__texture__uuid       = IDENTIFIER__UNKNOWN__u32;
     p_graphics_window->graphics_window__parent__uuid = IDENTIFIER__UNKNOWN__u32;
+    p_graphics_window->uuid_of__sprite_manager       = IDENTIFIER__UNKNOWN__u32;
+    p_graphics_window->uuid_of__ui_manager           = IDENTIFIER__UNKNOWN__u32;
+    p_graphics_window->uuid_of__hitbox_manager       = IDENTIFIER__UNKNOWN__u32;
 }
 
 void initialize_graphics_window_as__allocated(
@@ -90,9 +93,11 @@ UI_Manager *allocate_ui_manager_for__graphics_window(
         Gfx_Context *p_gfx_context,
         Graphics_Window *p_graphics_window,
         Quantity__u16 max_quantity_of__ui_elements) {
+    p_graphics_window->uuid_of__ui_manager =
+        GET_UUID_P(p_graphics_window);
     return allocate_p_ui_manager_from__ui_context(
             get_p_ui_context_from__gfx_context(p_gfx_context), 
-            GET_UUID_P(p_graphics_window),
+            p_graphics_window->uuid_of__ui_manager,
             max_quantity_of__ui_elements);
 }
 
@@ -100,9 +105,11 @@ void allocate_sprite_manager_for__graphics_window(
         Gfx_Context *p_gfx_context,
         Graphics_Window *p_graphics_window,
         Quantity__u32 max_quantity_of__sprites_in__sprite_manager) {
+    p_graphics_window->uuid_of__sprite_manager =
+        GET_UUID_P(p_graphics_window);
     allocate_sprite_manager_from__sprite_context(
             get_p_sprite_context_from__gfx_context(p_gfx_context), 
-            GET_UUID_P(p_graphics_window),
+            p_graphics_window->uuid_of__sprite_manager,
             max_quantity_of__sprites_in__sprite_manager);
 }
 
@@ -111,9 +118,11 @@ void allocate_hitbox_manager_for__graphics_window(
         Graphics_Window *p_graphics_window,
         Hitbox_Manager_Type the_type_of__hitbox_manager_to__allocate,
         Quantity__u32 max_quantity_of__hitboxes_in__hitbox_pool) {
+    p_graphics_window->uuid_of__hitbox_manager =
+        GET_UUID_P(p_graphics_window);
     allocate_hitbox_manager_from__hitbox_context(
             p_hitbox_context, 
-            GET_UUID_P(p_graphics_window), 
+            p_graphics_window->uuid_of__hitbox_manager, 
             the_type_of__hitbox_manager_to__allocate, 
             max_quantity_of__hitboxes_in__hitbox_pool);
 }
@@ -245,45 +254,18 @@ Sprite *allocate_p_sprite_from__graphics_window(
         Identifier__u32 uuid__u32, 
         Texture texture_to__sample_by__sprite, 
         Texture_Flags texture_flags_for__sprite) {
-    Sprite_Manager *p_sprite_manager = 0;
-    Graphics_Window *p_graphics_window_used_in__allocation_call = p_graphics_window;
-    switch (p_graphics_window->graphics_window__sprite_manager__allocation_scheme) {
-        case Graphics_Window__Sprite_Manager__Allocation_Scheme__Unknown:
-        case Graphics_Window__Sprite_Manager__Allocation_Scheme__None:
-            debug_warning("Did you forget to include a sprite pool allocation scheme for your graphics window?");
-            debug_error("allocate_p_sprite_from__graphics_window, this window is not allocated to handle sprites.");
-            return 0;
-        case Graphics_Window__Sprite_Manager__Allocation_Scheme__Is_Allocating:
-            p_sprite_manager =
-                get_p_sprite_manager_from__graphics_window(
-                        p_game,
-                        p_graphics_window);
-            break;
-        case Graphics_Window__Sprite_Manager__Allocation_Scheme__Is_Using_Parent_Pool:
-#ifndef NDEBUG
-            if (is_identifier_u32__invalid(p_graphics_window->graphics_window__parent__uuid)) {
-                debug_error("allocate_p_sprite_from__graphics_window, graphics_window parent uuid is invalid.");
-            }
-#endif
-            p_graphics_window_used_in__allocation_call =
-                get_p_graphics_window_by__uuid_from__graphics_window_manager(
-                        get_p_graphics_window_manager_from__gfx_context(
-                            get_p_gfx_context_from__game(p_game)), 
-                        p_graphics_window->graphics_window__parent__uuid);
-            p_sprite_manager =
-                get_p_sprite_manager_by__uuid_from__sprite_context(
-                        get_p_sprite_context_from__gfx_context(
-                            get_p_gfx_context_from__game(p_game)),
-                        p_graphics_window->graphics_window__parent__uuid);
-            break;
-    }
+    Sprite_Manager *p_sprite_manager = 
+        get_p_sprite_manager_by__uuid_from__sprite_context(
+                get_p_sprite_context_from__gfx_context(
+                    get_p_gfx_context_from__game(p_game)), 
+                p_graphics_window->uuid_of__sprite_manager);
     if (!p_sprite_manager) {
         debug_error("allocate_p_sprite_from__graphics_window, sprite pool is not allocated.");
         return 0;
     }
     return allocate_sprite_from__sprite_manager(
             get_p_gfx_context_from__game(p_game), p_sprite_manager, 
-            p_graphics_window_used_in__allocation_call, 
+            p_graphics_window, 
             uuid__u32, 
             texture_to__sample_by__sprite, 
             texture_flags_for__sprite);
@@ -304,6 +286,11 @@ void release_graphics_window_ui_manager(
         return;
     }
 #endif
+
+    if (does_graphics_window_share_a__ui_manager(
+                p_graphics_window)) {
+        return;
+    }
 
     UI_Manager *p_ui_manager =
         get_p_ui_manager_from__graphics_window(
@@ -335,6 +322,11 @@ void release_graphics_window_hitbox_manager(
     }
 #endif
 
+    if (does_graphics_window_share_a__hitbox_manager(
+                p_graphics_window)) {
+        return;
+    }
+
     Hitbox_Manager_Instance *p_hitbox_manager_instance =
         get_p_hitbox_manager_instance_using__uuid_from__hitbox_context(
                 get_p_hitbox_context_from__game(p_game), 
@@ -364,6 +356,11 @@ void release_graphics_window_sprite_manager(
         return;
     }
 #endif
+
+    if (does_graphics_window_share_a__sprite_manager(
+                p_graphics_window)) {
+        return;
+    }
 
     Sprite_Manager *p_sprite_manager =
         get_p_sprite_manager_from__graphics_window(
@@ -450,6 +447,66 @@ void set_graphics_window_as__no_longer_needing__composition(
     p_gfx_window->graphics_window__flags &=
         ~GRAPHICS_WINDOW__FLAG__COMPOSE__DIRTY
         ;
+}
+
+void share_sprite_manager_with__graphics_window(
+        Graphics_Window *p_graphics_window,
+        Identifier__u32 uuid_of__sprite_manager) {
+    if (does_graphics_window_own_a__sprite_manager(
+                p_graphics_window)) {
+        debug_error("share_sprite_manager_with__graphics_window, would leak sprite_manager owned by p_graphics_window.");
+        return;
+    }
+
+#ifndef NDEBUG
+    if (does_graphics_window_share_a__sprite_manager(
+                p_graphics_window)) {
+        debug_warning__verbose("share_sprite_manager_with__graphics_window, graphics_window is already sharing a sprite_manager!");
+    }
+#endif
+
+    p_graphics_window->uuid_of__sprite_manager =
+        uuid_of__sprite_manager;
+}
+
+void share_ui_manager_with__graphics_window(
+        Graphics_Window *p_graphics_window,
+        Identifier__u32 uuid_of__ui_manager) {
+    if (does_graphics_window_own_a__ui_manager(
+                p_graphics_window)) {
+        debug_error("share_ui_manager_with__graphics_window, would leak ui_manager owned by p_graphics_window.");
+        return;
+    }
+
+#ifndef NDEBUG
+    if (does_graphics_window_share_a__ui_manager(
+                p_graphics_window)) {
+        debug_warning__verbose("share_ui_manager_with__graphics_window, graphics_window is already sharing a ui_manager!");
+    }
+#endif
+
+    p_graphics_window->uuid_of__ui_manager =
+        uuid_of__ui_manager;
+}
+
+void share_hitbox_manager_with__graphics_window(
+        Graphics_Window *p_graphics_window,
+        Identifier__u32 uuid_of__hitbox_manager) {
+    if (does_graphics_window_own_a__hitbox_manager(
+                p_graphics_window)) {
+        debug_error("share_hitbox_manager_with__graphics_window, would leak hitbox_manager owned by p_graphics_window.");
+        return;
+    }
+
+#ifndef NDEBUG
+    if (does_graphics_window_share_a__hitbox_manager(
+                p_graphics_window)) {
+        debug_warning__verbose("share_hitbox_manager_with__graphics_window, graphics_window is already sharing a hitbox_manager!");
+    }
+#endif
+
+    p_graphics_window->uuid_of__hitbox_manager =
+        uuid_of__hitbox_manager;
 }
 
 void f_graphics_window__default_compose(

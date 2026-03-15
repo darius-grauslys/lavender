@@ -90,7 +90,7 @@ void m_ui_element__dispose_handler__default(
     p_this_ui_element->p_next = 0;
 
     Hitbox_AABB_Manager *p_hitbox_aabb_manager =
-        get_p_hitbox_manager_aabb_from__graphics_window(
+        (Hitbox_AABB_Manager*)get_pV_hitbox_manager_from__graphics_window(
                 p_game, 
                 p_graphics_window);
 
@@ -162,7 +162,7 @@ void allocate_hitbox_for__ui_element(
         Quantity__u32 height_of__hitbox__u32,
         Vector__3i32 position_of__hitbox__3i32) {
     Hitbox_AABB_Manager *p_hitbox_aabb_manager =
-        get_p_hitbox_manager_aabb_from__graphics_window(
+        (Hitbox_AABB_Manager*)get_pV_hitbox_manager_from__graphics_window(
                 p_game, 
                 p_graphics_window);
 
@@ -234,7 +234,7 @@ void set_position_3i32_of__ui_element(
         UI_Element *p_ui_element,
         Vector__3i32 position__3i32) {
     Hitbox_AABB_Manager *p_hitbox_aabb_manager =
-        get_p_hitbox_manager_aabb_from__graphics_window(
+        (Hitbox_AABB_Manager*)get_pV_hitbox_manager_from__graphics_window(
                 p_game, 
                 p_graphics_window);
 
@@ -288,7 +288,7 @@ void set_ui_element__size(
         UI_Element *p_ui_element,
         Quantity__u32 width, Quantity__u32 height) {
     Hitbox_AABB_Manager *p_hitbox_aabb_manager =
-        get_p_hitbox_manager_aabb_from__graphics_window(
+        (Hitbox_AABB_Manager*)get_pV_hitbox_manager_from__graphics_window(
                 p_game, 
                 p_graphics_window);
 
@@ -319,7 +319,7 @@ void set_ui_element__hitbox(
         Quantity__u32 height,
         Vector__3i32 position__3i32) {
     Hitbox_AABB_Manager *p_hitbox_aabb_manager =
-        get_p_hitbox_manager_aabb_from__graphics_window(
+        (Hitbox_AABB_Manager*)get_pV_hitbox_manager_from__graphics_window(
                 p_game, 
                 p_graphics_window);
 
@@ -502,7 +502,7 @@ void m_ui_element__compose_handler__default_non_recursive(
                 p_graphics_window));
 
     Hitbox_AABB_Manager *p_hitbox_aabb_manager =
-        get_p_hitbox_manager_aabb_from__graphics_window(
+        (Hitbox_AABB_Manager*)get_pV_hitbox_manager_from__graphics_window(
                 p_game, 
                 p_graphics_window);
     Quantity__u32 width_of__ui_tile_span; 
@@ -650,7 +650,7 @@ void update_ui_element_origin__relative_to(
     }
 #endif
     Hitbox_AABB_Manager *p_hitbox_aabb_manager =
-        get_p_hitbox_aabb_manager_from__hitbox_context(
+        (Hitbox_AABB_Manager*)get_pV_hitbox_manager_from__hitbox_context(
                 get_p_hitbox_context_from__game(p_game),
                 GET_UUID_P(p_ui_manager));
 

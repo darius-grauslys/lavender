@@ -8,6 +8,7 @@
 #include "platform.h"
 #include "platform_defines.h"
 #include "rendering/gfx_context.h"
+#include "rendering/graphics_window.h"
 #include "rendering/sprite.h"
 #include "rendering/texture.h"
 #include "serialization/hashing.h"
@@ -268,9 +269,10 @@ void render_sprites_in__sprite_manager(
                 p_sprite_render_record->p_sprite,
                 p_sprite_context);
         Hitbox_AABB_Manager *p_hitbox_aabb_manager =
-            get_p_hitbox_aabb_manager_from__hitbox_context(
-                    get_p_hitbox_context_from__game(p_game), 
-                    GET_UUID_P(p_gfx_window));
+            (Hitbox_AABB_Manager*)
+            get_pV_hitbox_manager_from__graphics_window(
+                    p_game, 
+                    p_gfx_window);
         Hitbox_AABB *p_hitbox_aabb =
             get_p_hitbox_aabb_by__uuid_u32_from__hitbox_aabb_manager(
                     p_hitbox_aabb_manager,

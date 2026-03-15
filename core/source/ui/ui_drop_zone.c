@@ -31,7 +31,7 @@ void m_ui_drop_zone__receive_drop_handler__default(
         return;
 
     Hitbox_AABB_Manager *p_hitbox_aabb_manager =
-        get_p_hitbox_manager_aabb_from__graphics_window(
+        (Hitbox_AABB_Manager*)get_pV_hitbox_manager_from__graphics_window(
                 p_game, 
                 p_graphics_window);
 

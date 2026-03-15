@@ -26,7 +26,7 @@ void m_process__game_action__world__load_world(
         (Game_Action*)p_this_process->p_process_data;
 
     Hitbox_AABB_Manager *p_hitbox_aabb_manager =
-        get_p_hitbox_aabb_manager_from__hitbox_context(
+        (Hitbox_AABB_Manager*)get_pV_hitbox_manager_from__hitbox_context(
                 get_p_hitbox_context_from__game(p_game), 
                 GET_UUID_P(get_p_world_from__game(p_game)));
 

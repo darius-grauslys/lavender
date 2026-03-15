@@ -7,6 +7,7 @@
 #include "rendering/graphics_window_manager.h"
 #include "rendering/sprite_context.h"
 #include "rendering/sprite_manager.h"
+#include "serialization/identifiers.h"
 #include "serialization/serialization_header.h"
 #include "types/implemented/graphics_window_kind.h"
 #include "types/implemented/hitbox_manager_type.h"
@@ -98,6 +99,18 @@ void set_graphics_window_as__no_longer_needing__composition(
         Game *p_game,
         Graphics_Window *p_gfx_window);
 
+void share_sprite_manager_with__graphics_window(
+        Graphics_Window *p_graphics_window,
+        Identifier__u32 uuid_of__sprite_manager);
+
+void share_ui_manager_with__graphics_window(
+        Graphics_Window *p_graphics_window,
+        Identifier__u32 uuid_of__ui_manager);
+
+void share_hitbox_manager_with__graphics_window(
+        Graphics_Window *p_graphics_window,
+        Identifier__u32 uuid_of__hitbox_manager);
+
 void f_graphics_window__default_compose(
         Game *p_game,
         Graphics_Window *p_gfx_window);
@@ -107,19 +120,78 @@ void f_graphics_window__default_render(
         Graphics_Window *p_gfx_window);
 
 static inline
-bool is_graphics_window__allocating_a_sprite_pool(
+bool does_graphics_window_own_a__sprite_manager(
         Graphics_Window *p_graphics_window) {
-    return p_graphics_window->graphics_window__sprite_manager__allocation_scheme
-        == Graphics_Window__Sprite_Manager__Allocation_Scheme__Is_Allocating
+    return 
+        !is_identifier_u32__invalid(GET_UUID_P(p_graphics_window))
+        && (
+                GET_UUID_P(p_graphics_window)
+                == p_graphics_window->uuid_of__sprite_manager
+        )
         ;
 }
 
 static inline
-bool is_graphics_window__using_parent_sprite_manager(
+bool does_graphics_window_own_a__ui_manager(
         Graphics_Window *p_graphics_window) {
-    return p_graphics_window->graphics_window__sprite_manager__allocation_scheme
-        == Graphics_Window__Sprite_Manager__Allocation_Scheme__Is_Using_Parent_Pool
+    return 
+        !is_identifier_u32__invalid(GET_UUID_P(p_graphics_window))
+        && (
+                GET_UUID_P(p_graphics_window)
+                == p_graphics_window->uuid_of__ui_manager
+        )
         ;
+}
+
+static inline
+bool does_graphics_window_own_a__hitbox_manager(
+        Graphics_Window *p_graphics_window) {
+    return 
+        !is_identifier_u32__invalid(GET_UUID_P(p_graphics_window))
+        && (
+                GET_UUID_P(p_graphics_window)
+                == p_graphics_window->uuid_of__hitbox_manager
+        )
+        ;
+}
+
+static inline
+bool does_graphics_window_share_a__sprite_manager(
+        Graphics_Window *p_graphics_window) {
+    return 
+        !is_identifier_u32__invalid(GET_UUID_P(p_graphics_window))
+        && !is_identifier_u32__invalid(
+                p_graphics_window->uuid_of__sprite_manager)
+        && (
+                GET_UUID_P(p_graphics_window)
+                != p_graphics_window->uuid_of__sprite_manager
+           );
+}
+
+static inline
+bool does_graphics_window_share_a__ui_manager(
+        Graphics_Window *p_graphics_window) {
+    return 
+        !is_identifier_u32__invalid(GET_UUID_P(p_graphics_window))
+        && !is_identifier_u32__invalid(
+                p_graphics_window->uuid_of__ui_manager)
+        && (
+                GET_UUID_P(p_graphics_window)
+                != p_graphics_window->uuid_of__ui_manager
+           );
+}
+
+static inline
+bool does_graphics_window_share_a__hitbox_manager(
+        Graphics_Window *p_graphics_window) {
+    return 
+        !is_identifier_u32__invalid(GET_UUID_P(p_graphics_window))
+        && !is_identifier_u32__invalid(
+                p_graphics_window->uuid_of__hitbox_manager)
+        && (
+                GET_UUID_P(p_graphics_window)
+                != p_graphics_window->uuid_of__hitbox_manager
+           );
 }
 
 static inline
@@ -151,7 +223,7 @@ UI_Manager *get_p_ui_manager_from__graphics_window(
     return get_p_ui_manager_by__uuid_from__ui_context(
             get_p_ui_context_from__gfx_context(
                 get_p_gfx_context_from__game(p_game)), 
-            GET_UUID_P(p_graphics_window));
+            p_graphics_window->uuid_of__ui_manager);
 }
 
 static inline
@@ -188,7 +260,7 @@ Sprite_Manager *get_p_sprite_manager_from__graphics_window(
     return get_p_sprite_manager_by__uuid_from__sprite_context(
             get_p_sprite_context_from__gfx_context(
                 get_p_gfx_context_from__game(p_game)), 
-            GET_UUID_P(p_graphics_window));
+            p_graphics_window->uuid_of__sprite_manager);
 }
 
 static inline
@@ -197,16 +269,16 @@ Hitbox_Manager_Instance *get_hitbox_manager_instance_from__graphics_window(
         Graphics_Window *p_graphics_window) {
     return get_p_hitbox_manager_instance_using__uuid_from__hitbox_context(
             get_p_hitbox_context_from__game(p_game),
-            GET_UUID_P(p_graphics_window));
+            p_graphics_window->uuid_of__hitbox_manager);
 }
 
 static inline
-Hitbox_AABB_Manager *get_p_hitbox_manager_aabb_from__graphics_window(
+void *get_pV_hitbox_manager_from__graphics_window(
         Game *p_game,
         Graphics_Window *p_graphics_window) {
-    return get_p_hitbox_aabb_manager_from__hitbox_context(
+    return get_pV_hitbox_manager_from__hitbox_context(
             get_p_hitbox_context_from__game(p_game), 
-            GET_UUID_P(p_graphics_window));
+            p_graphics_window->uuid_of__hitbox_manager);
 }
 
 static inline
