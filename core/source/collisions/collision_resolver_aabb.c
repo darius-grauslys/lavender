@@ -1,7 +1,7 @@
 #include "collisions/collision_resolver_aabb.h"
 #include "collisions/collision_node.h"
-#include "collisions/hitbox_aabb.h"
-#include "collisions/hitbox_aabb_manager.h"
+#include "collisions/core/aabb/hitbox_aabb.h"
+#include "collisions/core/aabb/hitbox_aabb_manager.h"
 #include "defines.h"
 #include "defines_weak.h"
 #include "degree.h"
@@ -9,6 +9,8 @@
 #include "game_action/core/hitbox/game_action__hitbox.h"
 #include "numerics.h"
 #include "platform_defines.h"
+#include "types/implemented/game_action_kind.h"
+#include "types/implemented/hitbox_kind.h"
 #include "vectors.h"
 #include "world/chunk.h"
 #include "world/chunk_vectors.h"
@@ -391,7 +393,8 @@ void poll_hitbox_aabb_for__tile_collision(
                             get_vector__3i16F8(
                                 get_acceleration_3i16F8_of__hitbox_aabb(p_hitbox_aabb).x__i16F8, 
                                 get_acceleration_3i16F8_of__hitbox_aabb(p_hitbox_aabb).y__i16F8, 
-                                0));
+                                0),
+                            Hitbox_Kind__AABB);
                     goto landed_on_ground;
                 }
             }
@@ -451,7 +454,8 @@ landed_on_ground:;
                     //     get_z_i32F4_from__hitbox(p_hitbox_aabb)
                     //     + i32_to__i32F4(BIT(TILE__WIDTH_AND__HEIGHT__BIT_SHIFT))),
                     get_velocity_3i32F4_of__hitbox_aabb(p_hitbox_aabb),
-                    get_acceleration_3i16F8_of__hitbox_aabb(p_hitbox_aabb));
+                    get_acceleration_3i16F8_of__hitbox_aabb(p_hitbox_aabb),
+                    Hitbox_Kind__AABB);
             return;
         }
     }

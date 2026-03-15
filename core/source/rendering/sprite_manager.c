@@ -1,5 +1,6 @@
 #include "rendering/sprite_manager.h"
-#include "collisions/hitbox_aabb_manager.h"
+#include "collisions/core/aabb/hitbox_aabb_manager.h"
+#include "collisions/hitbox_context.h"
 #include "debug/debug.h"
 #include "defines.h"
 #include "defines_weak.h"
@@ -266,9 +267,13 @@ void render_sprites_in__sprite_manager(
                 p_game,
                 p_sprite_render_record->p_sprite,
                 p_sprite_context);
+        Hitbox_AABB_Manager *p_hitbox_aabb_manager =
+            get_p_hitbox_aabb_manager_from__hitbox_context(
+                    get_p_hitbox_context_from__game(p_game), 
+                    GET_UUID_P(p_gfx_window));
         Hitbox_AABB *p_hitbox_aabb =
             get_p_hitbox_aabb_by__uuid_u32_from__hitbox_aabb_manager(
-                    get_p_hitbox_aabb_manager_from__game(p_game), 
+                    p_hitbox_aabb_manager,
                     GET_UUID_P(p_sprite_render_record
                         ->p_sprite));
         if (!p_hitbox_aabb) {

@@ -4,8 +4,9 @@
 #include "numerics.h"
 #include "vectors.h"
 #include <world/camera.h>
-#include "collisions/hitbox_aabb_manager.h"
-#include "collisions/hitbox_aabb.h"
+#include "collisions/hitbox_context.h"
+#include "collisions/core/aabb/hitbox_aabb_manager.h"
+#include "collisions/core/aabb/hitbox_aabb.h"
 #include "world/world.h"
 
 void m_camera_handler__default(
@@ -18,9 +19,13 @@ void m_camera_handler__follow__default(
         Camera *p_this_camera,
         Game *p_game,
         Graphics_Window *p_graphics_window) {
+    Hitbox_AABB_Manager *p_hitbox_aabb_manager =
+        get_p_hitbox_aabb_manager_from__hitbox_context(
+                get_p_hitbox_context_from__game(p_game),
+                GET_UUID_P(get_p_world_from__game(p_game)));
     Hitbox_AABB *p_hitbox_aabb =
         get_p_hitbox_aabb_by__uuid_u32_from__hitbox_aabb_manager(
-                get_p_hitbox_aabb_manager_from__game(p_game), 
+                p_hitbox_aabb_manager,
                 p_this_camera->uuid_of__target__u32);
 
     if (!p_hitbox_aabb) {

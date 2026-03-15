@@ -1,8 +1,8 @@
 #ifndef UI_ELEMENT_H
 #define UI_ELEMENT_H
 
-#include "collisions/hitbox_aabb.h"
-#include "collisions/hitbox_aabb_manager.h"
+#include "collisions/core/aabb/hitbox_aabb.h"
+#include "collisions/core/aabb/hitbox_aabb_manager.h"
 #include "defines_weak.h"
 #include "numerics.h"
 #include "platform.h"

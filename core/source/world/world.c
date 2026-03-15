@@ -2,8 +2,9 @@
 #include "collisions/collision_node.h"
 #include "collisions/collision_node_pool.h"
 #include "collisions/collision_resolver_aabb.h"
-#include "collisions/hitbox_aabb.h"
-#include "collisions/hitbox_aabb_manager.h"
+#include "collisions/core/aabb/hitbox_aabb.h"
+#include "collisions/core/aabb/hitbox_aabb_manager.h"
+#include "collisions/hitbox_context.h"
 #include "defines.h"
 #include "defines_weak.h"
 #include "game_action/core/world/game_action__world__load_world.h"
@@ -90,15 +91,22 @@ void manage_world(
     World *p_world = 
         get_p_world_from__game(p_game);
 
+    Hitbox_AABB_Manager *p_hitbox_aabb_manager =
+        get_p_hitbox_aabb_manager_from__hitbox_context(
+                get_p_hitbox_context_from__game(p_game), 
+                GET_UUID_P(p_world));
+
     poll_collision_resolver_aabb(
             p_game, 
-            get_p_hitbox_aabb_manager_from__game(p_game), 
+            get_p_hitbox_aabb_manager_from__hitbox_context(
+                get_p_hitbox_context_from__game(p_game), 
+                GET_UUID_P(p_world)),
             p_world->f_hitbox_aabb_collision_handler, 
             p_world->f_hitbox_aabb_tile_touch_handler);
 
     poll_hitbox_manager_for__movement(
             p_game,
-            get_p_hitbox_aabb_manager_from__game(p_game));
+            p_hitbox_aabb_manager);
 
     manage_world__entities(p_game);
 
@@ -118,7 +126,7 @@ void manage_world(
 
         Hitbox_AABB *p_hitbox_aabb =
             get_p_hitbox_aabb_by__uuid_u32_from__hitbox_aabb_manager(
-                    get_p_hitbox_aabb_manager_from__game(p_game), 
+                    p_hitbox_aabb_manager, 
                     GET_UUID_P(p_client));
 
         if (!p_hitbox_aabb) {
@@ -223,9 +231,14 @@ Entity *get_p_entity_from__world_using__3i32F4(
                 get_p_collision_node_pool_from__world(p_world), 
                 p_global_space->_serialization_header.uuid);
 
+    Hitbox_AABB_Manager *p_hitbox_aabb_manager =
+        get_p_hitbox_aabb_manager_from__hitbox_context(
+                get_p_hitbox_context_from__game(p_game), 
+                GET_UUID_P(p_world));
+
     Hitbox_AABB *p_hitbox_aabb =
         get_p_hitbox_aabb_at__vector_3i32F4_from__collision_node(
-                get_p_hitbox_aabb_manager_from__game(p_game),
+                p_hitbox_aabb_manager,
                 p_collision_node, 
                 position__3i32F4);
 

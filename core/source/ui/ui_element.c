@@ -1,6 +1,6 @@
 #include "ui/ui_element.h"
-#include "collisions/hitbox_aabb.h"
-#include "collisions/hitbox_aabb_manager.h"
+#include "collisions/core/aabb/hitbox_aabb.h"
+#include "collisions/core/aabb/hitbox_aabb_manager.h"
 #include "debug/debug.h"
 #include "defines.h"
 #include "defines_weak.h"

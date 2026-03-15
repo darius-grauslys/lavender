@@ -1,5 +1,5 @@
 #include "rendering/font/typer.h"
-#include "collisions/hitbox_aabb.h"
+#include "collisions/core/aabb/hitbox_aabb.h"
 #include "defines.h"
 #include "defines_weak.h"
 #include "platform.h"

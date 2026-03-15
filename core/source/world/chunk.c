@@ -1,4 +1,4 @@
-#include "collisions/hitbox_aabb.h"
+#include "collisions/core/aabb/hitbox_aabb.h"
 #include "defines.h"
 #include "defines_weak.h"
 #include "entity/entity.h"

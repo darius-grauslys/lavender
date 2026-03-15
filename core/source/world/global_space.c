@@ -2,8 +2,9 @@
 #include "client.h"
 #include "collisions/collision_node.h"
 #include "collisions/collision_node_pool.h"
-#include "collisions/hitbox_aabb.h"
-#include "collisions/hitbox_aabb_manager.h"
+#include "collisions/core/aabb/hitbox_aabb.h"
+#include "collisions/core/aabb/hitbox_aabb_manager.h"
+#include "collisions/hitbox_context.h"
 #include "defines.h"
 #include "defines_weak.h"
 #include "entity/entity_manager.h"
@@ -343,6 +344,12 @@ void m_process__serialize_global_space(
         Process *p_this_process,
         Game *p_game) {
     Process *p_process = 0;
+
+    Hitbox_AABB_Manager *p_hitbox_aabb_manager =
+        get_p_hitbox_aabb_manager_from__hitbox_context(
+                get_p_hitbox_context_from__game(p_game), 
+                GET_UUID_P(get_p_world_from__game(p_game)));
+
     Serialization_Request *p_serialization_request = 
         (Serialization_Request*)p_this_process->p_process_data;
     Global_Space *p_global_space = 
@@ -392,7 +399,7 @@ void m_process__serialize_global_space(
                         &p_entity)) {
                 Hitbox_AABB *p_hitbox_aabb =
                     get_p_hitbox_aabb_by__entity_from__hitbox_aabb_manager(
-                            get_p_hitbox_aabb_manager_from__game(p_game), 
+                            p_hitbox_aabb_manager,
                             p_entity);
                 // TODO: this is a hack fix atm
                 // When entities move, their prior entries in other collision nodes

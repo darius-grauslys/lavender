@@ -4,7 +4,7 @@
 #include "serialization/serialization_header.h"
 #include "vectors.h"
 #include "world/tile_vectors.h"
-#include <collisions/hitbox_aabb.h>
+#include <collisions/core/aabb/hitbox_aabb.h>
 #include <debug/debug.h>
 
 void initialize_hitbox(
