@@ -1,95 +1,131 @@
+#include <collisions/core/aabb/hitbox_aabb.h>
 #include "defines.h"
 #include "defines_weak.h"
 #include "numerics.h"
 #include "serialization/serialization_header.h"
 #include "vectors.h"
 #include "world/tile_vectors.h"
-#include <collisions/core/aabb/hitbox_aabb.h>
 #include <debug/debug.h>
 
-void initialize_hitbox(
-        Hitbox_AABB *hitbox) {
-    memset(hitbox,
+void initialize_hitbox_aabb(
+        Hitbox_AABB *p_hitbox_aabb) {
+#ifndef NDEBUG
+    if (!p_hitbox_aabb) {
+        debug_error("initialize_hitbox_aabb, p_hitbox_aabb == 0.");
+        return;
+    }
+#endif
+    memset(p_hitbox_aabb,
             0,
             sizeof(Hitbox_AABB));
     initialize_serialization_header_for__deallocated_struct(
-            &hitbox->_serialization_header,
+            &p_hitbox_aabb->_serialization_header,
             sizeof(Hitbox_AABB));
 }
 
-void initialize_hitbox_as__allocated(
-        Hitbox_AABB *hitbox,
+void initialize_hitbox_aabb_as__allocated(
+        Hitbox_AABB *p_hitbox_aabb,
         Identifier__u32 uuid__u32,
         Quantity__u32 width, 
         Quantity__u32 height,
         Vector__3i32F4 position__3i32F4) {
+#ifndef NDEBUG
+    if (!p_hitbox_aabb) {
+        debug_error("initialize_hitbox_aabb_as__allocated, p_hitbox_aabb == 0.");
+        return;
+    }
+#endif
     initialize_serialization_header(
-            &hitbox->_serialization_header,
+            &p_hitbox_aabb->_serialization_header,
             uuid__u32,
             sizeof(Hitbox_AABB));
-    hitbox->width__quantity_u32 = width;
-    hitbox->height__quantity_u32 = height;
-    hitbox->velocity__3i32F4.x__i32F4 = 0;
-    hitbox->velocity__3i32F4.y__i32F4 = 0;
-    hitbox->velocity__3i32F4.z__i32F4 = 0;
-    set_hitbox_aabb__position_with__3i32F4(hitbox, 
+    p_hitbox_aabb->width__quantity_u32 = width;
+    p_hitbox_aabb->height__quantity_u32 = height;
+    p_hitbox_aabb->velocity__3i32F4.x__i32F4 = 0;
+    p_hitbox_aabb->velocity__3i32F4.y__i32F4 = 0;
+    p_hitbox_aabb->velocity__3i32F4.z__i32F4 = 0;
+    set_hitbox_aabb__position_with__3i32F4(p_hitbox_aabb, 
             position__3i32F4);
 }
 
-Direction__u8 get_movement_direction_of__hitbox(
-        Hitbox_AABB *hitbox) {
+Direction__u8 get_movement_direction_of__hitbox_aabb(
+        Hitbox_AABB *p_hitbox_aabb) {
+#ifndef NDEBUG
+    if (!p_hitbox_aabb) {
+        debug_error("get_movement_direction_of__hitbox_aabb, p_hitbox_aabb == 0.");
+        return DIRECTION__NONE;
+    }
+#endif
     Direction__u8 direction_of_movement =
         DIRECTION__NONE;
-    if (0 < hitbox->velocity__3i32F4.x__i32F4) {
+    if (0 < p_hitbox_aabb->velocity__3i32F4.x__i32F4) {
         direction_of_movement |= DIRECTION__EAST;
     }
-    if (0 > hitbox->velocity__3i32F4.x__i32F4) {
+    if (0 > p_hitbox_aabb->velocity__3i32F4.x__i32F4) {
         direction_of_movement |= DIRECTION__WEST;
     }
-    if (0 < hitbox->velocity__3i32F4.y__i32F4) {
+    if (0 < p_hitbox_aabb->velocity__3i32F4.y__i32F4) {
         direction_of_movement |= DIRECTION__NORTH;
     }
-    if (0 > hitbox->velocity__3i32F4.y__i32F4) {
+    if (0 > p_hitbox_aabb->velocity__3i32F4.y__i32F4) {
         direction_of_movement |= DIRECTION__SOUTH;
     }
 
     return direction_of_movement;
 }
 
-void set_hitbox__position_with__3i32F4(
-        Hitbox_AABB *hitbox,
+void set_hitbox_aabb__position_with__3i32F4(
+        Hitbox_AABB *p_hitbox_aabb,
         Vector__3i32F4 position__3i32F4) {
-    set_hitbox_aabb_as__dirty(hitbox);
-    hitbox->position__3i32F4 =
+#ifndef NDEBUG
+    if (!p_hitbox_aabb) {
+        debug_error("set_hitbox_aabb__position_with__3i32F4, p_hitbox_aabb == 0.");
+        return;
+    }
+#endif
+    set_hitbox_aabb_as__dirty(p_hitbox_aabb);
+    p_hitbox_aabb->position__3i32F4 =
         position__3i32F4;
 }
 
-void set_hitbox__position_with__3i32(
-        Hitbox_AABB *hitbox,
+void set_hitbox_aabb__position_with__3i32(
+        Hitbox_AABB *p_hitbox_aabb,
         Vector__3i32 position__3i32) {
-    set_hitbox_aabb_as__dirty(hitbox);
+#ifndef NDEBUG
+    if (!p_hitbox_aabb) {
+        debug_error("set_hitbox_aabb__position_with__3i32, p_hitbox_aabb == 0.");
+        return;
+    }
+#endif
+    set_hitbox_aabb_as__dirty(p_hitbox_aabb);
     i32F4 x__global = position__3i32.x__i32;
     i32F4 y__global = position__3i32.y__i32;
     i32F4 z__global = position__3i32.z__i32;
 
-    hitbox->position__3i32F4.x__i32F4 =
+    p_hitbox_aabb->position__3i32F4.x__i32F4 =
         x__global << FRACTIONAL_PERCISION_4__BIT_SIZE;
-    hitbox->position__3i32F4.y__i32F4 =
+    p_hitbox_aabb->position__3i32F4.y__i32F4 =
         y__global << FRACTIONAL_PERCISION_4__BIT_SIZE;
-    hitbox->position__3i32F4.z__i32F4 =
+    p_hitbox_aabb->position__3i32F4.z__i32F4 =
         z__global << FRACTIONAL_PERCISION_4__BIT_SIZE;
 }
 
 void initialize_vector_3i32F4_as__aa_bb_without__velocity(
         Vector__3i32F4 *hitbox_point,
-        Hitbox_AABB *hitbox,
+        Hitbox_AABB *p_hitbox_aabb,
         Direction__u8 corner_direction) {
+#ifndef NDEBUG
+    if (!p_hitbox_aabb) {
+        debug_error("initialize_vector_3i32F4_as__aa_bb_without__velocity, p_hitbox_aabb == 0.");
+        return;
+    }
+#endif
 
     Signed_Index__i32 offset_half_width = 
-        (hitbox->width__quantity_u32 >> 1)
+        (p_hitbox_aabb->width__quantity_u32 >> 1)
         << FRACTIONAL_PERCISION_4__BIT_SIZE;
     Signed_Index__i32 offset_half_height = 
-        (hitbox->height__quantity_u32 >> 1)
+        (p_hitbox_aabb->height__quantity_u32 >> 1)
         << FRACTIONAL_PERCISION_4__BIT_SIZE;
     switch (corner_direction) {
         default:
@@ -111,40 +147,53 @@ void initialize_vector_3i32F4_as__aa_bb_without__velocity(
     }
 
     hitbox_point->x__i32F4 =
-        hitbox->position__3i32F4.x__i32F4
+        p_hitbox_aabb->position__3i32F4.x__i32F4
         + offset_half_width
         ;
     hitbox_point->y__i32F4 =
-        hitbox->position__3i32F4.y__i32F4
+        p_hitbox_aabb->position__3i32F4.y__i32F4
         + offset_half_height
         ;
     hitbox_point->z__i32F4 = 
-        hitbox->position__3i32F4.z__i32F4;
+        p_hitbox_aabb->position__3i32F4.z__i32F4;
 }
 
 void initialize_vector_3i32F4_as__aa_bb(
         Vector__3i32F4 *hitbox_point,
-        Hitbox_AABB *hitbox,
+        Hitbox_AABB *p_hitbox_aabb,
         Direction__u8 corner_direction) {
+#ifndef NDEBUG
+    if (!p_hitbox_aabb) {
+        debug_error("initialize_vector_3i32F4_as__aa_bb, p_hitbox_aabb == 0.");
+        return;
+    }
+#endif
+
     initialize_vector_3i32F4_as__aa_bb_without__velocity(
             hitbox_point,
-            hitbox,
+            p_hitbox_aabb,
             corner_direction);
     hitbox_point->x__i32F4 +=
-        hitbox->velocity__3i32F4.x__i32F4;
+        p_hitbox_aabb->velocity__3i32F4.x__i32F4;
     hitbox_point->y__i32F4 +=
-        hitbox->velocity__3i32F4.y__i32F4;
+        p_hitbox_aabb->velocity__3i32F4.y__i32F4;
 }
 
 void initialize_vector_3i32_as__aa_bb_without__velocity(
         Vector__3i32 *hitbox_point,
-        Hitbox_AABB *hitbox,
+        Hitbox_AABB *p_hitbox_aabb,
         Direction__u8 corner_direction) {
+#ifndef NDEBUG
+    if (!p_hitbox_aabb) {
+        debug_error("initialize_vector_3i32F4_as__aa_bb_without__velocity, p_hitbox_aabb == 0.");
+        return;
+    }
+#endif
 
     Signed_Index__i32 offset_half_width = 
-        hitbox->width__quantity_u32 >> 1;
+        p_hitbox_aabb->width__quantity_u32 >> 1;
     Signed_Index__i32 offset_half_height = 
-        hitbox->height__quantity_u32 >> 1;
+        p_hitbox_aabb->height__quantity_u32 >> 1;
     switch (corner_direction) {
         default:
             // This should never be a problem...
@@ -165,37 +214,44 @@ void initialize_vector_3i32_as__aa_bb_without__velocity(
     }
 
     hitbox_point->x__i32 =
-        get_x_i32_from__hitbox(hitbox)
+        get_x_i32_from__hitbox_aabb(p_hitbox_aabb)
         + offset_half_width
         ;
     hitbox_point->y__i32 =
-        get_y_i32_from__hitbox(hitbox)
+        get_y_i32_from__hitbox_aabb(p_hitbox_aabb)
         + offset_half_height
         ;
     hitbox_point->z__i32 = 
-        hitbox->position__3i32F4.z__i32F4;
+        p_hitbox_aabb->position__3i32F4.z__i32F4;
 }
 
 void initialize_vector_3i32_as__aa_bb(
         Vector__3i32 *hitbox_point,
-        Hitbox_AABB *hitbox,
+        Hitbox_AABB *p_hitbox_aabb,
         Direction__u8 corner_direction) {
+#ifndef NDEBUG
+    if (!p_hitbox_aabb) {
+        debug_error("initialize_vector_3i32F4_as__aa_bb, p_hitbox_aabb == 0.");
+        return;
+    }
+#endif
+
     initialize_vector_3i32_as__aa_bb_without__velocity(
             hitbox_point,
-            hitbox,
+            p_hitbox_aabb,
             corner_direction);
     hitbox_point->x__i32 +=
-        get_x_i32_from__vector_3i32F4(hitbox->velocity__3i32F4);
+        get_x_i32_from__vector_3i32F4(p_hitbox_aabb->velocity__3i32F4);
     hitbox_point->y__i32 +=
-        get_y_i32_from__vector_3i32F4(hitbox->velocity__3i32F4);
+        get_y_i32_from__vector_3i32F4(p_hitbox_aabb->velocity__3i32F4);
 }
 
-Direction__u8 get_tile_transition_direction_of__hitbox(
+Direction__u8 get_tile_transition_direction_of__hitbox_aabb(
         Hitbox_AABB *hitbox,
         Vector__3i32F4 *aa,
         Vector__3i32F4 *bb) {
     Direction__u8 direction_of_movement =
-        get_movement_direction_of__hitbox(hitbox);
+        get_movement_direction_of__hitbox_aabb(hitbox);
     Direction__u8 direction_of_transition =
         DIRECTION__NONE;
 
@@ -243,7 +299,7 @@ Direction__u8 get_tile_transition_direction_of__hitbox(
     return direction_of_transition;
 }
 
-bool is_this_hitbox__fully_inside_this_hitbox__without_velocity(
+bool is_this_hitbox_aabb__fully_inside_this_hitbox_aabb__without_velocity(
         Hitbox_AABB *hitbox__one,
         Hitbox_AABB *hitbox__two) {
     Vector__3i32F4 aa__one;
@@ -257,13 +313,13 @@ bool is_this_hitbox__fully_inside_this_hitbox__without_velocity(
             DIRECTION__NORTH_EAST);
 
     return
-        is_vector_3i32F4_inside__hitbox(
+        is_vector_3i32F4_inside__hitbox_aabb(
                 aa__one, hitbox__two)
-        && is_vector_3i32F4_inside__hitbox(
+        && is_vector_3i32F4_inside__hitbox_aabb(
                 bb__one, hitbox__two);
 }
 
-Direction__u8 is_this_hitbox__overlapping_this_hitbox(
+Direction__u8 is_this_hitbox_aabb__overlapping_this_hitbox_aabb(
         Hitbox_AABB *hitbox__one,
         Hitbox_AABB *hitbox__two) {
     Vector__3i32F4 aa__one_moving;
@@ -376,7 +432,7 @@ get_direction:
         ;
 
     Direction__u8 direction_of_movement =
-        get_movement_direction_of__hitbox(hitbox__one);
+        get_movement_direction_of__hitbox_aabb(hitbox__one);
     Direction__u8 direction_of_collision = DIRECTION__NONE;
 
     if (direction_of_movement & DIRECTION__EAST) {
@@ -412,7 +468,7 @@ get_direction:
 }
 
 
-Direction__u8 is_hitbox__colliding(
+Direction__u8 is_hitbox_aabb__colliding(
         Hitbox_AABB *hitbox__checking,
         Hitbox_AABB *hitbox__other) {
     // It is not enough to check if a corner
@@ -428,11 +484,11 @@ Direction__u8 is_hitbox__colliding(
     // Hitbox collision is therefore not about checking
     // if corners are inside another hitbox, but
     // rather checking if edges are.
-    return is_this_hitbox__overlapping_this_hitbox(
+    return is_this_hitbox_aabb__overlapping_this_hitbox_aabb(
                 hitbox__checking, hitbox__other);
 }
 
-void get_aa_bb_as__vectors_3i32F4_from__hitbox(
+void get_aa_bb_as__vectors_3i32F4_from__hitbox_aabb(
         Hitbox_AABB *hitbox,
         Vector__3i32F4 *aa,
         Vector__3i32F4 *bb) {
@@ -446,7 +502,7 @@ void get_aa_bb_as__vectors_3i32F4_from__hitbox(
             DIRECTION__NORTH_EAST);
 }
 
-void get_aa_bb_as__vectors_3i32_from__hitbox(
+void get_aa_bb_as__vectors_3i32_from__hitbox_aabb(
         Hitbox_AABB *hitbox,
         Vector__3i32 *aa,
         Vector__3i32 *bb) {
@@ -460,11 +516,11 @@ void get_aa_bb_as__vectors_3i32_from__hitbox(
             DIRECTION__NORTH_EAST);
 }
 
-void clamp_p_vector_3i32_to__hitbox(
+void clamp_p_vector_3i32_to__hitbox_aabb(
         Hitbox_AABB *p_hitbox, 
         Vector__3i32 *p_position__3i32) {
     Vector__3i32 aa, bb;
-    get_aa_bb_as__vectors_3i32_from__hitbox(
+    get_aa_bb_as__vectors_3i32_from__hitbox_aabb(
             p_hitbox, 
             &aa, 
             &bb);
@@ -482,11 +538,11 @@ void clamp_p_vector_3i32_to__hitbox(
             bb.z__i32);
 }
 
-bool is_vector_3i32F4_inside__hitbox(
+bool is_vector_3i32F4_inside__hitbox_aabb(
         Vector__3i32F4 vector,
         Hitbox_AABB *p_hitbox) {
     Vector__3i32F4 aa, bb;
-    get_aa_bb_as__vectors_3i32F4_from__hitbox(
+    get_aa_bb_as__vectors_3i32F4_from__hitbox_aabb(
             p_hitbox, 
             &aa, 
             &bb);
@@ -506,11 +562,11 @@ bool is_vector_3i32F4_inside__hitbox(
             );
 }
 
-bool is_vector_3i32_inside__hitbox(
+bool is_vector_3i32_inside__hitbox_aabb(
         Vector__3i32 vector,
         Hitbox_AABB *p_hitbox) {
     Vector__3i32 aa, bb;
-    get_aa_bb_as__vectors_3i32_from__hitbox(
+    get_aa_bb_as__vectors_3i32_from__hitbox_aabb(
             p_hitbox, 
             &aa, 
             &bb);

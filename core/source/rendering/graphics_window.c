@@ -310,12 +310,43 @@ void release_graphics_window_ui_manager(
                 p_game, 
                 p_graphics_window);
 
-    if (!p_ui_manager)
+    if (!p_ui_manager) {
         return;
+    }
 
     release_p_ui_manager_from__ui_context(
             p_game, 
             GET_UUID_P(p_ui_manager));
+}
+
+void release_graphics_window_hitbox_manager(
+        Game *p_game,
+        Graphics_Window *p_graphics_window) {
+#ifndef NEBUG
+    if (!p_game) {
+        debug_error("release_graphics_window_ui_manager, p_game == 0.");
+        return;
+    }
+#endif
+#ifndef NDEBUG
+    if (!p_graphics_window) {
+        debug_error("release_graphics_window_ui_manager, p_graphics_window == 0.");
+        return;
+    }
+#endif
+
+    Hitbox_Manager_Instance *p_hitbox_manager_instance =
+        get_p_hitbox_manager_instance_using__uuid_from__hitbox_context(
+                get_p_hitbox_context_from__game(p_game), 
+                GET_UUID_P(p_graphics_window));
+
+    if (!p_hitbox_manager_instance) {
+        return;
+    }
+
+    release_hitbox_manager_from__hitbox_context(
+            get_p_hitbox_context_from__game(p_game), 
+            GET_UUID_P(p_graphics_window));
 }
 
 void release_graphics_window_sprite_manager(
@@ -352,6 +383,13 @@ void reset_graphics_window(
         Game *p_game,
         Graphics_Window *p_graphics_window,
         bool is_releasing_unprovided_children) {
+    reset_children_of__graphics_window_from__graphics_window_manager(
+            p_game, 
+            get_p_graphics_window_manager_from__gfx_context(
+                get_p_gfx_context_from__game(p_game)), 
+            p_graphics_window,
+            is_releasing_unprovided_children);
+
     if (is_ui_tile_map__wrapper__valid(
                 get_p_ui_tile_map_from__graphics_window(
                     p_graphics_window))) {
@@ -366,13 +404,9 @@ void reset_graphics_window(
     release_graphics_window_sprite_manager(
             p_game, 
             p_graphics_window);
-
-    reset_children_of__graphics_window_from__graphics_window_manager(
+    release_graphics_window_hitbox_manager(
             p_game, 
-            get_p_graphics_window_manager_from__gfx_context(
-                get_p_gfx_context_from__game(p_game)), 
-            p_graphics_window,
-            is_releasing_unprovided_children);
+            p_graphics_window);
 }
 
 bool is_graphics_window_in_need_of__composition(

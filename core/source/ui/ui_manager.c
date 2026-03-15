@@ -1,5 +1,6 @@
-#include "collisions/hitbox_aabb.h"
-#include "collisions/hitbox_aabb_manager.h"
+#include <ui/ui_manager.h>
+#include "collisions/core/aabb/hitbox_aabb.h"
+#include "collisions/core/aabb/hitbox_aabb_manager.h"
 #include "debug/debug.h"
 #include "defines.h"
 #include "defines_weak.h"
@@ -12,7 +13,6 @@
 #include "ui/ui_tile_map.h"
 #include "world/world.h"
 #include <ui/ui_element.h>
-#include <ui/ui_manager.h>
 #include <vectors.h>
 #include <game.h>
 
@@ -232,7 +232,7 @@ UI_Element *get_highest_priority_ui_element_thats__under_this_ui_element(
             continue;
         }
 
-        if (is_vector_3i32_inside__hitbox(
+        if (is_vector_3i32_inside__hitbox_aabb(
                     vector_of__element_above__3i32,
                     p_hitbox_aabb)) {
             return p_ui_element;
@@ -244,6 +244,11 @@ UI_Element *get_highest_priority_ui_element_thats__under_this_ui_element(
 UI_Element *get_highest_priority_ui_element_thats__under_the_cursor(
         UI_Manager *p_ui_manager,
         Game *p_game) {
+    Hitbox_AABB_Manager *p_hitbox_aabb_manager =
+        get_p_hitbox_aabb_manager_from__hitbox_context(
+                get_p_hitbox_context_from__game(p_game), 
+                GET_UUID_P(p_ui_manager));
+
     Input *p_input =
         get_p_input_from__game(p_game);
     Vector__3i32 cursor_position =
@@ -268,14 +273,14 @@ UI_Element *get_highest_priority_ui_element_thats__under_the_cursor(
 
         Hitbox_AABB *p_hitbox_aabb =
             get_p_hitbox_aabb_by__uuid_u32_from__hitbox_aabb_manager(
-                    get_p_hitbox_aabb_manager_from__game(p_game),
+                    p_hitbox_aabb_manager,
                     GET_UUID_P(p_ui_element));
 
         if (!p_hitbox_aabb)
             return 0;
 
         //TODO: look into why using cursor old.
-        if (is_vector_3i32_inside__hitbox(
+        if (is_vector_3i32_inside__hitbox_aabb(
                     cursor_position,
                     p_hitbox_aabb)) {
             return p_ui_element;
@@ -310,17 +315,22 @@ UI_Element *detect_focus_in__ui_manager(
 UI_Element *detect_focus__strictly_under_cursor_in__ui_manager(
         UI_Manager *p_ui_manager, 
         Game *p_game) {
+    Hitbox_AABB_Manager *p_hitbox_aabb_manager =
+        get_p_hitbox_aabb_manager_from__hitbox_context(
+                get_p_hitbox_context_from__game(p_game), 
+                GET_UUID_P(p_ui_manager));
+
     UI_Element *p_ui_element__focused =
         detect_focus_in__ui_manager(
                 p_ui_manager, 
                 p_game);
     if (!p_ui_element__focused)
         return 0;
-    if (!is_vector_3i32_inside__hitbox(
+    if (!is_vector_3i32_inside__hitbox_aabb(
                 get_p_input_from__game(p_game)
                 ->cursor__3i32, 
                 get_p_hitbox_aabb_of__ui_element(
-                    get_p_hitbox_aabb_manager_from__game(p_game),
+                    p_hitbox_aabb_manager,
                     p_ui_element__focused))) {
         drop_ui_element_focus_for__ui_manager(p_ui_manager);
         p_ui_element__focused =
@@ -430,6 +440,11 @@ void handle_drop_in__ui_manager(
         Graphics_Window *p_graphics_window,
         UI_Manager *p_ui_manager,
         UI_Element *p_ui_element__focused) {
+    Hitbox_AABB_Manager *p_hitbox_aabb_manager =
+        get_p_hitbox_aabb_manager_from__hitbox_context(
+                get_p_hitbox_context_from__game(p_game), 
+                GET_UUID_P(p_ui_manager));
+
     if (!p_ui_element__focused)
         return;
     set_ui_element_as__dropped(
@@ -443,7 +458,7 @@ void handle_drop_in__ui_manager(
     UI_Element *p_ui_element__receiving_drop =
         get_highest_priority_ui_element_thats__under_this_ui_element(
             p_ui_manager,
-            get_p_hitbox_aabb_manager_from__game(p_game),
+            p_hitbox_aabb_manager,
             p_ui_manager->p_ui_element__focused);
     p_ui_element__receiving_drop =
         get_ui_parent_or__child_with__receive_drop_handler(
@@ -625,6 +640,10 @@ UI_Element *allocate_ui_element_from__ui_manager_as__child(
         Graphics_Window *p_graphics_window,
         UI_Manager *p_ui_manager,
         UI_Element *p_parent) {
+    Hitbox_AABB_Manager *p_hitbox_aabb_manager =
+        get_p_hitbox_aabb_manager_from__hitbox_context(
+                get_p_hitbox_context_from__game(p_game), 
+                GET_UUID_P(p_ui_manager));
     UI_Element *p_child =
         allocate_ui_element_from__ui_manager(p_ui_manager);
     set_ui_element_as__the_parent_of__this_ui_element(
@@ -636,8 +655,7 @@ UI_Element *allocate_ui_element_from__ui_manager_as__child(
             p_graphics_window,
             p_child, 
             get_position_3i32_from__p_ui_element(
-                get_p_hitbox_aabb_manager_from__game(
-                    p_game),
+                p_hitbox_aabb_manager,
                 p_parent));
     return p_child;
 }

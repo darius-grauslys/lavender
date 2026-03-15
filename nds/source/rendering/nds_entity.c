@@ -2,7 +2,7 @@
 #include <rendering/render_entity.h>
 #include <entity/entity.h>
 #include <nds.h>
-#include <collisions/hitbox_aabb.h>
+#include <collisions/core/aabb/hitbox_aabb.h>
 #include <vectors.h>
 #include <nds_defines.h>
 #include "rendering/nds_sprite.h"

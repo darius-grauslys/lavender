@@ -1,7 +1,8 @@
 #include "client.h"
 #include "collisions/collision_node.h"
-#include "collisions/hitbox_aabb.h"
-#include "collisions/hitbox_aabb_manager.h"
+#include "collisions/hitbox_context.h"
+#include "collisions/core/aabb/hitbox_aabb.h"
+#include "collisions/core/aabb/hitbox_aabb_manager.h"
 #include "defines.h"
 #include "defines_weak.h"
 #include "game.h"
@@ -47,6 +48,11 @@ void initialize_client(
 void m_process__teleport_client(
         Process *p_this_process,
         Game *p_game) {
+    Hitbox_AABB_Manager *p_hitbox_aabb_manager =
+        get_p_hitbox_aabb_manager_from__hitbox_context(
+                get_p_hitbox_context_from__game(p_game), 
+                GET_UUID_P(get_p_world_from__game(p_game)));
+
     Client *p_client = 
         get_p_client_by__uuid_from__game(
                 p_game, 
@@ -61,7 +67,7 @@ void m_process__teleport_client(
 
     Hitbox_AABB *p_hitbox_of__client =
         get_p_hitbox_aabb_by__uuid_u32_from__hitbox_aabb_manager(
-                get_p_hitbox_aabb_manager_from__game(p_game), 
+                p_hitbox_aabb_manager,
                 GET_UUID_P(p_client));
 
     if (!p_hitbox_of__client) {
@@ -92,7 +98,10 @@ void m_process__teleport_client(
             get_p_collision_node_pool_from__world(
                 get_p_world_from__game(p_game)), 
             get_p_collision_node_from__local_space(p_local_space), 
-            p_hitbox_of__client);
+            vector_3i32F4_to__chunk_vector_3i32(
+                get_position_3i32F4_of__hitbox_aabb(
+                    p_hitbox_of__client)),
+            GET_UUID_P(p_hitbox_of__client));
 
     if (success) {
         complete_process(p_this_process);
@@ -108,9 +117,14 @@ Process *teleport_client(
         Game *p_game,
         Client *p_client,
         Vector__3i32F4 position__3i32F4) {
+    Hitbox_AABB_Manager *p_hitbox_aabb_manager =
+        get_p_hitbox_aabb_manager_from__hitbox_context(
+                get_p_hitbox_context_from__game(p_game), 
+                GET_UUID_P(get_p_world_from__game(p_game)));
+
     Hitbox_AABB *p_hitbox_of__client =
         get_p_hitbox_aabb_by__uuid_u32_from__hitbox_aabb_manager(
-                get_p_hitbox_aabb_manager_from__game(p_game), 
+                p_hitbox_aabb_manager,
                 GET_UUID_P(p_client));
     
     if (p_hitbox_of__client) {
@@ -127,7 +141,7 @@ Process *teleport_client(
         } else {
             debug_error("teleport_client, p_hitbox_of__client not found in local space.");
         }
-        set_hitbox__position_with__3i32F4(
+        set_hitbox_aabb__position_with__3i32F4(
                 p_hitbox_of__client, 
                 position__3i32F4);
     }
@@ -391,6 +405,11 @@ bool dispatch_game_action_for__client(
 void m_process__deserialize_client__default(
         Process *p_this_process,
         Game *p_game) {
+    Hitbox_AABB_Manager *p_hitbox_aabb_manager =
+        get_p_hitbox_aabb_manager_from__hitbox_context(
+                get_p_hitbox_context_from__game(p_game), 
+                GET_UUID_P(get_p_world_from__game(p_game)));
+
     Serialization_Request *p_serialization_request =
         (Serialization_Request*)p_this_process->p_process_data;
     Client *p_client =
@@ -398,8 +417,7 @@ void m_process__deserialize_client__default(
 
     Hitbox_AABB *p_hitbox_aabb =
         allocate_hitbox_aabb_from__hitbox_aabb_manager(
-                get_p_hitbox_aabb_manager_from__game(
-                    p_game), 
+                p_hitbox_aabb_manager,
                 GET_UUID_P(p_client));
 
     if (!p_hitbox_aabb) {
@@ -430,7 +448,7 @@ void m_process__deserialize_client__default(
 
     if (length_of__read != expected_length_of__read) {
         // Assume that this is the first time the player is being loaded
-        set_hitbox__position_with__3i32(
+        set_hitbox_aabb__position_with__3i32(
                 p_hitbox_aabb, 
                 VECTOR__3i32__0_0_0);
         error = 0;
@@ -451,6 +469,11 @@ void m_process__deserialize_client__default(
 void m_process__serialize_client__default(
         Process *p_this_process,
         Game *p_game) {
+    Hitbox_AABB_Manager *p_hitbox_aabb_manager =
+        get_p_hitbox_aabb_manager_from__hitbox_context(
+                get_p_hitbox_context_from__game(p_game), 
+                GET_UUID_P(get_p_world_from__game(p_game)));
+
     Serialization_Request *p_serialization_request =
         (Serialization_Request*)p_this_process->p_process_data;
     Client *p_client =
@@ -458,7 +481,7 @@ void m_process__serialize_client__default(
 
     Hitbox_AABB *p_hitbox_aabb =
         get_p_hitbox_aabb_by__uuid_u32_from__hitbox_aabb_manager(
-                get_p_hitbox_aabb_manager_from__game(p_game), 
+                p_hitbox_aabb_manager,
                 GET_UUID_P(p_client));
 
     if (!p_hitbox_aabb) {

@@ -119,7 +119,7 @@ Hitbox_AABB *get_p_hitbox_aabb_at__vector_3i32F4_from__collision_node(
                     p_hitbox_aabb_manager, 
                     p_entry->uuid_of__hitbox__u32);
         if (p_hitbox_aabb
-                && is_vector_3i32F4_inside__hitbox(
+                && is_vector_3i32F4_inside__hitbox_aabb(
                     vector__3i32F4, 
                     p_hitbox_aabb)) {
             return p_hitbox_aabb;
@@ -178,7 +178,7 @@ void poll_for__collisions_within_this__collision_node(
         if (p_hitbox_aabb__other 
                 && p_hitbox_aabb__other
                 != p_hitbox_aabb
-                && is_hitbox__colliding(
+                && is_hitbox_aabb__colliding(
                     p_hitbox_aabb, 
                     p_hitbox_aabb__other)) {
             f_hitbox_collision_handler(

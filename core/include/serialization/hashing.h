@@ -114,7 +114,8 @@ Serialization_Header *allocate_serialization_header_with__this_uuid(
                 p_serialization_headers, 
                 length_of__p_serialization_headers, 
                 uuid__u32);
-    ALLOCATE_P(p_serialization_header, uuid__u32);
+    if (p_serialization_header)
+        ALLOCATE_P(p_serialization_header, uuid__u32);
     return p_serialization_header;
 }
 

@@ -74,6 +74,10 @@ void release_graphics_window_sprite_manager(
         Game *p_game,
         Graphics_Window *p_graphics_window);
 
+void release_graphics_window_hitbox_manager(
+        Game *p_game,
+        Graphics_Window *p_graphics_window);
+
 ///
 /// In particular, this should be called for graphics windows
 /// which are provided for by a PLATFORM when exiting a scene.

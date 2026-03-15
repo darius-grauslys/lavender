@@ -1,6 +1,6 @@
 #include "client.h"
-#include "collisions/hitbox_aabb.h"
-#include "collisions/hitbox_aabb_manager.h"
+#include "collisions/core/aabb/hitbox_aabb.h"
+#include "collisions/core/aabb/hitbox_aabb_manager.h"
 #include "defines.h"
 #include "defines_weak.h"
 #include "game.h"

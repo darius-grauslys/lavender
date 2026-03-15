@@ -144,7 +144,7 @@ void clamp_p_vector_3i32_to__ui_element(
         Hitbox_AABB_Manager *p_hitbox_aabb_manager,
         UI_Element *p_ui_element,
         Vector__3i32 *p_position__3i32) {
-    clamp_p_vector_3i32_to__hitbox(
+    clamp_p_vector_3i32_to__hitbox_aabb(
             get_p_hitbox_aabb_of__ui_element(
                 p_hitbox_aabb_manager, 
                 p_ui_element), 
@@ -155,7 +155,7 @@ static inline
 Signed_Index__i32 get_x_i32_from__p_ui_element(
         Hitbox_AABB_Manager *p_hitbox_aabb_manager,
         UI_Element *p_ui_element) {
-    return get_x_i32_from__hitbox(
+    return get_x_i32_from__hitbox_aabb(
             get_p_hitbox_aabb_of__ui_element(
                 p_hitbox_aabb_manager, 
                 p_ui_element));
@@ -164,7 +164,7 @@ static inline
 Signed_Index__i32 get_y_i32_from__p_ui_element(
         Hitbox_AABB_Manager *p_hitbox_aabb_manager,
         UI_Element *p_ui_element) {
-    return get_y_i32_from__hitbox(
+    return get_y_i32_from__hitbox_aabb(
             get_p_hitbox_aabb_of__ui_element(
                 p_hitbox_aabb_manager, 
                 p_ui_element));
@@ -173,7 +173,7 @@ static inline
 Signed_Index__i32 get_z_i32_from__p_ui_element(
         Hitbox_AABB_Manager *p_hitbox_aabb_manager,
         UI_Element *p_ui_element) {
-    return get_z_i32_from__hitbox(
+    return get_z_i32_from__hitbox_aabb(
             get_p_hitbox_aabb_of__ui_element(
                 p_hitbox_aabb_manager, 
                 p_ui_element));

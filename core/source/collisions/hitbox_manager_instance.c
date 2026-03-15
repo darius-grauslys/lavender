@@ -21,7 +21,7 @@ void initialize_hitbox_manager_instance_as__allocated(
             sizeof(Hitbox_Manager_Instance));
     p_hitbox_manager_instance->type_of__hitbox_manager =
         the_type_of__hitbox_manager__allocated;
-    p_hitbox_manager_instance->pM_hitbox_manager =
+    p_hitbox_manager_instance->pVM_hitbox_manager =
         pM_hitbox_manager;
 }
 

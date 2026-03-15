@@ -34,7 +34,7 @@ void register_hitbox_manager(
         u8 fractional_percision_of__acceleration
         ) {
 #ifndef NDEBUG
-    if (Hitbox_Manager_Type__Unknown >= the_type_of__hitbox_manager_to__register) {
+    if (Hitbox_Manager_Type__Unknown <= the_type_of__hitbox_manager_to__register) {
         debug_error("register_hitbox_manager_allocator, invalid type.");
         return;
     }
@@ -102,6 +102,7 @@ Hitbox_Manager_Instance *allocate_hitbox_manager_from__hitbox_context(
                     ->hitbox_manager_instances, 
                 MAX_QUANTITY_OF__HITBOX_MANAGERS, 
                 uuid_of__hitbox_manager__u32);
+
     if (!p_allocation) {
         debug_error("allocate_hitbox_manager_from__hitbox_context, maximum quantity of managers reached.");
         return 0;
@@ -221,15 +222,11 @@ void *get_pV_hitbox_from__this_hitbox_manager_in__hitbox_context(
         Hitbox_Context *p_hitbox_context,
         void *pV_hitbox_manager,
         Identifier__u32 uuid_of__hitbox__u32) {
-    u8 *p_memory_of__hitbox_manager = (u8*)pV_hitbox_manager;
-    // Skip over quantity specifier.
-    p_memory_of__hitbox_manager += sizeof(Quantity__u32);
-
-    Serialization_Header *p_serialization_header =
-        (Serialization_Header*)p_memory_of__hitbox_manager;
+    Hitbox_Manager_Intrinsic *p_hitbox_manager_instrinsic=
+        (Hitbox_Manager_Intrinsic*)pV_hitbox_manager;
 
     return dehash_identitier_u32_in__contigious_array(
-            p_serialization_header, 
+            (Serialization_Header*)p_hitbox_manager_instrinsic->p_array_of__hitboxes, 
             get_max_quantity_of__hitboxes_in__this_hitbox_manager(
                 pV_hitbox_manager), 
             uuid_of__hitbox__u32);
@@ -302,7 +299,7 @@ Quantity__u32 get_max_quantity_of__hitboxes_in__hitbox_manager(
         get_p_hitbox_manager_instance_using__uuid_from__hitbox_context(
                 p_hitbox_context, 
                 uuid_of__hitbox_manager__u32);
-    if (!is_hitbox_manager_instance__valid(*p_hitbox_manager_instance)) {
+    if (!is_p_hitbox_manager_instance__valid(p_hitbox_manager_instance)) {
         debug_warning("Returning 0 here.");
         debug_error("get_max_quantity_of__hitboxes_in__hitbox_manager, failed to dehash uuid of hitbox manager.");
         return 0;

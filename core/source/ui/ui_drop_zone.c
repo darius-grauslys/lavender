@@ -30,6 +30,11 @@ void m_ui_drop_zone__receive_drop_handler__default(
     if (!p_ui_element__dropped)
         return;
 
+    Hitbox_AABB_Manager *p_hitbox_aabb_manager =
+        get_p_hitbox_manager_aabb_from__graphics_window(
+                p_game, 
+                p_graphics_window);
+
     UI_Manager *p_ui_manager =
         get_p_ui_manager_from__graphics_window(
                 p_game,
@@ -59,7 +64,7 @@ void m_ui_drop_zone__receive_drop_handler__default(
                 p_graphics_window, 
                 p_ui_element__dropped, 
                 get_position_3i32_from__p_ui_element(
-                    get_p_hitbox_aabb_manager_from__game(p_game), 
+                    p_hitbox_aabb_manager,
                     p_this_drop_zone));
     }
     if (!p_ui_element__former_parent_of__dropped)

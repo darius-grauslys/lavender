@@ -89,15 +89,22 @@ void m_ui_element__dispose_handler__default(
     p_this_ui_element->p_child = 0;
     p_this_ui_element->p_next = 0;
 
-    Hitbox_AABB *p_hitbox_aabb =
-        get_p_hitbox_aabb_by__uuid_u32_from__hitbox_aabb_manager(
-                get_p_hitbox_aabb_manager_from__game(p_game), 
-                GET_UUID_P(p_this_ui_element));
-    if (p_hitbox_aabb) {
-        release_hitbox_aabb_from__hitbox_aabb_manager(
-                p_game,
-                get_p_hitbox_aabb_manager_from__game(p_game), 
-                p_hitbox_aabb);
+    Hitbox_AABB_Manager *p_hitbox_aabb_manager =
+        get_p_hitbox_manager_aabb_from__graphics_window(
+                p_game, 
+                p_graphics_window);
+
+    if (p_hitbox_aabb_manager) {
+        Hitbox_AABB *p_hitbox_aabb =
+            get_p_hitbox_aabb_by__uuid_u32_from__hitbox_aabb_manager(
+                    p_hitbox_aabb_manager,
+                    GET_UUID_P(p_this_ui_element));
+        if (p_hitbox_aabb) {
+            release_hitbox_aabb_from__hitbox_aabb_manager(
+                    p_game,
+                    p_hitbox_aabb_manager,
+                    p_hitbox_aabb);
+        }
     }
 
     Sprite_Manager *p_sprite_manager =
@@ -154,9 +161,14 @@ void allocate_hitbox_for__ui_element(
         Quantity__u32 width_of__hitbox__u32,
         Quantity__u32 height_of__hitbox__u32,
         Vector__3i32 position_of__hitbox__3i32) {
+    Hitbox_AABB_Manager *p_hitbox_aabb_manager =
+        get_p_hitbox_manager_aabb_from__graphics_window(
+                p_game, 
+                p_graphics_window);
+
     Hitbox_AABB *p_hitbox_aabb = 
         allocate_hitbox_aabb_from__hitbox_aabb_manager(
-                get_p_hitbox_aabb_manager_from__game(p_game),
+                p_hitbox_aabb_manager,
                 GET_UUID_P(p_ui_element));
 
     set_size_of__hitbox_aabb(
@@ -167,7 +179,7 @@ void allocate_hitbox_for__ui_element(
     // Set position of hitbox here before transform handler
     // since the current position is unknown.
     // See defines.h transform handler under UI_Element_t.
-    set_hitbox__position_with__3i32(
+    set_hitbox_aabb__position_with__3i32(
             p_hitbox_aabb, 
             position_of__hitbox__3i32);
 
@@ -221,12 +233,16 @@ void set_position_3i32_of__ui_element(
         Graphics_Window *p_graphics_window,
         UI_Element *p_ui_element,
         Vector__3i32 position__3i32) {
+    Hitbox_AABB_Manager *p_hitbox_aabb_manager =
+        get_p_hitbox_manager_aabb_from__graphics_window(
+                p_game, 
+                p_graphics_window);
+
     Vector__3i32 vector_of__child_relative_to__parent =
         VECTOR__3i32__0_0_0;
     Hitbox_AABB *p_hitbox_aabb =
         get_p_hitbox_aabb_of__ui_element(
-                get_p_hitbox_aabb_manager_from__game(
-                    p_game), 
+                p_hitbox_aabb_manager,
                 p_ui_element);
 
     if (does_ui_element_have__child(p_ui_element)) {
@@ -248,7 +264,7 @@ void set_position_3i32_of__ui_element(
                 p_graphics_window);
     }
 
-    set_hitbox__position_with__3i32(
+    set_hitbox_aabb__position_with__3i32(
             p_hitbox_aabb, 
             position__3i32);
 
@@ -271,10 +287,14 @@ void set_ui_element__size(
         Graphics_Window *p_graphics_window,
         UI_Element *p_ui_element,
         Quantity__u32 width, Quantity__u32 height) {
+    Hitbox_AABB_Manager *p_hitbox_aabb_manager =
+        get_p_hitbox_manager_aabb_from__graphics_window(
+                p_game, 
+                p_graphics_window);
+
     Hitbox_AABB *p_hitbox_aabb =
         get_p_hitbox_aabb_of__ui_element(
-                get_p_hitbox_aabb_manager_from__game(
-                    p_game), 
+                p_hitbox_aabb_manager,
                 p_ui_element);
     set_size_of__hitbox_aabb(
             p_hitbox_aabb,
@@ -298,16 +318,20 @@ void set_ui_element__hitbox(
         Quantity__u32 width, 
         Quantity__u32 height,
         Vector__3i32 position__3i32) {
+    Hitbox_AABB_Manager *p_hitbox_aabb_manager =
+        get_p_hitbox_manager_aabb_from__graphics_window(
+                p_game, 
+                p_graphics_window);
+
     Hitbox_AABB *p_hitbox_aabb =
         get_p_hitbox_aabb_of__ui_element(
-                get_p_hitbox_aabb_manager_from__game(
-                    p_game),
+                p_hitbox_aabb_manager,
                 p_ui_element);
     if (!p_hitbox_aabb) {
         debug_error("set_ui_element__hitbox, p_ui_element lacks hitbox.");
         return;
     }
-    initialize_hitbox_as__allocated(
+    initialize_hitbox_aabb_as__allocated(
             p_hitbox_aabb, 
             GET_UUID_P(p_hitbox_aabb), 
             width, 
@@ -378,12 +402,13 @@ const UI_Tile_Span *get_ui_tile_span_of__ui_element(
         Quantity__u32 *p_height_in__tiles,
         Index__u32 *p_index_x__u32, 
         Index__u32 *p_index_y__u32) {
+    *p_width_in__tiles = 0;
+    *p_height_in__tiles = 0;
+    *p_index_x__u32 = 0;
+    *p_index_y__u32 = 0;
+
     if (is_ui_element__using_sprite(
             p_ui_element)) {
-        *p_width_in__tiles = 0;
-        *p_height_in__tiles = 0;
-        *p_index_x__u32 = 0;
-        *p_index_y__u32 = 0;
         return 0;
     }
 
@@ -408,13 +433,13 @@ const UI_Tile_Span *get_ui_tile_span_of__ui_element(
         ;
 
     *p_index_x__u32 = 
-        ((get_x_i32_from__hitbox(p_hitbox_aabb)
+        ((get_x_i32_from__hitbox_aabb(p_hitbox_aabb)
           - p_graphics_window->position_of__gfx_window.x__i32
           + (p_graphics_window->width_of__graphics_window__u32 >> 1))
         >> UI_TILE__WIDTH_AND__HEIGHT__BIT_SHIFT)
         - (*p_width_in__tiles >> 1);
     *p_index_y__u32 =
-        ((get_y_i32_from__hitbox(p_hitbox_aabb)
+        ((get_y_i32_from__hitbox_aabb(p_hitbox_aabb)
           - p_graphics_window->position_of__gfx_window.y__i32
           + (p_graphics_window->height_of__graphics_window__u32 >> 1))
         >> UI_TILE__WIDTH_AND__HEIGHT__BIT_SHIFT)
@@ -477,7 +502,9 @@ void m_ui_element__compose_handler__default_non_recursive(
                 p_graphics_window));
 
     Hitbox_AABB_Manager *p_hitbox_aabb_manager =
-        get_p_hitbox_aabb_manager_from__game(p_game);
+        get_p_hitbox_manager_aabb_from__graphics_window(
+                p_game, 
+                p_graphics_window);
     Quantity__u32 width_of__ui_tile_span; 
     Quantity__u32 height_of__ui_tile_span;
     Index__u32 index_x__u32; 
@@ -622,9 +649,14 @@ void update_ui_element_origin__relative_to(
         return;
     }
 #endif
+    Hitbox_AABB_Manager *p_hitbox_aabb_manager =
+        get_p_hitbox_aabb_manager_from__hitbox_context(
+                get_p_hitbox_context_from__game(p_game),
+                GET_UUID_P(p_ui_manager));
+
     Hitbox_AABB *p_hitbox_aabb =
         get_p_hitbox_aabb_of__ui_element(
-                get_p_hitbox_aabb_manager_from__game(p_game), 
+                p_hitbox_aabb_manager,
                 p_ui_element);
 
     if (!p_hitbox_aabb) {
@@ -641,7 +673,7 @@ void update_ui_element_origin__relative_to(
                     position__old__3i32),
                 position__new__3i32);
 
-    set_hitbox__position_with__3i32(
+    set_hitbox_aabb__position_with__3i32(
             p_hitbox_aabb, 
             position_final__3i32);
 }

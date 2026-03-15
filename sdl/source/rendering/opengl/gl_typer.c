@@ -1,5 +1,5 @@
 #include "rendering/opengl/gl_typer.h"
-#include "collisions/hitbox_aabb.h"
+#include "collisions/core/aabb/hitbox_aabb.h"
 #include "defines_weak.h"
 #include "rendering/font/typer.h"
 #include "rendering/gfx_context.h"
@@ -107,14 +107,14 @@ static void GL_put_char_in__typer_for__texture(
 
     GL_push_viewport(
             p_GL_viewport_stack, 
-            get_x_i32_from__hitbox(
+            get_x_i32_from__hitbox_aabb(
                 &p_typer->text_bounding_box)
             + (p_PLATFORM_texture->width >> 1)
             + p_typer->cursor_position__3i32.x__i32
             + p_font_letter->x__offset_of__font_letter
             - (get_width_u32_of__hitbox_aabb(
                     &p_typer->text_bounding_box) >> 1),
-            get_y_i32_from__hitbox(
+            get_y_i32_from__hitbox_aabb(
                 &p_typer->text_bounding_box)
             + (p_PLATFORM_texture->height >> 1)
             - p_typer->cursor_position__3i32.y__i32

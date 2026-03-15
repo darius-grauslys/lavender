@@ -8,7 +8,7 @@
 #include <nds.h>
 #include <game.h>
 #include <defines.h>
-#include <collisions/hitbox_aabb.h>
+#include <collisions/core/aabb/hitbox_aabb.h>
 
 void PLATFORM_pre_render(Game *p_game) {
     swiWaitForVBlank();

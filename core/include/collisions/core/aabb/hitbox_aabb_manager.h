@@ -23,7 +23,10 @@ bool f_hitbox_manager__opaque_property_access_of__hitbox_AABB(
         bool is_setting_or__getting);
 
 void initialize_hitbox_aabb_manager(
-        Hitbox_AABB_Manager *p_hitbox_aabb_manager);
+        Hitbox_AABB_Manager *p_hitbox_aabb_manager,
+        void *pM_pool_of__hitboxes,
+        void **pM_ptr_array_of__hitbox_records,
+        Quantity__u32 quantity_of__hitboxes_to__pool);
 
 Hitbox_AABB *allocate_hitbox_aabb_from__hitbox_aabb_manager(
         Hitbox_AABB_Manager *p_hitbox_aabb_manager,

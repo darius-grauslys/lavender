@@ -1,4 +1,4 @@
-#include "collisions/hitbox_aabb.h"
+#include "collisions/core/aabb/hitbox_aabb.h"
 #include "debug/debug.h"
 #include "debug/nds_debug.h"
 #include "defines.h"

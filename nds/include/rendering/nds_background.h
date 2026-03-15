@@ -1,7 +1,7 @@
 #ifndef NDS_BACKGROUND_H
 #define NDS_BACKGROUND_H
 
-#include "collisions/hitbox_aabb.h"
+#include "collisions/core/aabb/hitbox_aabb.h"
 #include "defines.h"
 #include "defines_weak.h"
 #include "rendering/font/typer.h"

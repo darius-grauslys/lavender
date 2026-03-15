@@ -1,5 +1,5 @@
 #include "client.h"
-#include "collisions/hitbox_aabb_manager.h"
+#include "collisions/core/aabb/hitbox_aabb_manager.h"
 #include "collisions/hitbox_context.h"
 #include "defines.h"
 #include "defines_weak.h"
@@ -38,7 +38,7 @@
 #include <world/world.h>
 #include <timer.h>
 
-#include <collisions/hitbox_aabb.h>
+#include <collisions/core/aabb/hitbox_aabb.h>
 
 #include <world/chunk.h>
 #include <world/tile.h>

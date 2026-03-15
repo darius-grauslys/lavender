@@ -1,5 +1,5 @@
 #include "client.h"
-#include "collisions/hitbox_aabb_manager.h"
+#include "collisions/core/aabb/hitbox_aabb_manager.h"
 #include "game.h"
 #include "vectors.h"
 #include "world/world.h"

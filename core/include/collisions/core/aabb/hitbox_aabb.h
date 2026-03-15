@@ -7,16 +7,16 @@
 #include <world/chunk_vectors.h>
 #include "collisions/hitbox.h"
 
-Direction__u8 is_hitbox__colliding(
+Direction__u8 is_hitbox_aabb__colliding(
         Hitbox_AABB *hitbox__checking,
         Hitbox_AABB *hitbox__other);
 
-void get_aa_bb_as__vectors_3i32F4_from__hitbox(
+void get_aa_bb_as__vectors_3i32F4_from__hitbox_aabb(
         Hitbox_AABB *hitbox,
         Vector__3i32F4 *aa,
         Vector__3i32F4 *bb);
 
-void get_aa_bb_as__vectors_3i32_from__hitbox(
+void get_aa_bb_as__vectors_3i32_from__hitbox_aabb(
         Hitbox_AABB *hitbox,
         Vector__3i32 *aa,
         Vector__3i32 *bb);
@@ -37,10 +37,10 @@ void set_hitbox_aabb__position_with__3i32(
         Hitbox_AABB *hitbox,
         Vector__3i32 position__3i32);
 
-Direction__u8 get_movement_direction_of__hitbox(
+Direction__u8 get_movement_direction_of__hitbox_aabb(
         Hitbox_AABB *hitbox);
 
-Direction__u8 get_tile_transition_direction_of__hitbox(
+Direction__u8 get_tile_transition_direction_of__hitbox_aabb(
         Hitbox_AABB *hitbox,
         Vector__3i32F4 *aa,
         Vector__3i32F4 *bb);
@@ -65,13 +65,13 @@ void initialize_vector_3i32_as__aa_bb(
         Hitbox_AABB *hitbox,
         Direction__u8 corner_direction);
 
-void clamp_p_vector_3i32_to__hitbox(
+void clamp_p_vector_3i32_to__hitbox_aabb(
         Hitbox_AABB *p_hitbox, 
         Vector__3i32 *p_position__3i32);
 
-void initialize_hitbox(Hitbox_AABB *hitbox);
+void initialize_hitbox_aabb(Hitbox_AABB *hitbox);
 
-void initialize_hitbox_as__allocated(
+void initialize_hitbox_aabb_as__allocated(
         Hitbox_AABB *hitbox,
         Identifier__u32 uuid__u32,
         Quantity__u32 width, 
@@ -84,19 +84,19 @@ void initialize_hitbox_as__allocated(
 /// is fully within hitbox__one, this will return
 /// DIRECTION__NONE.
 ///
-Direction__u8 is_this_hitbox__overlapping_this_hitbox(
+Direction__u8 is_this_hitbox_aabb__overlapping_this_hitbox_aabb(
         Hitbox_AABB *hitbox__one,
         Hitbox_AABB *hitbox__two);
 
-bool is_vector_3i32F4_inside__hitbox(
+bool is_vector_3i32F4_inside__hitbox_aabb(
         Vector__3i32F4 vector,
         Hitbox_AABB *p_hitbox);
 
-bool is_vector_3i32_inside__hitbox(
+bool is_vector_3i32_inside__hitbox_aabb(
         Vector__3i32 vector,
         Hitbox_AABB *p_hitbox);
 
-bool is_this_hitbox__fully_inside_this_hitbox__without_velocity(
+bool is_this_hitbox_aabb__fully_inside_this_hitbox_aabb__without_velocity(
         Hitbox_AABB *hitbox__one,
         Hitbox_AABB *hitbox__two);
 
@@ -221,7 +221,7 @@ void set_size_of__hitbox_aabb(
 }
 
 static inline
-void apply_x_velocity_to__hitbox(
+void apply_x_velocity_to__hitbox_aabb(
         Hitbox_AABB *p_hitbox_aabb,
         i32F4 x__velocity) {
 #ifndef NDEBUG
@@ -234,7 +234,7 @@ void apply_x_velocity_to__hitbox(
 }
 
 static inline
-void apply_y_velocity_to__hitbox(
+void apply_y_velocity_to__hitbox_aabb(
         Hitbox_AABB *p_hitbox_aabb,
         i32F4 y__velocity) {
 #ifndef NDEBUG
@@ -247,7 +247,7 @@ void apply_y_velocity_to__hitbox(
 }
 
 static inline
-void apply_z_velocity_to__hitbox(
+void apply_z_velocity_to__hitbox_aabb(
         Hitbox_AABB *p_hitbox_aabb,
         i32F4 z__velocity) {
 #ifndef NDEBUG
@@ -266,7 +266,7 @@ void apply_z_velocity_to__hitbox(
 ///       Why?
 ///
 static inline
-void apply_velocity_to__hitbox(
+void apply_velocity_to__hitbox_aabb(
         Hitbox_AABB *p_hitbox_aabb,
         Vector__3i32F4 *vector) {
 #ifndef NDEBUG
@@ -275,14 +275,14 @@ void apply_velocity_to__hitbox(
         return;
     }
 #endif
-    apply_x_velocity_to__hitbox(p_hitbox_aabb, vector->x__i32F4);
-    apply_y_velocity_to__hitbox(p_hitbox_aabb, vector->y__i32F4);
-    apply_z_velocity_to__hitbox(p_hitbox_aabb, vector->z__i32F4);
+    apply_x_velocity_to__hitbox_aabb(p_hitbox_aabb, vector->x__i32F4);
+    apply_y_velocity_to__hitbox_aabb(p_hitbox_aabb, vector->y__i32F4);
+    apply_z_velocity_to__hitbox_aabb(p_hitbox_aabb, vector->z__i32F4);
 }
 
 /// TODO: REMOVE, must use dispatch_game_action__hitbox instead
 static inline
-void set_x_position_to__hitbox(
+void set_x_position_to__hitbox_aabb(
         Hitbox_AABB *p_hitbox_aabb,
         i32F4 x__position) {
 #ifndef NDEBUG
@@ -297,7 +297,7 @@ void set_x_position_to__hitbox(
 
 /// TODO: REMOVE, must use dispatch_game_action__hitbox instead
 static inline
-void set_y_position_to__hitbox(
+void set_y_position_to__hitbox_aabb(
         Hitbox_AABB *p_hitbox_aabb,
         i32F4 y__position) {
 #ifndef NDEBUG
@@ -312,7 +312,7 @@ void set_y_position_to__hitbox(
 
 /// TODO: REMOVE, must use dispatch_game_action__hitbox instead
 static inline
-void set_z_position_to__hitbox(
+void set_z_position_to__hitbox_aabb(
         Hitbox_AABB *p_hitbox_aabb,
         i32F4 z__position) {
 #ifndef NDEBUG
@@ -327,7 +327,7 @@ void set_z_position_to__hitbox(
 
 /// TODO: REMOVE, must use dispatch_game_action__hitbox instead
 static inline
-void offset_x_position_to__hitbox(
+void offset_x_position_to__hitbox_aabb(
         Hitbox_AABB *p_hitbox_aabb,
         i32F4 x__position) {
 #ifndef NDEBUG
@@ -342,7 +342,7 @@ void offset_x_position_to__hitbox(
 
 /// TODO: REMOVE, must use dispatch_game_action__hitbox instead
 static inline
-void offset_y_position_to__hitbox(
+void offset_y_position_to__hitbox_aabb(
         Hitbox_AABB *p_hitbox_aabb,
         i32F4 y__position) {
 #ifndef NDEBUG
@@ -357,7 +357,7 @@ void offset_y_position_to__hitbox(
 
 /// TODO: REMOVE, must use dispatch_game_action__hitbox instead
 static inline
-void offset_z_position_to__hitbox(
+void offset_z_position_to__hitbox_aabb(
         Hitbox_AABB *p_hitbox_aabb,
         i32F4 z__position) {
 #ifndef NDEBUG
@@ -371,7 +371,7 @@ void offset_z_position_to__hitbox(
 }
 
 static inline
-void set_x_velocity_to__hitbox(
+void set_x_velocity_to__hitbox_aabb(
         Hitbox_AABB *p_hitbox_aabb,
         i32F4 x__velocity) {
 #ifndef NDEBUG
@@ -385,7 +385,7 @@ void set_x_velocity_to__hitbox(
 }
 
 static inline
-void set_y_velocity_to__hitbox(
+void set_y_velocity_to__hitbox_aabb(
         Hitbox_AABB *p_hitbox_aabb,
         i32F4 y__velocity) {
 #ifndef NDEBUG
@@ -399,7 +399,7 @@ void set_y_velocity_to__hitbox(
 }
 
 static inline
-void set_z_velocity_to__hitbox(
+void set_z_velocity_to__hitbox_aabb(
         Hitbox_AABB *p_hitbox_aabb,
         i32F4 z__velocity) {
 #ifndef NDEBUG
@@ -413,7 +413,7 @@ void set_z_velocity_to__hitbox(
 }
 
 static inline
-void set_x_acceleration_to__hitbox(
+void set_x_acceleration_to__hitbox_aabb(
         Hitbox_AABB *p_hitbox_aabb,
         i16F8 x__acceleration) {
 #ifndef NDEBUG
@@ -427,7 +427,7 @@ void set_x_acceleration_to__hitbox(
 }
 
 static inline
-void set_y_acceleration_to__hitbox(
+void set_y_acceleration_to__hitbox_aabb(
         Hitbox_AABB *p_hitbox_aabb,
         i16F8 y__acceleration) {
 #ifndef NDEBUG
@@ -465,9 +465,9 @@ void set_velocity_to__hitbox_aabb(
     }
 #endif
     set_hitbox_aabb_as__dirty(p_hitbox_aabb);
-    set_x_velocity_to__hitbox(p_hitbox_aabb, velocity.x__i32F4);
-    set_y_velocity_to__hitbox(p_hitbox_aabb, velocity.y__i32F4);
-    set_z_velocity_to__hitbox(p_hitbox_aabb, velocity.z__i32F4);
+    set_x_velocity_to__hitbox_aabb(p_hitbox_aabb, velocity.x__i32F4);
+    set_y_velocity_to__hitbox_aabb(p_hitbox_aabb, velocity.y__i32F4);
+    set_z_velocity_to__hitbox_aabb(p_hitbox_aabb, velocity.z__i32F4);
 }
 
 static inline
@@ -481,13 +481,13 @@ void set_acceleration_to__hitbox_aabb(
     }
 #endif
     set_hitbox_aabb_as__dirty(p_hitbox_aabb);
-    set_x_acceleration_to__hitbox(p_hitbox_aabb, acceleration.x__i16F8);
-    set_y_acceleration_to__hitbox(p_hitbox_aabb, acceleration.y__i16F8);
+    set_x_acceleration_to__hitbox_aabb(p_hitbox_aabb, acceleration.x__i16F8);
+    set_y_acceleration_to__hitbox_aabb(p_hitbox_aabb, acceleration.y__i16F8);
     set_z_acceleration_to__hitbox(p_hitbox_aabb, acceleration.z__i16F8);
 }
 
 static inline
-i32F4 get_x_i32F4_from__hitbox(
+i32F4 get_x_i32F4_from__hitbox_aabb(
         Hitbox_AABB *p_hitbox) {
 #ifndef NDEBUG
     if (!p_hitbox) {
@@ -499,7 +499,7 @@ i32F4 get_x_i32F4_from__hitbox(
 }
 
 static inline
-i32F4 get_y_i32F4_from__hitbox(
+i32F4 get_y_i32F4_from__hitbox_aabb(
         Hitbox_AABB *p_hitbox) {
 #ifndef NDEBUG
     if (!p_hitbox) {
@@ -511,7 +511,7 @@ i32F4 get_y_i32F4_from__hitbox(
 }
 
 static inline
-i32F4 get_z_i32F4_from__hitbox(
+i32F4 get_z_i32F4_from__hitbox_aabb(
         Hitbox_AABB *p_hitbox) {
 #ifndef NDEBUG
     if (!p_hitbox) {
@@ -523,7 +523,7 @@ i32F4 get_z_i32F4_from__hitbox(
 }
 
 static inline
-Signed_Index__i32 get_x_i32_from__hitbox(
+Signed_Index__i32 get_x_i32_from__hitbox_aabb(
         Hitbox_AABB *p_hitbox) {
 #ifndef NDEBUG
     if (!p_hitbox) {
@@ -535,7 +535,7 @@ Signed_Index__i32 get_x_i32_from__hitbox(
 }
 
 static inline
-Signed_Index__i32 get_y_i32_from__hitbox(
+Signed_Index__i32 get_y_i32_from__hitbox_aabb(
         Hitbox_AABB *p_hitbox) {
 #ifndef NDEBUG
     if (!p_hitbox) {
@@ -547,7 +547,7 @@ Signed_Index__i32 get_y_i32_from__hitbox(
 }
 
 static inline
-Signed_Index__i32 get_z_i32_from__hitbox(
+Signed_Index__i32 get_z_i32_from__hitbox_aabb(
         Hitbox_AABB *p_hitbox) {
 #ifndef NDEBUG
     if (!p_hitbox) {
@@ -559,7 +559,7 @@ Signed_Index__i32 get_z_i32_from__hitbox(
 }
 
 static inline
-Signed_Index__i32 get_chunk_x_i32_from__hitbox(
+Signed_Index__i32 get_chunk_x_i32_from__hitbox_aabb(
         Hitbox_AABB *p_hitbox) {
 #ifndef NDEBUG
     if (!p_hitbox) {
@@ -572,7 +572,7 @@ Signed_Index__i32 get_chunk_x_i32_from__hitbox(
 }
 
 static inline
-Signed_Index__i32 get_chunk_y_i32_from__hitbox(
+Signed_Index__i32 get_chunk_y_i32_from__hitbox_aabb(
         Hitbox_AABB *p_hitbox) {
 #ifndef NDEBUG
     if (!p_hitbox) {
@@ -585,7 +585,7 @@ Signed_Index__i32 get_chunk_y_i32_from__hitbox(
 }
 
 static inline
-Signed_Index__i32 get_chunk_z_i32_from__hitbox(
+Signed_Index__i32 get_chunk_z_i32_from__hitbox_aabb(
         Hitbox_AABB *p_hitbox) {
 #ifndef NDEBUG
     if (!p_hitbox) {

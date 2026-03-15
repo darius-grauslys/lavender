@@ -390,44 +390,11 @@ void release_graphics_window_from__graphics_window_manager(
     Gfx_Context *p_gfx_context =
         get_p_gfx_context_from__game(p_game);
 
-    release_children_of__graphics_window_from__graphics_window_manager(
+    reset_graphics_window(
             p_game, 
-            get_p_graphics_window_manager_from__gfx_context(
-                get_p_gfx_context_from__game(p_game)), 
-            p_graphics_window);
-    
-    if (p_graphics_window->p_PLATFORM_gfx_window) {
-        PLATFORM_release_gfx_window(
-                p_gfx_context, 
-                p_graphics_window);
-    }
-    UI_Manager *p_ui_manager =
-        get_p_ui_manager_from__graphics_window(
-                p_game,
-                p_graphics_window);
-    if (p_ui_manager) {
-        release_p_ui_manager_from__ui_context(
-                p_game,
-                GET_UUID_P(p_graphics_window));
-    }
-    Sprite_Manager *p_sprite_manager =
-        get_p_sprite_manager_from__graphics_window(
-                p_game,
-                p_graphics_window);
-    if (p_sprite_manager) {
-        release_sprite_manager_from__sprite_context(
-                get_p_sprite_context_from__gfx_context(p_gfx_context),
-                p_sprite_manager);
-    }
-    if (is_ui_tile_map__wrapper__valid(
-                get_p_ui_tile_map_from__graphics_window(
-                    p_graphics_window))) {
-        release_ui_tile_map_with__ui_tile_map_manager(
-                get_p_ui_tile_map_manager_from__gfx_context(
-                    p_gfx_context), 
-                get_p_ui_tile_map_from__graphics_window(
-                    p_graphics_window));
-    }
+            p_graphics_window, 
+            true);
+
     DEALLOCATE_P(p_graphics_window);
     initialize_graphics_window(
             p_graphics_window);

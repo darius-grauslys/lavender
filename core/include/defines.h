@@ -359,7 +359,6 @@ typedef enum Hitbox_Manager_Type_t {
 /// WILL lead to undefined behavior!
 ///
 typedef struct Hitbox_Manager_Intrinsic_t {
-    Serialization_Header _serialization_header;
     Quantity__u32 quantity_of__hitboxes;
     Serialization_Header *p_array_of__hitboxes;
 } Hitbox_Manager_Intrinsic;
@@ -487,7 +486,6 @@ typedef struct Hitbox_AABB_Manager_t {
     union {
         Hitbox_Manager_Intrinsic _intrinsic;
         struct {
-            Serialization_Header _serialization_header;
             Quantity__u32 quantity_of__hitboxes;
             Hitbox_AABB *pM_pool_of__hitboxes;
         };

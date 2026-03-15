@@ -1,8 +1,8 @@
 #ifndef GAME_ACTION__HITBOX__AABB
 #define GAME_ACTION__HITBOX__AABB
 
-#include "collisions/hitbox_aabb.h"
-#include "collisions/hitbox_aabb_manager.h"
+#include "collisions/core/aabb/hitbox_aabb.h"
+#include "collisions/core/aabb/hitbox_aabb_manager.h"
 #include "defines.h"
 #include "defines_weak.h"
 #include "game.h"

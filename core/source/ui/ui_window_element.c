@@ -1,5 +1,5 @@
 #include "ui/ui_window_element.h"
-#include "collisions/hitbox_aabb.h"
+#include "collisions/core/aabb/hitbox_aabb.h"
 #include "debug/debug.h"
 #include "defines_weak.h"
 #include "game.h"

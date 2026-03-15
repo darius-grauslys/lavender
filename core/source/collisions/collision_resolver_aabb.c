@@ -27,10 +27,10 @@ void f_hitbox_aabb_collision_handler__default(
         World *p_world,
         Hitbox_AABB *p_hitbox_aabb__colliding,
         Hitbox_AABB *p_hitbox_aabb__collided) {
-    int32_t source_x = get_x_i32F4_from__hitbox(p_hitbox_aabb__colliding);
-    int32_t source_y = get_y_i32F4_from__hitbox(p_hitbox_aabb__colliding);
-    int32_t collided_x = get_x_i32F4_from__hitbox(p_hitbox_aabb__collided);
-    int32_t collided_y = get_y_i32F4_from__hitbox(p_hitbox_aabb__collided);
+    int32_t source_x = get_x_i32F4_from__hitbox_aabb(p_hitbox_aabb__colliding);
+    int32_t source_y = get_y_i32F4_from__hitbox_aabb(p_hitbox_aabb__colliding);
+    int32_t collided_x = get_x_i32F4_from__hitbox_aabb(p_hitbox_aabb__collided);
+    int32_t collided_y = get_y_i32F4_from__hitbox_aabb(p_hitbox_aabb__collided);
 
     int32_t delta_x = 
         source_x - collided_x;
@@ -94,10 +94,10 @@ void f_hitbox_aabb_tile_touch_handler__default(
                 0);
 
     Signed_Index__i32 delta_x =
-        get_x_i32F4_from__hitbox(p_hitbox_aabb)
+        get_x_i32F4_from__hitbox_aabb(p_hitbox_aabb)
         - tile_center.x__i32F4;
     Signed_Index__i32 delta_y =
-        get_y_i32F4_from__hitbox(p_hitbox_aabb)
+        get_y_i32F4_from__hitbox_aabb(p_hitbox_aabb)
         - tile_center.y__i32F4;
 
     Signed_Index__i32 ideal_delta_x =
@@ -291,7 +291,7 @@ void poll_hitbox_aabb_for__tile_collision(
         f_Hitbox_AABB_Tile_Touch_Handler f_hitbox_aabb_tile_touch_handler) {
 
     Vector__3i32F4 aa, bb;
-    get_aa_bb_as__vectors_3i32F4_from__hitbox(
+    get_aa_bb_as__vectors_3i32F4_from__hitbox_aabb(
             p_hitbox_aabb, &aa, &bb);
 
     Vector__3i32F4 position__3i32F4 =
@@ -347,7 +347,7 @@ void poll_hitbox_aabb_for__tile_collision(
         do {
             for (Index__u32 index=0;index<8;index+=2) {
                 i32F4 z_ground_tile__i32F4 = 
-                    get_z_i32F4_from__hitbox(p_hitbox_aabb)
+                    get_z_i32F4_from__hitbox_aabb(p_hitbox_aabb)
                     - get_z_offset_i32F4_of__ray(
                             &ray__3i32F20)
                     ;
@@ -383,8 +383,8 @@ void poll_hitbox_aabb_for__tile_collision(
                             p_game, 
                             GET_UUID_P(p_hitbox_aabb), 
                             get_vector__3i32F4(
-                                get_x_i32F4_from__hitbox(p_hitbox_aabb), 
-                                get_y_i32F4_from__hitbox(p_hitbox_aabb), 
+                                get_x_i32F4_from__hitbox_aabb(p_hitbox_aabb), 
+                                get_y_i32F4_from__hitbox_aabb(p_hitbox_aabb), 
                                 z_ground_tile__i32F4), 
                             get_vector__3i32F4(
                                 get_velocity_3i32F4_of__hitbox_aabb(p_hitbox_aabb).x__i32F4, 
@@ -419,16 +419,16 @@ landed_on_ground:;
         Vector__3i32F4 offset__3i32F4 =
             get_2i32F4_offset_from__angle(
                     get_angle_from__direction(
-                        get_movement_direction_of__hitbox(
+                        get_movement_direction_of__hitbox_aabb(
                             p_hitbox_aabb)));
         offset__3i32F4.x__i32F4 <<= FRACTIONAL_PERCISION_4__BIT_SIZE - 1;
         offset__3i32F4.y__i32F4 <<= FRACTIONAL_PERCISION_4__BIT_SIZE - 1;
         Tile_Logic_Record tile_logic_record;
         Vector__3i32F4 forward_position__3i32F4 =
             (Vector__3i32F4){
-                get_x_i32F4_from__hitbox(p_hitbox_aabb) + offset__3i32F4.x__i32F4,
-                get_y_i32F4_from__hitbox(p_hitbox_aabb) + offset__3i32F4.y__i32F4,
-                (get_z_i32F4_from__hitbox(
+                get_x_i32F4_from__hitbox_aabb(p_hitbox_aabb) + offset__3i32F4.x__i32F4,
+                get_y_i32F4_from__hitbox_aabb(p_hitbox_aabb) + offset__3i32F4.y__i32F4,
+                (get_z_i32F4_from__hitbox_aabb(
                         p_hitbox_aabb) & ~MASK(TILE__WIDTH_AND__HEIGHT__BIT_SHIFT 
                             + FRACTIONAL_PERCISION_4__BIT_SIZE))
                     + i32_to__i32F4(BIT(TILE__WIDTH_AND__HEIGHT__BIT_SHIFT))
@@ -470,7 +470,7 @@ landed_on_ground:;
             get_vector__3i32(
                     x__chunk, 
                     y__chunk, 
-                    get_chunk_z_i32_from__hitbox(p_hitbox_aabb));
+                    get_chunk_z_i32_from__hitbox_aabb(p_hitbox_aabb));
 
         Local_Space *p_local_space =
             get_p_local_space_from__local_space_manager(

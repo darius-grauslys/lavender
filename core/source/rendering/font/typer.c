@@ -13,7 +13,7 @@ void initialize_typer(
         Quantity__u32 height,
         Quantity__u32 quantity_of__spacing,
         i32 x__cursor, i32 y__cursor) {
-    initialize_hitbox_as__allocated(
+    initialize_hitbox_aabb_as__allocated(
             &p_typer->text_bounding_box, 
             IDENTIFIER__UNKNOWN__u32,
             width, height, 
@@ -36,7 +36,7 @@ bool poll_typer_for__cursor_wrapping(
         Font_Letter *p_font_letter) {
 
     Hitbox_AABB font_letter_hitbox;
-    initialize_hitbox_as__allocated(
+    initialize_hitbox_aabb_as__allocated(
             &font_letter_hitbox, 
             IDENTIFIER__UNKNOWN__u32,
             p_font_letter->width_of__font_letter, 
@@ -63,7 +63,7 @@ bool poll_typer_for__cursor_wrapping(
     font_letter_hitbox.position__3i32F4 =
         hitbox_position;
 
-    if (is_this_hitbox__fully_inside_this_hitbox__without_velocity(
+    if (is_this_hitbox_aabb__fully_inside_this_hitbox_aabb__without_velocity(
                 &font_letter_hitbox,
                 &p_typer->text_bounding_box)) {
         return true;
@@ -100,7 +100,7 @@ bool poll_typer_for__cursor_wrapping(
     font_letter_hitbox.position__3i32F4 =
         hitbox_position;
 
-    return is_this_hitbox__fully_inside_this_hitbox__without_velocity(
+    return is_this_hitbox_aabb__fully_inside_this_hitbox_aabb__without_velocity(
                 &font_letter_hitbox,
                 &p_typer->text_bounding_box);
 }
