@@ -1,0 +1,179 @@
+%% Module Topology: Collision System
+%% Shows ownership hierarchy and relationships between collision types.
+
+classDiagram
+    direction TB
+
+    class Game {
+        +Hitbox_Context hitbox_context
+        +World *pM_world
+    }
+
+    class World {
+        +Collision_Node_Pool collision_node_pool
+        +Global_Space_Manager global_space_manager
+        +Entity_Manager entity_manager
+        +f_Hitbox_AABB_Collision_Handler f_hitbox_aabb_collision_handler
+        +f_Hitbox_AABB_Tile_Touch_Handler f_hitbox_aabb_tile_touch_handler
+    }
+
+    class Hitbox_Context {
+        +Hitbox_Manager_Instance hitbox_manager_instances[MAX_QUANTITY_OF__HITBOX_MANAGERS]
+        +Hitbox_Manager_Instance__Invocation_Table hitbox_manager_instance__invocation_table[Hitbox_Manager_Type__Unknown]
+        +Hitbox_Manager_Registration_Record hitbox_manager_registration_records[Hitbox_Manager_Type__Unknown]
+        +initialize_hitbox_context()
+        +register_hitbox_manager()
+        +allocate_hitbox_manager_from__hitbox_context()
+        +release_hitbox_manager_from__hitbox_context()
+        +allocate_pV_hitbox_from__hitbox_context()
+        +opaque_access_to__hitbox()
+        +get_p_hitbox_manager_instance_using__uuid_from__hitbox_context()
+        +get_pV_hitbox_from__hitbox_context()
+        +get_pV_hitbox_manager_from__hitbox_context()
+    }
+
+    class Hitbox_Manager_Instance {
+        +Serialization_Header _serialization_header
+        +void *pVM_hitbox_manager
+        +Hitbox_Manager_Type type_of__hitbox_manager
+        +is_p_hitbox_manager_instance__valid() bool
+    }
+
+    class Hitbox_Manager_Instance__Invocation_Table {
+        +f_Hitbox_Manager__Allocator f_hitbox_manager__allocator
+        +f_Hitbox_Manager__Deallocator f_hitbox_manager__deallocator
+        +f_Hitbox_Manager__Opaque_Property_Access_Of__Hitbox f_hitbox_manager__get_properties_of__hitbox
+    }
+
+    class Hitbox_Manager_Registration_Record {
+        +u8 size_of__components__dimensions
+        +u8 size_of__components__pos_vel
+        +u8 size_of__components__acceleration
+        +u8 quantity_of__components__dimensions
+        +u8 quantity_of__components__pos_vel_acc
+        +u8 fractional_percision_of__dimensions
+        +u8 fractional_percision_of__pos_vel
+        +u8 fractional_percision_of__acceleration
+    }
+
+    class Hitbox_Manager_Intrinsic {
+        <<interface>>
+        +Quantity__u32 quantity_of__hitboxes
+        +Serialization_Header *p_array_of__hitboxes
+    }
+
+    class Hitbox_AABB_Manager {
+        +Quantity__u32 quantity_of__hitboxes
+        +Hitbox_AABB *pM_pool_of__hitboxes
+        +Hitbox_AABB **pM_ptr_array_of__hitbox_records
+        +Index__u32 index_of__next_hitbox_aabb_in__records
+        +allocate_hitbox_aabb_from__hitbox_aabb_manager()
+        +release_hitbox_aabb_from__hitbox_aabb_manager()
+        +get_p_hitbox_aabb_by__uuid_u32_from__hitbox_aabb_manager()
+        +get_p_hitbox_aabb_by__index_from__hitbox_aabb_manager()
+        +poll_hitbox_manager_for__movement()
+    }
+
+    class Hitbox_AABB {
+        +Serialization_Header _serialization_header
+        +Vector__3i32F4 position__3i32F4
+        +Vector__3i32F4 velocity__3i32F4
+        +Vector__3i16F8 acceleration__3i16F8
+        +Quantity__u32 width__quantity_u32
+        +Quantity__u32 height__quantity_u32
+        +Hitbox_Flags__u8 hitbox_aabb_flags__u8
+        +is_hitbox_aabb__colliding() Direction__u8
+        +is_hitbox_aabb__dirty() bool
+        +is_hitbox_aabb__active() bool
+    }
+
+    class Hitbox_Flags__u8 {
+        <<typedef u8>>
+        +HITBOX_FLAG__IS_ACTIVE
+        +HITBOX_FLAG__IS_DIRTY
+    }
+
+    class Collision_Node_Pool {
+        +Collision_Node collision_nodes[QUANTITY_OF__GLOBAL_SPACE]
+        +Collision_Node_Entry collision_node_entries[MAX_QUANTITY_OF__HITBOX_AABB]
+        +initialize_collision_node_pool()
+        +allocate_collision_node_from__collision_node_pool()
+        +release_collision_node_from__collision_node_pool()
+        +allocate_collision_node_entry_from__collision_node_pool()
+        +release_collision_node_entry_from__collision_node_pool()
+        +get_p_collision_node_by__uuid_64_from__collision_node_pool()
+    }
+
+    class Collision_Node {
+        +Serialization_Header__UUID_64 _serialization_header
+        +Collision_Node_Entry *p_linked_list__collision_node_entries__tail
+        +add_entry_to__collision_node() bool
+        +remove_entry_from__collision_node()
+        +poll_for__collisions_within_this__collision_node()
+        +get_quantity_of__entries_in__collision_node() Quantity__u32
+        +is_collision_node__allocated() bool
+    }
+
+    class Collision_Node_Entry {
+        +Identifier__u32 uuid_of__hitbox__u32
+        +Collision_Node_Entry *p_previous_entry
+    }
+
+    class Global_Space {
+        +Serialization_Header__UUID_64 _serialization_header
+        +Chunk_Vector__3i32 chunk_vector__3i32
+        +Chunk *p_chunk
+        +Collision_Node *p_collision_node
+    }
+
+    class Global_Space_Manager {
+        +Global_Space global_spaces[QUANTITY_OF__GLOBAL_SPACE]
+        +f_Global_Space__Dispose_Handler f_global_space__dispose_handler
+    }
+
+    class Hitbox_Manager_Type {
+        <<enumeration>>
+        Hitbox_Manager_Type__Default
+        Hitbox_Manager_Type__AABB
+        Hitbox_Manager_Type__AAABBB
+        Hitbox_Manager_Type__Unknown
+    }
+
+    %% Ownership: Game owns Hitbox_Context and World
+    Game *-- Hitbox_Context : owns
+    Game *-- World : owns via pM_world
+
+    %% Ownership: World owns Collision_Node_Pool and Global_Space_Manager
+    World *-- Collision_Node_Pool : owns
+    World *-- Global_Space_Manager : owns
+
+    %% Hitbox_Context owns instances and tables
+    Hitbox_Context *-- "0..8" Hitbox_Manager_Instance : owns pool
+    Hitbox_Context *-- Hitbox_Manager_Instance__Invocation_Table : owns per type
+    Hitbox_Context *-- Hitbox_Manager_Registration_Record : owns per type
+
+    %% Hitbox_Manager_Instance holds opaque pointer to concrete manager
+    Hitbox_Manager_Instance --> Hitbox_AABB_Manager : pVM_hitbox_manager (opaque)
+    Hitbox_Manager_Instance --> Hitbox_Manager_Type : type_of__hitbox_manager
+
+    %% Hitbox_AABB_Manager implements Hitbox_Manager_Intrinsic
+    Hitbox_AABB_Manager ..|> Hitbox_Manager_Intrinsic : union cast
+    Hitbox_AABB_Manager *-- "0..256" Hitbox_AABB : pM_pool_of__hitboxes
+
+    %% Hitbox_AABB uses Hitbox_Flags__u8
+    Hitbox_AABB *-- Hitbox_Flags__u8 : hitbox_aabb_flags__u8
+
+    %% Collision_Node_Pool owns nodes and entries
+    Collision_Node_Pool *-- "N" Collision_Node : collision_nodes array
+    Collision_Node_Pool *-- "256" Collision_Node_Entry : collision_node_entries array
+
+    %% Collision_Node has linked list of entries
+    Collision_Node --> "0..*" Collision_Node_Entry : linked list tail
+    Collision_Node_Entry --> Collision_Node_Entry : p_previous_entry
+
+    %% Collision_Node_Entry references Hitbox_AABB by UUID
+    Collision_Node_Entry ..> Hitbox_AABB : uuid_of__hitbox__u32 references
+
+    %% Global_Space references Collision_Node
+    Global_Space --> Collision_Node : p_collision_node
+    Global_Space_Manager *-- "N" Global_Space : global_spaces array
