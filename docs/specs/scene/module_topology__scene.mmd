@@ -1,0 +1,125 @@
+%% Module Topology: Scene System
+%% Shows ownership hierarchy and relationships between scene types.
+
+classDiagram
+    direction TB
+
+    class Game {
+        +Scene_Manager scene_manager
+        +Gfx_Context gfx_context
+    }
+
+    class Scene_Manager {
+        +Scene scenes[Scene_Kind__Unknown]
+        +Scene *p_active_scene
+        +initialize_scene_manager()
+        +register_scene_into__scene_manager()
+        +get_p_scene_from__scene_manager() Scene*
+        +get_p_active_scene_from__scene_manager() Scene*
+        +set_active_scene_for__scene_manager()
+        +quit_scene_state_machine()
+        +is_p_scene_the__active_scene_in__scene_manager() bool
+    }
+
+    class Scene {
+        +Serialization_Header _serialization_header
+        +Scene *p_parent_scene
+        +m_Load_Scene m_load_scene_handler
+        +m_Enter_Scene m_enter_scene_handler
+        +m_Unload_Scene m_unload_scene_handler
+        +void *p_scene_data
+        +bool is_active
+        +initialize_scene()
+        +is_scene__valid() bool
+        +poll_is__scene_active() bool
+    }
+
+    class Scene_Kind {
+        <<enumeration>>
+        Scene_Kind__None = 0
+        Scene_Kind__Unknown
+    }
+
+    class Scene_Data__Game {
+        +Timer__u8 timer_for__hud_notification__u8
+        +Timer__u8 timer_for__typer_sliding__u8
+    }
+
+    class m_Load_Scene {
+        <<function pointer>>
+        +void callback(Scene*, Game*)
+    }
+
+    class m_Enter_Scene {
+        <<function pointer>>
+        +void callback(Scene*, Game*)
+    }
+
+    class m_Unload_Scene {
+        <<function pointer>>
+        +void callback(Scene*, Game*)
+    }
+
+    class Serialization_Header {
+        +Quantity__u32 size_of__struct
+        +Identifier__u32 uuid
+    }
+
+    class Timer__u8 {
+        <<typedef u8>>
+    }
+
+    class register_scenes {
+        <<implemented function>>
+        +void register_scenes(Scene_Manager*)
+    }
+
+    class register_scene__main {
+        <<implemented function>>
+        +void register_scene__main(Scene_Manager*)
+    }
+
+    class scene__game_accessors {
+        <<static inline>>
+        +get_hud_timer_from__scene__game(Scene*) Timer__u8*
+        +get_typer_timer_from__scene__game(Scene*) Timer__u8*
+    }
+
+    %% Ownership: Game owns Scene_Manager
+    Game *-- Scene_Manager : owns
+
+    %% Scene_Manager owns array of Scene slots
+    Scene_Manager *-- "0..Scene_Kind__Unknown" Scene : scenes array
+
+    %% Scene_Manager references active scene
+    Scene_Manager --> Scene : p_active_scene
+
+    %% Scene_Kind indexes into Scene_Manager.scenes
+    Scene_Manager --> Scene_Kind : indexed by
+
+    %% Scene contains handler function pointers
+    Scene *-- m_Load_Scene : m_load_scene_handler
+    Scene *-- m_Enter_Scene : m_enter_scene_handler
+    Scene *-- m_Unload_Scene : m_unload_scene_handler
+
+    %% Scene contains Serialization_Header
+    Scene *-- Serialization_Header : _serialization_header
+
+    %% Scene optionally references parent scene
+    Scene --> Scene : p_parent_scene (optional)
+
+    %% Scene holds opaque pointer to scene data
+    Scene --> Scene_Data__Game : p_scene_data (opaque cast)
+
+    %% Scene_Data__Game contains timers
+    Scene_Data__Game *-- Timer__u8 : timer_for__hud_notification__u8
+    Scene_Data__Game *-- Timer__u8 : timer_for__typer_sliding__u8
+
+    %% Accessor utilities operate on Scene via Scene_Data__Game
+    scene__game_accessors ..> Scene : reads p_scene_data
+    scene__game_accessors ..> Scene_Data__Game : casts and accesses
+
+    %% Implemented registration functions target Scene_Manager
+    register_scenes ..> Scene_Manager : registers all scenes
+    register_scene__main ..> Scene_Manager : registers main scene
+    register_scenes ..> register_scene__main : calls
