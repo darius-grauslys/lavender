@@ -2,6 +2,7 @@
 #define TEST_UTIL_H
 
 #include <munit.h>
+#include <stdio.h>
 
 #define TEST_NAME(name) \
     MunitTestFunc_ ## name
@@ -66,7 +67,7 @@ include_test_suite__ ## name
 
 // args leading from name are tests.
 #define DEFINE_SUITE(name, ...) \
-char *test_suite_ ## name ## __prefix = #name "_" ;\
+char *test_suite_ ## name ## __prefix = #name ;\
 \
 MunitTest test_suite_ ## name ## __tests[] = { \
     __VA_ARGS__, \
@@ -75,6 +76,7 @@ MunitTest test_suite_ ## name ## __tests[] = { \
 \
 void include_test_suite__ ## name ( \
         MunitSuite *test_suite) { \
+    printf("\t\tincluded suite: %s\n", test_suite_ ## name ## __prefix ); \
     test_suite->prefix = \
         test_suite_ ## name ## __prefix; \
     test_suite->tests = \
@@ -91,7 +93,9 @@ void include_sub_suites_for__ ## name (MunitSuite *test_suite) { \
         __VA_ARGS__ \
     }; \
     for (int i=0;i<count;i++) { \
+        printf("\tincluding %d %p\n", i, test_suite_includers[i]); \
         if (!test_suite_includers[i]) { \
+            printf("\tBREAK\n"); \
             break; \
         } \
         test_suite_includers[i](&test_suite_ ## name ## __sub_suites[i]); \
@@ -101,7 +105,7 @@ void include_sub_suites_for__ ## name (MunitSuite *test_suite) { \
 
 // args leading from name are tests.
 #define DEFINE_SUITE_WITH__SUB_SUITES(name, ...) \
-char *test_suite_ ## name ## __prefix = #name "_"; \
+char *test_suite_ ## name ## __prefix = #name ; \
 \
 MunitTest test_suite_ ## name ## __tests[] = { \
     __VA_ARGS__, \
@@ -110,6 +114,7 @@ MunitTest test_suite_ ## name ## __tests[] = { \
 \
 void include_test_suite__ ## name( \
         MunitSuite *test_suite) { \
+    printf("included MAIN suite: %s\n", test_suite_ ## name ## __prefix ); \
     test_suite->prefix = \
         test_suite_ ## name ## __prefix; \
     test_suite->tests = \
@@ -117,6 +122,17 @@ void include_test_suite__ ## name( \
     test_suite->iterations = 1; \
     test_suite->options = MUNIT_SUITE_OPTION_NONE; \
     include_sub_suites_for__ ## name (test_suite); \
+}
+
+static inline
+void test_log(const char *c_str__msg, ...) {
+    va_list args_list;
+    va_start(args_list, c_str__msg);
+    printf("\033[37;1mTEST_LOG:\033[0m ");
+    vprintf(c_str__msg, args_list);
+    va_end(args_list);
+    
+    printf("\n");
 }
 
 #endif
