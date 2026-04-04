@@ -144,9 +144,9 @@ new flags. The `p_audio_instance_handle` is reused.
 
 ### Ownership
 
-Audio effects are pooled in `PLATFORM_Audio_Context`. On NDS, this is
-`PLATFORM_Audio_Context.audio_effects[NDS_MAX_QUANTITY_OF__AUDIO_EFFECTS]`.
-The platform backend manages allocation and deallocation of the pool.
+Audio effects are pooled in `PLATFORM_Audio_Context`. The pool size is
+platform-defined. The platform backend manages allocation and deallocation
+of the pool via `PLATFORM_allocate_audio_effect`.
 
 ### Polling
 

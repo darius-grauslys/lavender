@@ -1,0 +1,74 @@
+%% Module Topology: Audio System
+%% Shows ownership hierarchy and relationships between audio types.
+%% Core-only: all platform-specific details are behind PLATFORM_* abstractions.
+
+classDiagram
+    direction TB
+
+    class Game {
+        +PLATFORM_Audio_Context *p_PLATFORM_audio_context
+    }
+
+    class PLATFORM_Audio_Context {
+        <<platform-defined>>
+        Opaque to core.
+        Holds Audio_Effect pool and
+        backend-specific playback state.
+    }
+
+    class Audio_Effect {
+        +void *p_audio_instance_handle
+        +Timer__u32 timer_for__audio
+        +enum Audio_Effect_Kind the_kind_of__audio_effect
+        +Audio_Flags__u8 audio_flags__u8
+        +initialize_audio_effect()
+        +set_audio_effect()
+        +play_audio_effect_and__forget() Audio_Effect*
+        +is_audio__active() bool
+        +is_audio__released_on_completion() bool
+        +is_audio__looping() bool
+        +set_audio_as__active()
+        +set_audio_as__inactive()
+        +set_audio_as__releasing_on_completion()
+        +set_audio_as__not_releasing_on_completion()
+        +set_audio_as__looping()
+        +set_audio_as__not_looping()
+    }
+
+    class Audio_Flags__u8 {
+        <<typedef u8>>
+        +AUDIO_FLAGS__NONE
+        +AUDIO_FLAG__IS_ACTIVE : bit 0
+        +AUDIO_FLAG__RELEASE_ON_COMPLETE : bit 1
+        +AUDIO_FLAG__IS_LOOPING : bit 2
+    }
+
+    class Audio_Effect_Kind {
+        <<enumeration>>
+        Audio_Effect_Kind__None
+        Audio_Effect_Kind__Unknown
+    }
+
+    class Timer__u32 {
+        +uint32_t remaining__u32
+        +uint32_t start__u32
+    }
+
+    %% Ownership
+    Game *-- PLATFORM_Audio_Context : owns
+
+    %% PLATFORM_Audio_Context pools Audio_Effects
+    PLATFORM_Audio_Context *-- "0..N" Audio_Effect : platform-managed pool
+
+    %% Audio_Effect composition
+    Audio_Effect *-- Audio_Flags__u8 : audio_flags__u8
+    Audio_Effect *-- Timer__u32 : timer_for__audio
+    Audio_Effect --> Audio_Effect_Kind : the_kind_of__audio_effect
+
+    %% Core functions that bridge to platform
+    Audio_Effect ..> PLATFORM_Audio_Context : play_audio_effect_and__forget\nuses PLATFORM_allocate_audio_effect\nand PLATFORM_play_audio_effect
+
+    %% Extension notes
+    note for Audio_Effect_Kind "Games extend this enum in their\ntypes/implemented/audio_effect_kind.h.\nAudio_Effect_Kind__None = sentinel (0).\nAudio_Effect_Kind__Unknown = end sentinel."
+
+    note for PLATFORM_Audio_Context "Opaque to core. Pool size and\ninternal layout are platform-defined.\nAccessed only via PLATFORM_* functions."
