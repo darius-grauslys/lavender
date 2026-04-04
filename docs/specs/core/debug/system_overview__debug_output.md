@@ -164,12 +164,6 @@ debug and console output system:
 1. **All six debug functions** — `debug_info__verbose`,
    `debug_warning__verbose`, `debug_info`, `debug_warning`,
    `debug_error`, `debug_abort`.
-2. **`PLATFORM_pre_abort()`** — called by `debug_abort` before output.
-   Used for platform-specific cleanup.
-3. **`PLATFORM_abort()`** — called after `debug_abort` output to halt
-   execution.
-4. **`PLATFORM_coredump()`** — called by `debug_error` to create a
-   core dump if possible on the platform.
 
 Implementations must respect the `NDEBUG`, `NLOG`, and `VERBOSE`
 preprocessor flags as described above.

@@ -3,6 +3,13 @@
 ## Purpose
 
 The game action system is the engine's primary command/event mechanism.
+Whenever a state modifying interaction occurs, the implementation of that 
+exchange must be implemented as a game action if that state modification is
+observable by game clients. An example where a state modification is to be
+implemented as a game action is when a component of an entity is updated. 
+A counter example of this is when the component of a ui element is modified
+on a client's local game engine instance.
+
 All significant state mutations — entity spawning, hitbox updates, chunk
 loading, input relay, TCP handshake steps — are expressed as `Game_Action`
 instances that flow through a centralized dispatch pipeline. This pipeline

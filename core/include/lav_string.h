@@ -23,7 +23,7 @@ bool cstr_to_i16__limit_n(
             p_cstr, 
             limit_n,
             &value);
-    bool result = (bool)(value != 0);
+    bool result = (value != 0);
     if (result)
         *p_OUT_i16 = (i16)value;
     return result;
@@ -39,7 +39,7 @@ bool cstr_to_i8__limit_n(
             p_cstr, 
             limit_n,
             &value);
-    bool result = (bool)(value != 0);
+    bool result = (value != 0);
     if (result)
         *p_OUT_i8 = (i8)value;
     return result;
@@ -55,7 +55,7 @@ bool cstr_to_u16__limit_n(
             p_cstr, 
             limit_n,
             &value);
-    bool result = (bool)(value != 0);
+    bool result = (value != 0);
     if (result)
         *p_OUT_u16 = (u16)value;
     return result;
@@ -71,7 +71,7 @@ bool cstr_to_u8__limit_n(
             p_cstr, 
             limit_n,
             &value);
-    bool result = (bool)(value != 0);
+    bool result = (value != 0);
     if (result)
         *p_OUT_u8 = (u8)value;
     return result;
