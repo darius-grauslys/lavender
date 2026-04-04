@@ -1,0 +1,135 @@
+%% Module Topology: Raycast System
+%% Shows ownership hierarchy and relationships between raycast types.
+
+classDiagram
+    direction TB
+
+    class Ray__3i32F20 {
+        +Vector__3i32F20 ray_starting_vector__3i32F20
+        +Vector__3i32F20 ray_current_vector__3i32F20
+        +Degree__u9 angle_of__ray : 10
+        +Ray_Plane_Mode ray_plane_mode : 2
+        +get_ray() Ray__3i32F20
+        +get_ray_as__extension() Ray__3i32F20
+        +get_ray__out_of_bounds() Ray__3i32F20
+        +step_p_ray() void
+        +step_p_ray_until__next_whole_integer() void
+        +step_p_ray_until__next_tile() void
+        +is_ray__out_of_bouds() bool
+        +get_ray_endpoint_as__vector_3i32F4() Vector__3i32F4
+        +get_ray_endpoint_as__vector_3i32() Vector__3i32
+        +get_vector__3i32F20_wrt__p_ray_and_its_origin() Vector__3i32F20
+        +get_x_offset_i32F4_of__ray() i32F4
+        +get_y_offset_i32F4_of__ray() i32F4
+        +get_z_offset_i32F4_of__ray() i32F4
+        +is_p_ray_within__squared_length_i32() bool
+        +is_p_ray_within__squared_length_i32F4() bool
+        +get_squared_length_i32F4_of__ray() i32F4
+        +get_squared_length_i32F20_of__ray() i32F20
+    }
+
+    class Vector__3i32F20 {
+        +i32F20 x__i32F20
+        +i32F20 y__i32F20
+        +i32F20 z__i32F20
+    }
+
+    class Vector__3i32F4 {
+        +i32F4 x__i32F4
+        +i32F4 y__i32F4
+        +i32F4 z__i32F4
+    }
+
+    class Vector__3i32 {
+        +Signed_Index__i32 x__i32
+        +Signed_Index__i32 y__i32
+        +Signed_Index__i32 z__i32
+    }
+
+    class Degree__u9 {
+        <<typedef uint16_t>>
+        +ANGLE__0
+        +ANGLE__27_5
+        +ANGLE__45
+        +ANGLE__90
+        +ANGLE__180
+        +ANGLE__270
+        +ANGLE__360
+        +ANGLE__MASK
+        +ANGLE__OUT_OF_BOUNDS
+    }
+
+    class Ray_Plane_Mode {
+        <<enumeration>>
+        Ray_Plane_Mode__XY
+        Ray_Plane_Mode__XZ
+        Ray_Plane_Mode__YZ
+    }
+
+    class Path {
+        +Ray__3i32F20 leading_ray_of__path
+        +Vector__3i32 path_nodes__3i32[PATH_VECTORS_MAX_QUANTITY_OF]
+        +Degree__u9 obstruction_indicent_stack[PATH_VECTORS_MAX_QUANTITY_OF]
+    }
+
+    class Degree_Utilities {
+        <<module: degree.h>>
+        +get_angle_between__vectors_3i32() Degree__u9
+        +get_direction_from__angle() Direction__u8
+        +get_angle_from__direction() Degree__u9
+        +is_degree_u9__out_of_bounds() bool
+        +add_angles() Degree__u9
+        +subtract_angles() Degree__u9
+        +get_2i32F4_offset_from__angle() Vector__3i32F4
+        +get_2i32F20_offset_from__angle() Vector__3i32F20
+    }
+
+    class Vector_Utilities {
+        <<module: vectors.h>>
+        +vector_3i32F20_to__vector_3i32F4() Vector__3i32F4
+        +vector_3i32F20_to__vector_3i32() Vector__3i32
+        +vector_3i32F4_to__vector_3i32F20() Vector__3i32F20
+        +subtract_vectors__3i32F20() Vector__3i32F20
+        +is_vectors_3i32F20__out_of_bounds() bool
+        +is_vector_3i32F20_within__squared_distance_i32() bool
+        +is_vector_3i32F20_within__squared_distance_i32F4() bool
+        +get_distance_squared_of__vector_3i32F4() i32F4
+        +get_distance_squared_of__vector_3i32F20() i32F20
+    }
+
+    %% Ray__3i32F20 owns its vectors
+    Ray__3i32F20 *-- Vector__3i32F20 : ray_starting_vector__3i32F20
+    Ray__3i32F20 *-- Vector__3i32F20 : ray_current_vector__3i32F20
+
+    %% Ray__3i32F20 uses Degree__u9 and Ray_Plane_Mode
+    Ray__3i32F20 *-- Degree__u9 : angle_of__ray
+    Ray__3i32F20 *-- Ray_Plane_Mode : ray_plane_mode
+
+    %% Path owns a Ray
+    Path *-- Ray__3i32F20 : leading_ray_of__path
+    Path *-- "N" Vector__3i32 : path_nodes__3i32
+    Path *-- "N" Degree__u9 : obstruction_indicent_stack
+
+    %% Ray construction depends on Vector__3i32F4 input
+    Ray__3i32F20 ..> Vector__3i32F4 : get_ray() input / endpoint extraction
+
+    %% Ray endpoint extraction produces Vector__3i32
+    Ray__3i32F20 ..> Vector__3i32 : endpoint extraction
+
+    %% Ray extension produces new Ray from existing Ray
+    Ray__3i32F20 ..> Ray__3i32F20 : get_ray_as__extension()
+
+    %% Ray depends on Degree_Utilities for angle-to-offset conversion
+    Ray__3i32F20 ..> Degree_Utilities : angle offset / bounds checking
+
+    %% Ray depends on Vector_Utilities for conversions and distance
+    Ray__3i32F20 ..> Vector_Utilities : conversion / distance / bounds
+
+    %% Degree_Utilities produces vectors
+    Degree_Utilities ..> Vector__3i32F4 : get_2i32F4_offset_from__angle()
+    Degree_Utilities ..> Vector__3i32F20 : get_2i32F20_offset_from__angle()
+
+    %% Vector_Utilities converts between precisions
+    Vector_Utilities ..> Vector__3i32F4 : conversion target
+    Vector_Utilities ..> Vector__3i32F20 : conversion target
+    Vector_Utilities ..> Vector__3i32 : conversion target
