@@ -1,0 +1,230 @@
+%% Module Topology: Serialization System
+%% Shows ownership hierarchy and relationships between serialization types.
+
+classDiagram
+    direction TB
+
+    class Game {
+        +World *pM_world
+        +Gfx_Context gfx_context
+    }
+
+    class Serialization_Header {
+        +Quantity__u32 size_of__struct
+        +Identifier__u32 uuid
+        +initialize_serialization_header()
+        +initialize_serialization_header_for__deallocated_struct()
+        +initialize_serialization_header__contiguous_array()
+        +get_p_serialization_header_from__contigious_array() Serialization_Header*
+        +get_next_available_p_serialization_header() Serialization_Header*
+        +is_identifier_u32_matching__serialization_header() bool
+        +is_serialized_struct__deallocated() bool
+    }
+
+    class Serialization_Header__UUID_64 {
+        +Quantity__u32 size_of__struct
+        +Identifier__u64 uuid
+        +initialize_serialization_header__uuid_64()
+        +initialize_serialization_header_for__deallocated_struct__uuid_64()
+        +initialize_serialization_header__contiguous_array__uuid_64()
+        +get_p_serialization_header_from__contigious_array__uuid_64() Serialization_Header__UUID_64*
+        +get_next_available_p_serialization_header__uuid_64() Serialization_Header__UUID_64*
+        +is_identifier_u64_matching__serialization_header() bool
+        +is_serialized_struct__deallocated__uuid_64() bool
+    }
+
+    class Identifiers {
+        <<module>>
+        +get_random__uuid_u32(Repeatable_Psuedo_Random*) Identifier__u32
+        +get_random__uuid_u64(Repeatable_Psuedo_Random*) Identifier__u64
+        +merge_identifiers_u32(Identifier__u32, Quantity__u8, Identifier__u32) Identifier__u32
+        +is_identifier_u32__invalid(Identifier__u32) bool
+        +is_identifier_u64__invalid(Identifier__u64) bool
+    }
+
+    class Hashing {
+        <<module>>
+        +poll_for__uuid_collision() Index__u32
+        +poll_for__uuid_collision__uuid_64() Index__u32
+        +get_next_available__uuid_in__contiguous_array() Identifier__u32
+        +get_next_available__uuid_in__contiguous_array__uuid_64() Identifier__u64
+        +dehash_identitier_u32_in__contigious_array() Serialization_Header*
+        +dehash_identitier_u64_in__contigious_array() Serialization_Header__UUID_64*
+        +get_next_available__allocation_in__contiguous_array() Serialization_Header*
+        +get_next_available__allocation_in__contiguous_array__u64() Serialization_Header__UUID_64*
+        +allocate_serialization_header_with__this_uuid() Serialization_Header*
+        +allocate_serialization_header() Serialization_Header*
+        +allocate_serialization_header_with__uuid_branding() Serialization_Header*
+        +allocate_serialization_header_with__this_uuid__u64() Serialization_Header__UUID_64*
+        +allocate_serialization_header__u64() Serialization_Header__UUID_64*
+        +allocate_serialization_header_with__uuid_branding__u64() Serialization_Header__UUID_64*
+        +has_uuid_in__contiguous_array() bool
+        +has_uuid_in__contiguous_array__uuid_64() bool
+        +bound_uuid_to__contiguous_array() Identifier__u32
+        +bound_uuid_to__contiguous_array__uuid_64() Identifier__u32
+    }
+
+    class Serialization_Pool {
+        +Quantity__u32 quantity_of__pool_elements
+        +Quantity__u32 size_of__element
+        +Serialization_Header *p_headers
+        +initialize_serialization_pool()
+        +allocate_from__serialization_pool() Serialization_Header*
+        +release_from__serialization_pool()
+        +dehash_from__serialization_pool() Serialization_Header*
+        +allocate_by_hash_in__serialization_pool()
+    }
+
+    class Serialized_Field {
+        +Identifier__u32 identifier_for__serialized_field
+        +void *p_serialized_field__data
+        +Serialization_Header *p_serialized_field__serialization_header
+        +Entity *p_serialized_field__entity
+        +Inventory *p_serialized_field__inventory
+        +Item_Stack *p_serialized_field__item_stack
+        +Chunk *p_serialized_field__chunk
+        +initialize_serialized_field()
+        +initialize_serialized_field_as__unassigned()
+        +initialize_serialized_field_as__unlinked()
+        +link_serialized_field_against__contiguous_array() bool
+        +point_serialized_field_to__this_serialized_struct()
+        +is_serialized_field_matching__serialization_header() bool
+        +is_p_serialized_field__linked() bool
+    }
+
+    class Serialized_Item_Stack_Ptr {
+        <<typedef Serialized_Field>>
+    }
+
+    class Serialized_Inventory_Ptr {
+        <<typedef Serialized_Field>>
+    }
+
+    class Serialized_Entity_Ptr {
+        <<typedef Serialized_Field>>
+    }
+
+    class Serialized_Chunk_Ptr {
+        <<typedef Serialized_Field>>
+    }
+
+    class Serialization_Request {
+        +void *p_data
+        +Serialization_Header *p_serialization_header
+        +void *p_file_handler
+        +Quantity__u32 quantity_of__file_contents
+        +u8 *p_tcp_packet_destination
+        +u8 *pM_packet_bitmap
+        +Quantity__u16 quantity_of__bytes_in__destination
+        +Quantity__u16 quantity_of__tcp_packets__anticipated
+        +Serialization_Request_Flags serialization_request_flags
+        +initialize_serialization_request()
+        +activate_serialization_request() bool
+        +deactivate_serialization_request()
+    }
+
+    class Serialization_Request_Flags {
+        <<typedef u8>>
+        +SERIALZIATION_REQUEST_FLAG__IS_ALLOCATED
+        +SERIALZIATION_REQUEST_FLAG__IS_ACTIVE
+        +SERIALZIATION_REQUEST_FLAG__USE_SERIALIZER_OR_BUFFER
+        +SERIALIZATION_REQUEST_FLAG__READ_OR_WRITE
+        +SERIALIZATION_REQUEST_FLAG__KEEP_ALIVE
+        +SERIALIZATION_REQUEST_FLAG__IS_TCP_OR_IO
+    }
+
+    class Game_Directory {
+        <<module>>
+        +stat_game_data_file(Game*, char*) Index__u32
+        +save_game(Game*)
+        +append_path(IO_path, IO_path)
+    }
+
+    class PLATFORM_File_System_Context {
+        <<platform>>
+        +Serialization_Request serialization_requests[]
+        +PLATFORM_allocate_serialization_request()
+        +PLATFORM_release_serialization_request()
+        +PLATFORM_get_quantity_of__active_serialization_requests()
+    }
+
+    class Repeatable_Psuedo_Random {
+        <<external>>
+    }
+
+    %% Serialization_Header is embedded as first field of pooled structs
+    %% Representative consumers listed here
+    class Entity {
+        +Serialization_Header _serialization_header
+    }
+
+    class UI_Element {
+        +Serialization_Header _serialization_header
+    }
+
+    class Graphics_Window {
+        +Serialization_Header _serialization_header
+    }
+
+    class Game_Action {
+        +Serialization_Header _serialiation_header
+    }
+
+    class Chunk {
+        +Serialization_Header__UUID_64 _serialization_header
+    }
+
+    class Global_Space {
+        +Serialization_Header__UUID_64 _serialization_header
+    }
+
+    class Collision_Node {
+        +Serialization_Header__UUID_64 _serialization_header
+    }
+
+    %% Serialization_Header embedded in 32-bit UUID structs
+    Entity *-- Serialization_Header : first field
+    UI_Element *-- Serialization_Header : first field
+    Graphics_Window *-- Serialization_Header : first field
+    Game_Action *-- Serialization_Header : first field
+
+    %% Serialization_Header__UUID_64 embedded in 64-bit UUID structs
+    Chunk *-- Serialization_Header__UUID_64 : first field
+    Global_Space *-- Serialization_Header__UUID_64 : first field
+    Collision_Node *-- Serialization_Header__UUID_64 : first field
+
+    %% Identifiers generates UUIDs using randomizer
+    Identifiers --> Repeatable_Psuedo_Random : uses for UUID generation
+
+    %% Hashing depends on Serialization_Header for array operations
+    Hashing --> Serialization_Header : operates on contiguous arrays
+    Hashing --> Serialization_Header__UUID_64 : operates on contiguous arrays (64-bit)
+    Hashing --> Identifiers : uses for UUID generation and validation
+
+    %% Serialization_Pool wraps contiguous arrays and delegates to Hashing
+    Serialization_Pool *-- Serialization_Header : p_headers (backing array)
+    Serialization_Pool --> Hashing : delegates dehash and allocation
+
+    %% Serialized_Field contains a Serialization_Header (via union) and a data pointer
+    Serialized_Field *-- Serialization_Header : _serialization_header (union overlay)
+    Serialized_Field --> Serialization_Header : links against contiguous arrays
+
+    %% Typed aliases for Serialized_Field
+    Serialized_Item_Stack_Ptr ..|> Serialized_Field : typedef
+    Serialized_Inventory_Ptr ..|> Serialized_Field : typedef
+    Serialized_Entity_Ptr ..|> Serialized_Field : typedef
+    Serialized_Chunk_Ptr ..|> Serialized_Field : typedef
+
+    %% Serialization_Request references Serialization_Header and uses flags
+    Serialization_Request *-- Serialization_Request_Flags : serialization_request_flags
+    Serialization_Request --> Serialization_Header : p_serialization_header
+
+    %% PLATFORM_File_System_Context pools Serialization_Requests
+    PLATFORM_File_System_Context *-- "N" Serialization_Request : platform pool
+
+    %% Game_Directory depends on Game for save/load
+    Game_Directory --> Game : operates on
+    Game_Directory --> PLATFORM_File_System_Context : uses platform I/O
+
+    %% Serialization_Request lifecycle managed via platform context
+    Serialization_Request --> PLATFORM_File_System_Context : deactivate closes file/frees bitmap
