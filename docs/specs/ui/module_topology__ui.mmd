@@ -1,0 +1,290 @@
+%% Module Topology: UI System
+%% Shows ownership hierarchy and relationships between UI types.
+
+classDiagram
+    direction TB
+
+    class Game {
+        +Gfx_Context *p_gfx_context
+        +Hitbox_Context hitbox_context
+    }
+
+    class Gfx_Context {
+        +UI_Context ui_context
+        +UI_Tile_Map_Manager ui_tile_map_manager
+        +Graphics_Window_Manager graphics_window_manager
+        +Sprite_Context sprite_context
+        +Font_Manager font_manager
+        +PLATFORM_Gfx_Context *p_PLATFORM_gfx_context
+    }
+
+    class UI_Context {
+        +UI_Manager ui_managers[MAX_QUANTITY_OF__UI_MANAGERS]
+        +UI_Window_Record ui_window_record[Graphics_Window_Kind__Unknown]
+        +initialize_ui_context()
+        +allocate_p_ui_manager_from__ui_context()
+        +release_p_ui_manager_from__ui_context()
+        +get_p_ui_manager_by__uuid_from__ui_context()
+        +register_ui_window_into__ui_context()
+        +open_ui_window_with__this_uuid_and__parent_uuid()
+        +open_ui_window_with__this_uuid()
+        +open_ui_window()
+        +populate_window_with__ui()
+        +close_ui_window()
+    }
+
+    class UI_Window_Record {
+        +f_UI_Window__Load f_ui_window__load
+        +f_UI_Window__Close f_ui_window__close
+        +Signed_Quantity__i32 signed_quantity_of__sprites
+        +Signed_Quantity__i16 signed_quantity_of__ui_elements
+        +is_ui_window_record__valid() bool
+        +is_ui_window_record__allocating_a_sprite_pool() bool
+        +is_ui_window_record__using_parent_sprite_pool() bool
+    }
+
+    class UI_Manager {
+        +Serialization_Header _serialization_header
+        +UI_Element *pM_ui_element_pool
+        +UI_Element **pM_ptr_array_of__ui_elements
+        +Repeatable_Psuedo_Random randomizer
+        +UI_Element *p_ui_element__focused
+        +UI_Element **p_ptr_of__ui_element__latest_in_ptr_array
+        +Quantity__u16 max_quantity_of__ui_elements
+        +UI_Manager_Flags__u8 ui_manager_flags__u8
+        +initialize_ui_manager()
+        +allocate_ui_manager__members() bool
+        +release_ui_manager__members()
+        +allocate_ui_element_from__ui_manager() UI_Element*
+        +allocate_ui_element_from__ui_manager_as__child() UI_Element*
+        +allocate_many_ui_elements_from__ui_manager()
+        +allocate_many_ui_elements_from__ui_manager_in__succession() UI_Element*
+        +allocate_many_ui_elements_from__ui_manager_as__recursive_children() UI_Element*
+        +release__ui_element_from__ui_manager()
+        +release_all__ui_elements_from__ui_manager()
+        +poll_ui_manager__update()
+        +compose_all_ui_elements_in__ui_manager()
+        +render_all_ui_elements_in__ui_manager()
+        +foreach_ui_element_in__ui_manager()
+        +get_p_ui_element_by__uuid_from__ui_manager() UI_Element*
+        +is_ui_manager__dirty() bool
+        +set_ui_manager_as__dirty()
+        +set_ui_manager_as__NOT_dirty()
+    }
+
+    class UI_Manager_Flags__u8 {
+        <<typedef u8>>
+        +UI_MANAGER_FLAG__IS_DIRTY
+    }
+
+    class UI_Element {
+        +Serialization_Header _serialization_header
+        +m_UI_Clicked m_ui_clicked_handler
+        +m_UI_Dragged m_ui_dragged_handler
+        +m_UI_Dropped m_ui_dropped_handler
+        +m_UI_Receive_Drop m_ui_receive_drop_handler
+        +m_UI_Held m_ui_held_handler
+        +m_UI_Typed m_ui_typed_handler
+        +m_UI_Transformed m_ui_transformed_handler
+        +m_UI_Compose m_ui_compose_handler
+        +m_UI_Dispose m_ui_dispose_handler
+        +UI_Element *p_parent
+        +UI_Element *p_child
+        +UI_Element *p_next
+        +UI_Tile_Span ui_tile_span
+        +UI_Flags__u16 ui_flags
+        +UI_Element_Data ui_element_data
+        +enum UI_Element_Kind the_kind_of_ui_element__this_is
+        +initialize_ui_element()
+        +allocate_hitbox_for__ui_element()
+        +set_position_3i32_of__ui_element()
+        +set_ui_element__size()
+        +set_ui_element__hitbox()
+        +is_ui_element__enabled() bool
+        +is_ui_element__focused() bool
+        +is_ui_element__using_sprite() bool
+        +is_ui_element__using_ui_tile_span() bool
+    }
+
+    class UI_Element_Kind {
+        <<enumeration>>
+        UI_Element_Kind__Button
+        UI_Element_Kind__Draggable
+        UI_Element_Kind__Drop_Zone
+        UI_Element_Kind__Slider
+        UI_Element_Kind__Text
+        UI_Element_Kind__Text_Box
+        UI_Element_Kind__Window
+        UI_Element_Kind__Unknown
+    }
+
+    class UI_Flags__u16 {
+        <<typedef u16>>
+        +UI_FLAGS__BIT_IS_ENABLED
+        +UI_FLAGS__BIT_IS_FOCUSED
+        +UI_FLAGS__BIT_IS_NON_INTERACTIVE
+        +UI_FLAGS__BIT_IS_BEING_HELD
+        +UI_FLAGS__BIT_IS_BEING_DRAGGED
+        +UI_FLAGS__BIT_IS_SNAPPED_X_OR_Y_AXIS
+        +UI_FLAGS__BIT_IS_USING__SPRITE_OR_UI_TILE_SPAN
+        +UI_FLAGS__BIT_CUSTOM_0
+        +UI_FLAGS__BIT_CUSTOM_1
+        +UI_FLAGS__BIT_CUSTOM_2
+        +UI_FLAGS__BIT_CUSTOM_3
+    }
+
+    class UI_Button_Flags__u8 {
+        <<typedef u8>>
+        +UI_BUTTON_FLAGS__BIT_IS_TOGGLEABLE
+        +UI_BUTTON_FLAGS__BIT_IS_TOGGLED
+    }
+
+    class UI_Tile_Span {
+        +UI_Tile ui_tile__corners[4]
+        +UI_Tile ui_tile__edges[4]
+        +UI_Tile ui_tile__fill
+        +initialize_ui_tile_span_as__empty()
+        +initialize_ui_tile_span()
+        +get_ui_tile_of__ui_tile_span() const UI_Tile*
+    }
+
+    class UI_Tile {
+        +UI_Tile_Kind the_kind_of__ui_tile : 10
+        +UI_Tile_Flags ui_tile_flags : 6
+        +initialize_ui_tile_as__empty()
+        +initialize_ui_tile()
+        +get_ui_tile_raw_from__ui_tile() UI_Tile_Raw
+        +set_ui_tile_to__ui_tile_raw()
+    }
+
+    class UI_Tile_Map__Wrapper {
+        +UI_Tile_Raw *p_ui_tile_data
+        +Quantity__u32 width_of__ui_tile_map
+        +Quantity__u32 height_of__ui_tile_map
+        +UI_Tile_Map_Size catagory_size_of__ui_tile_map
+        +initialize_ui_tile_map__wrapper()
+        +generate_ui_span_in__ui_tile_map()
+        +fill_ui_tile_map()
+        +fill_ui_tile_map_in__this_region()
+        +copy_into_ui_tile_map()
+        +set_ui_tile_map__wrapper__utilized_size()
+        +is_ui_tile_map__wrapper__valid() bool
+    }
+
+    class UI_Tile_Map_Size {
+        <<enumeration>>
+        UI_Tile_Map_Size__None
+        UI_Tile_Map_Size__Small
+        UI_Tile_Map_Size__Medium
+        UI_Tile_Map_Size__Large
+        UI_Tile_Map_Size__Unknown
+    }
+
+    class UI_Tile_Map_Manager {
+        +UI_Tile_Map__Large ui_tile_maps__large[]
+        +UI_Tile_Map__Medium ui_tile_maps__medium[]
+        +UI_Tile_Map__Small ui_tile_maps__small[]
+        +initialize_ui_tile_map_manager()
+        +allocate_ui_tile_map_with__ui_tile_map_manager() UI_Tile_Map__Wrapper
+        +release_ui_tile_map_with__ui_tile_map_manager()
+    }
+
+    class Graphics_Window {
+        +Serialization_Header _serialization_header
+        +UI_Tile_Map__Wrapper ui_tile_map__wrapper
+        +Vector__3i32 origin_of__gfx_window
+        +Vector__3i32 position_of__gfx_window
+        +Quantity__u32 width_of__graphics_window__u32
+        +Quantity__u32 height_of__graphics_window__u32
+        +f_PLATFORM_render_gfx_window f_PLATFORM_compose_gfx_window
+    }
+
+    class Hitbox_AABB {
+        +Serialization_Header _serialization_header
+        +Vector__3i32F4 position__3i32F4
+        +Quantity__u32 width__quantity_u32
+        +Quantity__u32 height__quantity_u32
+    }
+
+    class Hitbox_AABB_Manager {
+        +get_p_hitbox_aabb_by__uuid_u32_from__hitbox_aabb_manager() Hitbox_AABB*
+    }
+
+    class Typer {
+        <<text layout engine>>
+    }
+
+    class Font {
+        <<font resource>>
+    }
+
+    class Sprite {
+        <<sprite resource>>
+    }
+
+    %% Ownership: Game owns Gfx_Context
+    Game *-- Gfx_Context : owns
+
+    %% Gfx_Context owns UI_Context, UI_Tile_Map_Manager
+    Gfx_Context *-- UI_Context : owns
+    Gfx_Context *-- UI_Tile_Map_Manager : owns
+
+    %% UI_Context owns UI_Manager pool and UI_Window_Record registry
+    UI_Context *-- "0..8" UI_Manager : ui_managers pool
+    UI_Context *-- "N" UI_Window_Record : ui_window_record registry
+
+    %% UI_Manager owns UI_Element pool
+    UI_Manager *-- "0..N" UI_Element : pM_ui_element_pool
+    UI_Manager *-- UI_Manager_Flags__u8 : ui_manager_flags__u8
+    UI_Manager --> UI_Element : p_ui_element__focused
+
+    %% UI_Element uses UI_Element_Kind discriminator
+    UI_Element *-- UI_Flags__u16 : ui_flags
+    UI_Element --> UI_Element_Kind : the_kind_of_ui_element__this_is
+
+    %% UI_Element tree structure (self-referential)
+    UI_Element --> UI_Element : p_parent
+    UI_Element --> UI_Element : p_child
+    UI_Element --> UI_Element : p_next
+
+    %% UI_Element contains UI_Tile_Span for tile-based rendering
+    UI_Element *-- UI_Tile_Span : ui_tile_span
+
+    %% UI_Element union: Button variant
+    UI_Element *-- UI_Button_Flags__u8 : ui_button_flags (union, Button)
+
+    %% UI_Element union: Slider variant
+    UI_Element --> "Vector__3i32" UI_Element : slider__spanning_length__3i32 (union, Slider)
+
+    %% UI_Element union: Text/Text_Box variant
+    UI_Element --> Typer : typer (union, Text/Text_Box)
+
+    %% UI_Element union: Window variant
+    UI_Element --> Graphics_Window : p_ui_window__graphics_window (union, Window)
+
+    %% UI_Tile_Span contains UI_Tile instances
+    UI_Tile_Span *-- "9" UI_Tile : corners + edges + fill
+
+    %% UI_Tile_Map__Wrapper references UI_Tile_Raw data
+    UI_Tile_Map__Wrapper --> UI_Tile_Map_Size : catagory_size_of__ui_tile_map
+
+    %% UI_Tile_Map_Manager pools tile maps of each size
+    UI_Tile_Map_Manager *-- UI_Tile_Map__Wrapper : allocates wrappers
+
+    %% Graphics_Window contains a UI_Tile_Map__Wrapper
+    Graphics_Window *-- UI_Tile_Map__Wrapper : ui_tile_map__wrapper
+
+    %% UI_Element spatial data is stored externally in Hitbox_AABB
+    UI_Element ..> Hitbox_AABB : UUID-based lookup
+    UI_Element ..> Hitbox_AABB_Manager : get_p_hitbox_aabb_of__ui_element
+
+    %% UI_Element rendering modes
+    UI_Element ..> Sprite : sprite mode (optional)
+    UI_Element ..> Font : text rendering (Text/Text_Box)
+
+    %% UI_Window_Record drives window lifecycle
+    UI_Window_Record ..> UI_Manager : load callback populates
+    UI_Window_Record ..> Graphics_Window : load callback targets
+
+    %% Platform compose reads tile map
+    Graphics_Window ..> UI_Tile_Map__Wrapper : f_PLATFORM_compose_gfx_window reads
