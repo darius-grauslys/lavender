@@ -2,9 +2,75 @@
 
 #include <process/tcp_game_action_process.c>
 
-#warning Please make tests for: /home/shalidor/Projects/Lavender/tests/core/source/process/test_suite_process_tcp_game_action_process.c
+void m_test_tcp_handler__noop(
+        Process *p_this_process,
+        Game *p_game) {
+    (void)p_this_process;
+    (void)p_game;
+}
 
-// Before writing any tests, please see the README
-// found in ./tests
+TEST_FUNCTION(initialize_tcp_receiver__fails_without_game_context) {
+    Process process;
+    Game_Action game_action;
+    Game game;
+    uint8_t buffer[256];
 
-DEFINE_SUITE(tcp_game_action_process, END_TESTS)
+    memset(&process, 0, sizeof(process));
+    memset(&game_action, 0, sizeof(game_action));
+    memset(&game, 0, sizeof(game));
+    memset(buffer, 0, sizeof(buffer));
+
+    initialize_process(
+            &process,
+            1,
+            m_test_tcp_handler__noop,
+            0,
+            PROCESS_PRIORITY__0_MAXIMUM,
+            PROCESS_FLAGS__NONE);
+
+    initialize_process_as__game_action_process(
+            &process,
+            &game_action);
+
+    bool result =
+        initialize_process_as__tcp_game_action_payload_receiver(
+                &game,
+                &process,
+                buffer,
+                sizeof(buffer));
+
+    munit_assert_false(result);
+
+    return MUNIT_OK;
+}
+
+TEST_FUNCTION(initialize_tcp_receiver__process_data_was_game_action) {
+    Process process;
+    Game_Action game_action;
+
+    memset(&process, 0, sizeof(process));
+    memset(&game_action, 0, sizeof(game_action));
+
+    initialize_process(
+            &process,
+            1,
+            m_test_tcp_handler__noop,
+            0,
+            PROCESS_PRIORITY__0_MAXIMUM,
+            PROCESS_FLAGS__NONE);
+
+    initialize_process_as__game_action_process(
+            &process,
+            &game_action);
+
+    munit_assert_ptr_equal(
+            process.p_process_data,
+            &game_action);
+
+    return MUNIT_OK;
+}
+
+DEFINE_SUITE(tcp_game_action_process,
+    INCLUDE_TEST__STATELESS(initialize_tcp_receiver__fails_without_game_context),
+    INCLUDE_TEST__STATELESS(initialize_tcp_receiver__process_data_was_game_action),
+    END_TESTS)
