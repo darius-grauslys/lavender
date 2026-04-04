@@ -1,0 +1,359 @@
+%% Module Topology: Game Action System
+%% Shows ownership hierarchy and relationships between game action types.
+
+classDiagram
+    direction TB
+
+    class Game {
+        +Game_Action_Logic_Table game_action_logic_table
+        +Process_Manager process_manager
+        +m_Game_Action_Handler m_game_action_handler__dispatch
+        +m_Game_Action_Handler m_game_action_handler__receive
+        +m_Game_Action_Handler m_game_action_handler__resolve
+        +dispatch_game_action()
+        +dispatch_game_action_to__server()
+        +receive_game_action()
+        +resolve_game_action()
+    }
+
+    class Client {
+        +Game_Action_Manager game_action_manager__inbound
+        +Game_Action_Manager game_action_manager__outbound
+        +Input input_of__client
+    }
+
+    class Game_Action_Manager {
+        +Game_Action game_actions[MAX_QUANTITY_OF__GAME_ACTIONS]
+        +Repeatable_Psuedo_Random repeatable_pseudo_random
+        +initialize_game_action_manager()
+        +allocate_game_action_from__game_action_manager() Game_Action*
+        +allocate_game_action_with__this_uuid_from__game_action_manager() Game_Action*
+        +allocate_as__copy_of__game_action_from__game_action_manager() Game_Action*
+        +allocate_as__copy_of__game_action_with__this_uuid_from__manager() Game_Action*
+        +release_game_action_from__game_action_manager() bool
+        +get_p_game_action_by__uuid_from__game_action_manager() Game_Action*
+    }
+
+    class Game_Action_Logic_Table {
+        +Game_Action_Logic_Entry game_action_logic_entries[Game_Action_Kind__Unknown]
+        +initialize_game_action_logic_table()
+        +get_p_game_action_logic_entry_by__game_action_kind() Game_Action_Logic_Entry*
+        +dispatch_game_action_process() Process*
+        +dispatch_game_action_process__outbound() Process*
+        +dispatch_game_action_process__inbound() Process*
+        +get_m_process__outbound_for__this_game_action_kind() m_Process
+        +get_m_process__inbound_for__this_game_action_kind() m_Process
+    }
+
+    class Game_Action_Logic_Entry {
+        +m_Process m_process_of__game_action__inbound
+        +m_Process m_process_of__game_action__outbound
+        +Game_Action_Flags game_action_flags__inbound
+        +Game_Action_Flags game_action_flags__inbound_mask
+        +Game_Action_Flags game_action_flags__outbound
+        +Game_Action_Flags game_action_flags__outbound_mask
+        +Process_Flags__u8 process_flags_of__game_action__outbound
+        +Process_Flags__u8 process_flags_of__game_action__inbound
+        +Process_Priority__u8 process_priority__u8
+        +initialize_game_action_logic_entry()
+        +initialize_game_action_logic_entry_as__process__out_and_in()
+        +initialize_game_action_logic_entry_as__process__out()
+        +initialize_game_action_logic_entry_as__process__in()
+        +initialize_game_action_logic_entry_as__react__out()
+        +initialize_game_action_logic_entry_as__react__in()
+        +initialize_game_action_logic_entry_as__message()
+        +initialize_game_action_logic_entry_as__broadcast__server()
+        +initialize_game_action_logic_entry_as__message_response()
+        +santize_game_action__inbound()
+        +santize_game_action__outbound()
+    }
+
+    class Game_Action {
+        +Serialization_Header _serialiation_header
+        +Identifier__u32 uuid_of__client__u32
+        +Identifier__u32 uuid_of__game_action__responding_to
+        +Vector__3i32F4 vector_3i32F4__broadcast_point
+        +Game_Action_Kind the_kind_of_game_action__this_action_is
+        +Game_Action_Flags game_action_flags
+        +initialize_game_action()
+        +set_the_kind_of__game_action()
+        +get_kind_of__game_action() Game_Action_Kind
+        +get_client_uuid_from__game_action() Identifier__u32
+        +get_response_uuid_from__game_action() Identifier__u32
+        +is_game_action__allocated() bool
+        +is_game_action__inbound() bool
+        +is_game_action__with_process() bool
+        +is_game_action__local() bool
+        +is_game_action__broadcasted() bool
+        +is_game_action__bad_request() bool
+    }
+
+    class Game_Action_Flags {
+        <<typedef u8>>
+        +BIT_IS_ALLOCATED
+        +BIT_IS_IN_OR__OUT_BOUND
+        +BIT_IS_WITH_PROCESS
+        +BIT_IS_PROCESSED_ON_INVOCATION_OR_RESPONSE
+        +BIT_IS_RESPONSE
+        +BIT_IS_LOCAL
+        +BIT_IS_BROADCASTED
+        +BIT_IS_BAD_REQUEST
+    }
+
+    class Game_Action_Kind {
+        <<enumeration>>
+        Game_Action_Kind__None
+        Game_Action_Kind__Bad_Request
+        Game_Action_Kind__TCP_Connect__Begin
+        Game_Action_Kind__TCP_Connect
+        Game_Action_Kind__TCP_Connect__Reject
+        Game_Action_Kind__TCP_Connect__Accept
+        Game_Action_Kind__TCP_Disconnect
+        Game_Action_Kind__TCP_Delivery
+        Game_Action_Kind__Global_Space__Request
+        Game_Action_Kind__Global_Space__Resolve
+        Game_Action_Kind__Global_Space__Store
+        Game_Action_Kind__Entity__Spawn
+        Game_Action_Kind__Entity__Get
+        Game_Action_Kind__Hitbox__Set_Position
+        Game_Action_Kind__Input
+        Game_Action_Kind__World__Load_World
+        Game_Action_Kind__World__Load_Client
+    }
+
+    class Game_Action_Registrar {
+        <<implemented>>
+        +register_game_actions__offline()
+        +register_game_actions__client()
+        +register_game_actions__server()
+    }
+
+    class Process {
+        +void *p_process_data
+        +m_Process m_process_handler
+        +Process_Priority__u8 process_priority__u8
+        +Process_Flags__u8 process_flags
+        +fail_process()
+        +complete_process()
+    }
+
+    class Process_Manager {
+        +allocate_process() Process*
+    }
+
+    class Serialization_Request {
+        +void *p_data
+        +Serialization_Header *p_serialization_header
+        +void *p_file_handler
+        +Quantity__u32 quantity_of__file_contents
+    }
+
+    %% -- TCP Action Kinds --
+
+    class GA_TCP_Connect__Begin {
+        <<Game_Action payload>>
+        +IPv4_Address ga_kind__tcp_connect__begin__ipv4_address
+        +Session_Token ga_kind__tcp_connect__begin__session_token
+        +initialize_game_action_for__tcp_connect__begin()
+        +dispatch_game_action__connect__begin()
+        +register_game_action__tcp_connect__begin()
+    }
+
+    class GA_TCP_Connect {
+        <<Game_Action payload>>
+        +Identifier__u64 ga_kind__tcp_connect__session_token
+        +initialize_game_action_for__tcp_connect()
+        +dispatch_game_action__connect()
+        +receive_game_action__connect()
+        +register_game_action__tcp_connect()
+    }
+
+    class GA_TCP_Connect__Accept {
+        <<Game_Action payload>>
+        +initialize_game_action_for__tcp_connect__accept()
+        +dispatch_game_action__connect__accept()
+        +register_game_action__tcp_connect__accept()
+    }
+
+    class GA_TCP_Connect__Reject {
+        <<Game_Action payload>>
+        +initialize_game_action_for__tcp_connect__reject()
+        +dispatch_game_action__connect__reject()
+        +register_game_action__tcp_connect__reject()
+    }
+
+    class GA_TCP_Delivery {
+        <<Game_Action payload>>
+        +u8 ga_kind__tcp_delivery__payload[PAYLOAD_SIZE]
+        +Quantity__u16 ga_kind__tcp_delivery__packet_index
+        +initialize_game_action_for__tcp_delivery()
+        +dispatch_game_action__tcp_delivery()
+        +register_game_action__tcp_delivery()
+    }
+
+    %% -- Global Space Action Kinds --
+
+    class GA_Global_Space__Request {
+        <<Game_Action payload>>
+        +Global_Space_Vector__3i32 ga_kind__global_space__request__gsv_3i32
+        +TCP_PAYLOAD_BITMAP ga_kind__global_space__request__chunk_payload_bitmap
+        +Timer__u32 ga_kind__global_space__request__timeout
+        +initialize_game_action_for__global_space__request()
+        +dispatch_game_action__global_space__request()
+        +register_game_action__global_space__request_for__client()
+        +register_game_action__global_space__request_for__server()
+        +register_game_action__global_space__request_for__offline()
+    }
+
+    class GA_Global_Space__Resolve {
+        <<Game_Action payload>>
+        +Global_Space_Vector__3i32 ga_kind__global_space__resolve__gsv__3i32
+        +initialize_game_action_for__global_space__resolve()
+        +dispatch_game_action__global_space__resolve()
+        +register_game_action__global_space__resolve()
+    }
+
+    class GA_Global_Space__Store {
+        <<Game_Action payload>>
+        +Global_Space_Vector__3i32 ga_kind__global_space__store__gsv__3i32
+        +initialize_game_action_for__global_space__store()
+        +dispatch_game_action__global_space__store()
+        +register_game_action__global_space__store()
+    }
+
+    %% -- Entity Action Kinds --
+
+    class GA_Entity__Spawn {
+        <<Game_Action payload>>
+        +Identifier__u32 ga_kind__entity__uuid
+        +Entity_Kind ga_kind__entity__the_kind_of__entity
+        +initialize_game_action_for__entity__spawn()
+        +dispatch_game_action__entity__spawn()
+        +broadcast_game_action__entity__spawn()
+        +register_game_action__entity__spawn_for__server()
+        +register_game_action__entity__spawn_for__client()
+    }
+
+    class GA_Entity__Get {
+        <<Game_Action payload>>
+        +Identifier__u32 ga_kind__entity__uuid
+        +TCP_PAYLOAD_BITMAP ga_kind__entity__get__entity_data_payload_bitmap
+        +initialize_game_action_for__entity__get()
+        +dispatch_game_action__entity__get()
+        +register_game_action__entity__get_for__server()
+        +register_game_action__entity__get_for__client()
+    }
+
+    %% -- Hitbox Action Kind --
+
+    class GA_Hitbox__Set_Position {
+        <<Game_Action payload>>
+        +Identifier__u32 ga_kind__hitbox__uuid_of__target
+        +Vector__3i32F4 ga_kind__hitbox__position__3i32F4
+        +Vector__3i32F4 ga_kind__hitbox__velocity__3i32F4
+        +Vector__3i16F8 ga_kind__hitbox__acceleration__3i16F8
+        +Hitbox_Kind ga_kind__hitbox__the_kind_of__hitbox
+        +initialize_game_action_for__hitbox()
+        +dispatch_game_action__hitbox()
+        +register_game_action__hitbox_for__server()
+        +register_game_action__hitbox_for__client()
+        +register_game_action__hitbox_for__offline()
+    }
+
+    class GA_Hitbox__AABB_Process {
+        <<inline process handler>>
+        +m_process__game_action__hitbox__aabb()
+    }
+
+    %% -- Input Action Kind --
+
+    class GA_Input {
+        <<Game_Action payload>>
+        +Input ga_kind__input__input
+        +initialize_game_action_for__input()
+        +dispatch_game_action__input()
+        +register_game_action__input_for__server()
+        +register_game_action__input_for__client()
+        +register_game_action__input_for__offline()
+    }
+
+    %% -- World Action Kinds --
+
+    class GA_World__Load_World {
+        <<Game_Action payload>>
+        +Identifier__u32 ga_kind__world__load_world__uuid_of__client__u32
+        +initialize_game_action_for__world__load_world()
+        +dispatch_game_action__world__load_world()
+        +register_game_action__world__load_world()
+    }
+
+    class GA_World__Load_Client {
+        <<Game_Action payload>>
+        +Identifier__u32 ga_kind__world__load_world__uuid_of__client__u32
+        +initialize_game_action_for__world__load_client()
+        +dispatch_game_action__world__load_client()
+        +register_game_action__world__load_client()
+    }
+
+    %% -- Bad Request Action Kind --
+
+    class GA_Bad_Request {
+        <<Game_Action payload>>
+        +u32 ga_kind__bad_request__request_error_code
+        +initialize_game_action_for__bad_request()
+        +dispatch_game_action__bad_request()
+        +register_game_action__bad_request()
+    }
+
+    %% ===== Ownership Relationships =====
+
+    %% Game owns the logic table and process manager
+    Game *-- Game_Action_Logic_Table : owns
+    Game *-- Process_Manager : owns
+
+    %% Client owns two Game_Action_Managers
+    Client *-- "2" Game_Action_Manager : inbound + outbound
+
+    %% Game_Action_Manager owns a pool of Game_Actions
+    Game_Action_Manager *-- "MAX_QUANTITY_OF__GAME_ACTIONS" Game_Action : game_actions pool
+
+    %% Game_Action_Logic_Table owns entries indexed by kind
+    Game_Action_Logic_Table *-- "Game_Action_Kind__Unknown" Game_Action_Logic_Entry : indexed by kind
+
+    %% Game_Action composition
+    Game_Action *-- Game_Action_Flags : game_action_flags
+    Game_Action *-- Game_Action_Kind : the_kind_of_game_action__this_action_is
+
+    %% Game_Action_Logic_Entry references m_Process handlers
+    Game_Action_Logic_Entry --> Process : spawns via dispatch
+
+    %% Process references Game_Action as process data
+    Process --> Game_Action : p_process_data
+
+    %% ===== Registrar populates the logic table =====
+    Game_Action_Registrar ..> Game_Action_Logic_Table : populates entries
+
+    %% ===== Payload kind classes are union members of Game_Action =====
+    Game_Action --> GA_TCP_Connect__Begin : union payload
+    Game_Action --> GA_TCP_Connect : union payload
+    Game_Action --> GA_TCP_Connect__Accept : union payload
+    Game_Action --> GA_TCP_Connect__Reject : union payload
+    Game_Action --> GA_TCP_Delivery : union payload
+    Game_Action --> GA_Global_Space__Request : union payload
+    Game_Action --> GA_Global_Space__Resolve : union payload
+    Game_Action --> GA_Global_Space__Store : union payload
+    Game_Action --> GA_Entity__Spawn : union payload
+    Game_Action --> GA_Entity__Get : union payload
+    Game_Action --> GA_Hitbox__Set_Position : union payload
+    Game_Action --> GA_Input : union payload
+    Game_Action --> GA_World__Load_World : union payload
+    Game_Action --> GA_World__Load_Client : union payload
+    Game_Action --> GA_Bad_Request : union payload
+
+    %% ===== Hitbox AABB process handler =====
+    GA_Hitbox__Set_Position ..> GA_Hitbox__AABB_Process : registered as m_Process for AABB
+
+    %% ===== TCP Delivery used by multi-packet transfers =====
+    GA_TCP_Delivery ..> Serialization_Request : fragment reassembly
+    GA_Global_Space__Request ..> GA_TCP_Delivery : chunk data via fragments
+    GA_Entity__Get ..> GA_TCP_Delivery : entity data via fragments
