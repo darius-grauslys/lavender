@@ -32,7 +32,7 @@ precedence because the game's include path is searched before core's.
 ## Dependencies
 
 - `platform_defines.h` (included first, provides platform-specific overrides
-  from the backend such as NDS, SDL, or no_gui)
+  from the backend)
 
 ## Include Chain
 
@@ -198,7 +198,7 @@ value:
 
 The override chain is (highest priority first):
 
-1. `platform_defines.h` (backend-specific, e.g. NDS memory constraints)
+1. `platform_defines.h` (platform-specific, provided by the backend)
 2. `config/implemented/engine_config.h` (this file, game-specific)
 3. `platform_defaults.h` (engine defaults, lowest priority)
 
@@ -239,8 +239,8 @@ silently due to broken `MASK(n)` logic. All TCP-dependent systems
 
 Many of these constants directly control pool sizes that are allocated
 statically or at initialization. Increasing pool sizes increases memory
-usage proportionally. On memory-constrained platforms (e.g. Nintendo DS),
-be conservative with:
+usage proportionally. On memory-constrained platforms, be conservative
+with:
 
 - `MAX_QUANTITY_OF__ENTITIES` (each entity contains `Entity_Data`)
 - `QUANTITY_OF__GLOBAL_SPACE` (each contains a full `Chunk`)

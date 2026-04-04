@@ -1,0 +1,170 @@
+%% Module Topology: Configuration System
+%% Shows the include chain and override precedence for engine compile-time constants.
+%% Core-only: all platform-specific details are behind platform_defines.h.
+
+classDiagram
+    direction TB
+
+    class platform_defaults_h {
+        <<header>>
+        Applies #ifndef guarded defaults
+        for all engine constants.
+        Enforces compile-time constraints.
+    }
+
+    class engine_config_h {
+        <<template header>>
+        Game-specific overrides.
+        Copied to game project by
+        tools/lav_new_project.
+        All #defines commented out
+        by default.
+    }
+
+    class platform_defines_h {
+        <<header>>
+        Platform-specific overrides.
+        Highest priority in the
+        override chain.
+    }
+
+    class Filesystem_Constants {
+        <<constant group>>
+        +MAX_LENGTH_OF__IO_PATH : 128
+        +PATH_SEPERATOR : '/'
+    }
+
+    class Process_Constants {
+        <<constant group>>
+        +PROCESS_MAX_QUANTITY_OF : 512
+    }
+
+    class Game_Action_Constants {
+        <<constant group>>
+        +MAX_QUANTITY_OF__GAME_ACTIONS : 512
+    }
+
+    class TCP_Constants {
+        <<constant group>>
+        +MAX_QUANTITY_OF__TCP_SOCKETS : 1
+        +MAX_SIZE_OF__TCP_PACKET : BIT(9)
+        +MAX_QUANTITY_OF__TCP_PACKETS_PER__SOCKET : BIT(8)
+        +TCP_ERROR__DESTINATION_OVERFLOW : -1
+        +TCP_ERROR__QUEUE_FULL : -2
+    }
+
+    class Camera_Constants {
+        <<constant group>>
+        +CAMERA_FULCRUM__WIDTH : 256
+        +CAMERA_FULCRUM__HEIGHT : 196
+    }
+
+    class Texture_Constants {
+        <<constant group>>
+        +MAX_QUANTITY_OF__TEXTURES : 128
+    }
+
+    class Rendering_Constants {
+        <<constant group>>
+        +GFX_CONTEXT__RENDERING_WIDTH__IN_CHUNKS : 4
+        +GFX_CONTEXT__RENDERING_HEIGHT__IN_CHUNKS : 3
+        +GFX_CONTEXT__RENDERING_DEPTH__IN_CHUNKS : 1
+    }
+
+    class Tile_Constants {
+        <<constant group>>
+        +TILE__WIDTH_AND__HEIGHT__BIT_SHIFT : 3
+        +TILE__WIDTH_AND__HEIGHT_IN__PIXELS : derived
+    }
+
+    class Chunk_Constants {
+        <<constant group>>
+        +CHUNK__WIDTH_AND__HEIGHT__BIT_SHIFT : 3
+        +CHUNK__DEPTH__BIT_SHIFT : 1
+        +CHUNK__WIDTH : derived
+        +CHUNK__HEIGHT : derived
+        +CHUNK__DEPTH : derived
+        +CHUNK__QUANTITY_OF__TILES : derived
+    }
+
+    class Local_Space_Constants {
+        <<constant group>>
+        +LOCAL_SPACE__WIDTH_AND__HEIGHT_IN__TILES__BIT_SHIFT : 3
+        +LOCAL_SPACE__WIDTH_AND__HEIGHT_IN__PIXELS__BIT_SHIFT : derived
+        +LOCAL_SPACE_MANAGER__WIDTH : 8
+        +LOCAL_SPACE_MANAGER__HEIGHT : 8
+        +LOCAL_SPACE_MANAGER__DEPTH : 1
+        +VOLUME_OF__LOCAL_SPACE_MANAGER : derived
+    }
+
+    class Multiplayer_Constants {
+        <<constant group>>
+        +MAX_QUANTITY_OF__CLIENTS : 4
+        +QUANTITY_OF__GLOBAL_SPACE : derived
+    }
+
+    class Entity_Constants {
+        <<constant group>>
+        +MAX_QUANTITY_OF__ENTITIES : 128
+    }
+
+    class Sprite_Constants {
+        <<constant group>>
+        +MAX_QUANTITY_OF__SPRITES : 256
+    }
+
+    class Input_Constants {
+        <<constant group>>
+        +QUANTITY_OF__INPUTS : 14
+        +INPUT_CODE_* : sequential from 0
+        +INPUT_* : bit flags from BIT(0)
+    }
+
+    class UI_Tile_Map_Constants {
+        <<constant group>>
+        +UI_TILE__WIDTH_AND__HEIGHT__BIT_SHIFT : 3
+        +UI_TILE__WIDTH_AND__HEIGHT_IN__PIXELS : derived
+        +UI_TILE_MAP__SMALL__MAX_QUANTITY_OF : 32
+        +UI_TILE_MAP__MEDIUM__MAX_QUANTITY_OF : 16
+        +UI_TILE_MAP__LARGE__MAX_QUANTITY_OF : 8
+    }
+
+    class Graphics_Window_Constants {
+        <<constant group>>
+        +PLATFORM__GFX_WINDOW__MAX_QUANTITY_OF : 1
+    }
+
+    %% Include chain (override precedence: platform_defines > engine_config > platform_defaults)
+    platform_defaults_h --> engine_config_h : includes first
+    engine_config_h --> platform_defines_h : includes first
+
+    %% platform_defaults.h produces all constant groups via #ifndef guards
+    platform_defaults_h ..> Filesystem_Constants : #ifndef guarded default
+    platform_defaults_h ..> Process_Constants : #ifndef guarded default
+    platform_defaults_h ..> Game_Action_Constants : #ifndef guarded default
+    platform_defaults_h ..> TCP_Constants : #ifndef guarded default
+    platform_defaults_h ..> Camera_Constants : #ifndef guarded default
+    platform_defaults_h ..> Texture_Constants : #ifndef guarded default
+    platform_defaults_h ..> Rendering_Constants : #ifndef guarded default
+    platform_defaults_h ..> Tile_Constants : #ifndef guarded default
+    platform_defaults_h ..> Chunk_Constants : #ifndef guarded default
+    platform_defaults_h ..> Local_Space_Constants : #ifndef guarded default
+    platform_defaults_h ..> Multiplayer_Constants : #ifndef guarded default
+    platform_defaults_h ..> Entity_Constants : #ifndef guarded default
+    platform_defaults_h ..> Sprite_Constants : #ifndef guarded default
+    platform_defaults_h ..> Input_Constants : #ifndef guarded default
+    platform_defaults_h ..> UI_Tile_Map_Constants : #ifndef guarded default
+    platform_defaults_h ..> Graphics_Window_Constants : #ifndef guarded default
+
+    %% Derivation relationships
+    Tile_Constants ..> Chunk_Constants : CHUNK__WIDTH derived from TILE shift
+    Chunk_Constants ..> Local_Space_Constants : LOCAL_SPACE derived from CHUNK dims
+    Local_Space_Constants ..> Multiplayer_Constants : QUANTITY_OF__GLOBAL_SPACE derived
+    Rendering_Constants ..> Local_Space_Constants : compile-time constraint
+
+    %% Notes
+    note for engine_config_h "Template file. Copied to game project\nby tools/lav_new_project.\nAll #defines commented out by default.\nUncomment to override."
+
+    note for platform_defines_h "Provided by the platform backend.\nHighest override priority.\nOpaque to core specs."
+
+    note for TCP_Constants "MAX_SIZE_OF__TCP_PACKET MUST be BIT(n).\nMAX_QUANTITY_OF__TCP_PACKETS_PER__SOCKET\nMUST be power of 2."
