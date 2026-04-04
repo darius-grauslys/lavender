@@ -8,8 +8,8 @@ used throughout core and platform backends for development-time
 instrumentation.
 
 All functions in this header are **platform-implemented** — core declares
-them but does not define them. Each backend (NDS, SDL, no_gui) provides
-its own implementation. The reference implementation in
+them but does not define them. Each backend provides its own
+implementation. The reference implementation in
 `core/source/debug/debug.c` targets POSIX terminals with ANSI color codes.
 
 All debug print helpers append a trailing newline automatically.
@@ -220,12 +220,9 @@ When implementing a new backend, the following must be provided:
    `debug_warning__verbose`, `debug_info`, `debug_warning`,
    `debug_error`, `debug_abort`.
 2. **`PLATFORM_pre_abort()`** — called by `debug_abort` before output.
-   Used for platform-specific cleanup (e.g. NDS initializes the debug
-   sub-screen in its implementation).
+   Used for platform-specific cleanup.
 3. **`PLATFORM_abort()`** — called after `debug_abort` output to
-   actually halt execution. Platform backends implement this as
-   `abort()` (no_gui, SDL, tests) or a deliberate crash
-   (`*(uint32_t*)8192 = 100` on NDS).
+   actually halt execution.
 4. **`PLATFORM_coredump()`** — called by `debug_error` to create a
    core dump if possible on the platform.
 

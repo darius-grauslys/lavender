@@ -1,0 +1,53 @@
+%% Module Topology: Debug & Console Output System
+%% Shows the relationship between debug logging and console output types.
+
+classDiagram
+    direction TB
+
+    class Console {
+        <<struct>>
+        +(empty - platform extensible)
+    }
+
+    class DebugFunctions {
+        <<functions>>
+        +debug_info__verbose(const char *msg_fmt, ...) void
+        +debug_warning__verbose(const char *msg_fmt, ...) void
+        +debug_info(const char *msg_fmt, ...) void
+        +debug_warning(const char *msg_fmt, ...) void
+        +debug_error(const char *msg_fmt, ...) void
+        +debug_abort(const char *msg_fmt, ...) void
+    }
+
+    class ConsoleFunctions {
+        <<functions>>
+        +print_console(const char *str) void
+        +clear_console() void
+    }
+
+    class CompilationFlags {
+        <<preprocessor>>
+        +NDEBUG : disables debug output
+        +NLOG : suppresses all log output
+        +VERBOSE : enables verbose variants
+    }
+
+    class PLATFORM_Functions {
+        <<platform-implemented>>
+        +PLATFORM_pre_abort() void
+        +PLATFORM_abort() void
+        +PLATFORM_coredump() void
+    }
+
+    %% Debug functions are controlled by compilation flags
+    CompilationFlags ..> DebugFunctions : controls output visibility
+
+    %% Debug error/abort functions depend on platform hooks
+    DebugFunctions --> PLATFORM_Functions : debug_error calls PLATFORM_coredump
+    DebugFunctions --> PLATFORM_Functions : debug_abort calls PLATFORM_pre_abort + PLATFORM_abort
+
+    %% Console functions are unconditional - no flag dependency
+    ConsoleFunctions --> Console : operates on console surface
+
+    %% Both are text output but independent
+    DebugFunctions .. ConsoleFunctions : both provide text output\nbut are independent systems
