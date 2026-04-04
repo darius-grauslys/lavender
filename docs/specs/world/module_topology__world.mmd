@@ -1,0 +1,345 @@
+%% Module Topology: World System
+%% Shows ownership hierarchy and relationships between world types.
+
+classDiagram
+    direction TB
+
+    class Game {
+        +World *pM_world
+    }
+
+    class World {
+        +Serialization_Header _serialization_header
+        +Region_Manager region_manager
+        +Entity_Manager entity_manager
+        +Global_Space_Manager global_space_manager
+        +Collision_Node_Pool collision_node_pool
+        +Chunk_Pool chunk_pool
+        +Structure_Manager structure_manager
+        +Tile_Logic_Table tile_logic_table
+        +Chunk_Generator_Table chunk_generator_table
+        +Repeatable_Psuedo_Random repeatable_pseudo_random
+        +Inventory_Manager inventory_manager
+        +Item_Manager item_manager
+        +Camera camera
+        +f_Tile_Render_Kernel f_tile_render_kernel
+        +World_Name_String name
+        +Vector__3i32F4 spawn_point
+        +f_Hitbox_AABB_Tile_Touch_Handler f_hitbox_aabb_tile_touch_handler
+        +f_Hitbox_AABB_Collision_Handler f_hitbox_aabb_collision_handler
+        +Graphics_Window *p_graphics_window_for__world
+        +Quantity__u8 length_of__world_name
+        +initialize_world()
+        +manage_world()
+        +manage_world__entities()
+        +allocate_entity_into__world() Entity*
+        +poll_world_for__scrolling() bool
+        +save_world()
+        +load_world() Process*
+        +poll_for_collision_node_update() bool
+        +set_name_of__world()
+    }
+
+    class Camera {
+        +Vector__3i32F4 position
+        +m_Camera_Handler m_camera_handler
+        +Quantity__u32 width_of__fulcrum
+        +Quantity__u32 height_of__fulcrum
+        +i32F20 z_near
+        +i32F20 z_far
+        +Identifier__u32 uuid_of__target__u32
+        +initialize_camera()
+        +initialize_camera_as__inactive()
+        +m_camera_handler__default()
+        +m_camera_handler__follow__default()
+        +is_camera__active() bool
+        +is_position_within__camera_fulcrum() bool
+        +set_camera_to__follow()
+    }
+
+    class Region_Manager {
+        +Region regions[REGION_MAX_QUANTITY_OF]
+        +Region_Vector__3i32 center_of__region_manager
+        +initialize_region_manager()
+        +set_center_of__region_manager()
+    }
+
+    class Region {
+        +Serialization_Header _serialization_header
+        +u8 bitmap_of__serialized_chunks[]
+        +u8 bitmap_of__sites[]
+        +is_tile_position_within__region() bool
+        +is_structure_within__region() bool
+        +get_region_that__this_global_space_is_in() Region_Vector__3i32
+        +m_process__serialize_region()
+        +m_process__deserialize_region()
+        +truncate_p_chunk_vector_3i32_to__region()
+    }
+
+    class Global_Space_Manager {
+        +Global_Space global_spaces[QUANTITY_OF__GLOBAL_SPACE]
+        +f_Global_Space__Dispose_Handler f_global_space__dispose_handler
+        +initialize_global_space_manager()
+        +allocate_global_space_in__global_space_manager() Global_Space*
+        +release_global_space()
+        +release_global_space_in__global_space_manager()
+        +get_p_global_space_from__global_space_manager() Global_Space*
+        +get_p_tile_from__global_space_manager() Tile*
+        +hold_global_space_within__global_space_manager() Global_Space*
+        +drop_global_space_within__global_space_manager()
+        +get_uuid_for__global_space() Identifier__u64
+    }
+
+    class Global_Space {
+        +Serialization_Header__UUID_64 _serialization_header
+        +Chunk_Vector__3i32 chunk_vector__3i32
+        +Chunk *p_chunk
+        +Collision_Node *p_collision_node
+        +Process *p_generation_process
+        +Quantity__u16 quantity_of__references
+        +Global_Space_Flags__u8 global_space_flags__u8
+        +initialize_global_space()
+        +initialize_global_space_as__allocated()
+        +hold_global_space()
+        +drop_global_space() bool
+        +is_global_space__allocated() bool
+        +is_global_space__active() bool
+        +is_global_space__constructing() bool
+        +is_global_space__deconstructing() bool
+        +is_global_space__dirty() bool
+    }
+
+    class Global_Space_Flags__u8 {
+        <<typedef u8>>
+        +GLOBAL_SPACE_FLAG__IS_CONSTRUCTING
+        +GLOBAL_SPACE_FLAG__IS_DECONSTRUCTING
+        +GLOBAL_SPACE_FLAG__IS_AWAITING__CONSTRUCTION
+        +GLOBAL_SPACE_FLAG__IS_AWAITING__DECONSTRUCTION
+        +GLOBAL_SPACE_FLAG__IS_DIRTY
+    }
+
+    class Local_Space_Manager {
+        +Local_Space local_spaces[VOLUME_OF__LOCAL_SPACE_MANAGER]
+        +Vector__3i32 center_of__local_space_manager__3i32
+        +Local_Space *p_local_space__north_west
+        +Local_Space *p_local_space__north_east
+        +Local_Space *p_local_space__south_west
+        +Local_Space *p_local_space__south_east
+        +Local_Space *p_local_space__north_west__top
+        +Local_Space *p_local_space__north_east__top
+        +Local_Space *p_local_space__south_west__top
+        +Local_Space *p_local_space__south_east__top
+        +initialize_local_space_manager()
+        +set_center_of__local_space_manager()
+        +move_local_space_manager()
+        +poll_local_space_for__scrolling()
+        +get_p_local_space_from__local_space_manager() Local_Space*
+        +get_p_tile_by__3i32F4_from__local_space_manager() Tile*
+        +is_local_space_manager__loaded() bool
+    }
+
+    class Local_Space {
+        +Global_Space_Vector__3i32 global_space__vector__3i32
+        +Global_Space *p_global_space
+        +Local_Space *p_local_space__north
+        +Local_Space *p_local_space__east
+        +Local_Space *p_local_space__south
+        +Local_Space *p_local_space__west
+        +Local_Space *p_local_space__above
+        +Local_Space *p_local_space__below
+        +initialize_local_space()
+        +set_neighbors_of__local_space()
+        +is_local_space__allocated() bool
+        +is_local_space__active() bool
+    }
+
+    class Chunk_Pool {
+        +Chunk chunks[QUANTITY_OF__GLOBAL_SPACE]
+        +initialize_chunk_pool()
+        +allocate_chunk_from__chunk_pool() Chunk*
+        +release_chunk_from__chunk_pool()
+    }
+
+    class Chunk {
+        +Serialization_Header__UUID_64 _serialization_header
+        +Chunk_Flags chunk_flags
+        +Tile tiles[CHUNK__QUANTITY_OF__TILES]
+        +initialize_chunk()
+        +m_process__serialize_chunk()
+        +m_process__deserialize_chunk()
+        +get_p_tile_from__chunk() Tile*
+        +set_tile_of__chunk()
+        +is_chunk__active() bool
+        +is_chunk__updated() bool
+    }
+
+    class Chunk_Flags {
+        <<typedef u16>>
+        +CHUNK_FLAG__IS_ACTIVE
+        +CHUNK_FLAG__IS_AWAITING_SERIALIZATION
+        +CHUNK_FLAG__IS_AWAITING_DESERIALIZATION
+        +CHUNK_FLAG__IS_UPDATED
+        +CHUNK_FLAG__IS_VISUALLY_UPDATED
+    }
+
+    class Tile {
+        +Tile_Kind the_kind_of__tile
+        +set_tile_kind_of__tile()
+        +get_tile_kind_from__tile() Tile_Kind
+        +is_tile_of__this_kind() bool
+        +is_tile_kind__illegal() bool
+    }
+
+    class Tile_Logic_Table {
+        +Tile_Logic_Table_Data tile_logic_table_data
+        +m_Tile_Logic_Table__Get_Tile_Logic_Record m_get_tile_logic_record
+        +Quantity__u32 quantity_of__records
+        +initialize_tile_logic_table()
+        +get_tile_logic_record_for__this_tile() bool
+        +poll__is_tile__unpassable() bool
+        +poll__is_tile__sight_blocking() bool
+        +poll__is_tile__without_ground() bool
+        +poll__tile_height() i32F4
+    }
+
+    class Tile_Logic_Record {
+        +Tile_Logic_Flags__u16 tile_logic_flags__u8
+        +i32F4 tile_height__i32F4
+        +is_tile_logic_record__unpassable() bool
+        +is_tile_logic_record__sight_blocking() bool
+        +is_tile_logic_record__without_ground() bool
+    }
+
+    class Tile_Logic_Flags__u16 {
+        <<typedef u16>>
+        +TILE_LOGIC_FLAG__IS_UNPASSABLE
+        +TILE_LOGIC_FLAG__IS_SIGHT_BLOCKING
+        +TILE_LOGIC_FLAG__IS_WITHOUT_GROUND
+        +TILE_LOGIC_FLAG__RESERVED_1 .. RESERVED_5
+        +TILE_LOGIC_FLAG__CUSTOM_0 .. CUSTOM_7
+    }
+
+    class Chunk_Generator_Table {
+        +m_Process M_process__chunk_generators[Chunk_Generator_Kind__Unknown]
+        +initialize_chunk_generator_table()
+        +register_chunk_generator_into__chunk_generator_table()
+        +get_chunk_generator_process_from__chunk_generator_table() m_Process
+        +get_default_chunk_generator_process() m_Process
+    }
+
+    class Structure_Manager {
+        +Room rooms[ROOM_MAX_QUANTITY_OF]
+        +Structure structures[STRUCTURE_MAX_QUANTITY_OF]
+        +Room *ptr_array_of__allocated_rooms[]
+        +Structure *ptr_array_of__allocated_structures[]
+        +Quantity__u32 quantity_of__allocated_rooms
+        +Quantity__u32 quantity_of__allocated_structures
+        +initialize_structure_manager()
+        +allocate_room_in__structure_manager() Room*
+        +allocate_structure_in__structure_manager() Structure*
+        +release_room_in__structure_manager()
+        +release_structure_in__structure_manager()
+    }
+
+    class Structure {
+        +Serialization_Header _serialization_header
+        +Structure_Ptr_Array_Of__Rooms ptr_array_of__rooms
+        +Hitbox_AABB bounding_box_of__structure
+        +Structure_Type__u16 the_kind_of__structure
+        +Quantity__u8 quantity_of__rooms_in__structure
+        +Structure_Flags__u8 structure_flags
+        +initialize_structure()
+        +add_p_room_to__structure()
+        +get_rooms_in__structure()
+        +is_structure__allocated() bool
+    }
+
+    class Room {
+        +Serialization_Header _serialization_header
+        +Hitbox_AABB bounding_box_of__room
+        +Vector__3i32F4 entrances__3i32F4[4]
+        +Room_Type__u16 the_type_of__room
+        +Quantity__u8 quantity_of__room_entrances
+        +Room_Flags__u8 room_flags
+        +initialize_room()
+        +add_entrance_to__room()
+        +get_closest_entrance_to__room() Vector__3i32F4
+        +is_room__allocated() bool
+    }
+
+    class Site {
+        +Serialization_Header _serialization_header
+        +Site_Ptr_Array_Of__Structures ptr_array_of__structures_in__site
+        +Hitbox_AABB bounding_box_of__site
+        +Quantity__u8 quantity_of__structures_in__site
+        +initialize_site()
+    }
+
+    class Structure_Tile {
+        +bool has_walls
+        +bool has_stairs
+        +bool has_windows
+    }
+
+    %% Ownership: Game owns World
+    Game *-- World : owns via pM_world
+
+    %% World owns all major sub-components
+    World *-- Camera : owns
+    World *-- Region_Manager : owns
+    World *-- Global_Space_Manager : owns
+    World *-- Chunk_Pool : owns
+    World *-- Structure_Manager : owns
+    World *-- Tile_Logic_Table : owns
+    World *-- Chunk_Generator_Table : owns
+    World --> Graphics_Window : p_graphics_window_for__world
+
+    %% Region_Manager owns Regions
+    Region_Manager *-- "0..4" Region : regions array
+
+    %% Global_Space_Manager owns Global_Spaces
+    Global_Space_Manager *-- "N" Global_Space : global_spaces array
+    Global_Space *-- Global_Space_Flags__u8 : global_space_flags__u8
+
+    %% Global_Space references Chunk and Collision_Node
+    Global_Space --> Chunk : p_chunk
+    Global_Space --> Collision_Node : p_collision_node
+
+    %% Local_Space_Manager owns Local_Spaces
+    Local_Space_Manager *-- "64" Local_Space : local_spaces array
+
+    %% Local_Space references Global_Space and neighbors
+    Local_Space --> Global_Space : p_global_space
+    Local_Space --> Local_Space : p_local_space__north/east/south/west/above/below
+
+    %% Chunk_Pool owns Chunks
+    Chunk_Pool *-- "N" Chunk : chunks array
+    Chunk *-- Chunk_Flags : chunk_flags
+    Chunk *-- "128" Tile : tiles array
+
+    %% Tile_Logic_Table owns Tile_Logic_Records
+    Tile_Logic_Table *-- "N" Tile_Logic_Record : tile_logic_table_data
+    Tile_Logic_Record *-- Tile_Logic_Flags__u16 : tile_logic_flags__u8
+
+    %% Chunk_Generator_Table owns generator process array
+    Chunk_Generator_Table *-- "N" m_Process : M_process__chunk_generators
+
+    %% Structure_Manager owns Rooms and Structures
+    Structure_Manager *-- "128" Room : rooms pool
+    Structure_Manager *-- "16" Structure : structures pool
+
+    %% Structure references Rooms
+    Structure --> "0..8" Room : ptr_array_of__rooms
+
+    %% Site references Structures
+    Site --> "0..N" Structure : ptr_array_of__structures_in__site
+
+    %% Region tracks serialized chunks and sites
+    Region ..> Global_Space : bitmap tracks serialization
+    Region ..> Site : bitmap tracks sites
+
+    %% Camera can follow an entity by UUID
+    Camera ..> Entity_Manager : uuid_of__target__u32 references
+
+    %% Structure_Tile is a helper for generation
+    Structure_Tile .. Structure : used during generation
