@@ -1,0 +1,425 @@
+%% Module Topology: Rendering System
+%% Shows ownership hierarchy and relationships between rendering types.
+
+classDiagram
+    direction TB
+
+    class Game {
+        +Gfx_Context gfx_context
+    }
+
+    class Gfx_Context {
+        +Graphics_Window_Manager graphics_window_manager
+        +Aliased_Texture_Manager aliased_texture_manager
+        +UI_Context ui_context
+        +UI_Tile_Map_Manager ui_tile_map_manager
+        +Font_Manager font_manager
+        +PLATFORM_Gfx_Context *p_PLATFORM_gfx_context
+        +Sprite_Context sprite_context
+        +initialize_gfx_context()
+        +get_p_PLATFORM_gfx_context_from__gfx_context() PLATFORM_Gfx_Context*
+        +get_p_aliased_texture_manager_from__gfx_context() Aliased_Texture_Manager*
+        +get_p_ui_context_from__gfx_context() UI_Context*
+        +get_p_ui_tile_map_manager_from__gfx_context() UI_Tile_Map_Manager*
+        +get_p_graphics_window_manager_from__gfx_context() Graphics_Window_Manager*
+        +get_p_font_manager_from__gfx_context() Font_Manager*
+        +get_p_sprite_context_from__gfx_context() Sprite_Context*
+    }
+
+    class Graphics_Window_Manager {
+        +Graphics_Window graphics_windows[MAX_QUANTITY_OF__GRAPHICS_WINDOWS]
+        +Graphics_Window *ptr_array_of__sorted_graphic_windows[MAX_QUANTITY_OF__GRAPHICS_WINDOWS]
+        +Repeatable_Psuedo_Random randomizer
+        +initialize_graphics_window_manager()
+        +allocate_graphics_window_with__uuid_from__graphics_window_manager() Graphics_Window*
+        +allocate_graphics_window_from__graphics_window_manager() Graphics_Window*
+        +release_graphics_window_from__graphics_window_manager()
+        +get_p_graphics_window_by__uuid_from__graphics_window_manager() Graphics_Window*
+        +get_graphics_windows_from__graphics_window_manager() Quantity__u8
+        +set_graphics_window_as__parent_to__this_graphics_window()
+        +is_graphics_window_a__descendant_of__this_graphics_window() bool
+        +compose_graphic_windows_in__graphics_window_manager()
+        +render_graphic_windows_in__graphics_window_manager()
+        +sort_graphic_windows_in__graphic_window_manager()
+        +setup_platform_provided_graphics_windows() bool
+        +allocate_or_get__platform_provided_graphics_windows() bool
+        +reset_platform_provided_graphics_windows()
+    }
+
+    class Graphics_Window {
+        +Serialization_Header _serialization_header
+        +UI_Tile_Map__Wrapper ui_tile_map__wrapper
+        +Vector__3i32 origin_of__gfx_window
+        +Vector__3i32 position_of__gfx_window
+        +Vector__3i32 position_of__gfx_window__minimum
+        +Vector__3i32 position_of__gfx_window__maximum
+        +Quantity__u32 width_of__graphics_window__u32
+        +Quantity__u32 height_of__graphics_window__u32
+        +f_PLATFORM_render_gfx_window f_PLATFORM_compose_gfx_window
+        +f_PLATFORM_render_gfx_window f_PLATFORM_render_gfx_window
+        +Camera *p_camera
+        +PLATFORM_Graphics_Window *p_PLATFORM_gfx_window
+        +Identifier__u32 graphics_window__parent__uuid
+        +Identifier__u32 uuid_of__sprite_manager
+        +Identifier__u32 uuid_of__ui_manager
+        +Identifier__u32 uuid_of__hitbox_manager
+        +Graphics_Window_Kind the_kind_of__window
+        +Index__u8 priority_of__window
+        +Graphics_Window_Flags__u8 graphics_window__flags
+        +initialize_graphics_window()
+        +initialize_graphics_window_as__allocated()
+        +allocate_ui_manager_for__graphics_window() UI_Manager*
+        +allocate_sprite_manager_for__graphics_window()
+        +allocate_hitbox_manager_for__graphics_window()
+        +allocate_p_sprite_from__graphics_window() Sprite*
+        +release_graphics_window_ui_manager()
+        +release_graphics_window_sprite_manager()
+        +release_graphics_window_hitbox_manager()
+        +share_sprite_manager_with__graphics_window()
+        +share_ui_manager_with__graphics_window()
+        +share_hitbox_manager_with__graphics_window()
+        +does_graphics_window_own_a__sprite_manager() bool
+        +does_graphics_window_own_a__ui_manager() bool
+        +does_graphics_window_own_a__hitbox_manager() bool
+        +does_graphics_window_share_a__sprite_manager() bool
+        +does_graphics_window_share_a__ui_manager() bool
+        +does_graphics_window_share_a__hitbox_manager() bool
+        +is_graphics_window__allocated() bool
+        +is_graphics_window__enabled() bool
+        +is_graphics_window__platform_provided() bool
+        +get_p_ui_manager_from__graphics_window() UI_Manager*
+        +get_p_sprite_manager_from__graphics_window() Sprite_Manager*
+        +get_hitbox_manager_instance_from__graphics_window() Hitbox_Manager_Instance*
+    }
+
+    class Graphics_Window_Flags__u8 {
+        <<typedef u8>>
+        +GRAPHICS_WINDOW__FLAG__IS_ENABLED
+        +GRAPHICS_WINDOW__FLAG__COMPOSE__DIRTY
+        +GRAPHICS_WINDOW__FLAG__IS_PLATFORM_PROVIDED
+    }
+
+    class Aliased_Texture_Manager {
+        +Aliased_Texture aliased_textures[MAX_QUANTITY_OF__ALIASED_TEXTURES]
+        +Repeatable_Psuedo_Random repeatable_psuedo_random_for__texture_uuid
+        +initialize_aliased_texture_manager()
+        +allocate_texture_with__alias() bool
+        +load_texture_from__path_with__alias() bool
+        +get_texture_by__alias() bool
+        +get_texture_by__uuid() bool
+        +get_uuid_of__aliased_texture() Identifier__u32
+        +release_all_aliased_textures()
+        +release_aliased_texture_by__alias()
+        +release_aliased_texture_by__uuid()
+    }
+
+    class Aliased_Texture {
+        +Serialization_Header _serialization_header
+        +Texture_Name__c_str name_of__texture__c_str
+        +Texture texture
+        +initialize_aliased_texture()
+        +set_c_str_of__aliased_texture()
+        +is_c_str_matching__aliased_texture() bool
+        +give_texture_to__aliased_texture()
+        +get_texture_from__aliased_texture() Texture
+        +is_aliased_texture__used() bool
+    }
+
+    class Texture {
+        +PLATFORM_Texture *p_PLATFORM_texture
+        +Texture_Flags texture_flags
+        +initialize_texture()
+        +set_texture_flags_as__hidden()
+        +set_texture_flags_as__visible()
+        +is_texture_flags__hidden() bool
+        +is_texture_flags__readonly() bool
+        +get_texture_flags__rendering_method() Texture_Flags
+        +get_texture_flags__format() Texture_Flags
+        +get_texture_flags__width() Texture_Flags
+        +get_texture_flags__height() Texture_Flags
+        +get_length_of__texture_flag__width() Quantity__u16
+        +get_length_of__texture_flag__height() Quantity__u16
+    }
+
+    class Texture_Flags {
+        <<typedef u32>>
+        +TEXTURE_FLAG__IS_HIDDEN
+        +TEXTURE_FLAG__IS_READONLY
+        +TEXTURE_FLAG__SIZE_*
+        +TEXTURE_FLAG__RENDER_METHOD__*
+        +TEXTURE_FLAG__FORMAT__*
+    }
+
+    class Sprite_Context {
+        +Sprite_Animation sprite_animations[Sprite_Animation_Kind__Unknown]
+        +Sprite_Manager *pM_sprite_managers
+        +Sprite_Animation_Group_Set sprite_animation_groups[Sprite_Animation_Group_Kind__Unknown]
+        +Quantity__u8 max_quantity_of__sprite_managers
+        +initialize_sprite_context()
+        +allocate_sprite_managers_from__sprite_context() bool
+        +release_sprite_managers_from__sprite_context()
+        +allocate_sprite_manager_from__sprite_context() Sprite_Manager*
+        +release_sprite_manager_from__sprite_context()
+        +register_sprite_animation_into__sprite_context()
+        +get_sprite_animation_from__sprite_context() Sprite_Animation
+        +register_sprite_animation_group_into__sprite_context()
+        +get_sprite_animation_group_from__sprite_context() Sprite_Animation_Group_Set
+        +get_p_sprite_animation_group_from__sprite_context() Sprite_Animation_Group_Set*
+        +get_p_sprite_manager_by__uuid_from__sprite_context() Sprite_Manager*
+        +is_sprite_managers_allocated_in__sprite_context() bool
+    }
+
+    class Sprite_Manager {
+        +Serialization_Header _serialization_header
+        +Sprite *pM_pool_of__sprites
+        +Sprite_Render_Record *pM_sprite_render_records
+        +Sprite_Render_Record *p_sprite_render_record__last
+        +Quantity__u32 max_quantity_of__sprites
+        +initialize_sprite_manager()
+        +allocate_sprite_manager__members() bool
+        +allocate_sprite_from__sprite_manager() Sprite*
+        +release_sprite_from__sprite_manager()
+        +get_p_sprite_by__uuid_from__sprite_manager() Sprite*
+        +render_sprites_in__sprite_manager()
+    }
+
+    class Sprite_Render_Record {
+        +Vector__3i32F4 position__3i32F4
+        +Sprite *p_sprite
+    }
+
+    class Sprite {
+        +Serialization_Header _serialization_header
+        +PLATFORM_Sprite *p_PLATFORM_sprite
+        +Texture texture_for__sprite_to__sample
+        +Texture texture_of__sprite
+        +m_Sprite_Animation_Handler m_sprite_animation_handler
+        +Sprite_Animation animation
+        +Sprite_Animation_Group_Kind the_kind_of__sprite__animation_group
+        +Index__u16 index_of__sprite_frame
+        +Sprite_Kind the_kind_of__sprite
+        +Sprite_Flags sprite_flags__u8
+        +Direction__u8 direction__old__u8
+        +Direction__u8 direction__delta__u8
+        +m_sprite_animation_handler__default()
+        +poll_sprite_for__animation()
+        +set_sprite_animation()
+        +is_sprite__deallocated() bool
+        +is_sprite__enabled() bool
+        +set_sprite_as__enabled() bool
+        +set_sprite_as__disabled() bool
+        +is_sprite__needing_graphics_update() bool
+        +set_frame_index_of__sprite()
+        +is_sprite__flipped_x() bool
+        +is_sprite__flipped_y() bool
+        +get_p_sprite_animation_from__sprite() Sprite_Animation*
+        +get_the_kind_of__sprite_animation_group_of__this_sprite() Sprite_Animation_Group_Kind
+    }
+
+    class Sprite_Flags {
+        <<typedef u8>>
+        +SPRITE_FLAG__BIT_IS_ENABLED
+        +SPRITE_FLAG__BIT_IS_NEEDING_GRAPHICS_UPDATE
+        +SPRITE_FLAG__BIT_IS_FLIPPED_X
+        +SPRITE_FLAG__BIT_IS_FLIPPED_Y
+    }
+
+    class Sprite_Animation {
+        +Sprite_Animation_Kind the_kind_of_animation__this_sprite_has
+        +Timer__u8 animation_timer__u8
+        +Quantity__u8 sprite_animation__initial_frame__u8
+        +Quantity__u8 sprite_animation__quantity_of__frames__u8
+        +Quantity__u8 sprite_animation__ticks_per__frame__u5
+        +Sprite_Animation_Flags__u3 sprite_animation__flags__u3
+        +is_sprite_animation__looping() bool
+        +is_sprite_animation__NOT_looping() bool
+        +set_sprite_animation_as__looping()
+        +set_sprite_animation_as__NOT_looping()
+        +is_sprite_animation__offset_by__direction() bool
+        +set_sprite_animation_as__offset_by__direction()
+        +set_sprite_animation_as__NOT_offset_by__direction()
+    }
+
+    class Sprite_Animation_Flags__u3 {
+        <<typedef u8, 3 bits>>
+        +SPRITE_ANIMATION_FLAG__IS_NOT_LOOPING
+        +SPRITE_ANIMATION_FLAG__IS_OFFSET_BY__DIRECTION
+    }
+
+    class Sprite_Animation_Group_Set {
+        +Quantity__u8 quantity_of__columns_in__sprite_animation_group__u4
+        +Quantity__u8 quantity_of__rows_in__sprite_animation_group__u4
+        +Index__u8 index_of__sprite_animation_group_in__group_set_u8
+    }
+
+    class Font_Manager {
+        +Font fonts[MAX_QUANTITY_OF__FONT]
+        +initialize_font_manager()
+        +allocate_font_from__font_manager() Font*
+        +release_font_from__font_manager()
+    }
+
+    class Font {
+        +Font_Letter font_lookup_table[FONT_LETTER_MAX_QUANTITY_OF]
+        +Texture texture_of__font
+        +Quantity__u8 max_width_of__font_letter
+        +Quantity__u8 max_height_of__font_letter
+        +Font_Flags font_flags
+        +initialize_font__letter()
+        +initialize_font()
+        +get_p_font_letter_from__font() Font_Letter*
+        +is_font__allocated() bool
+        +set_font_as__allocated()
+        +set_font_as__deallocated()
+    }
+
+    class Font_Letter {
+        +Quantity__u8 width_of__font_letter :4
+        +Quantity__u8 height_of__font_letter :4
+        +Quantity__u8 x__offset_of__font_letter :4
+        +Quantity__u8 y__offset_of__font_letter :4
+        +Index__u16 index_of__character__in_font :16
+    }
+
+    class Font_Flags {
+        <<typedef u8>>
+        +FONT_FLAG__IS_ALLOCATED
+    }
+
+    class Typer {
+        +Hitbox_AABB text_bounding_box
+        +Vector__3i32 cursor_position__3i32
+        +Font *p_font
+        +Texture texture_of__typer_target
+        +PLATFORM_Graphics_Window *p_PLATFORM_graphics_window__typer_target
+        +Quantity__u16 quantity_of__space_in__pixels_between__lines
+        +bool is_using_PLATFORM_texture_or__PLATFORM_graphics_window
+        +initialize_typer()
+        +initialize_typer_with__font()
+        +poll_typer_for__cursor_wrapping() bool
+        +put_c_string_in__typer()
+        +set_typer__position()
+        +set_typer__bounding_box_size()
+        +set_typer__cursor()
+        +reset_typer_cursor()
+        +offset_typer_by__font_letter()
+        +get_p_font_letter_from__typer() Font_Letter*
+        +set_PLATFORM_texture_target_for__typer()
+        +set_PLATFORM_graphics_window_target_for__typer()
+        +is_typer_targetting__PLATFORM_texture() bool
+        +is_typer_targetting__PLATFORM_graphics_window() bool
+    }
+
+    class GFX_CONTEXT_Helpers {
+        <<static inline helpers>>
+        +GFX_CONTEXT_allocate_graphics_window_with__ui_manager() Graphics_Window*
+        +GFX_CONTEXT_allocate_graphics_window_with__ui_manager_and__sprite_pool() Graphics_Window*
+        +GFX_CONTEXT_allocate_graphics_window_with__sprite_pool() Graphics_Window*
+    }
+
+    %% Platform opaque types
+    class PLATFORM_Gfx_Context {
+        <<platform-specific>>
+    }
+    class PLATFORM_Graphics_Window {
+        <<platform-specific>>
+    }
+    class PLATFORM_Texture {
+        <<platform-specific>>
+    }
+    class PLATFORM_Sprite {
+        <<platform-specific>>
+    }
+
+    %% External references (not owned by rendering)
+    class UI_Manager {
+        <<see UI specs>>
+    }
+    class UI_Context {
+        <<see UI specs>>
+    }
+    class UI_Tile_Map_Manager {
+        <<see UI specs>>
+    }
+    class Hitbox_Manager_Instance {
+        <<see collision specs>>
+    }
+    class Hitbox_Context {
+        <<see collision specs>>
+    }
+
+    %% Ownership: Game owns Gfx_Context
+    Game *-- Gfx_Context : owns
+
+    %% Gfx_Context owns all subsystem managers
+    Gfx_Context *-- Graphics_Window_Manager : owns
+    Gfx_Context *-- Aliased_Texture_Manager : owns
+    Gfx_Context *-- Sprite_Context : owns
+    Gfx_Context *-- Font_Manager : owns
+    Gfx_Context *-- UI_Context : owns
+    Gfx_Context *-- UI_Tile_Map_Manager : owns
+    Gfx_Context --> PLATFORM_Gfx_Context : p_PLATFORM_gfx_context
+
+    %% Graphics_Window_Manager owns Graphics_Window pool
+    Graphics_Window_Manager *-- "0..8" Graphics_Window : graphics_windows pool
+
+    %% Graphics_Window composition
+    Graphics_Window *-- Graphics_Window_Flags__u8 : graphics_window__flags
+    Graphics_Window --> PLATFORM_Graphics_Window : p_PLATFORM_gfx_window
+    Graphics_Window --> Graphics_Window : graphics_window__parent__uuid (parent-child)
+
+    %% Graphics_Window references managers by UUID (ownership or sharing)
+    Graphics_Window ..> Sprite_Manager : uuid_of__sprite_manager references
+    Graphics_Window ..> UI_Manager : uuid_of__ui_manager references
+    Graphics_Window ..> Hitbox_Manager_Instance : uuid_of__hitbox_manager references
+
+    %% Aliased_Texture_Manager owns Aliased_Texture pool
+    Aliased_Texture_Manager *-- "0..128" Aliased_Texture : aliased_textures pool
+
+    %% Aliased_Texture wraps Texture
+    Aliased_Texture *-- Texture : texture
+
+    %% Texture wraps platform handle and flags
+    Texture --> PLATFORM_Texture : p_PLATFORM_texture
+    Texture *-- Texture_Flags : texture_flags
+
+    %% Sprite_Context owns Sprite_Manager pool and animation registries
+    Sprite_Context *-- "0..N" Sprite_Manager : pM_sprite_managers (heap pool)
+    Sprite_Context *-- "N" Sprite_Animation : sprite_animations registry
+    Sprite_Context *-- "N" Sprite_Animation_Group_Set : sprite_animation_groups registry
+
+    %% Sprite_Manager owns Sprite pool and render records
+    Sprite_Manager *-- "0..N" Sprite : pM_pool_of__sprites (heap pool)
+    Sprite_Manager *-- "0..N" Sprite_Render_Record : pM_sprite_render_records (heap)
+
+    %% Sprite_Render_Record references Sprite
+    Sprite_Render_Record --> Sprite : p_sprite
+
+    %% Sprite composition
+    Sprite *-- Sprite_Animation : animation (embedded)
+    Sprite *-- Sprite_Flags : sprite_flags__u8
+    Sprite *-- Texture : texture_for__sprite_to__sample
+    Sprite *-- Texture : texture_of__sprite
+    Sprite --> PLATFORM_Sprite : p_PLATFORM_sprite
+
+    %% Sprite_Animation uses flags
+    Sprite_Animation *-- Sprite_Animation_Flags__u3 : sprite_animation__flags__u3
+
+    %% Font_Manager owns Font pool
+    Font_Manager *-- "0..8" Font : fonts pool
+
+    %% Font composition
+    Font *-- "256" Font_Letter : font_lookup_table
+    Font *-- Texture : texture_of__font
+    Font *-- Font_Flags : font_flags
+
+    %% Typer references Font and render targets
+    Typer --> Font : p_font
+    Typer --> Texture : texture_of__typer_target (union)
+    Typer --> PLATFORM_Graphics_Window : p_PLATFORM_graphics_window__typer_target (union)
+
+    %% GFX_CONTEXT_Helpers uses multiple subsystems
+    GFX_CONTEXT_Helpers ..> Graphics_Window_Manager : allocates windows
+    GFX_CONTEXT_Helpers ..> Graphics_Window : configures resources
+    GFX_CONTEXT_Helpers ..> UI_Manager : allocates for window
+    GFX_CONTEXT_Helpers ..> Sprite_Manager : allocates for window
