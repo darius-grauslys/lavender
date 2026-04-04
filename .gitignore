@@ -8,3 +8,4 @@ build_podman.sh
 */generated/*
 core.*
 .aider*
+aider_notes/*
