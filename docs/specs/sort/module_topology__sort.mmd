@@ -1,0 +1,158 @@
+%% Module Topology: Sort System
+%% Shows ownership hierarchy and relationships between sort types.
+
+classDiagram
+    direction TB
+
+    class Game {
+        +Sort_List_Manager sort_list_manager
+    }
+
+    class Sort_List_Manager {
+        +Quantity__u32 quantity_of__allocated_sort_lists
+        +Quantity__u32 quantity_of__allocated_sort_nodes
+        +Sort_List sort_lists[SORT_LIST__MAXIMUM_QUANTITY_OF]
+        +Sort_Node sort_nodes[SORT_NODE__MAXIMUM_QUANTITY_OF]
+        +initialize_sort_list_manager()
+        +allocate_sort_list_in__sort_list_manager() Sort_List*
+        +release_sort_list_in__sort_list_manager()
+        +get_quantity_of__allocated_sort_lists_in__sort_list_manager() Quantity__u32
+        +get_quantity_of__allocated_sort_nodes_in__sort_list_manager() Quantity__u32
+        +get_quantity_of__available_sort_lists_in__sort_list_manager() Quantity__u32
+        +get_quantity_of__available_sort_nodes_in__sort_list_manager() Quantity__u32
+        +get_p_sort_list_by__index_in__sort_list_manager() Sort_List*
+        +get_p_sort_node_by__index_in__sort_list_manager() Sort_Node*
+        +is_sort_node_a__sort_list() bool
+    }
+
+    class Sort_List {
+        +Sort_Node *p_node_list
+        +f_Sort_Heuristic f_sort_heuristic
+        +m_Sort m_sort
+        +Sort_List *p_sort_list__next
+        +Quantity__u32 size_of__p_node_list : 31
+        +bool is_allocated : 1
+        +Sort_Data sort_data
+        +initialize_sort_list_as__allocated()
+        +initialize_sort_list_as__empty()
+        +point_sort_list__sort_nodes_to__this_range()
+        +append_into__sort_list()
+        +insert_into__sort_list()
+        +remove_from__sort_list()
+        +run_sort()
+        +run_sort__once() bool
+        +run_sort_with__this_many_steps() bool
+        +run_sort_with__this_heurisitic_and__this_many_steps() bool
+        +get_index_of__sort_node_in__sort_list() Index__u16
+        +get_p_sort_node_by__index_from__sort_list() Sort_Node*
+        +get_next_p_sort_node_from__sort_list() Sort_Node*
+        +get_length_of__sort_list() Quantity__u32
+        +is_sort_list__allocated() bool
+        +is_sort_list__extexted() bool
+        +get_extension_of__sort_list() Sort_List*
+        +get_p_node_list_from__sort_list() Sort_Node*
+        +set_sort_list_as__allocated()
+        +set_sort_list_as__deallocated()
+        +set_sort_list__sort_heuristic()
+    }
+
+    class Sort_Node {
+        +void *p_node_data
+        +Signed_Quantity__i16 heuristic_value
+        +Index__u16 index_for__next_node : 15
+        +bool is_allocated : 1
+        +initialize_sort_node_as__allocated()
+        +initialize_sort_node_as__empty()
+        +set_sort_node_as__allocated()
+        +set_sort_node_as__deallocated()
+        +is_sort_node__allocated() bool
+        +set_sort_node__p_node_data()
+    }
+
+    class Sort_Data {
+        <<union>>
+        +Index__u16 index_of__heapification
+        +Index__u16 index_of__heap_sort
+    }
+
+    class f_Sort_Heuristic {
+        <<function pointer>>
+        +Signed_Quantity__i32 invoke(Sort_Node *p_node__one, Sort_Node *p_node__two)
+    }
+
+    class m_Sort {
+        <<function pointer>>
+        +bool invoke(Sort_List *p_this_sort_list)
+    }
+
+    class Heap_Sort_Module {
+        <<module: heap_sort.h>>
+        +initialize_sort_list_as__heap()
+        +initialize_sort_list_as__heap_sort()
+        +rotate_heap()
+        +request_resorting_of__heap()
+        +request_resorting_of__heap_sort()
+        +m_sort__heapify__sort_list() bool
+        +m_sort__heap_sort__sort_list() bool
+        +is_sort_data__heapifed() bool
+        +is_heap__heapifed() bool
+        +get_index_of__heap_sort_from__sort_data() Index__u16
+        +get_index_of__heap_sort_from__sort_list() Index__u16
+        +is_heap_sort__sorted() bool
+    }
+
+    class Opaque_Heap_Sort_Module {
+        <<module: heap_sort__opaque.h>>
+        +heap_sort__opaque()
+    }
+
+    class f_Sort_Heuristic__i32 {
+        <<function pointer>>
+        +Signed_Quantity__i32 invoke(void *p_context, void *p_one, void *p_two)
+    }
+
+    class f_Sort_Swap__Void {
+        <<function pointer>>
+        +void invoke(void *p_context, void *p_one, void *p_two)
+    }
+
+    %% Ownership: Game owns Sort_List_Manager
+    Game *-- Sort_List_Manager : owns
+
+    %% Sort_List_Manager owns pools of Sort_List and Sort_Node
+    Sort_List_Manager *-- "0..64" Sort_List : sort_lists pool
+    Sort_List_Manager *-- "0..512" Sort_Node : sort_nodes pool
+
+    %% Sort_List references contiguous range of Sort_Nodes
+    Sort_List --> "0..*" Sort_Node : p_node_list (contiguous range)
+
+    %% Sort_List contains Sort_Data
+    Sort_List *-- Sort_Data : sort_data
+
+    %% Sort_List uses pluggable function pointers
+    Sort_List --> f_Sort_Heuristic : f_sort_heuristic
+    Sort_List --> m_Sort : m_sort
+
+    %% Sort_List extension chaining
+    Sort_List --> Sort_List : p_sort_list__next (extension chain)
+
+    %% Sort_Node index-based linking within contiguous array
+    Sort_Node --> Sort_Node : index_for__next_node (index-based link)
+
+    %% Sort_Node holds opaque data pointer
+    Sort_Node --> "0..1" Sort_List : p_node_data (when chaining sort lists)
+
+    %% Heap_Sort_Module provides m_Sort implementations
+    Heap_Sort_Module ..|> m_Sort : m_sort__heapify__sort_list
+    Heap_Sort_Module ..|> m_Sort : m_sort__heap_sort__sort_list
+
+    %% Heap_Sort_Module operates on Sort_List and Sort_Data
+    Heap_Sort_Module ..> Sort_List : configures and steps
+    Heap_Sort_Module ..> Sort_Data : reads/writes heap indices
+
+    %% Opaque_Heap_Sort_Module is standalone
+    Opaque_Heap_Sort_Module --> f_Sort_Heuristic__i32 : comparison function
+    Opaque_Heap_Sort_Module --> f_Sort_Swap__Void : swap function
+
+    %% is_sort_node_a__sort_list bridges Sort_Node and Sort_List
+    Sort_List_Manager ..> Sort_Node : is_sort_node_a__sort_list checks p_node_data
