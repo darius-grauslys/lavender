@@ -1,9 +1,10 @@
 #include <rendering/MAIN_TEST_SUITE__CORE_RENDERING.h>
 
-INCLUDE_SUB_SUITES(CORE_RENDERING, 12,
+INCLUDE_SUB_SUITES(CORE_RENDERING, 13,
 INCLUDE_SUITE(sprite_manager),
 INCLUDE_SUITE(animate_sprite),
 INCLUDE_SUITE(graphics_window),
+INCLUDE_SUITE(sprite_context),
 INCLUDE_SUITE(sprite),
 INCLUDE_SUITE(aliased_texture),
 INCLUDE_SUITE(aliased_texture_manager),
