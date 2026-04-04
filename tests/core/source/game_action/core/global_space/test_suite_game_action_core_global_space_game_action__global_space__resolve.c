@@ -2,9 +2,68 @@
 
 #include <game_action/core/global_space/game_action__global_space__resolve.c>
 
-#warning Please make tests for: /home/shalidor/Projects/Lavender/tests/core/source/game_action/core/global_space/test_suite_game_action_core_global_space_game_action__global_space__resolve.c
+TEST_FUNCTION(game_action__global_space__resolve__initialize__sets_kind) {
+    Game_Action ga;
+    initialize_game_action(&ga);
 
-// Before writing any tests, please see the README
-// found in ./tests
+    Global_Space_Vector__3i32 gsv = {10, 20, 30};
 
-DEFINE_SUITE(game_action__global_space__resolve, END_TESTS)
+    initialize_game_action_for__global_space__resolve(
+            &ga,
+            gsv);
+
+    munit_assert_int(
+            get_kind_of__game_action(&ga),
+            ==,
+            Game_Action_Kind__Global_Space__Resolve);
+
+    return MUNIT_OK;
+}
+
+TEST_FUNCTION(game_action__global_space__resolve__initialize__sets_coordinates) {
+    Game_Action ga;
+    initialize_game_action(&ga);
+
+    Global_Space_Vector__3i32 gsv = {5, 15, 25};
+
+    initialize_game_action_for__global_space__resolve(
+            &ga,
+            gsv);
+
+    munit_assert_int32(
+            ga.ga_kind__global_space__resolve__gsv__3i32.x__i32,
+            ==,
+            5);
+    munit_assert_int32(
+            ga.ga_kind__global_space__resolve__gsv__3i32.y__i32,
+            ==,
+            15);
+    munit_assert_int32(
+            ga.ga_kind__global_space__resolve__gsv__3i32.z__i32,
+            ==,
+            25);
+
+    return MUNIT_OK;
+}
+
+TEST_FUNCTION(game_action__global_space__resolve__register__populates_table) {
+    Game_Action_Logic_Table table;
+    initialize_game_action_logic_table(&table);
+
+    register_game_action__global_space__resolve(&table);
+
+    Game_Action_Logic_Entry *p_entry =
+        get_p_game_action_logic_entry_by__game_action_kind(
+                &table,
+                Game_Action_Kind__Global_Space__Resolve);
+
+    munit_assert_ptr_not_null(p_entry);
+
+    return MUNIT_OK;
+}
+
+DEFINE_SUITE(game_action__global_space__resolve,
+    INCLUDE_TEST__STATELESS(game_action__global_space__resolve__initialize__sets_kind),
+    INCLUDE_TEST__STATELESS(game_action__global_space__resolve__initialize__sets_coordinates),
+    INCLUDE_TEST__STATELESS(game_action__global_space__resolve__register__populates_table),
+    END_TESTS)
