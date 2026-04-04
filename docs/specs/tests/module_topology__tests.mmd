@@ -1,0 +1,271 @@
+%% Module Topology: Test Infrastructure
+%% Shows ownership hierarchy and relationships between test system components.
+
+classDiagram
+    direction TB
+
+    class TestRunner {
+        <<munit>>
+        +MunitSuite test_suite
+        +munit_suite_main(suite, user_data, argc, argv) int
+    }
+
+    class main_c {
+        <<generated entry point>>
+        +main(argc, argv) int
+    }
+
+    class test_util_h {
+        <<macro library>>
+        +TEST_NAME(name)
+        +TEST_NAME__SETUP(name)
+        +TEST_NAME__CLEAN_UP(name)
+        +TEST_FUNCTION(name)
+        +SETUP_TEST(name)
+        +CLEAN_UP_TEST(name)
+        +INCLUDE_TEST(name, options, parameters)
+        +INCLUDE_TEST__NO_PARAMETERS(name, options)
+        +INCLUDE_TEST__BASIC(name)
+        +INCLUDE_TEST__STATELESS(name)
+        +DECLARE_SUITE(name)
+        +INCLUDE_SUITE(name)
+        +DEFINE_SUITE(name, ...)
+        +DEFINE_SUITE_WITH__SUB_SUITES(name, ...)
+        +INCLUDE_SUB_SUITES(name, count, ...)
+        +END_TESTS
+        +END_SUITES
+        +f_test_suite_includer
+        +test_log(c_str__msg, ...)
+    }
+
+    class MunitSuite {
+        <<munit>>
+        +char *prefix
+        +MunitTest *tests
+        +MunitSuite *suites
+        +unsigned int iterations
+        +MunitSuiteOptions options
+    }
+
+    class MunitTest {
+        <<munit>>
+        +char *name
+        +MunitTestFunc test
+        +MunitTestSetup setup
+        +MunitTestTearDown tear_down
+        +MunitTestOptions options
+        +MunitParameterEnum *parameters
+    }
+
+    class MunitResult {
+        <<munit enum>>
+        MUNIT_OK
+        MUNIT_FAIL
+        MUNIT_SKIP
+        MUNIT_ERROR
+    }
+
+    class MAIN_TEST_SUITE__CORE_ANCIENTS_GAME_h {
+        <<generated root header>>
+        includes test_suite_main.h
+        includes test_suite_vectors.h
+        includes test_suite_core_string.h
+        includes test_suite_random.h
+        includes test_suite_client.h
+        includes test_suite_degree.h
+        includes test_suite_game.h
+        includes 18 directory MAIN_TEST_SUITE headers
+        +DECLARE_SUITE(CORE_ANCIENTS_GAME)
+    }
+
+    class MAIN_TEST_SUITE__CORE_ANCIENTS_GAME_c {
+        <<generated root source>>
+        +test_suite_CORE_ANCIENTS_GAME__sub_suites[26]
+        +include_sub_suites_for__CORE_ANCIENTS_GAME(MunitSuite*)
+        +include_test_suite__CORE_ANCIENTS_GAME(MunitSuite*)
+    }
+
+    class DirectorySuite {
+        <<generated per subdirectory>>
+        +include_test_suite__TREE_DIRNAME(MunitSuite*)
+        +include_sub_suites_for__TREE_DIRNAME(MunitSuite*)
+        +test_suite_TREE_DIRNAME__sub_suites[N]
+        +test_suite_TREE_DIRNAME__prefix
+        +test_suite_TREE_DIRNAME__tests[]
+    }
+
+    class ModuleSuiteHeader {
+        <<generated per source file>>
+        +DECLARE_SUITE(module_name)
+    }
+
+    class ModuleSuiteSource {
+        <<generated per source file>>
+        +test_suite_module__prefix
+        +test_suite_module__tests[]
+        +include_test_suite__module(MunitSuite*)
+    }
+
+    class update_sh {
+        <<bash script>>
+        +base_dir
+        +core_dir
+        +platform_dir
+        +gen_main(include_dir, source_dir, skip_stubs)
+        +update_core(skip_stubs)
+    }
+
+    class update_recursive_sh {
+        <<bash script>>
+        +search_base_dir
+        +search_suffix
+        +output_base_dir__include
+        +output_base_dir__source
+        +tree_name
+        +exclusion_string
+    }
+
+    class platform_defines_h {
+        <<stub template>>
+        +MAX_LENGTH_OF__IO_PATH 1024
+        +PATH_SEPERATOR
+        +CAMERA_FULCRUM__WIDTH 256
+        +CAMERA_FULCRUM__HEIGHT 196
+        +MAX_QUANTITY_OF__TEXTURES 128
+        +CHUNK__WIDTH 8
+        +CHUNK__HEIGHT 8
+        +CHUNK__DEPTH 2
+        +TILE__WIDTH_AND__HEIGHT_IN__PIXELS 8
+        +LOCAL_SPACE_MANAGER__WIDTH 8
+        +LOCAL_SPACE_MANAGER__HEIGHT 8
+        +MAX_QUANTITY_OF__ENTITIES 128
+        +MAX_QUANTITY_OF__CLIENTS 4
+        +QUANTITY_OF__GLOBAL_SPACE 256
+        +PLATFORM__GFX_WINDOW__MAX_QUANTITY_OF 128
+    }
+
+    class PLATFORM_c {
+        <<stub template>>
+        +PLATFORM_initialize_time()
+        +PLATFORM_get_time_elapsed() u32F20
+        +PLATFORM_get_date_time()
+        +PLATFORM_coredump()
+        +PLATFORM_pre_abort()
+        +PLATFORM_abort()
+        +PLATFORM_pre_render()
+        +PLATFORM_post_render()
+        +PLATFORM_compose_world()
+        +PLATFORM_allocate_texture() bool
+        +PLATFORM_allocate_texture_with__path() bool
+        +PLATFORM_release_texture()
+        +PLATFORM_allocate_gfx_window() PLATFORM_Graphics_Window*
+        +PLATFORM_release_gfx_window()
+        +PLATFORM_compose_gfx_window()
+        +PLATFORM_render_gfx_window()
+        +PLATFORM_render_sprite()
+        +PLATFORM_put_char_in__typer()
+        +PLATFORM_initialize_audio()
+        +PLATFORM_allocate_audio_effect() Audio_Effect*
+        +PLATFORM_play_audio_effect()
+        +PLATFORM_poll_audio_effects()
+        +PLATFORM_play_audio__stream()
+        +PLATFORM_is_audio__streaming() bool
+        +PLATFORM_allocate_sprite() PLATFORM_Sprite*
+        +PLATFORM_release_sprite()
+        +PLATFORM_release_all__sprites()
+        +PLATFORM_initialize_file_system_context()
+        +PLATFORM_get_base_directory() Quantity__u32
+        +PLATFORM_get_directories() Quantity__u32
+        +PLATFORM_access() int
+        +PLATFORM_opendir() PLATFORM_Directory*
+        +PLATFORM_closedir()
+        +PLATFORM_mkdir() bool
+        +PLATFORM_append_base_directory_to__path()
+        +PLATFORM_get_quantity_of__active_serialization_requests() Quantity__u32
+        +PLATFORM_allocate_serialization_request() Serialization_Request*
+        +PLATFORM_release_serialization_request()
+        +PLATFORM_open_file() PLATFORM_Open_File_Error
+        +PLATFORM_close_file()
+        +PLATFORM_write_file() PLATFORM_Write_File_Error
+        +PLATFORM_read_file() PLATFORM_Read_File_Error
+        +PLATFORM_get_position_in__file() Index__u32
+        +PLATFORM_set_position_in__file() bool
+        +PLATFORM_poll_input()
+        +PLATFORM_tcp_begin() PLATFORM_TCP_Context*
+        +PLATFORM_tcp_end()
+        +PLATFORM_tcp_connect() PLATFORM_TCP_Socket*
+        +PLATFORM_tcp_poll_connect() TCP_Socket_State
+        +PLATFORM_tcp_server() PLATFORM_TCP_Socket*
+        +PLATFORM_tcp_close_socket() bool
+        +PLATFORM_tcp_poll_accept() PLATFORM_TCP_Socket*
+        +PLATFORM_tcp_send() i32
+        +PLATFORM_tcp_recieve() i32
+    }
+
+    class Makefile_tests {
+        <<build system>>
+        +CFLAGS -Wall -O2
+        +SOURCE_TEST_CORE
+        +INCLUDE_TEST_CORE
+        +SOURCE_TEST_PLATFORM
+        +INCLUDE_TEST_PLATFORM
+        +SOURCE_TEST_GAME
+        +INCLUDE_TEST_GAME
+        +CORE_OMIT main.c
+        +OFILES
+        +OUTPUT
+    }
+
+    %% Entry point wires root suite and invokes runner
+    main_c --> MAIN_TEST_SUITE__CORE_ANCIENTS_GAME_c : calls include_test_suite__CORE_ANCIENTS_GAME
+    main_c --> TestRunner : passes MunitSuite to munit_suite_main
+
+    %% TestRunner uses MunitSuite tree
+    TestRunner *-- MunitSuite : runs root suite
+    TestRunner ..> MunitResult : returns per test
+
+    %% MunitSuite contains tests and child suites
+    MunitSuite *-- "0..*" MunitTest : tests array
+    MunitSuite *-- "0..*" MunitSuite : suites array
+
+    %% test_util.h macros produce MunitSuite and MunitTest structs
+    test_util_h ..> MunitSuite : DEFINE_SUITE / DEFINE_SUITE_WITH__SUB_SUITES produce
+    test_util_h ..> MunitTest : INCLUDE_TEST* macros produce
+
+    %% Root header aggregates all sub-suite declarations
+    MAIN_TEST_SUITE__CORE_ANCIENTS_GAME_h --> "7" ModuleSuiteHeader : includes module headers
+    MAIN_TEST_SUITE__CORE_ANCIENTS_GAME_h --> "18" DirectorySuite : includes directory MAIN_TEST_SUITE headers
+
+    %% Root source wires 25 sub-suites + NULL
+    MAIN_TEST_SUITE__CORE_ANCIENTS_GAME_c --> "7" ModuleSuiteSource : INCLUDE_SUITE(module)
+    MAIN_TEST_SUITE__CORE_ANCIENTS_GAME_c --> "18" DirectorySuite : INCLUDE_SUITE(CORE_DIR)
+
+    %% Directory suites aggregate module suites and nested directory suites
+    DirectorySuite *-- "0..*" ModuleSuiteSource : sub_suites
+    DirectorySuite *-- "0..*" DirectorySuite : sub_suites (nested)
+
+    %% Module suite source includes original .c and defines tests
+    ModuleSuiteSource ..> MunitSuite : DEFINE_SUITE populates
+    ModuleSuiteSource ..> MunitTest : TEST_FUNCTION registered via INCLUDE_TEST__STATELESS
+    ModuleSuiteHeader ..> ModuleSuiteSource : declares include_test_suite__module
+
+    %% Code generation scripts produce the suite hierarchy
+    update_sh --> update_recursive_sh : delegates per directory tree
+    update_sh ..> MAIN_TEST_SUITE__CORE_ANCIENTS_GAME_c : generates root source
+    update_sh ..> MAIN_TEST_SUITE__CORE_ANCIENTS_GAME_h : generates root header
+    update_sh ..> main_c : generates entry point
+    update_recursive_sh ..> DirectorySuite : generates directory suites
+    update_recursive_sh ..> ModuleSuiteHeader : generates stub headers if missing
+    update_recursive_sh ..> ModuleSuiteSource : generates stub sources if missing
+
+    %% Platform stubs provide linkable symbols
+    platform_defines_h ..> PLATFORM_c : constants consumed by stub implementations
+    PLATFORM_c ..> Makefile_tests : linked into test binary when no platform
+
+    %% Makefile orchestrates compilation and linking
+    Makefile_tests ..> main_c : compiles
+    Makefile_tests ..> MAIN_TEST_SUITE__CORE_ANCIENTS_GAME_c : compiles
+    Makefile_tests ..> DirectorySuite : compiles all generated sources
+    Makefile_tests ..> ModuleSuiteSource : compiles all test sources
+    Makefile_tests ..> PLATFORM_c : compiles when no real platform
+    Makefile_tests ..> TestRunner : links into final binary
