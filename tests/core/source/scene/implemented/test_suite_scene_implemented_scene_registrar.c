@@ -2,9 +2,15 @@
 
 #include <scene/implemented/scene_registrar.c>
 
-#warning Please make tests for: /home/shalidor/Projects/Lavender/tests/core/source/scene/implemented/test_suite_scene_implemented_scene_registrar.c
+TEST_FUNCTION(register_scenes__does_not_crash_on_initialized_manager) {
+    Scene_Manager scene_manager;
+    initialize_scene_manager(&scene_manager);
 
-// Before writing any tests, please see the README
-// found in ./tests
+    register_scenes(&scene_manager);
 
-DEFINE_SUITE(scene_registrar, END_TESTS)
+    return MUNIT_OK;
+}
+
+DEFINE_SUITE(scene_registrar,
+    INCLUDE_TEST__STATELESS(register_scenes__does_not_crash_on_initialized_manager),
+    END_TESTS)
