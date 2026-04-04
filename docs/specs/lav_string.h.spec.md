@@ -30,10 +30,27 @@ None.
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
-| `cstr_to_i16__limit_n` | `(const char*, i32 limit_n, i16*) -> bool` | `bool` | Parses via `cstr_to_i32__limit_n` and narrows to `i16`. |
-| `cstr_to_i8__limit_n` | `(const char*, i32 limit_n, i8*) -> bool` | `bool` | Parses via `cstr_to_i32__limit_n` and narrows to `i8`. |
-| `cstr_to_u16__limit_n` | `(const char*, i32 limit_n, u16*) -> bool` | `bool` | Parses via `cstr_to_u32__limit_n` and narrows to `u16`. |
-| `cstr_to_u8__limit_n` | `(const char*, i32 limit_n, u8*) -> bool` | `bool` | Parses via `cstr_to_u32__limit_n` and narrows to `u8`. |
+| `cstr_to_i16__limit_n` | `(const char*, i32 limit_n, i16*) -> bool` | `bool` | Parses via `cstr_to_i32__limit_n`, narrows return to target width, converts to bool, and narrows parsed value to `i16` on success. |
+| `cstr_to_i8__limit_n` | `(const char*, i32 limit_n, i8*) -> bool` | `bool` | Parses via `cstr_to_i32__limit_n`, narrows return to target width, converts to bool, and narrows parsed value to `i8` on success. |
+| `cstr_to_u16__limit_n` | `(const char*, i32 limit_n, u16*) -> bool` | `bool` | Parses via `cstr_to_u32__limit_n`, narrows return to target width, converts to bool, and narrows parsed value to `u16` on success. |
+| `cstr_to_u8__limit_n` | `(const char*, i32 limit_n, u8*) -> bool` | `bool` | Parses via `cstr_to_u32__limit_n`, narrows return to target width, converts to bool, and narrows parsed value to `u8` on success. |
+
+### Narrowing Wrapper Pattern
+
+Each narrowing wrapper follows this pattern:
+
+1. Declare a stack variable `value` of the wide type (i32 or u32),
+   initialized to 0.
+2. Call the wide parsing function, cast the boolean return to the
+   narrow target type, and assign to `value`.
+3. Convert `value` to `bool` via `!= 0` comparison and assign to
+   `result`.
+4. If `result` is true, cast `value` to the narrow type and write
+   through the output pointer.
+5. Return `result`.
+
+This ensures the output pointer is only written on successful parse,
+and the narrowing cast is applied to the parsed value.
 
 ## Agentic Workflow
 
@@ -57,16 +74,9 @@ Use these functions when:
 
 ### Known Issues
 
-The narrowing wrappers cast the **return value** of the inner parsing
-function rather than the parsed value:
-
-    bool result = (i16)cstr_to_i32__limit_n(...);
-
-This casts the boolean result (0 or 1) to the narrow type and then
-assigns to `bool`, which works correctly but is misleading. The actual
-narrowing of the parsed value is done correctly via the separate
-assignment. However, no overflow check is performed when narrowing from
-32-bit to the smaller type — the value is silently truncated.
+No overflow check is performed when narrowing from 32-bit to the
+smaller type — the value is silently truncated if it exceeds the
+target type's range.
 
 ### Preconditions
 
@@ -76,10 +86,9 @@ assignment. However, no overflow check is performed when narrowing from
 
 ### Postconditions
 
-- On success (returns true): the output pointer contains the parsed value.
-- On failure (returns false): the output pointer is not modified (for
-  narrowing wrappers, the intermediate `value` variable is 0 but the
-  output is only written on success).
+- On success (returns true): the output pointer contains the parsed
+  value (narrowed to the target type for wrapper functions).
+- On failure (returns false): the output pointer is not modified.
 
 ### Error Handling
 

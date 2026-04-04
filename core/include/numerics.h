@@ -205,8 +205,8 @@ u16 add_u16__clamped(
         u16 first__u16,
         u16 second__u16,
         u16 clamp__u16) {
-    if (MAX__U8 - first__u16 < second__u16) {
-        return MAX__U8;
+    if (MAX__U16 - first__u16 < second__u16) {
+        return clamp__u16;
     }
     if (first__u16 + second__u16 > clamp__u16) {
         return clamp__u16;
@@ -219,8 +219,8 @@ u32 add_u32__clamped(
         u32 first__u32,
         u32 second__u32,
         u32 clamp__u32) {
-    if (MAX__U8 - first__u32 < second__u32) {
-        return MAX__U8;
+    if (MAX__U32 - first__u32 < second__u32) {
+        return clamp__u32;
     }
     if (first__u32 + second__u32 > clamp__u32) {
         return clamp__u32;
@@ -427,7 +427,7 @@ u8 r_bitshift_u8__clamped(
     if (shift__u8 >= 8)
         return min__u8;
     u8 shifted = value__u8 >> shift__u8;
-    if (shift__u8 < min__u8) {
+    if (shifted < min__u8) {
         return min__u8;
     }
     return shifted;
@@ -438,10 +438,10 @@ u16 r_bitshift_u16__clamped(
         u16 value__u16,
         u16 shift__u16,
         u16 min__u16) {
-    if (shift__u16 >= 8)
+    if (shift__u16 >= 16)
         return min__u16;
     u16 shifted = value__u16 >> shift__u16;
-    if (shift__u16 < min__u16) {
+    if (shifted < min__u16) {
         return min__u16;
     }
     return shifted;
@@ -452,10 +452,10 @@ u32 r_bitshift_u32__clamped(
         u32 value__u32,
         u32 shift__u32,
         u32 min__u32) {
-    if (shift__u32 >= 8)
+    if (shift__u32 >= 32)
         return min__u32;
     u32 shifted = value__u32 >> shift__u32;
-    if (shift__u32 < min__u32) {
+    if (shifted < min__u32) {
         return min__u32;
     }
     return shifted;

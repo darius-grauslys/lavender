@@ -77,18 +77,18 @@ every subsystem performs fixed-point arithmetic.
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
-| `add_u8__clamped` | `(u8, u8, u8 clamp) -> u8` | Addition clamped to `clamp`. |
-| `add_u16__clamped` | `(u16, u16, u16 clamp) -> u16` | Addition clamped to `clamp`. |
-| `add_u32__clamped` | `(u32, u32, u32 clamp) -> u32` | Addition clamped to `clamp`. |
+| `add_u8__clamped` | `(u8, u8, u8 clamp) -> u8` | Addition clamped to `clamp`. Uses `MAX__U8` for overflow detection. |
+| `add_u16__clamped` | `(u16, u16, u16 clamp) -> u16` | Addition clamped to `clamp`. Uses `MAX__U16` for overflow detection. |
+| `add_u32__clamped` | `(u32, u32, u32 clamp) -> u32` | Addition clamped to `clamp`. Uses `MAX__U32` for overflow detection. |
 | `subtract_u8__clamped` | `(u8, u8, u8 min) -> u8` | Subtraction clamped to `min`. |
 | `subtract_u16__clamped` | `(u16, u16, u16 min) -> u16` | Subtraction clamped to `min`. |
 | `subtract_u32__clamped` | `(u32, u32, u32 min) -> u32` | Subtraction clamped to `min`. |
 | `multiply_u8__clamped` | `(u8, u8, u8 clamp) -> u8` | Multiplication clamped to `clamp`. |
 | `multiply_u16__clamped` | `(u16, u16, u16 clamp) -> u16` | Multiplication clamped to `clamp`. |
 | `multiply_u32__clamped` | `(u32, u32, u32 clamp) -> u32` | Multiplication clamped to `clamp`. |
-| `r_bitshift_u8__clamped` | `(u8, u8 shift, u8 min) -> u8` | Right shift clamped to `min`. |
-| `r_bitshift_u16__clamped` | `(u16, u16 shift, u16 min) -> u16` | Right shift clamped to `min`. |
-| `r_bitshift_u32__clamped` | `(u32, u32 shift, u32 min) -> u32` | Right shift clamped to `min`. |
+| `r_bitshift_u8__clamped` | `(u8, u8 shift, u8 min) -> u8` | Right shift clamped to `min`. Checks `shift >= 8`. |
+| `r_bitshift_u16__clamped` | `(u16, u16 shift, u16 min) -> u16` | Right shift clamped to `min`. Checks `shift >= 16`. |
+| `r_bitshift_u32__clamped` | `(u32, u32 shift, u32 min) -> u32` | Right shift clamped to `min`. Checks `shift >= 32`. |
 
 ### No-Overflow Arithmetic (static inline)
 
@@ -162,14 +162,6 @@ on platforms without an FPU (e.g. Nintendo DS). The naming convention is:
 
 Conversion between formats always uses arithmetic shifts to preserve
 sign correctness.
-
-### Known Issues
-
-- `add_u16__clamped` and `add_u32__clamped` use `MAX__U8` for overflow
-  detection instead of `MAX__U16` / `MAX__U32` respectively. This means
-  they will incorrectly clamp when `first` exceeds 255.
-- `r_bitshift_u16__clamped` and `r_bitshift_u32__clamped` check
-  `shift >= 8` instead of `>= 16` / `>= 32` respectively.
 
 ### Preconditions
 

@@ -1,0 +1,362 @@
+%% Module Topology: Core Engine
+%% Shows ownership hierarchy and relationships between top-level engine types.
+
+classDiagram
+    direction TB
+
+    class Game {
+        +Input input
+        +Scene_Manager scene_manager
+        +Hitbox_Context hitbox_context
+        +World *pM_world
+        +Process_Manager process_manager
+        +Sort_List_Manager sort_list_manager
+        +Path_List_Manager path_list_manager
+        +Log log__global
+        +Log log__local
+        +Log log__system
+        +Gfx_Context gfx_context
+        +PLATFORM_Audio_Context *p_PLATFORM_audio_context
+        +PLATFORM_File_System_Context *p_PLATFORM_file_system_context
+        +Game_Action_Logic_Table game_action_logic_table
+        +Session_Token session_token
+        +Timer__u32 tick__timer_u32
+        +Timer__u32 time__seconds__u32
+        +Timer__u32 time__nanoseconds__u32
+        +Quantity__u32 max_quantity_of__clients
+        +Client *pM_clients
+        +Client **pM_ptr_array_of__clients
+        +TCP_Socket_Manager *pM_tcp_socket_manager
+        +Game_Flags__u32 game_flags__u32
+        +initialize_game()
+        +run_game() int
+        +manage_game()
+        +manage_game__pre_render()
+        +manage_game__post_render()
+        +allocate_world_for__game()
+        +allocate_client_pool_for__game() bool
+        +allocate_client_from__game() Client*
+        +release_client_from__game()
+        +begin_multiplayer_for__game()
+        +stop_multiplayer_for__game()
+        +poll_multiplayer()
+    }
+
+    class World {
+        +Collision_Node_Pool collision_node_pool
+        +Global_Space_Manager global_space_manager
+        +Entity_Manager entity_manager
+        +Inventory_Manager inventory_manager
+        +Item_Manager item_manager
+        +Chunk_Generator_Table chunk_generator_table
+        +Repeatable_Psuedo_Random repeatable_pseudo_random
+        +f_Hitbox_AABB_Collision_Handler f_hitbox_aabb_collision_handler
+        +f_Hitbox_AABB_Tile_Touch_Handler f_hitbox_aabb_tile_touch_handler
+    }
+
+    class Gfx_Context {
+        +Graphics_Window_Manager graphics_window_manager
+        +Aliased_Texture_Manager aliased_texture_manager
+        +UI_Context ui_context
+        +UI_Tile_Map_Manager ui_tile_map_manager
+        +Font_Manager font_manager
+        +PLATFORM_Gfx_Context *p_PLATFORM_gfx_context
+        +Sprite_Context sprite_context
+    }
+
+    class Client {
+        +Serialization_Header _serialization_header
+        +Game_Action_Manager game_action_manager__inbound
+        +Game_Action_Manager game_action_manager__outbound
+        +Local_Space_Manager local_space_manager
+        +Input input_of__client
+        +Client_Flags__u16 client_flags__u16
+        +initialize_client()
+        +dispatch_game_action_for__client() bool
+        +receive_game_action_for__client() bool
+        +release_game_action_from__client() bool
+        +allocate_game_action_from__client() Game_Action*
+        +teleport_client() Process*
+        +is_client__active() bool
+        +is_client__loaded() bool
+        +is_client__saving() bool
+    }
+
+    class Client_Flags__u16 {
+        <<typedef u16>>
+        +CLIENT_FLAGS__NONE
+        +CLIENT_FLAG__IS_ACTIVE
+        +CLIENT_FLAG__IS_LOADED
+        +CLIENT_FLAG__IS_FAILED_TO_LOAD
+        +CLIENT_FLAG__IS_SAVING
+        +CLIENT_FLAG__IS_FRESH
+    }
+
+    class Game_Action_Manager {
+        +Repeatable_Psuedo_Random repeatable_pseudo_random
+    }
+
+    class Local_Space_Manager {
+    }
+
+    class Input {
+    }
+
+    class Hitbox_Context {
+        +Hitbox_Manager_Instance hitbox_manager_instances[]
+        +Hitbox_Manager_Instance__Invocation_Table hitbox_manager_instance__invocation_table[]
+        +Hitbox_Manager_Registration_Record hitbox_manager_registration_records[]
+        +initialize_hitbox_context()
+        +register_hitbox_manager()
+        +allocate_hitbox_manager_from__hitbox_context()
+        +release_hitbox_manager_from__hitbox_context()
+    }
+
+    class Process_Manager {
+        +Repeatable_Psuedo_Random repeatable_psuedo_random_for__process_uuid
+    }
+
+    class Scene_Manager {
+    }
+
+    class Sort_List_Manager {
+    }
+
+    class Path_List_Manager {
+    }
+
+    class Entity_Manager {
+        +Repeatable_Psuedo_Random randomizer
+    }
+
+    class Inventory_Manager {
+    }
+
+    class Item_Manager {
+    }
+
+    class Collision_Node_Pool {
+        +Collision_Node collision_nodes[]
+        +Collision_Node_Entry collision_node_entries[]
+    }
+
+    class Global_Space_Manager {
+        +Global_Space global_spaces[]
+    }
+
+    class Global_Space {
+        +Chunk_Vector__3i32 chunk_vector__3i32
+        +Chunk *p_chunk
+        +Collision_Node *p_collision_node
+    }
+
+    class Graphics_Window_Manager {
+    }
+
+    class Graphics_Window {
+        +Serialization_Header _serialization_header
+        +UI_Tile_Map__Wrapper ui_tile_map__wrapper
+        +Vector__3i32 origin_of__gfx_window
+        +Vector__3i32 position_of__gfx_window
+        +Quantity__u32 width_of__graphics_window__u32
+        +Quantity__u32 height_of__graphics_window__u32
+    }
+
+    class Aliased_Texture_Manager {
+        +Repeatable_Psuedo_Random repeatable_psuedo_random_for__texture_uuid
+    }
+
+    class UI_Context {
+    }
+
+    class UI_Manager {
+        +Serialization_Header _serialization_header
+        +UI_Element *pM_ui_element_pool
+        +UI_Element **pM_ptr_array_of__ui_elements
+        +Repeatable_Psuedo_Random randomizer
+        +UI_Element *p_ui_element__focused
+    }
+
+    class UI_Element {
+        +Serialization_Header _serialization_header
+        +m_UI_Clicked m_ui_clicked_handler
+        +m_UI_Dragged m_ui_dragged_handler
+        +m_UI_Dropped m_ui_dropped_handler
+        +m_UI_Receive_Drop m_ui_receive_drop_handler
+    }
+
+    class Sprite_Context {
+    }
+
+    class Font_Manager {
+    }
+
+    class TCP_Socket_Manager {
+    }
+
+    class Session_Token {
+    }
+
+    class Game_Action {
+        +Serialization_Header _serialiation_header
+        +Identifier__u32 uuid_of__client__u32
+    }
+
+    class Serialization_Header {
+        +Quantity__u32 size_of__struct
+        +Identifier__u32 uuid
+    }
+
+    class Serialization_Request {
+        +void *p_data
+        +Serialization_Header *p_serialization_header
+        +void *p_file_handler
+        +Quantity__u32 quantity_of__file_contents
+    }
+
+    class Repeatable_Psuedo_Random {
+        +Psuedo_Random_Seed__u32 seed__initial
+        +Psuedo_Random_Seed__u32 seed__current_random
+        +initialize_repeatable_psuedo_random()
+        +get_pseudo_random_i32__intrusively()
+        +get_pseudo_random_i32__non_intrusively()
+    }
+
+    class Timer__u32 {
+        +u32 remaining__u32
+        +u32 start__u32
+        +poll_timer_u32() bool
+        +reset_timer_u32()
+        +is_timer_u32__elapsed() bool
+    }
+
+    class Timer__u16 {
+        +u16 remaining__u16
+        +u16 start__u16
+    }
+
+    class Timer__u8 {
+        +u8 remaining__u8
+        +u8 start__u8
+    }
+
+    class Audio_Effect {
+        +void *p_audio_instance_handle
+        +Timer__u32 timer_for__audio
+        +Audio_Effect_Kind the_kind_of__audio_effect
+        +Audio_Flags__u8 audio_flags__u8
+    }
+
+    class Log {
+    }
+
+    class Game_Flags__u32 {
+        <<typedef u32>>
+        +GAME_FLAG__IS_SERVER_OR__CLIENT
+    }
+
+    class Game_Action_Logic_Table {
+    }
+
+    class PLATFORM_Gfx_Context {
+        <<platform>>
+    }
+
+    class PLATFORM_Audio_Context {
+        <<platform>>
+    }
+
+    class PLATFORM_File_System_Context {
+        <<platform>>
+    }
+
+    class PLATFORM_TCP_Context {
+        <<platform>>
+    }
+
+    class PLATFORM_Graphics_Window {
+        <<platform>>
+    }
+
+    class PLATFORM_Texture {
+        <<platform>>
+    }
+
+    class PLATFORM_Sprite {
+        <<platform>>
+    }
+
+    %% ===== Game owns top-level subsystems =====
+    Game *-- Gfx_Context : owns
+    Game *-- Hitbox_Context : owns
+    Game *-- Process_Manager : owns
+    Game *-- Scene_Manager : owns
+    Game *-- Sort_List_Manager : owns
+    Game *-- Path_List_Manager : owns
+    Game *-- Input : owns (fallback)
+    Game *-- Session_Token : owns
+    Game *-- Game_Action_Logic_Table : owns
+    Game *-- "3" Log : owns (global, local, system)
+    Game *-- "3" Timer__u32 : owns (tick, seconds, nanoseconds)
+    Game *-- Game_Flags__u32 : game_flags__u32
+    Game *-- World : owns via pM_world
+    Game *-- "0..*" Client : owns pool via pM_clients
+    Game --> TCP_Socket_Manager : pM_tcp_socket_manager (optional)
+    Game --> PLATFORM_Audio_Context : p_PLATFORM_audio_context
+    Game --> PLATFORM_File_System_Context : p_PLATFORM_file_system_context
+
+    %% ===== Gfx_Context owns rendering subsystems =====
+    Gfx_Context *-- Graphics_Window_Manager : owns
+    Gfx_Context *-- Aliased_Texture_Manager : owns
+    Gfx_Context *-- UI_Context : owns
+    Gfx_Context *-- Sprite_Context : owns
+    Gfx_Context *-- Font_Manager : owns
+    Gfx_Context --> PLATFORM_Gfx_Context : p_PLATFORM_gfx_context
+
+    %% ===== Graphics subsystem internals =====
+    Graphics_Window_Manager *-- "0..*" Graphics_Window : owns
+    Graphics_Window --> PLATFORM_Graphics_Window : platform backing
+    Aliased_Texture_Manager *-- Repeatable_Psuedo_Random : texture UUID generation
+
+    %% ===== UI subsystem =====
+    UI_Context *-- UI_Manager : owns
+    UI_Manager *-- "0..*" UI_Element : pM_ui_element_pool
+    UI_Manager *-- Repeatable_Psuedo_Random : UUID generation
+
+    %% ===== World owns world subsystems =====
+    World *-- Collision_Node_Pool : owns
+    World *-- Global_Space_Manager : owns
+    World *-- Entity_Manager : owns
+    World *-- Inventory_Manager : owns
+    World *-- Item_Manager : owns
+    World *-- Repeatable_Psuedo_Random : world generation
+
+    %% ===== World internals =====
+    Global_Space_Manager *-- "0..*" Global_Space : owns
+    Global_Space --> Collision_Node_Pool : p_collision_node references node in pool
+    Entity_Manager *-- Repeatable_Psuedo_Random : entity UUID generation
+
+    %% ===== Client owns its subsystems =====
+    Client *-- Serialization_Header : _serialization_header
+    Client *-- "2" Game_Action_Manager : owns (inbound + outbound)
+    Client *-- Local_Space_Manager : owns
+    Client *-- Input : owns (input_of__client)
+    Client *-- Client_Flags__u16 : client_flags__u16
+
+    %% ===== Client interactions =====
+    Game_Action_Manager *-- Repeatable_Psuedo_Random : game action UUID generation
+    Client --> Game_Action : dispatches and receives
+
+    %% ===== Networking =====
+    TCP_Socket_Manager --> PLATFORM_TCP_Context : platform backing
+
+    %% ===== Process Manager =====
+    Process_Manager *-- Repeatable_Psuedo_Random : process UUID generation
+
+    %% ===== Audio =====
+    PLATFORM_Audio_Context *-- "0..*" Audio_Effect : manages
+    Audio_Effect *-- Timer__u32 : timer_for__audio
+
+    %% ===== Serialization =====
+    PLATFORM_File_System_Context *-- "0..*" Serialization_Request : owns pool
+    Serialization_Request --> Serialization_Header : p_serialization_header
