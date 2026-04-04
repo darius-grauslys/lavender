@@ -1,0 +1,359 @@
+%% Module Topology: Implemented Types (Template System)
+%% Shows the injection hierarchy and relationships between
+%% template headers in core/include/types/implemented/.
+%%
+%% These files are templates shipped with the engine. They are
+%% copied to the game project directory by tools/lav_new_project
+%% and extended by the game developer. The copies are what
+%% participate in the build — not the originals.
+
+classDiagram
+    direction TB
+
+    class defines_weak_h {
+        <<injection target>>
+        +Tile_Kind
+        +Entity_Kind
+        +Item_Kind
+        +Scene_Kind
+        +Sprite_Kind
+        +Sprite_Animation_Kind
+        +Sprite_Animation_Group_Kind
+        +Audio_Effect_Kind
+        +Audio_Stream_Kind
+        +UI_Element_Kind
+        +UI_Tile_Kind
+        +UI_Sprite_Kind
+        +Graphics_Window_Kind
+        +Game_Action_Kind
+        +Chunk_Generator_Kind
+        +Hitbox_Kind
+        +Hitbox_Manager_Type
+    }
+
+    class defines_h {
+        <<injection target>>
+        +Tile
+        +Entity_Data
+        +Entity_Functions
+        +Item_Data
+        +UI_Element_Data
+        +Tile_Logic_Table_Data
+        +MAX_QUANTITY_OF__TILE_LOGIC_TABLES
+    }
+
+    %% -------------------------------------------------------
+    %% Enum templates injected into defines_weak.h
+    %% -------------------------------------------------------
+
+    class tile_kind_h {
+        <<template enum>>
+        +DEFINE_TILE_KIND
+        +Tile_Kind__None = 0
+        +Tile_Kind__Unknown
+    }
+
+    class entity_kind_h {
+        <<template enum>>
+        +DEFINE_ENTITY_KIND
+        +Entity_Kind__None = 0
+        +Entity_Kind__Unknown
+    }
+
+    class item_kind_h {
+        <<template enum>>
+        +DEFINE_ITEM_KIND
+        +Item_Kind__None = 0
+        +Item_Kind__Unknown
+    }
+
+    class scene_kind_h {
+        <<template enum>>
+        +DEFINE_SCENE_KIND
+        +Scene_Kind__None = 0
+        +Scene_Kind__Unknown
+    }
+
+    class sprite_kind_h {
+        <<template enum>>
+        +DEFINE_SPRITE_KIND
+        +Sprite_Kind__None
+        +Sprite_Kind__Unknown
+    }
+
+    class sprite_animation_kind_h {
+        <<template enum>>
+        +DEFINE_SPRITE_ANIMATION_KIND
+        +Sprite_Animation_Kind__None
+        +Sprite_Animation_Kind__Unknown
+    }
+
+    class sprite_animation_group_kind_h {
+        <<template enum>>
+        +DEFINE_SPRITE_ANIMATION_GROUP_KIND
+        +Sprite_Animation_Group_Kind__None
+        +Sprite_Animation_Group_Kind__Unknown
+    }
+
+    class audio_effect_kind_h {
+        <<template enum>>
+        +DEFINE_AUDIO_EFFECT_KIND
+        +Audio_Effect_Kind__None
+        +Audio_Effect_Kind__Unknown
+    }
+
+    class audio_stream_kind_h {
+        <<template enum>>
+        +DEFINE_AUDIO_STREAM_KIND
+        +Audio_Stream_Kind__None
+        +Audio_Stream_Kind__Unknown
+    }
+
+    class ui_element_kind_h {
+        <<template enum>>
+        +DEFINE_UI_ELEMENT_KIND
+        +UI_Element_Kind__None
+        +UI_Element_Kind__Button
+        +UI_Element_Kind__Draggable
+        +UI_Element_Kind__Slider
+        +UI_Element_Kind__Drop_Zone
+        +UI_Element_Kind__Text
+        +UI_Element_Kind__Text_Box
+        +UI_Element_Kind__Logical
+        +UI_Element_Kind__Window
+        +UI_Element_Kind__Unknown
+    }
+
+    class ui_tile_kind_h {
+        <<template enum>>
+        +DEFINE_UI_TILE_KIND
+        +UI_Tile_Kind__None
+        +UI_Tile_Kind__Unknown
+    }
+
+    class ui_sprite_kind_h {
+        <<template enum>>
+        +DEFINE_UI_SPRITE_KIND
+        +UI_Sprite_Kind__None
+        +UI_Sprite_Kind__8x8
+        +UI_Sprite_Kind__16x16
+        +UI_Sprite_Kind__32x32
+        +UI_Sprite_Kind__Unknown
+    }
+
+    class graphics_window_kind_h {
+        <<template enum>>
+        +DEFINE_GRAPHICS_WINDOW_KIND
+        +Graphics_Window_Kind__None = 0
+        +Graphics_Window_Kind__Unknown
+    }
+
+    class game_action_kind_h {
+        <<template enum>>
+        +DEFINE_GAME_ACTION_KIND
+        +Game_Action_Kind__None = 0
+        +Game_Action_Kind__Bad_Request
+        +Game_Action_Kind__TCP_Connect__Begin
+        +Game_Action_Kind__TCP_Connect
+        +Game_Action_Kind__TCP_Connect__Reject
+        +Game_Action_Kind__TCP_Connect__Accept
+        +Game_Action_Kind__TCP_Disconnect
+        +Game_Action_Kind__TCP_Delivery
+        +Game_Action_Kind__World__Load_World
+        +Game_Action_Kind__World__Load_Client
+        +Game_Action_Kind__World__Request_Client_Data
+        +Game_Action_Kind__Global_Space__Request
+        +Game_Action_Kind__Global_Space__Resolve
+        +Game_Action_Kind__Global_Space__Store
+        +Game_Action_Kind__Inventory__Request
+        +Game_Action_Kind__Inventory__Resolve
+        +Game_Action_Kind__Entity__Spawn
+        +Game_Action_Kind__Entity__Get
+        +Game_Action_Kind__Sprite
+        +Game_Action_Kind__Hitbox
+        +Game_Action_Kind__Hitbox__End
+        +Game_Action_Kind__Input
+        +Game_Action_Kind__Custom
+        +Game_Action_Kind__Unknown
+    }
+
+    class chunk_generator_kind_h {
+        <<template enum>>
+        +DEFINE_CHUNK_GENERATOR_KIND
+        +Chunk_Generator_Kind__None = 0
+        +Chunk_Generator_Kind__Unknown
+    }
+
+    class hitbox_kind_h {
+        <<template enum>>
+        +DEFINE_HITBOX_KIND
+        +Hitbox_Kind__Opaque
+        +Hitbox_Kind__AABB
+        +Hitbox_Kind__Unknown
+    }
+
+    class hitbox_manager_type_h {
+        <<template enum>>
+        +DEFINE_HITBOX_MANAGER_TYPE
+        +Hitbox_Manager_Type__Default
+        +Hitbox_Manager_Type__AABB
+        +Hitbox_Manager_Type__AAABBB
+        +Hitbox_Manager_Type__Unknown
+    }
+
+    %% -------------------------------------------------------
+    %% Struct / constant templates injected into defines.h
+    %% -------------------------------------------------------
+
+    class tile_h {
+        <<template struct>>
+        +DEFINE_TILE
+        +Tile_Kind the_kind_of__tile
+    }
+
+    class entity_data_h {
+        <<template struct>>
+        +DEFINE_ENTITY_DATA
+        +Entity_Flags__u32 entity_flags
+        +Entity_Kind the_kind_of__entity
+    }
+
+    class entity_functions_h {
+        <<template struct>>
+        +DEFINE_ENTITY_FUNCTIONS
+        +m_entity_dispose_handler
+        +m_entity_update_handler
+        +m_entity_disable_handler
+        +m_entity_enable_handler
+        +m_entity_serialize_handler
+        +m_entity_deserialize_handler
+    }
+
+    class item_data_h {
+        <<template struct>>
+        +DEFINE_ITEM_DATA
+    }
+
+    class ui_element_data_h {
+        <<template struct>>
+        +DEFINE_UI_ELEMENT_DATA
+    }
+
+    class tile_logic_table_data_h {
+        <<template struct>>
+        +DEFINE_TILE_LOGIC_TABLE_DATA
+        +Tile_Logic_Record tile_logic_record__tile_kind[Tile_Kind__Unknown]
+    }
+
+    class tile_logic_table_list_h {
+        <<template constant>>
+        +DEFINE_TILE_LOGIC_TABLE_LIST
+        +MAX_QUANTITY_OF__TILE_LOGIC_TABLES = 8
+    }
+
+    %% -------------------------------------------------------
+    %% Injection relationships: enum templates -> defines_weak.h
+    %% -------------------------------------------------------
+
+    tile_kind_h ..> defines_weak_h : injected via DEFINE_TILE_KIND
+    entity_kind_h ..> defines_weak_h : injected via DEFINE_ENTITY_KIND
+    item_kind_h ..> defines_weak_h : injected via DEFINE_ITEM_KIND
+    scene_kind_h ..> defines_weak_h : injected via DEFINE_SCENE_KIND
+    sprite_kind_h ..> defines_weak_h : injected via DEFINE_SPRITE_KIND
+    sprite_animation_kind_h ..> defines_weak_h : injected via DEFINE_SPRITE_ANIMATION_KIND
+    sprite_animation_group_kind_h ..> defines_weak_h : injected via DEFINE_SPRITE_ANIMATION_GROUP_KIND
+    audio_effect_kind_h ..> defines_weak_h : injected via DEFINE_AUDIO_EFFECT_KIND
+    audio_stream_kind_h ..> defines_weak_h : injected via DEFINE_AUDIO_STREAM_KIND
+    ui_element_kind_h ..> defines_weak_h : injected via DEFINE_UI_ELEMENT_KIND
+    ui_tile_kind_h ..> defines_weak_h : injected via DEFINE_UI_TILE_KIND
+    ui_sprite_kind_h ..> defines_weak_h : injected via DEFINE_UI_SPRITE_KIND
+    graphics_window_kind_h ..> defines_weak_h : injected via DEFINE_GRAPHICS_WINDOW_KIND
+    game_action_kind_h ..> defines_weak_h : injected via DEFINE_GAME_ACTION_KIND
+    chunk_generator_kind_h ..> defines_weak_h : injected via DEFINE_CHUNK_GENERATOR_KIND
+    hitbox_kind_h ..> defines_weak_h : injected via DEFINE_HITBOX_KIND
+    hitbox_manager_type_h ..> defines_weak_h : injected via DEFINE_HITBOX_MANAGER_TYPE
+
+    %% -------------------------------------------------------
+    %% Injection relationships: struct/constant templates -> defines.h
+    %% -------------------------------------------------------
+
+    tile_h ..> defines_h : injected via DEFINE_TILE
+    entity_data_h ..> defines_h : injected via DEFINE_ENTITY_DATA
+    entity_functions_h ..> defines_h : injected via DEFINE_ENTITY_FUNCTIONS
+    item_data_h ..> defines_h : injected via DEFINE_ITEM_DATA
+    ui_element_data_h ..> defines_h : injected via DEFINE_UI_ELEMENT_DATA
+    tile_logic_table_data_h ..> defines_h : injected via DEFINE_TILE_LOGIC_TABLE_DATA
+    tile_logic_table_list_h ..> defines_h : injected via DEFINE_TILE_LOGIC_TABLE_LIST
+
+    %% -------------------------------------------------------
+    %% defines.h depends on defines_weak.h
+    %% -------------------------------------------------------
+
+    defines_h --> defines_weak_h : includes (weak types available)
+
+    %% -------------------------------------------------------
+    %% Cross-template type dependencies
+    %% -------------------------------------------------------
+
+    tile_h --> tile_kind_h : uses Tile_Kind
+    entity_data_h --> entity_kind_h : uses Entity_Kind
+    tile_logic_table_data_h --> tile_kind_h : sized by Tile_Kind__Unknown
+    game_action_kind_h --> hitbox_kind_h : Hitbox__End delimiter
+
+    %% -------------------------------------------------------
+    %% Runtime consumer relationships (array sizing)
+    %% -------------------------------------------------------
+
+    class Entity_Manager {
+        <<runtime consumer>>
+        +entity_functions[Entity_Kind__Unknown]
+    }
+
+    class Scene_Manager {
+        <<runtime consumer>>
+        +scenes[Scene_Kind__Unknown]
+    }
+
+    class Sprite_Context {
+        <<runtime consumer>>
+        +sprite_animations[Sprite_Animation_Kind__Unknown]
+        +sprite_animation_groups[Sprite_Animation_Group_Kind__Unknown]
+    }
+
+    class Tile_Logic_Table {
+        <<runtime consumer>>
+        +tile_logic_table_data : Tile_Logic_Table_Data
+    }
+
+    class Chunk_Generator_Table {
+        <<runtime consumer>>
+        +M_process__chunk_generators[Chunk_Generator_Kind__Unknown]
+    }
+
+    class Game_Action_Logic_Table {
+        <<runtime consumer>>
+        +game_action_logic_entries[Game_Action_Kind__Unknown]
+    }
+
+    class UI_Context {
+        <<runtime consumer>>
+        +ui_window_record[Graphics_Window_Kind__Unknown]
+    }
+
+    class Hitbox_Context_Consumer {
+        <<runtime consumer>>
+        +hitbox_manager_instance__invocation_table[Hitbox_Manager_Type__Unknown]
+        +hitbox_manager_registration_records[Hitbox_Manager_Type__Unknown]
+    }
+
+    entity_kind_h ..> Entity_Manager : sizes entity_functions[]
+    entity_functions_h ..> Entity_Manager : element type
+    scene_kind_h ..> Scene_Manager : sizes scenes[]
+    sprite_animation_kind_h ..> Sprite_Context : sizes sprite_animations[]
+    sprite_animation_group_kind_h ..> Sprite_Context : sizes sprite_animation_groups[]
+    tile_kind_h ..> Tile_Logic_Table : sizes via Tile_Logic_Table_Data
+    tile_logic_table_data_h ..> Tile_Logic_Table : embedded struct
+    chunk_generator_kind_h ..> Chunk_Generator_Table : sizes M_process__chunk_generators[]
+    game_action_kind_h ..> Game_Action_Logic_Table : sizes game_action_logic_entries[]
+    graphics_window_kind_h ..> UI_Context : sizes ui_window_record[]
+    hitbox_manager_type_h ..> Hitbox_Context_Consumer : sizes invocation/registration tables
