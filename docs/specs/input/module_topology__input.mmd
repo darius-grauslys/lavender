@@ -1,0 +1,124 @@
+%% Module Topology: Input System
+%% Shows ownership hierarchy and relationships between input types.
+
+classDiagram
+    direction TB
+
+    class Game {
+        +Input input
+        +World *pM_world
+    }
+
+    class Input {
+        +Input_Flags__u32 input_flags__pressed
+        +Input_Flags__u32 input_flags__held
+        +Input_Flags__u32 input_flags__released
+        +Input_Flags__u32 input_flags__pressed_old
+        +Vector__3i32 cursor__3i32
+        +Vector__3i32 cursor__old__3i32
+        +unsigned char writing_buffer[MAX_QUANTITY_OF__SYMBOLS_IN__INPUT_WRITING_BUFFER]
+        +unsigned char last_symbol
+        +Index__u8 index_of__writing_buffer__read
+        +Index__u8 index_of__writing_buffer__write
+        +Input_Mode__u8 input_mode__u8
+        +initialize_input()
+        +poll_input()
+        +clear_input()
+        +consume_input()
+        +poll_input_for__writing() unsigned char
+        +buffer_input_for__writing()
+        +get_last_symbol_of__input_for__writing() unsigned char
+        +get_input_mode_of__input() Input_Mode__u8
+        +set_input_mode_of__input()
+    }
+
+    class Input_Flags__u32 {
+        <<typedef u32>>
+        +INPUT_NONE
+        +INPUT_FORWARD
+        +INPUT_LEFT
+        +INPUT_RIGHT
+        +INPUT_BACKWARD
+        +INPUT_GAME_SETTINGS
+        +INPUT_LOCKON
+        +INPUT_USE
+        +INPUT_USE_SECONDARY
+        +INPUT_EXAMINE
+        +INPUT_CONSUME
+        +INPUT_TURN_RIGHT
+        +INPUT_TURN_LEFT
+        +INPUT_CLICK
+    }
+
+    class Input_Mode__u8 {
+        <<typedef u8>>
+        +INPUT_MODE__NONE
+        +INPUT_MODE__NORMAL
+        +INPUT_MODE__WRITING
+    }
+
+    class Input_Code__u32 {
+        <<typedef u32>>
+        +INPUT_CODE_NONE
+        +INPUT_CODE_FORWARD
+        +INPUT_CODE_LEFT
+        +INPUT_CODE_RIGHT
+        +INPUT_CODE_BACKWARD
+        +INPUT_CODE_GAME_SETTINGS
+        +INPUT_CODE_LOCKON
+        +INPUT_CODE_USE
+        +INPUT_CODE_USE_SECONDARY
+        +INPUT_CODE_EXAMINE
+        +INPUT_CODE_CONSUME
+        +INPUT_CODE_TURN_RIGHT
+        +INPUT_CODE_TURN_LEFT
+        +INPUT_CODE_CLICK
+    }
+
+    class Vector__3i32 {
+        +Signed_Index__i32 x__i32
+        +Signed_Index__i32 y__i32
+        +Signed_Index__i32 z__i32
+    }
+
+    class Client {
+        +Input input_of__client
+    }
+
+    class UI_Element {
+        +m_UI_Clicked m_ui_clicked_handler
+        +m_UI_Dragged m_ui_dragged_handler
+        +m_UI_Dropped m_ui_dropped_handler
+        +m_UI_Receive_Drop m_ui_receive_drop_handler
+    }
+
+    class UI_Manager {
+        +UI_Element *p_ui_element__focused
+    }
+
+    class PLATFORM_poll_input {
+        <<platform function>>
+        +(Game*, Input*) void
+    }
+
+    %% Ownership: Game owns Input
+    Game *-- Input : owns
+
+    %% Client owns per-client Input (multiplayer)
+    Client *-- Input : owns input_of__client
+
+    %% Input uses Input_Flags__u32 for three state fields
+    Input *-- "3+1" Input_Flags__u32 : pressed / held / released / pressed_old
+    Input *-- Input_Mode__u8 : input_mode__u8
+    Input *-- "2" Vector__3i32 : cursor__3i32 / cursor__old__3i32
+
+    %% Input_Code__u32 maps to Input_Flags__u32 (sequential ID to bitmask)
+    Input_Code__u32 ..> Input_Flags__u32 : maps code to flag bit
+
+    %% Platform provides polling implementation
+    PLATFORM_poll_input ..> Input : populates pressed / held / released / cursor
+    PLATFORM_poll_input ..> Game : reads game state
+
+    %% UI system consumes input
+    UI_Manager ..> Input : queries and consumes input
+    UI_Element ..> Input : responds to click / drag / drop
