@@ -5,4 +5,3 @@ INCLUDE_SUITE(aliased_texture_registrar),
 INCLUDE_SUITE(sprite_animation_registrar),NULL);
 
 DEFINE_SUITE_WITH__SUB_SUITES(CORE_RENDERING_IMPLEMENTED, END_TESTS);
-

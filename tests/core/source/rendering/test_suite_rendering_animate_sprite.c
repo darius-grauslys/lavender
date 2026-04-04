@@ -2,9 +2,10 @@
 
 #include <rendering/animate_sprite.c>
 
-#warning Please make tests for: /home/shalidor/Projects/Lavender/tests/core/source/rendering/test_suite_rendering_animate_sprite.c
-
-// Before writing any tests, please see the README
-// found in ./tests
+// animate_sprite.h is DEPRECATED / INACTIVE.
+// All function bodies are currently commented out.
+// The animation system has been refactored to use Sprite_Animation structs
+// and m_Sprite_Animation_Handler callbacks (see sprite.h).
+// No tests can be written for this module.
 
 DEFINE_SUITE(animate_sprite, END_TESTS)
