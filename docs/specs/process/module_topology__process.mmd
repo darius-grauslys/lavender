@@ -1,0 +1,213 @@
+%% Module Topology: Process Scheduling System
+%% Shows ownership hierarchy and relationships between process types.
+
+classDiagram
+    direction TB
+
+    class Game {
+        +Process_Manager process_manager
+        +PLATFORM_File_System_Context *p_PLATFORM_file_system_context
+    }
+
+    class Process_Manager {
+        +Process processes[PROCESS_MAX_QUANTITY_OF]
+        +Process_Table process_table
+        +Repeatable_Psuedo_Random repeatable_psuedo_random_for__process_uuid
+        +Process *p_process__latest
+        +Identifier__u32 next__uuid__u32
+        +initialize_process_manager()
+        +allocate_process_in__process_manager() Process*
+        +release_process_from__process_manager()
+        +run_process_with__uuid() Process*
+        +run_process() Process*
+        +poll_process_manager() Quantity__u32
+        +get_p_process_by__uuid() Process*
+        +get_p_latest_allocated_process_from__process_manager() Process*
+        +get_quantity_of__processes_in__process_manager() Quantity__u32
+    }
+
+    class Process_Table {
+        +Process_Priority_Table_Entry process_priority_table[PROCESS_MAX_PRIORITY_LEVEL + 1]
+        +Process *ptr_array_of__processes[PROCESS_MAX_QUANTITY_OF]
+        +Process_Priority_Table_Entry *p_process_priority_table_entry__current
+        +initialize_process_table()
+        +add_process_to__process_table() bool
+        +remove_process_from__process_table()
+        +begin_polling_of__process_table()
+        +poll_next_p_process_from__process_table() Process*
+        +get_quantity_of__processes_in__process_table() Quantity__u32
+    }
+
+    class Process_Priority_Table_Entry {
+        +Process **p_ptr_process__youngest_of__priority
+        +Process **p_ptr_process__oldest_of__priority
+        +Process **p_ptr_process__current_priority_to__swap
+        +initialize_process_priority_table_entry()
+        +move_process_priorty_table_entry_up__one_in__ptr_array_of__processes() bool
+        +move_process_priorty_table_entry_down__one_in__ptr_array_of__processes() bool
+        +add_process_to__process_priorty_table_entry_in__ptr_array_of__processes() bool
+        +remove_process_from__process_priority_table_entry_from__ptr_array_of__processes() bool
+        +poll_next_p_process_from__process_priority_table_entry() bool
+        +is_process_priority_table_entry__empty() bool
+        +get_quantity_of__processes_in__process_priority_table_entry() Quantity__u32
+    }
+
+    class Process {
+        +Serialization_Header _serialization_header
+        +m_Process m_process_run__handler
+        +m_Process m_process_dispose__handler
+        +Process *p_enqueued_process / p_sub_process
+        +void *p_process_data
+        +i32 process_valueA__i32
+        +i32 process_valueB__i32
+        +u8 process_sub_state__u8
+        +Process_Status_Kind the_kind_of_status__this_process_has
+        +Process_Kind the_kind_of__process_this__process_is
+        +Process_Flags__u8 process_flags__u8
+        +Process_Priority__u8 process_priority__u8
+        +initialize_process()
+        +initialize_process_as__empty_process()
+        +initialize_process_as__serialized_process()
+        +complete_process()
+        +fail_process()
+        +stop_process()
+        +set_process_as__stopped()
+        +is_process__active() bool
+        +is_process__finished() bool
+        +is_process__complete() bool
+        +is_process__failed() bool
+        +is_process__enqueued() bool
+        +is_process__available() bool
+        +enqueue_process()
+        +is_process__critical() bool
+        +is_process__sub_process() bool
+        +get_the_kind_of__process() Process_Kind
+        +get_process_priorty_of__process() Process_Priority__u8
+    }
+
+    class Process_Status_Kind {
+        <<enumeration>>
+        Process_Status_Kind__None
+        Process_Status_Kind__Stopped
+        Process_Status_Kind__Idle
+        Process_Status_Kind__Busy
+        Process_Status_Kind__Stopping
+        Process_Status_Kind__Enqueued
+        Process_Status_Kind__Complete
+        Process_Status_Kind__Fail
+        Process_Status_Kind__Unknown
+    }
+
+    class Process_Kind {
+        <<enumeration>>
+        Process_Kind__None
+        Process_Kind__Generic
+        Process_Kind__Serialized
+        Process_Kind__Game_Action
+        Process_Kind__Unknown
+    }
+
+    class Process_Flags__u8 {
+        <<typedef u8>>
+        +PROCESS_FLAG__IS_CRITICAL
+        +PROCESS_FLAG__IS_SUB_PROCESS
+    }
+
+    class Process_Priority__u8 {
+        <<typedef u8>>
+        +PROCESS_PRIORITY__0_MAXIMUM = 0
+        +PROCESS_PRIORITY__1 = 1
+        +PROCESS_PRIORITY__MINIMUM = PROCESS_MAX_PRIORITY_LEVEL - 1
+    }
+
+    class m_Process {
+        <<function pointer>>
+        +void invoke(Process *p_this_process, Game *p_game)
+    }
+
+    class Game_Action {
+        +Serialization_Header _serialiation_header
+        +Identifier__u32 uuid_of__client__u32
+        +Game_Action_Kind the_kind_of__game_action
+    }
+
+    class Serialization_Request {
+        +void *p_data
+        +Serialization_Header *p_serialization_header
+        +void *p_file_handler
+        +Quantity__u32 quantity_of__file_contents
+        +u8 *p_tcp_packet_destination
+        +u8 *pM_packet_bitmap
+        +Quantity__u16 quantity_of__bytes_in__destination
+        +Quantity__u16 quantity_of__tcp_packets__anticipated
+    }
+
+    class Game_Action_Process {
+        <<utility functions>>
+        +initialize_process_as__game_action_process(Process*, Game_Action*)
+        +set_game_action_process_as__tcp_payload_receiver(Game*, Process*, u8*, Quantity__u16) bool
+        +m_process__dispose_handler__game_action__default(Process*, Game*)
+    }
+
+    class TCP_Game_Action_Process {
+        <<utility functions>>
+        +initialize_process_as__tcp_game_action_payload_receiver(Game*, Process*, u8*, Quantity__u16) bool
+        +poll_game_action_process__tcp_receive(Game*, Process*) PLATFORM_Read_File_Error
+        +poll_game_action_process__tcp_delivery(Game*, Identifier__u32, Identifier__u32, u8*, Quantity__u32, u8*, Quantity__u16) PLATFORM_Write_File_Error
+    }
+
+    class Filesystem_Process {
+        <<utility functions>>
+        +initialize_process_as__filesystem_process(Process*, Serialization_Request*, void*)
+        +initialize_process_as__filesystem_process__open_file(Game*, Process*, IO_path, const char*, void*, bool) bool
+    }
+
+    %% Ownership: Game owns Process_Manager
+    Game *-- Process_Manager : owns
+
+    %% Process_Manager owns process pool and Process_Table
+    Process_Manager *-- "512" Process : processes pool
+    Process_Manager *-- Process_Table : owns
+
+    %% Process_Table owns priority entries and pointer array
+    Process_Table *-- "PROCESS_MAX_PRIORITY_LEVEL + 1" Process_Priority_Table_Entry : process_priority_table
+    Process_Table --> "0..512" Process : ptr_array_of__processes (pointers into pool)
+
+    %% Process_Priority_Table_Entry delimits a region of the pointer array
+    Process_Priority_Table_Entry --> Process : p_ptr_process__youngest_of__priority
+    Process_Priority_Table_Entry --> Process : p_ptr_process__oldest_of__priority
+    Process_Priority_Table_Entry --> Process : p_ptr_process__current_priority_to__swap (round-robin cursor)
+
+    %% Process uses enums, flags, handler
+    Process --> Process_Status_Kind : the_kind_of_status__this_process_has
+    Process --> Process_Kind : the_kind_of__process_this__process_is
+    Process *-- Process_Flags__u8 : process_flags__u8
+    Process *-- Process_Priority__u8 : process_priority__u8
+    Process --> m_Process : m_process_run__handler
+    Process --> m_Process : m_process_dispose__handler
+
+    %% Process enqueueing chain
+    Process --> Process : p_enqueued_process / p_sub_process
+
+    %% Process opaque data pointer
+    Process --> Game_Action : p_process_data (Game_Action mode)
+    Process --> Serialization_Request : p_process_data (Serialized / TCP mode)
+
+    %% Game_Action_Process configures Process for game actions
+    Game_Action_Process ..> Process : configures
+    Game_Action_Process ..> Game_Action : wraps as p_process_data
+
+    %% TCP_Game_Action_Process extends game action process for TCP
+    TCP_Game_Action_Process ..> Process : configures
+    TCP_Game_Action_Process ..> Serialization_Request : allocates and wraps
+    TCP_Game_Action_Process ..> Game_Action : original moved to Serialization_Request.p_data
+
+    %% Filesystem_Process configures Process for file I/O
+    Filesystem_Process ..> Process : configures
+    Filesystem_Process ..> Serialization_Request : wraps as p_process_data
+
+    %% Serialization_Request data pointer chain
+    Serialization_Request --> Game_Action : p_data (in TCP receiver mode)
+
+    %% Process_Manager latest process pattern
+    Process_Manager --> Process : p_process__latest (one-shot)
