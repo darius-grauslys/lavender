@@ -1,0 +1,100 @@
+%% Module Topology: Utility System
+%% Shows ownership hierarchy and relationships between util types.
+
+classDiagram
+    direction TB
+
+    class Bitmap__Flat {
+        <<macro: BITMAP(name, N)>>
+        +u8 name[N / 8]
+        +initialize_bitmap()
+        +is_bit_set_in__bitmap() bool
+        +set_bit_in__bitmap()
+    }
+
+    class Bitmap__HeapAccelerated {
+        <<macro: BITMAP_AND_HEAP(name, N)>>
+        +u8 name[N/8 + heap levels]
+        +initialize_bitmap()
+        +is_bit_set_in__bitmap() bool
+        +set_bit_in__bitmap_and_heap()
+        +get_index_of__first_set_bit_from__bitmap_and_heap() Index__u32
+        +SET_BIT_IN__BITMAP_AND_HEAP()
+    }
+
+    class Enum_Map {
+        <<macro: ENUM_MAP(name, type_enum, type_value)>>
+        +type_value _values[type_enum__Unknown]
+        +initialize_enum_map__name()
+        +register_type_value_into__name()
+        +get_type_value_from__name() type_value
+        +get_p_type_value_by__enum_key_from__name() type_value*
+    }
+
+    class UUID_Mapped_Pool {
+        <<macro: UUID_MAPPED__POOL(name, type_value, length)>>
+        +Serialization_Pool _serialization_pool
+        +type_value _values[length]
+        +initialize_name()
+        +allocate_type_value_from__name() type_value*
+        +release_type_value_from__name()
+        +dehash_p_type_value_from__name() type_value*
+    }
+
+    class Serialization_Pool {
+        +Quantity__u32 quantity_of__pool_elements
+        +Quantity__u32 size_of__element
+        +Serialization_Header *p_headers
+        +initialize_serialization_pool()
+        +allocate_from__serialization_pool()
+        +release_from__serialization_pool()
+    }
+
+    class Serialization_Header {
+        +Quantity__u32 size_of__struct
+        +Identifier__u32 uuid
+    }
+
+    class Hashing {
+        <<macro: DEHASH>>
+        +dehash_identifier_u64_in__contiguous_array()
+    }
+
+    %% Bitmap__HeapAccelerated extends Bitmap__Flat with heap levels
+    Bitmap__Flat <|-- Bitmap__HeapAccelerated : extends with heap summary
+
+    %% UUID_Mapped_Pool owns a Serialization_Pool
+    UUID_Mapped_Pool *-- Serialization_Pool : _serialization_pool
+
+    %% UUID_Mapped_Pool delegates to Hashing for dehash
+    UUID_Mapped_Pool ..> Hashing : DEHASH macro
+
+    %% Serialization_Pool references Serialization_Header
+    Serialization_Pool --> Serialization_Header : p_headers
+
+    %% UUID_Mapped_Pool elements must contain Serialization_Header
+    UUID_Mapped_Pool ..> Serialization_Header : elements must begin with
+
+    %% Enum_Map has no structural dependency on serialization
+    %% Enum_Map is self-contained (array indexed by enum)
+
+    %% Bitmap types are self-contained (raw u8 arrays)
+    %% No structural dependency on serialization
+
+    %% Usage relationships from engine systems (illustrative)
+    class Collision_Node_Pool {
+        <<external consumer>>
+    }
+    class Region {
+        <<external consumer>>
+    }
+    class Entity_Manager {
+        <<external consumer>>
+    }
+
+    Collision_Node_Pool ..> UUID_Mapped_Pool : node pool pattern
+    Collision_Node_Pool ..> Bitmap__Flat : allocation tracking
+    Region ..> Bitmap__Flat : serialized chunk tracking
+    Region ..> Bitmap__Flat : site presence tracking
+    Entity_Manager ..> UUID_Mapped_Pool : entity pool pattern
+    Entity_Manager ..> Enum_Map : entity function dispatch
