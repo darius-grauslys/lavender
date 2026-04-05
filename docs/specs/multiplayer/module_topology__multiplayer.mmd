@@ -1,0 +1,208 @@
+%% Module Topology: Multiplayer System
+%% Shows ownership hierarchy and relationships between multiplayer types.
+
+classDiagram
+    direction TB
+
+    class Game {
+        +Session_Token session_token
+        +Quantity__u32 max_quantity_of__clients
+        +Quantity__u32 index_to__next_client_in__pool
+        +Client *pM_clients
+        +Client **pM_ptr_array_of__clients
+        +TCP_Socket_Manager *pM_tcp_socket_manager
+        +m_Game_Action_Handler m_game_action_handler__dispatch
+        +m_Game_Action_Handler m_game_action_handler__receive
+        +m_Game_Action_Handler m_game_action_handler__resolve
+        +Game_Action_Logic_Table game_action_logic_table
+        +Game_Flags__u32 game_flags__u32
+        +is_in_multiplayer_game() bool
+        +is_host() bool
+        +get_user_id() USER_ID
+    }
+
+    class Client {
+        +Serialization_Header _serialization_header
+        +Game_Action_Manager game_action_manager__inbound
+        +Game_Action_Manager game_action_manager__outbound
+        +Local_Space_Manager local_space_manager
+        +Input input_of__client
+        +Client_Flags__u16 client_flags__u16
+    }
+
+    class Client_Flags__u16 {
+        <<typedef u16>>
+        +CLIENT_FLAG__IS_ACTIVE
+        +CLIENT_FLAG__IS_LOADED
+        +CLIENT_FLAG__IS_FAILED_TO_LOAD
+        +CLIENT_FLAG__IS_SAVING
+        +CLIENT_FLAG__IS_FRESH
+    }
+
+    class TCP_Socket_Manager {
+        +TCP_Socket tcp_sockets[MAX_QUANTITY_OF__TCP_SOCKETS]
+        +TCP_Socket *ptr_array_of__tcp_sockets[]
+        +PLATFORM_TCP_Context *p_PLATFORM_tcp_context
+        +m_Poll_TCP_Socket_Manager m_poll_tcp_socket_manager
+        +PLATFORM_TCP_Socket *p_PLATFORM_tcp_socket__pending_connection
+        +IPv4_Address ipv4__pending_connection
+        +Quantity__u32 quantity_of__connections
+        +initialize_tcp_socket_manager()
+        +open_socket_on__tcp_socket_manager__ipv4()
+        +open_server_socket_on__tcp_socket_manager__ipv4()
+        +accept_socket_on__tcp_socket_manager__ipv4()
+        +close_socket_on__tcp_socket_manager__ipv4()
+        +poll_tcp_socket_manager_for__pending_connections()
+        +accept_pending_connection()
+        +reject_pending_connection()
+        +get_p_tcp_socket_for__this_uuid()
+        +get_quantity_of__active_tcp_sockets()
+    }
+
+    class TCP_Socket {
+        +Serialization_Header _serialization_header
+        +TCP_Packet queue_of__tcp_packet[MAX_QUANTITY_OF__TCP_PACKETS_PER__SOCKET]
+        +Quantity__u16 packet_size__entries[MAX_QUANTITY_OF__TCP_PACKETS_PER__SOCKET]
+        +IPv4_Address tcp_socket__address
+        +PLATFORM_TCP_Socket *p_PLATFORM_tcp_socket
+        +Index__u32 index_of__enqueue_begin
+        +Quantity__u32 quantity_of__received_packets
+        +TCP_Socket_State tcp_socket__state_of
+        +TCP_Socket_Flags__u8 tcp_socket_flags__u8
+        +initialize_tcp_socket()
+        +initialize_tcp_socket_as__deallocated()
+        +poll_tcp_socket_for__connection()
+        +send_bytes_over__tcp_socket()
+        +receive_bytes_over__tcp_socket()
+        +get_latest__delivery_from__tcp_socket()
+        +bind_tcp_socket()
+        +unbind_tcp_socket()
+    }
+
+    class TCP_Socket_State {
+        <<enumeration>>
+        TCP_Socket_State__None
+        TCP_Socket_State__Disconnected
+        TCP_Socket_State__Connecting
+        TCP_Socket_State__Connected
+        TCP_Socket_State__Authenticating
+        TCP_Socket_State__Authenticated
+        TCP_Socket_State__Unknown
+    }
+
+    class TCP_Packet {
+        +u8 tcp_packet_bytes[MAX_SIZE_OF__TCP_PACKET]
+    }
+
+    class IPv4_Address {
+        +u8 ip_bytes[4]
+        +u16 port
+        +populate_ipv4_address() bool
+    }
+
+    class Session_Token {
+        +Identifier__u64 player_uuid
+        +Identifier__u64 session_token
+        +get_uuid_u32_of__session_token_player_uuid_u64() Identifier__u32
+    }
+
+    class TCP_Socket_Flags__u8 {
+        <<typedef u8>>
+        +TCP_SOCKET_FLAG__IS_MANUALLY_DRIVEN
+    }
+
+    class m_Poll_TCP_Socket_Manager {
+        <<function pointer>>
+        +void callback(TCP_Socket_Manager*, Game*)
+    }
+
+    class Game_Action {
+        +_Game_Action_Header header
+        +Game_Action_Kind the_kind_of_game_action__this_action_is
+        +Game_Action_Flags game_action_flags
+        +Identifier__u32 uuid_of__client__u32
+        +ga_kind__tcp_connect__begin (IPv4_Address, Session_Token)
+        +ga_kind__tcp_connect (session_token u64)
+        +ga_kind__tcp_delivery (payload, packet_index)
+    }
+
+    class Game_Action_Manager {
+        +Game_Action game_actions[MAX_QUANTITY_OF__GAME_ACTIONS]
+        +Repeatable_Psuedo_Random repeatable_pseudo_random
+    }
+
+    class Game_Action_Logic_Table {
+        +Game_Action_Logic_Entry game_action_logic_entries[Game_Action_Kind__Unknown]
+    }
+
+    class Game_Action_Logic_Entry {
+        +m_Process m_process_of__game_action__inbound
+        +m_Process m_process_of__game_action__outbound
+        +Game_Action_Flags game_action_flags__inbound
+        +Game_Action_Flags game_action_flags__inbound_mask
+        +Game_Action_Flags game_action_flags__outbound
+        +Game_Action_Flags game_action_flags__outbound_mask
+        +Process_Flags__u8 process_flags_of__game_action__outbound
+        +Process_Flags__u8 process_flags_of__game_action__inbound
+        +Process_Priority__u8 process_priority__u8
+    }
+
+    class PLATFORM_TCP_Context {
+        <<platform opaque>>
+    }
+
+    class PLATFORM_TCP_Socket {
+        <<platform opaque>>
+    }
+
+    class Default_Client_Poller {
+        <<strategy>>
+        +m_poll_tcp_socket_manager_as__client__default()
+    }
+
+    class Default_Server_Poller {
+        <<strategy>>
+        +m_poll_tcp_socket_manager_as__server__default()
+    }
+
+    %% Ownership: Game owns clients and TCP_Socket_Manager
+    Game *-- "0..*" Client : pM_clients pool
+    Game *-- TCP_Socket_Manager : pM_tcp_socket_manager
+    Game *-- Session_Token : session_token
+    Game *-- Game_Action_Logic_Table : game_action_logic_table
+
+    %% Client owns inbound/outbound game action managers
+    Client *-- Game_Action_Manager : game_action_manager__inbound
+    Client *-- Game_Action_Manager : game_action_manager__outbound
+    Client *-- Client_Flags__u16 : client_flags__u16
+
+    %% Game_Action_Manager owns Game_Actions
+    Game_Action_Manager *-- "0..*" Game_Action : game_actions pool
+
+    %% Game_Action_Logic_Table owns entries
+    Game_Action_Logic_Table *-- "N" Game_Action_Logic_Entry : per Game_Action_Kind
+
+    %% TCP_Socket_Manager owns TCP_Sockets and references platform context
+    TCP_Socket_Manager *-- "0..N" TCP_Socket : tcp_sockets pool
+    TCP_Socket_Manager --> PLATFORM_TCP_Context : p_PLATFORM_tcp_context
+    TCP_Socket_Manager --> m_Poll_TCP_Socket_Manager : polling callback
+    TCP_Socket_Manager --> PLATFORM_TCP_Socket : p_PLATFORM_tcp_socket__pending_connection
+
+    %% TCP_Socket contains packets and references platform socket
+    TCP_Socket *-- "0..N" TCP_Packet : queue_of__tcp_packet (circular buffer)
+    TCP_Socket *-- IPv4_Address : tcp_socket__address
+    TCP_Socket *-- TCP_Socket_Flags__u8 : tcp_socket_flags__u8
+    TCP_Socket --> TCP_Socket_State : tcp_socket__state_of
+    TCP_Socket --> PLATFORM_TCP_Socket : p_PLATFORM_tcp_socket
+
+    %% Polling strategies implement m_Poll_TCP_Socket_Manager
+    Default_Client_Poller ..|> m_Poll_TCP_Socket_Manager : implements
+    Default_Server_Poller ..|> m_Poll_TCP_Socket_Manager : implements
+
+    %% Session_Token compresses to entity UUID
+    Session_Token ..> Game : compressed UUID for entity allocation
+
+    %% Game_Action references TCP types for multiplayer game actions
+    Game_Action --> IPv4_Address : ga_kind__tcp_connect__begin
+    Game_Action --> Session_Token : ga_kind__tcp_connect__begin
+    Game_Action --> TCP_Packet : TCP_DELIVERY overlay
