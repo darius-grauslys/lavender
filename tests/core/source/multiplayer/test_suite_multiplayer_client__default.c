@@ -2,9 +2,13 @@
 
 #include <multiplayer/client__default.c>
 
-#warning Please make tests for: /home/shalidor/Projects/Lavender/tests/core/source/multiplayer/test_suite_multiplayer_client__default.c
+TEST_FUNCTION(m_poll_tcp_socket_manager_as__client__default__symbol_exists) {
+    m_Poll_TCP_Socket_Manager callback =
+        (m_Poll_TCP_Socket_Manager)m_poll_tcp_socket_manager_as__client__default;
+    munit_assert_ptr_not_null((void *)callback);
+    return MUNIT_OK;
+}
 
-// Before writing any tests, please see the README
-// found in ./tests
-
-DEFINE_SUITE(client__default, END_TESTS)
+DEFINE_SUITE(client__default,
+    INCLUDE_TEST__STATELESS(m_poll_tcp_socket_manager_as__client__default__symbol_exists),
+    END_TESTS)
