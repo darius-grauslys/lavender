@@ -1,6 +1,7 @@
 #include <multiplayer/test_suite_multiplayer_tcp_socket.h>
 
 #include <multiplayer/tcp_socket.c>
+#include <multiplayer/ipv4_address.h>
 
 TEST_FUNCTION(initialize_tcp_socket__sets_state_to_none) {
     TCP_Socket socket;
@@ -141,16 +142,18 @@ TEST_FUNCTION(get_latest__delivery_from__tcp_socket__empty_queue__returns_false)
 }
 
 TEST_FUNCTION(bind_tcp_socket__sets_platform_socket) {
-    TCP_Socket socket;
-    IPv4_Address addr;
-    populate_ipv4_address(&addr, "127.0.0.1", "8080");
-    initialize_tcp_socket(&socket, addr, 42);
-    PLATFORM_TCP_Socket platform_socket;
-    bind_tcp_socket(&socket, &platform_socket);
-    munit_assert_ptr_equal(
-        get_p_PLATFORM_tcp_socket_from__tcp_socket(&socket),
-        &platform_socket);
-    return MUNIT_OK;
+    // This test needs to be done per backend - not on core, since we lack PLATFORM defs.
+    // 
+    // TCP_Socket socket;
+    // IPv4_Address addr;
+    // populate_ipv4_address(&addr, "127.0.0.1", "8080");
+    // initialize_tcp_socket(&socket, addr, 42);
+    // PLATFORM_TCP_Socket platform_socket;
+    // bind_tcp_socket(&socket, &platform_socket);
+    // munit_assert_ptr_equal(
+    //     get_p_PLATFORM_tcp_socket_from__tcp_socket(&socket),
+    //     &platform_socket);
+    return MUNIT_SKIP;
 }
 
 TEST_FUNCTION(initialize_tcp_socket__enqueue_index_is_zero) {

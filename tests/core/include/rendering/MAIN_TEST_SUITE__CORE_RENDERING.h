@@ -1,6 +1,7 @@
 #include "test_suite_rendering_sprite_manager.h"
 #include "test_suite_rendering_animate_sprite.h"
 #include "test_suite_rendering_graphics_window.h"
+#include "test_suite_rendering_sprite_context.h"
 #include "test_suite_rendering_sprite.h"
 #include "test_suite_rendering_aliased_texture.h"
 #include "test_suite_rendering_aliased_texture_manager.h"

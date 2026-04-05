@@ -1,0 +1,6 @@
+#include "aabb/MAIN_TEST_SUITE__CORE_COLLISIONS_CORE_AABB.h"
+
+#include <test_util.h>
+
+DECLARE_SUITE(CORE_COLLISIONS_CORE);
+

@@ -5,6 +5,7 @@
 #include "test_suite_client.h"
 #include "test_suite_degree.h"
 #include "test_suite_game.h"
+#include "test_suite_lav_string.h"
 #include "input/MAIN_TEST_SUITE__CORE_INPUT.h"
 #include "rendering/MAIN_TEST_SUITE__CORE_RENDERING.h"
 #include "world/MAIN_TEST_SUITE__CORE_WORLD.h"

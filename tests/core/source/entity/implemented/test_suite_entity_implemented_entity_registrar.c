@@ -1,6 +1,8 @@
 #include <entity/implemented/test_suite_entity_implemented_entity_registrar.h>
 
 #include <entity/implemented/entity_registrar.c>
+#include <entity/entity_manager.h>
+#include <entity/entity.h>
 
 TEST_FUNCTION(register_entity__does_not_crash) {
     Entity_Manager entity_manager;

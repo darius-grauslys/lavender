@@ -5,3 +5,4 @@ INCLUDE_SUITE(game_action__entity__spawn),
 INCLUDE_SUITE(game_action__entity__get),NULL);
 
 DEFINE_SUITE_WITH__SUB_SUITES(CORE_GAME_ACTION_CORE_ENTITY, END_TESTS);
+

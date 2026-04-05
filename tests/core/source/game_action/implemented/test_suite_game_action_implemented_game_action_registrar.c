@@ -1,6 +1,8 @@
 #include <game_action/implemented/test_suite_game_action_implemented_game_action_registrar.h>
 
 #include <game_action/implemented/game_action_registrar.c>
+#include <game_action/game_action_logic_table.h>
+#include <types/implemented/game_action_kind.h>
 
 TEST_FUNCTION(game_action_registrar__register_offline__populates_hitbox) {
     Game_Action_Logic_Table table;
@@ -11,7 +13,7 @@ TEST_FUNCTION(game_action_registrar__register_offline__populates_hitbox) {
     Game_Action_Logic_Entry *p_entry =
         get_p_game_action_logic_entry_by__game_action_kind(
                 &table,
-                Game_Action_Kind__Hitbox__Set_Position);
+                Game_Action_Kind__Hitbox);
 
     munit_assert_ptr_not_null(p_entry);
     munit_assert_ptr_not_null(

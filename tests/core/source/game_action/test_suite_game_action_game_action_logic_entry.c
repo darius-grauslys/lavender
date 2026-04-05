@@ -1,6 +1,7 @@
 #include <game_action/test_suite_game_action_game_action_logic_entry.h>
 
 #include <game_action/game_action_logic_entry.c>
+#include <game_action/game_action.h>
 
 static void dummy_process_handler(
         Process *p_this_process,

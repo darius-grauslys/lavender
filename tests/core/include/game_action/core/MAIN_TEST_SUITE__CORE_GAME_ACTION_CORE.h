@@ -1,4 +1,5 @@
 #include "test_suite_game_action_core_game_action__bad_request.h"
+#include "input/MAIN_TEST_SUITE__CORE_GAME_ACTION_CORE_INPUT.h"
 #include "world/MAIN_TEST_SUITE__CORE_GAME_ACTION_CORE_WORLD.h"
 #include "tcp/MAIN_TEST_SUITE__CORE_GAME_ACTION_CORE_TCP.h"
 #include "entity/MAIN_TEST_SUITE__CORE_GAME_ACTION_CORE_ENTITY.h"

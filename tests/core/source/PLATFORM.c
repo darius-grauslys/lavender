@@ -1,4 +1,4 @@
-#ifndef PLATFORM
+#if !defined(PLATFORM)
 ///
 /// This file includes everything from platform.h
 /// which is NOT implemented.
@@ -14,6 +14,9 @@
 
 #ifdef _WIN32
 
+#include <windows.h>
+#include <mmsystem.h>
+
 void PLATFORM_initialize_time(void) {
     return;
 }
@@ -21,8 +24,6 @@ void PLATFORM_initialize_time(void) {
 ///
 /// NOTE: Timer value is considered to be u32F20 seconds
 ///
-#include <windows.h>
-#include <mmsystem.h>
 u32F20 PLATFORM_get_time_elapsed(
         Timer__u32 *p_timer__seconds__u32,
         Timer__u32 *p_timer__nanoseconds__u32) {
@@ -55,6 +56,19 @@ u32F20 PLATFORM_get_time_elapsed(
                 << 10)
         ;
 }
+
+void PLATFORM_get_date_time(Date_Time *p_date_time) {
+    SYSTEMTIME st;
+    GetLocalTime(&st);
+
+    p_date_time->seconds = st.wSecond;
+    p_date_time->minutes = st.wMinute;
+    p_date_time->hours   = st.wHour;
+    p_date_time->days    = st.wDay;
+    p_date_time->months  = st.wMonth - 1;
+    p_date_time->years   = st.wYear - 1900;
+}
+
 #else
 
 #include <time.h>
@@ -170,13 +184,44 @@ void PLATFORM_abort(void) {
 void PLATFORM_pre_render(Game *p_game) {}
 void PLATFORM_post_render(Game *p_game) {}
 
-void PLATFORM_compose_world(
+// TODO: remove
+void PLATFORM_render_entity(
+        Entity *entity,
+        Game *game) {}
+
+// TODO: remove
+void m_PLATFORM_game_action_handler_for__multiplayer(
+        Game *p_this_game,
+        Game_Action *p_game_action) {}
+
+// TODO: remove
+void PLATFORM_initialize_rendering__game(
+        PLATFORM_Gfx_Context *gfx_context) {}
+
+void PLATFORM_put_char_in__typer(
         Gfx_Context *p_gfx_context,
-        Graphics_Window **p_ptr_array_of__gfx_windows,
-        Local_Space_Manager *p_local_space_manager,
-        Texture *ptr_array_of__textures,
-        Quantity__u32 quantity_of__gfx_windows,
-        f_Tile_Render_Kernel f_tile_render_kernel) {}
+        Typer *p_typer,
+        unsigned char letter) {}
+
+PLATFORM_Sprite *PLATFORM_allocate_sprite(
+        Gfx_Context *p_gfx_context,
+        Graphics_Window *p_gfx_window,
+        Sprite *p_sprite,
+        Texture_Flags texture_flags_for__sprite) { return 0; }
+
+void PLATFORM_release_sprite(
+        Gfx_Context *p_gfx_context,
+        PLATFORM_Sprite *p_PLATFORM_sprite) {}
+
+void PLATFORM_release_all__sprites(
+        PLATFORM_Gfx_Context *p_PLATFORM_gfx_context) {}
+
+// TODO: use wrapper types
+void PLATFORM_render_sprite(
+        Gfx_Context *p_gfx_context,
+        Graphics_Window *p_gfx_window,
+        Sprite *p_sprite,
+        Vector__3i32F4 position_of__sprite__3i32F4) {}
 
 bool PLATFORM_allocate_texture(
         PLATFORM_Gfx_Context *p_PLATFORM_gfx_context,
@@ -190,6 +235,14 @@ bool PLATFORM_allocate_texture_with__path(
         Texture_Flags texture_flags,
         const char *c_str__path,
         Texture *p_OUT_texture) { return 0; }
+
+void PLATFORM_update_texture(
+        Texture texture) {}
+
+// TODO: remove
+void PLATFORM_use_texture(
+        PLATFORM_Gfx_Context *p_PLATFORM_gfx_context,
+        Texture texture) {}
 
 void PLATFORM_release_texture(
         PLATFORM_Gfx_Context *p_PLATFORM_gfx_context,
@@ -205,18 +258,45 @@ void PLATFORM_release_gfx_window(
         Gfx_Context *p_gfx_context,
         Graphics_Window *p_graphics_window) {}
 
+Quantity__u32 PLATFORM_get_provided_windows(
+        Gfx_Context *p_gfx_context,
+        PLATFORM_Graphics_Window **ptr_array_of__PLATFORM_graphics_windows,
+        Texture_Flags *array_of__texture_flags,
+        Quantity__u32 quantity_of__ptrs_in_buffer__u32,
+        Index__u32 index_of__offset__u32) {
+    return 0;
+}
+
 void PLATFORM_compose_gfx_window(
-        Gfx_Context *p_gfx_context, 
+        Game *p_game,
+        Graphics_Window *p_gfx_window) {}
+
+void PLATFORM_compose_ui_span_in__gfx_window(
+        Game *p_game,
+        Graphics_Window *p_gfx_window,
+        Quantity__u32 width_of__ui_tile_span,
+        Quantity__u32 height_of__ui_tile_span,
+        Index__u32 index_x__u32,
+        Index__u32 index_y__u32) {}
+
+void PLATFORM_compose_world(
+        Game *p_game,
+        Graphics_Window *p_gfx_window) {}
+
+void PLATFORM_project_gfx_window(
+        Game *p_game,
+        Graphics_Window *p_gfx_window) {}
+
+void PLATFORM_project_world(
+        Game *p_game,
         Graphics_Window *p_gfx_window) {}
 
 void PLATFORM_render_gfx_window(
-        Gfx_Context *p_gfx_context,
+        Game *p_game,
         Graphics_Window *p_gfx_window) {}
 
-void PLATFORM_put_char_in__typer(
-        Gfx_Context *p_gfx_context,
-        Typer *p_typer,
-        unsigned char letter) {}
+void PLATFORM_initialize_game(Game *p_game) {}
+void PLATFORM_close_game(Game *p_game) {}
 
 void PLATFORM_initialize_audio(
         PLATFORM_Audio_Context *p_PLATFORM_audio_context) {}
@@ -236,26 +316,6 @@ void PLATFORM_play_audio__stream(
 
 bool PLATFORM_is_audio__streaming(
         PLATFORM_Audio_Context *p_PLATFORM_audio_context) { return false; }
-
-PLATFORM_Sprite *PLATFORM_allocate_sprite(
-        Gfx_Context *p_gfx_context,
-        Graphics_Window *p_gfx_window,
-        Sprite *p_sprite,
-        Texture_Flags texture_flags_for__sprite) { return 0; }
-
-void PLATFORM_release_sprite(
-        Gfx_Context *p_gfx_context,
-        PLATFORM_Sprite *p_PLATFORM_sprite) {}
-
-void PLATFORM_release_all__sprites(
-        PLATFORM_Gfx_Context *p_PLATFORM_gfx_context) {}
-
-// TODO: use wrapper types
-void PLATFORM_render_sprite(
-        Gfx_Context *p_gfx_context,
-        Graphics_Window *p_gfx_window,
-        Sprite *sprite,
-        Vector__3i32F4 position_of__sprite__3i32F4) {}
 
 ///
 /// SECTION_serialization
@@ -371,6 +431,20 @@ void PLATFORM_poll_input(
 ///
 /// SECTION_log
 ///
+
+// TODO: remove
+bool PLATFORM_update_log__global(Game *p_game) { return false; }
+// TODO: remove
+bool PLATFORM_update_log__local(Game *p_game) { return false; }
+// TODO: remove
+bool PLATFORM_update_log__system(Game *p_game) { return false; }
+
+// TODO: remove
+bool PLATFORM_clear_log__global(Game *p_game) { return false; }
+// TODO: remove
+bool PLATFORM_clear_log__local(Game *p_game) { return false; }
+// TODO: remove
+bool PLATFORM_clear_log__system(Game *p_game) { return false; }
 
 ///
 /// SECTION_multiplayer

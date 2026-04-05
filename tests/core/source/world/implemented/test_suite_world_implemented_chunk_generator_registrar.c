@@ -1,6 +1,7 @@
 #include <world/implemented/test_suite_world_implemented_chunk_generator_registrar.h>
 
 #include <world/implemented/chunk_generator_registrar.c>
+#include <world/chunk_generator_table.h>
 
 TEST_FUNCTION(chunk_generator_registrar__register_does_not_crash) {
     Chunk_Generator_Table table;

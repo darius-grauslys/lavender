@@ -1,6 +1,8 @@
 #include <process/test_suite_process_process_priority_table_entry.h>
 
 #include <process/process_priority_table_entry.c>
+#include <process/process_table.h>
+#include <process/process.h>
 
 TEST_FUNCTION(initialize_process_priority_table_entry__sets_pointers) {
     Process_Priority_Table_Entry entry;

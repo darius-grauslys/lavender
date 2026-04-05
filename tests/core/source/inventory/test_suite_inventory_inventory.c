@@ -137,16 +137,18 @@ TEST_FUNCTION(inventory__remove_item_stack__becomes_empty) {
 }
 
 TEST_FUNCTION(inventory__remove_all__becomes_empty) {
-    Inventory inventory;
-    initialize_inventory(&inventory, 1);
-    Item item;
-    initialize_item(&item, Item_Kind__Unknown);
-    add_item_to__inventory(&inventory, item, 5, 10);
-    add_item_to__inventory(&inventory, item, 3, 10);
-    munit_assert_false(is_inventory__empty(&inventory));
-    remove_all_item_stacks_from__inventory(&inventory);
-    munit_assert_true(is_inventory__empty(&inventory));
-    return MUNIT_OK;
+    // TODO: remove_all_item_stacks_from__inventory lacks an implementation.
+    //
+    // Inventory inventory;
+    // initialize_inventory(&inventory, 1);
+    // Item item;
+    // initialize_item(&item, Item_Kind__Unknown);
+    // add_item_to__inventory(&inventory, item, 5, 10);
+    // add_item_to__inventory(&inventory, item, 3, 10);
+    // munit_assert_false(is_inventory__empty(&inventory));
+    // remove_all_item_stacks_from__inventory(&inventory);
+    // munit_assert_true(is_inventory__empty(&inventory));
+    return MUNIT_FAIL;
 }
 
 TEST_FUNCTION(inventory__remove_this_many__removes_correct_quantity) {

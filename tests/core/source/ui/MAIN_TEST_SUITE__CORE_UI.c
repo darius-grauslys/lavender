@@ -1,10 +1,12 @@
 #include <ui/MAIN_TEST_SUITE__CORE_UI.h>
 
-INCLUDE_SUB_SUITES(CORE_UI, 15,
+INCLUDE_SUB_SUITES(CORE_UI, 17,
+INCLUDE_SUITE(ui_window),
 INCLUDE_SUITE(ui_tile_span),
 INCLUDE_SUITE(ui_button),
 INCLUDE_SUITE(ui_tile_map),
 INCLUDE_SUITE(ui_slider),
+INCLUDE_SUITE(ui_window_element),
 INCLUDE_SUITE(ui_text),
 INCLUDE_SUITE(ui_tile_map_manager),
 INCLUDE_SUITE(ui_context),

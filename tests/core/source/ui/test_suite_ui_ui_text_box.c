@@ -154,7 +154,8 @@ TEST_FUNCTION(get_p_const_c_str_text_of__ui_text_box__returns_set_string) {
             test_str,
             length);
 
-    const char *result = get_p_const_c_str_text_of__ui_text_box(&ui_element);
+    Quantity__u32 size_of__text = 0;
+    const char *result = get_p_const_c_str_text_of__ui_text_box(&ui_element, &size_of__text);
 
     munit_assert_ptr_not_null(result);
     munit_assert_string_equal(result, "hello");
@@ -182,11 +183,13 @@ TEST_FUNCTION(set_c_str_of__ui_text_box_with__const_c_str__updates_string) {
     Quantity__u32 new_length = 5;
 
     set_c_str_of__ui_text_box_with__const_c_str(
+            0, // TODO: this test must be updated to include a ui_manager.
             &ui_element,
             new_str,
             new_length);
 
-    const char *result = get_p_const_c_str_text_of__ui_text_box(&ui_element);
+    Quantity__u32 size_of__text = 0;
+    const char *result = get_p_const_c_str_text_of__ui_text_box(&ui_element, &size_of__text);
 
     munit_assert_ptr_not_null(result);
     munit_assert_string_equal(result, "world");
@@ -194,7 +197,7 @@ TEST_FUNCTION(set_c_str_of__ui_text_box_with__const_c_str__updates_string) {
     return MUNIT_OK;
 }
 
-DEFINE_SUITE(ui_text,
+DEFINE_SUITE(ui_text_box,
     INCLUDE_TEST__STATELESS(initialize_ui_element_as__text_box_with__const_c_str__sets_kind),
     INCLUDE_TEST__STATELESS(initialize_ui_element_as__text_box_with__pM_c_str__sets_kind),
     INCLUDE_TEST__STATELESS(initialize_ui_element_as__text_box_with__buffer_size__sets_kind),

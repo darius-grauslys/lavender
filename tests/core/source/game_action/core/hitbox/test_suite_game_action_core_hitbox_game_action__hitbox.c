@@ -21,7 +21,7 @@ TEST_FUNCTION(game_action__hitbox__initialize__sets_kind) {
     munit_assert_int(
             get_kind_of__game_action(&ga),
             ==,
-            Game_Action_Kind__Hitbox__Set_Position);
+            Game_Action_Kind__Hitbox);
 
     return MUNIT_OK;
 }
@@ -147,7 +147,7 @@ TEST_FUNCTION(game_action__hitbox__register_for_server__populates_table) {
     Game_Action_Logic_Entry *p_entry =
         get_p_game_action_logic_entry_by__game_action_kind(
                 &table,
-                Game_Action_Kind__Hitbox__Set_Position);
+                Game_Action_Kind__Hitbox);
 
     munit_assert_ptr_not_null(p_entry);
     munit_assert_ptr_not_null(
@@ -166,7 +166,7 @@ TEST_FUNCTION(game_action__hitbox__register_for_offline__populates_table) {
     Game_Action_Logic_Entry *p_entry =
         get_p_game_action_logic_entry_by__game_action_kind(
                 &table,
-                Game_Action_Kind__Hitbox__Set_Position);
+                Game_Action_Kind__Hitbox);
 
     munit_assert_ptr_not_null(p_entry);
     munit_assert_ptr_not_null(
