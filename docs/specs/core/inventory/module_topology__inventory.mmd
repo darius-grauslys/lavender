@@ -1,0 +1,235 @@
+%% Module Topology: Inventory System
+%% Shows ownership hierarchy and relationships between inventory types.
+%% The inventory system is a core ECS component: entities and world
+%% containers reference inventories by UUID through the Inventory_Manager
+%% pool owned by World.
+
+classDiagram
+    direction TB
+
+    class Game {
+        +World *pM_world
+        +get_p_inventory_manager_from__game()
+        +get_p_item_manager_from__game()
+    }
+
+    class World {
+        +Inventory_Manager inventory_manager
+        +Item_Manager item_manager
+        +get_p_inventory_manager_from__world()
+        +get_p_item_manager_from__world()
+    }
+
+    class Inventory_Manager {
+        +Inventory inventories[MAX_QUANTITY_OF__INVENTORY]
+        +initialize_inventory_manager()
+        +allocate_p_inventory_using__this_uuid_in__inventory_manager()
+        +release_inventory_in__inventory_manager()
+        +get_inventory_by__uuid_in__inventory_manager()
+    }
+
+    class Inventory {
+        +Serialization_Header _serialization_header
+        +Item_Stack items[INVENTORY_ITEM_MAXIMUM_QUANTITY_OF]
+        +Quantity__u8 quantity_of__item_stacks
+        +initialize_inventory()
+        +initialize_inventory_as__empty()
+        +serialize_inventory()
+        +deserialize_inventory()
+        +add_item_to__inventory()
+        +copy_p_item_stack_to__inventory()
+        +move_p_item_stack_to__inventory()
+        +remove_p_item_stack_from__inventory()
+        +remove_this_many_item_kinds_from__inventory()
+        +remove_all_item_stacks_from__inventory()
+        +get_first_p_item_stack_of__this_item_kind_from__inventory()
+        +get_next_p_item_stack_of__this_item_kind_from__inventory()
+        +get_p_item_stack_from__inventory_by__index()
+        +get_p_item_stack_from__inventory()
+        +does_inventory_have_this_many_of__item_kind()
+        +does_inventory_have__available_item_stacks()
+        +is_inventory__empty()
+    }
+
+    class Item_Stack {
+        +Serialization_Header _serialization_header
+        +Item item
+        +Quantity__u8 quantity_of__items
+        +Quantity__u8 max_quantity_of__items
+        +initialize_item_stack()
+        +initialize_item_stack_as__empty()
+        +serialize_item_stack()
+        +deserialize_item_stack()
+        +set_item_stack()
+        +copy_item_stack()
+        +resolve_item_stack__merge_or_swap()
+        +remove_quantity_of_items_from__item_stack()
+        +is_p_item_stack__empty()
+        +is_p_item_stack__full()
+        +get_quantity_of__items_in__item_stack()
+        +get_item_kind_of__item_stack()
+    }
+
+    class Item {
+        +Item_Kind the_kind_of_item__this_item_is
+        +Item_Data item_data
+        +initialize_item()
+        +initialize_item_as__empty()
+        +get_item__empty()
+        +get_item_kind_of__item()
+        +is_p_item__empty()
+    }
+
+    class Item_Data {
+        <<platform-defined>>
+    }
+
+    class Item_Kind {
+        <<enumeration>>
+        Item_Kind__None
+        ...platform-defined kinds...
+        Item_Kind__Unknown
+    }
+
+    class Item_Manager {
+        +Item item_templates[Item_Kind__Unknown]
+        +initialize_item_manager()
+        +register_item_in__item_manager()
+        +get_item_from__item_manager()
+        +register_core_items_into__item_manager()
+    }
+
+    class Item_Stack_Manager {
+        +Item_Stack_Allocation_Specifier item_stack_allocation_specifiers[ITEM_STACK_RECORD_MAX_QUANTITY_OF]
+        +Quantity__u32 quantity_of__item_stack_allocation_specifier
+        +initialize_item_stack_manager()
+        +allocate_item_stack_allocation_specification_in__item_stack_manager()
+        +release_item_stack_allocation_specification_in__item_stack_manager()
+        +initalize_item_stack_with__item_stack_manager()
+        +get_p_item_stack_alloc_spec_by__index_from__item_stack_manager()
+    }
+
+    class Item_Stack_Allocation_Specifier {
+        +enum Item_Kind the_kind_of_item :15
+        +bool is_allocated :1
+        +f_Item_Stack__Create f_item_stack__create
+        +initialize_item_stack_allocation_specifier()
+        +initialize_item_stack_allocation_specifier_as__empty()
+        +is_item_stack_allocation_specifier__allocated()
+        +set_item_stack_allocation_specifier_as__allocated()
+        +set_item_stack_allocation_specifier_as__deallocated()
+    }
+
+    class f_Item_Stack__Create {
+        <<function pointer>>
+        void callback(Item_Stack*)
+    }
+
+    class Item_Registrar {
+        <<implemented by platform>>
+        +register_items(Item_Manager*)
+    }
+
+    class Serialization_Header {
+        +Quantity__u32 size_of__struct
+        +Identifier__u32 uuid
+    }
+
+    class Serialized_Field {
+        +Inventory *p_serialized_field__inventory
+        +Item_Stack *p_serialized_field__item_stack
+        +Entity *p_serialized_field__entity
+        +Chunk *p_serialized_field__chunk
+    }
+
+    class Entity {
+        +Serialization_Header _serialization_header
+        +Entity_Data entity_data
+        +Entity_Functions entity_functions
+        +ENTITY_FLAG__IS_WITH_INVENTORY__SERIALIZATION
+    }
+
+    class Entity_Manager {
+        +Entity entities[MAX_QUANTITY_OF__ENTITIES]
+    }
+
+    class Tile {
+        +Tile_Kind the_kind_of__tile
+        +TILE_FLAGS__BIT_IS_CONTAINER
+    }
+
+    class PLATFORM_File_System_Context {
+        <<platform>>
+    }
+
+    class Serialization_Request {
+        <<engine>>
+    }
+
+    class Hashing_Utilities {
+        <<hashing.h>>
+        +poll_for__uuid_collision()
+        +dehash_identitier_u32_in__contigious_array()
+        +get_next_available__allocation_in__contiguous_array()
+        +allocate_serialization_header_with__this_uuid()
+    }
+
+    %% Ownership: Game owns World
+    Game *-- World : owns via pM_world
+
+    %% Ownership: World owns Inventory_Manager and Item_Manager
+    World *-- Inventory_Manager : owns
+    World *-- Item_Manager : owns
+    World *-- Entity_Manager : owns
+
+    %% Inventory_Manager owns pool of Inventories
+    Inventory_Manager *-- "0..64" Inventory : inventories pool
+
+    %% Inventory owns fixed array of Item_Stacks
+    Inventory *-- "0..27" Item_Stack : items array
+    Inventory *-- Serialization_Header : _serialization_header
+
+    %% Item_Stack contains an Item and has a Serialization_Header
+    Item_Stack *-- Item : item (embedded)
+    Item_Stack *-- Serialization_Header : _serialization_header
+
+    %% Item contains Item_Kind and Item_Data
+    Item --> Item_Kind : the_kind_of_item__this_item_is
+    Item *-- Item_Data : item_data (embedded)
+
+    %% Item_Manager holds template Items indexed by Item_Kind
+    Item_Manager *-- "0..N" Item : item_templates array
+    Item_Manager --> Item_Kind : indexed by
+
+    %% Item_Stack_Manager owns pool of specifiers (standalone)
+    Item_Stack_Manager *-- "0..256" Item_Stack_Allocation_Specifier : specifiers pool
+
+    %% Specifier references Item_Kind and factory function
+    Item_Stack_Allocation_Specifier --> Item_Kind : the_kind_of_item
+    Item_Stack_Allocation_Specifier --> f_Item_Stack__Create : factory function
+
+    %% Item_Registrar populates Item_Manager
+    Item_Registrar ..> Item_Manager : register_items populates
+
+    %% Serialization dependencies
+    Inventory ..> PLATFORM_File_System_Context : serialize/deserialize
+    Inventory ..> Serialization_Request : serialize/deserialize
+    Inventory ..> Item_Manager : deserialize requires
+    Item_Stack ..> PLATFORM_File_System_Context : serialize/deserialize
+    Item_Stack ..> Serialization_Request : serialize/deserialize
+    Item_Stack ..> Item_Manager : deserialize requires
+
+    %% Item_Stack_Manager creates Item_Stacks
+    Item_Stack_Manager ..> Item_Stack : creates/initializes
+
+    %% Hashing utilities used by Inventory_Manager
+    Inventory_Manager ..> Hashing_Utilities : UUID-based pool management
+
+    %% ECS relationships
+    Entity ..> Inventory : references by UUID
+    Entity_Manager ..> Inventory_Manager : entity UUID lookup
+    Tile ..> Inventory : container tiles reference by spatial UUID
+
+    %% Serialized_Field references
+    Serialized_Field ..> Inventory : p_serialized_field__inventory
+    Serialized_Field ..> Item_Stack : p_serialized_field__item_stack
