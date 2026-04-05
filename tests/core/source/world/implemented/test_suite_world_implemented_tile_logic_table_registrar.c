@@ -2,9 +2,13 @@
 
 #include <world/implemented/tile_logic_table_registrar.c>
 
-#warning Please make tests for: /home/shalidor/Projects/Lavender/tests/core/source/world/implemented/test_suite_world_implemented_tile_logic_table_registrar.c
+TEST_FUNCTION(tile_logic_table_registrar__register_does_not_crash) {
+    Tile_Logic_Table table;
+    initialize_tile_logic_table(&table);
+    register_tile_logic_tables(0, &table);
+    return MUNIT_OK;
+}
 
-// Before writing any tests, please see the README
-// found in ./tests
-
-DEFINE_SUITE(tile_logic_table_registrar, END_TESTS)
+DEFINE_SUITE(tile_logic_table_registrar,
+    INCLUDE_TEST__STATELESS(tile_logic_table_registrar__register_does_not_crash),
+    END_TESTS)

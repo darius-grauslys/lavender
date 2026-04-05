@@ -2,9 +2,13 @@
 
 #include <world/implemented/chunk_generator_registrar.c>
 
-#warning Please make tests for: /home/shalidor/Projects/Lavender/tests/core/source/world/implemented/test_suite_world_implemented_chunk_generator_registrar.c
+TEST_FUNCTION(chunk_generator_registrar__register_does_not_crash) {
+    Chunk_Generator_Table table;
+    initialize_chunk_generator_table(&table);
+    register_chunk_generators(&table);
+    return MUNIT_OK;
+}
 
-// Before writing any tests, please see the README
-// found in ./tests
-
-DEFINE_SUITE(chunk_generator_registrar, END_TESTS)
+DEFINE_SUITE(chunk_generator_registrar,
+    INCLUDE_TEST__STATELESS(chunk_generator_registrar__register_does_not_crash),
+    END_TESTS)

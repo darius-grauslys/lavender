@@ -2,9 +2,82 @@
 
 #include <world/camera.c>
 
-#warning Please make tests for: /home/shalidor/Projects/Lavender/tests/core/source/world/test_suite_world_camera.c
+TEST_FUNCTION(camera__initialize_camera_as__inactive__position_out_of_bounds) {
+    Camera camera;
+    initialize_camera_as__inactive(&camera);
+    munit_assert_false(is_camera__active(&camera));
+    return MUNIT_OK;
+}
 
-// Before writing any tests, please see the README
-// found in ./tests
+TEST_FUNCTION(camera__initialize_camera__sets_fulcrum) {
+    Camera camera;
+    Vector__3i32F4 pos;
+    pos.x__i32F4 = 0;
+    pos.y__i32F4 = 0;
+    pos.z__i32F4 = 0;
+    initialize_camera(
+        &camera,
+        pos,
+        0,
+        256,
+        196,
+        0,
+        0);
+    munit_assert_uint32(camera.width_of__fulcrum, ==, 256);
+    munit_assert_uint32(camera.height_of__fulcrum, ==, 196);
+    return MUNIT_OK;
+}
 
-DEFINE_SUITE(camera, END_TESTS)
+TEST_FUNCTION(camera__initialize_camera__is_active) {
+    Camera camera;
+    Vector__3i32F4 pos;
+    pos.x__i32F4 = 0;
+    pos.y__i32F4 = 0;
+    pos.z__i32F4 = 0;
+    initialize_camera(
+        &camera,
+        pos,
+        0,
+        256,
+        196,
+        0,
+        0);
+    munit_assert_true(is_camera__active(&camera));
+    return MUNIT_OK;
+}
+
+TEST_FUNCTION(camera__set_camera_to__follow__sets_uuid) {
+    Camera camera;
+    initialize_camera_as__inactive(&camera);
+    set_camera_to__follow(&camera, 42);
+    munit_assert_uint32(camera.uuid_of__target__u32, ==, 42);
+    return MUNIT_OK;
+}
+
+TEST_FUNCTION(camera__get_position_3i32F4_of__camera__returns_position) {
+    Camera camera;
+    Vector__3i32F4 pos;
+    pos.x__i32F4 = 100;
+    pos.y__i32F4 = 200;
+    pos.z__i32F4 = 0;
+    initialize_camera(
+        &camera,
+        pos,
+        0,
+        256,
+        196,
+        0,
+        0);
+    Vector__3i32F4 result = get_position_3i32F4_of__camera(&camera);
+    munit_assert_int32(result.x__i32F4, ==, 100);
+    munit_assert_int32(result.y__i32F4, ==, 200);
+    return MUNIT_OK;
+}
+
+DEFINE_SUITE(camera,
+    INCLUDE_TEST__STATELESS(camera__initialize_camera_as__inactive__position_out_of_bounds),
+    INCLUDE_TEST__STATELESS(camera__initialize_camera__sets_fulcrum),
+    INCLUDE_TEST__STATELESS(camera__initialize_camera__is_active),
+    INCLUDE_TEST__STATELESS(camera__set_camera_to__follow__sets_uuid),
+    INCLUDE_TEST__STATELESS(camera__get_position_3i32F4_of__camera__returns_position),
+    END_TESTS)
