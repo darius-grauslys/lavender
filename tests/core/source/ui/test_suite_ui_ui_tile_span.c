@@ -2,9 +2,253 @@
 
 #include <ui/ui_tile_span.c>
 
-#warning Please make tests for: /home/shalidor/Projects/Lavender/tests/core/source/ui/test_suite_ui_ui_tile_span.c
+TEST_FUNCTION(initialize_ui_tile_span_as__empty__all_tiles_none) {
+    UI_Tile_Span span;
+    initialize_ui_tile_span_as__empty(&span);
+    for (int i = 0; i < 4; i++) {
+        munit_assert_int(
+                span.ui_tile__corners[i].the_kind_of__ui_tile,
+                ==,
+                UI_Tile_Kind__None);
+        munit_assert_int(
+                span.ui_tile__edges[i].the_kind_of__ui_tile,
+                ==,
+                UI_Tile_Kind__None);
+    }
+    munit_assert_int(
+            span.ui_tile__fill.the_kind_of__ui_tile,
+            ==,
+            UI_Tile_Kind__None);
+    return MUNIT_OK;
+}
 
-// Before writing any tests, please see the README
-// found in ./tests
+TEST_FUNCTION(initialize_ui_tile_span__sets_corners_edges_fill) {
+    UI_Tile_Span span;
+    UI_Tile corners[4];
+    UI_Tile edges[4];
+    UI_Tile fill;
+    for (int i = 0; i < 4; i++) {
+        initialize_ui_tile(&corners[i], (UI_Tile_Kind)(i + 1), 0);
+        initialize_ui_tile(&edges[i], (UI_Tile_Kind)(i + 10), 0);
+    }
+    initialize_ui_tile(&fill, (UI_Tile_Kind)99, 0);
+    initialize_ui_tile_span(&span, corners, edges, fill);
+    for (int i = 0; i < 4; i++) {
+        munit_assert_int(
+                span.ui_tile__corners[i].the_kind_of__ui_tile,
+                ==,
+                i + 1);
+        munit_assert_int(
+                span.ui_tile__edges[i].the_kind_of__ui_tile,
+                ==,
+                i + 10);
+    }
+    munit_assert_int(
+            span.ui_tile__fill.the_kind_of__ui_tile,
+            ==,
+            99);
+    return MUNIT_OK;
+}
 
-DEFINE_SUITE(ui_tile_span, END_TESTS)
+TEST_FUNCTION(get_ui_tile_of__ui_tile_span__returns_corner_top_left) {
+    UI_Tile_Span span;
+    UI_Tile corners[4];
+    UI_Tile edges[4];
+    UI_Tile fill;
+    for (int i = 0; i < 4; i++) {
+        initialize_ui_tile(&corners[i], (UI_Tile_Kind)(i + 1), 0);
+        initialize_ui_tile(&edges[i], (UI_Tile_Kind)(i + 10), 0);
+    }
+    initialize_ui_tile(&fill, (UI_Tile_Kind)99, 0);
+    initialize_ui_tile_span(&span, corners, edges, fill);
+    const UI_Tile *p_tile =
+        get_ui_tile_of__ui_tile_span(&span, 4, 4, 0, 0);
+    munit_assert_not_null(p_tile);
+    munit_assert_int(
+            p_tile->the_kind_of__ui_tile,
+            ==,
+            span.ui_tile__corner__top_left.the_kind_of__ui_tile);
+    return MUNIT_OK;
+}
+
+TEST_FUNCTION(get_ui_tile_of__ui_tile_span__returns_corner_top_right) {
+    UI_Tile_Span span;
+    UI_Tile corners[4];
+    UI_Tile edges[4];
+    UI_Tile fill;
+    for (int i = 0; i < 4; i++) {
+        initialize_ui_tile(&corners[i], (UI_Tile_Kind)(i + 1), 0);
+        initialize_ui_tile(&edges[i], (UI_Tile_Kind)(i + 10), 0);
+    }
+    initialize_ui_tile(&fill, (UI_Tile_Kind)99, 0);
+    initialize_ui_tile_span(&span, corners, edges, fill);
+    const UI_Tile *p_tile =
+        get_ui_tile_of__ui_tile_span(&span, 4, 4, 3, 0);
+    munit_assert_not_null(p_tile);
+    munit_assert_int(
+            p_tile->the_kind_of__ui_tile,
+            ==,
+            span.ui_tile__corner__top_right.the_kind_of__ui_tile);
+    return MUNIT_OK;
+}
+
+TEST_FUNCTION(get_ui_tile_of__ui_tile_span__returns_corner_bottom_left) {
+    UI_Tile_Span span;
+    UI_Tile corners[4];
+    UI_Tile edges[4];
+    UI_Tile fill;
+    for (int i = 0; i < 4; i++) {
+        initialize_ui_tile(&corners[i], (UI_Tile_Kind)(i + 1), 0);
+        initialize_ui_tile(&edges[i], (UI_Tile_Kind)(i + 10), 0);
+    }
+    initialize_ui_tile(&fill, (UI_Tile_Kind)99, 0);
+    initialize_ui_tile_span(&span, corners, edges, fill);
+    const UI_Tile *p_tile =
+        get_ui_tile_of__ui_tile_span(&span, 4, 4, 0, 3);
+    munit_assert_not_null(p_tile);
+    munit_assert_int(
+            p_tile->the_kind_of__ui_tile,
+            ==,
+            span.ui_tile__corner__bottom_left.the_kind_of__ui_tile);
+    return MUNIT_OK;
+}
+
+TEST_FUNCTION(get_ui_tile_of__ui_tile_span__returns_corner_bottom_right) {
+    UI_Tile_Span span;
+    UI_Tile corners[4];
+    UI_Tile edges[4];
+    UI_Tile fill;
+    for (int i = 0; i < 4; i++) {
+        initialize_ui_tile(&corners[i], (UI_Tile_Kind)(i + 1), 0);
+        initialize_ui_tile(&edges[i], (UI_Tile_Kind)(i + 10), 0);
+    }
+    initialize_ui_tile(&fill, (UI_Tile_Kind)99, 0);
+    initialize_ui_tile_span(&span, corners, edges, fill);
+    const UI_Tile *p_tile =
+        get_ui_tile_of__ui_tile_span(&span, 4, 4, 3, 3);
+    munit_assert_not_null(p_tile);
+    munit_assert_int(
+            p_tile->the_kind_of__ui_tile,
+            ==,
+            span.ui_tile__corner__bottom_right.the_kind_of__ui_tile);
+    return MUNIT_OK;
+}
+
+TEST_FUNCTION(get_ui_tile_of__ui_tile_span__returns_edge_top) {
+    UI_Tile_Span span;
+    UI_Tile corners[4];
+    UI_Tile edges[4];
+    UI_Tile fill;
+    for (int i = 0; i < 4; i++) {
+        initialize_ui_tile(&corners[i], (UI_Tile_Kind)(i + 1), 0);
+        initialize_ui_tile(&edges[i], (UI_Tile_Kind)(i + 10), 0);
+    }
+    initialize_ui_tile(&fill, (UI_Tile_Kind)99, 0);
+    initialize_ui_tile_span(&span, corners, edges, fill);
+    const UI_Tile *p_tile =
+        get_ui_tile_of__ui_tile_span(&span, 4, 4, 1, 0);
+    munit_assert_not_null(p_tile);
+    munit_assert_int(
+            p_tile->the_kind_of__ui_tile,
+            ==,
+            span.ui_tile__edge__top.the_kind_of__ui_tile);
+    return MUNIT_OK;
+}
+
+TEST_FUNCTION(get_ui_tile_of__ui_tile_span__returns_edge_bottom) {
+    UI_Tile_Span span;
+    UI_Tile corners[4];
+    UI_Tile edges[4];
+    UI_Tile fill;
+    for (int i = 0; i < 4; i++) {
+        initialize_ui_tile(&corners[i], (UI_Tile_Kind)(i + 1), 0);
+        initialize_ui_tile(&edges[i], (UI_Tile_Kind)(i + 10), 0);
+    }
+    initialize_ui_tile(&fill, (UI_Tile_Kind)99, 0);
+    initialize_ui_tile_span(&span, corners, edges, fill);
+    const UI_Tile *p_tile =
+        get_ui_tile_of__ui_tile_span(&span, 4, 4, 2, 3);
+    munit_assert_not_null(p_tile);
+    munit_assert_int(
+            p_tile->the_kind_of__ui_tile,
+            ==,
+            span.ui_tile__edge__bottom.the_kind_of__ui_tile);
+    return MUNIT_OK;
+}
+
+TEST_FUNCTION(get_ui_tile_of__ui_tile_span__returns_edge_left) {
+    UI_Tile_Span span;
+    UI_Tile corners[4];
+    UI_Tile edges[4];
+    UI_Tile fill;
+    for (int i = 0; i < 4; i++) {
+        initialize_ui_tile(&corners[i], (UI_Tile_Kind)(i + 1), 0);
+        initialize_ui_tile(&edges[i], (UI_Tile_Kind)(i + 10), 0);
+    }
+    initialize_ui_tile(&fill, (UI_Tile_Kind)99, 0);
+    initialize_ui_tile_span(&span, corners, edges, fill);
+    const UI_Tile *p_tile =
+        get_ui_tile_of__ui_tile_span(&span, 4, 4, 0, 2);
+    munit_assert_not_null(p_tile);
+    munit_assert_int(
+            p_tile->the_kind_of__ui_tile,
+            ==,
+            span.ui_tile__edge__left.the_kind_of__ui_tile);
+    return MUNIT_OK;
+}
+
+TEST_FUNCTION(get_ui_tile_of__ui_tile_span__returns_edge_right) {
+    UI_Tile_Span span;
+    UI_Tile corners[4];
+    UI_Tile edges[4];
+    UI_Tile fill;
+    for (int i = 0; i < 4; i++) {
+        initialize_ui_tile(&corners[i], (UI_Tile_Kind)(i + 1), 0);
+        initialize_ui_tile(&edges[i], (UI_Tile_Kind)(i + 10), 0);
+    }
+    initialize_ui_tile(&fill, (UI_Tile_Kind)99, 0);
+    initialize_ui_tile_span(&span, corners, edges, fill);
+    const UI_Tile *p_tile =
+        get_ui_tile_of__ui_tile_span(&span, 4, 4, 3, 1);
+    munit_assert_not_null(p_tile);
+    munit_assert_int(
+            p_tile->the_kind_of__ui_tile,
+            ==,
+            span.ui_tile__edge__right.the_kind_of__ui_tile);
+    return MUNIT_OK;
+}
+
+TEST_FUNCTION(get_ui_tile_of__ui_tile_span__returns_fill_for_interior) {
+    UI_Tile_Span span;
+    UI_Tile corners[4];
+    UI_Tile edges[4];
+    UI_Tile fill;
+    for (int i = 0; i < 4; i++) {
+        initialize_ui_tile(&corners[i], (UI_Tile_Kind)(i + 1), 0);
+        initialize_ui_tile(&edges[i], (UI_Tile_Kind)(i + 10), 0);
+    }
+    initialize_ui_tile(&fill, (UI_Tile_Kind)99, 0);
+    initialize_ui_tile_span(&span, corners, edges, fill);
+    const UI_Tile *p_tile =
+        get_ui_tile_of__ui_tile_span(&span, 4, 4, 1, 1);
+    munit_assert_not_null(p_tile);
+    munit_assert_int(
+            p_tile->the_kind_of__ui_tile,
+            ==,
+            99);
+    return MUNIT_OK;
+}
+
+DEFINE_SUITE(ui_tile_span,
+    INCLUDE_TEST__STATELESS(initialize_ui_tile_span_as__empty__all_tiles_none),
+    INCLUDE_TEST__STATELESS(initialize_ui_tile_span__sets_corners_edges_fill),
+    INCLUDE_TEST__STATELESS(get_ui_tile_of__ui_tile_span__returns_corner_top_left),
+    INCLUDE_TEST__STATELESS(get_ui_tile_of__ui_tile_span__returns_corner_top_right),
+    INCLUDE_TEST__STATELESS(get_ui_tile_of__ui_tile_span__returns_corner_bottom_left),
+    INCLUDE_TEST__STATELESS(get_ui_tile_of__ui_tile_span__returns_corner_bottom_right),
+    INCLUDE_TEST__STATELESS(get_ui_tile_of__ui_tile_span__returns_edge_top),
+    INCLUDE_TEST__STATELESS(get_ui_tile_of__ui_tile_span__returns_edge_bottom),
+    INCLUDE_TEST__STATELESS(get_ui_tile_of__ui_tile_span__returns_edge_left),
+    INCLUDE_TEST__STATELESS(get_ui_tile_of__ui_tile_span__returns_edge_right),
+    INCLUDE_TEST__STATELESS(get_ui_tile_of__ui_tile_span__returns_fill_for_interior),
+    END_TESTS)
