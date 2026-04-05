@@ -2,9 +2,53 @@
 
 #include <inventory/item.c>
 
-#warning Please make tests for: /home/shalidor/Projects/Lavender/tests/core/source/inventory/test_suite_inventory_item.c
+TEST_FUNCTION(item__initialize_item__sets_kind) {
+    Item item;
+    initialize_item(&item, Item_Kind__None);
+    munit_assert_int(get_item_kind_of__item(&item), ==, Item_Kind__None);
+    return MUNIT_OK;
+}
 
-// Before writing any tests, please see the README
-// found in ./tests
+TEST_FUNCTION(item__initialize_item_as__empty__is_empty) {
+    Item item;
+    initialize_item_as__empty(&item);
+    munit_assert_true(is_p_item__empty(&item));
+    return MUNIT_OK;
+}
 
-DEFINE_SUITE(item, END_TESTS)
+TEST_FUNCTION(item__initialize_item_as__empty__kind_is_none) {
+    Item item;
+    initialize_item_as__empty(&item);
+    munit_assert_int(get_item_kind_of__item(&item), ==, Item_Kind__None);
+    return MUNIT_OK;
+}
+
+TEST_FUNCTION(item__get_item__empty__returns_empty_item) {
+    Item item = get_item__empty();
+    munit_assert_true(is_p_item__empty(&item));
+    munit_assert_int(get_item_kind_of__item(&item), ==, Item_Kind__None);
+    return MUNIT_OK;
+}
+
+TEST_FUNCTION(item__is_p_item__empty__true_for_none) {
+    Item item;
+    initialize_item(&item, Item_Kind__None);
+    munit_assert_true(is_p_item__empty(&item));
+    return MUNIT_OK;
+}
+
+TEST_FUNCTION(item__is_p_item__empty__false_for_unknown) {
+    Item item;
+    initialize_item(&item, Item_Kind__Unknown);
+    munit_assert_false(is_p_item__empty(&item));
+    return MUNIT_OK;
+}
+
+DEFINE_SUITE(item,
+    INCLUDE_TEST__STATELESS(item__initialize_item__sets_kind),
+    INCLUDE_TEST__STATELESS(item__initialize_item_as__empty__is_empty),
+    INCLUDE_TEST__STATELESS(item__initialize_item_as__empty__kind_is_none),
+    INCLUDE_TEST__STATELESS(item__get_item__empty__returns_empty_item),
+    INCLUDE_TEST__STATELESS(item__is_p_item__empty__true_for_none),
+    INCLUDE_TEST__STATELESS(item__is_p_item__empty__false_for_unknown),
+    END_TESTS)
