@@ -1,6 +1,6 @@
-# Specification: core/include/raycast/ray.h
+# 1. Specification: core/include/raycast/ray.h
 
-## Overview
+## 1.1. Overview
 
 Provides construction, stepping, and measurement utilities for the
 `Ray__3i32F20` struct — the engine's fixed-point raycasting primitive.
@@ -12,7 +12,7 @@ with 20 bits of fractional precision), providing sub-tile accuracy
 without floating-point hardware — critical for deterministic behavior
 on the Nintendo DS and other fixed-point-only targets.
 
-## Dependencies
+## 1.2. Dependencies
 
 - `defines.h` (for `Ray__3i32F20`, `Vector__3i32F4`, `Vector__3i32F20`,
   `Vector__3i32`, `Degree__u9`, `Ray_Plane_Mode`, `i32F4`, `i32F20`,
@@ -29,9 +29,9 @@ on the Nintendo DS and other fixed-point-only targets.
   `get_distance_squared_of__vector_3i32F4`,
   `get_distance_squared_of__vector_3i32F20`)
 
-## Types
+## 1.3. Types
 
-### Ray__3i32F20 (struct)
+### 1.3.1. Ray__3i32F20 (struct)
 
 Defined in `defines.h`:
 
@@ -49,7 +49,7 @@ Defined in `defines.h`:
 | `angle_of__ray` | `Degree__u9` | 10 | Direction of the ray expressed as a 9-bit degree value (0–511). See Degree Constants below. |
 | `ray_plane_mode` | `Ray_Plane_Mode` | 2 | Which 2D plane the ray operates in (XY, XZ, or YZ). |
 
-### Ray_Plane_Mode (enum)
+### 1.3.2. Ray_Plane_Mode (enum)
 
 Defined in `defines.h`:
 
@@ -65,7 +65,7 @@ Defined in `defines.h`:
 | `Ray_Plane_Mode__XZ` | Ray steps in the X-Z plane. |
 | `Ray_Plane_Mode__YZ` | Ray steps in the Y-Z plane. |
 
-### Degree__u9 (u16)
+### 1.3.3. Degree__u9 (u16)
 
 A 9-bit angular unit where the full circle is divided into 512 steps.
 Defined in `defines.h`:
@@ -84,7 +84,7 @@ Defined in `defines.h`:
 | `ANGLE__MASK` | `MASK(5)` | Mask for sub-angle bits (lower 5 bits). |
 | `ANGLE__OUT_OF_BOUNDS` | `MASK(10)` | Sentinel for invalid/out-of-bounds rays. |
 
-### Degree Utility Functions (from degree.h)
+### 1.3.4. Degree Utility Functions (from degree.h)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -97,15 +97,15 @@ Defined in `defines.h`:
 | `get_2i32F4_offset_from__angle` | `(Degree__u9) -> Vector__3i32F4` | `Vector__3i32F4` | Direction offset at i32F4 precision. Excellent for short range, not accurate beyond ~10 integer units. |
 | `get_2i32F20_offset_from__angle` | `(Degree__u9) -> Vector__3i32F20` | `Vector__3i32F20` | Direction offset at i32F20 precision. High accuracy; long-distance inaccuracy limited only by Degree__u9 resolution. |
 
-### Fixed-Point Constants
+### 1.3.5. Fixed-Point Constants
 
 | Constant | Value | Description |
 |----------|-------|-------------|
 | `LENGTH_OF_RAY__i32F20` | `0b11111111` (255) | Maximum ray step length per invocation in i32F20 units. |
 
-## Functions
+## 1.4. Functions
 
-### Construction
+### 1.4.1. Construction
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -113,7 +113,7 @@ Defined in `defines.h`:
 | `get_ray_as__extension` | `(Ray__3i32F20 *p_ray, Degree__u9 angle) -> Ray__3i32F20` | `Ray__3i32F20` | Constructs a new ray that begins at the current endpoint of `p_ray` and proceeds in the given angle. Inherits the plane mode of the source ray. |
 | `get_ray__out_of_bounds` | `(void) -> Ray__3i32F20` | `Ray__3i32F20` | Returns a sentinel ray with `VECTOR__3i32F20__OUT_OF_BOUNDS` for both vectors and `ANGLE__OUT_OF_BOUNDS` for the angle. (static inline) |
 
-### Stepping
+### 1.4.2. Stepping
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
@@ -121,20 +121,20 @@ Defined in `defines.h`:
 | `step_p_ray_until__next_whole_integer` | `(Ray__3i32F20*) -> void` | Advances the ray until its current position crosses the next whole integer boundary (i.e. the i32F20 fractional part wraps to a new integer value). Used for grid-aligned sampling. |
 | `step_p_ray_until__next_tile` | `(Ray__3i32F20*) -> void` | Advances the ray until it enters the next tile. Tile boundaries are determined by `TILE__WIDTH_AND__HEIGHT__BIT_SHIFT` (default: 3, meaning 8-unit tiles). |
 
-### Validity Check (static inline)
+### 1.4.3. Validity Check (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `is_ray__out_of_bouds` | `(Ray__3i32F20 ray) -> bool` | `bool` | Returns true if the ray's current vector is out of bounds (via `is_vectors_3i32F20__out_of_bounds`) OR the angle is out of bounds (via `is_degree_u9__out_of_bounds`). Note: takes the ray **by value**, not by pointer. Note: the function name contains a typo (`bouds` instead of `bounds`). |
 
-### Endpoint Extraction (static inline)
+### 1.4.4. Endpoint Extraction (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `get_ray_endpoint_as__vector_3i32F4` | `(Ray__3i32F20*) -> Vector__3i32F4` | `Vector__3i32F4` | Converts the ray's current endpoint from i32F20 to i32F4 precision via `vector_3i32F20_to__vector_3i32F4`. |
 | `get_ray_endpoint_as__vector_3i32` | `(Ray__3i32F20*) -> Vector__3i32` | `Vector__3i32` | Converts the ray's current endpoint from i32F20 to whole integer coordinates via `vector_3i32F20_to__vector_3i32`. |
 
-### Displacement Measurement (static inline)
+### 1.4.5. Displacement Measurement (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -143,7 +143,7 @@ Defined in `defines.h`:
 | `get_y_offset_i32F4_of__ray` | `(Ray__3i32F20*) -> i32F4` | `i32F4` | Returns the Y component of displacement, converted from i32F20 to i32F4. |
 | `get_z_offset_i32F4_of__ray` | `(Ray__3i32F20*) -> i32F4` | `i32F4` | Returns the Z component of displacement, converted from i32F20 to i32F4. |
 
-### Distance Measurement (static inline)
+### 1.4.6. Distance Measurement (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -152,9 +152,9 @@ Defined in `defines.h`:
 | `get_squared_length_i32F4_of__ray` | `(Ray__3i32F20*) -> i32F4` | `i32F4` | Returns the squared distance from origin to current endpoint. Converts displacement to i32F4 before squaring via `get_distance_squared_of__vector_3i32F4`. |
 | `get_squared_length_i32F20_of__ray` | `(Ray__3i32F20*) -> i32F20` | `i32F20` | Returns the squared distance from origin to current endpoint at full i32F20 precision. Internally converts to i32F4 for the actual computation (via `get_distance_squared_of__vector_3i32F20`). Emits a `debug_info` log with the delta vector components. |
 
-## Agentic Workflow
+## 1.5. Agentic Workflow
 
-### Ray Construction Pattern
+### 1.5.1. Ray Construction Pattern
 
 Rays are constructed from a world-space position (typically an entity's
 hitbox position in i32F4) and a direction angle:
@@ -168,7 +168,7 @@ The starting position is automatically promoted from i32F4 to i32F20
 precision internally. The current vector is initialized to the starting
 vector (zero displacement).
 
-### Iterative Stepping Pattern
+### 1.5.2. Iterative Stepping Pattern
 
 Rays are advanced incrementally using the step functions. This is the
 primary usage pattern for tile-based raycasting:
@@ -192,7 +192,7 @@ primary usage pattern for tile-based raycasting:
         }
     }
 
-### Step Granularity
+### 1.5.3. Step Granularity
 
 Three levels of stepping granularity are provided:
 
@@ -202,7 +202,7 @@ Three levels of stepping granularity are provided:
 | `step_p_ray_until__next_whole_integer` | Integer boundary crossing | Grid-aligned checks at integer resolution. |
 | `step_p_ray_until__next_tile` | Tile boundary crossing | Tile-based line-of-sight, pathfinding probes. Most common. |
 
-### Ray Extension Pattern
+### 1.5.4. Ray Extension Pattern
 
 To create a branching or deflected ray from an existing ray's endpoint:
 
@@ -215,7 +215,7 @@ To create a branching or deflected ray from an existing ray's endpoint:
 This is used in pathfinding (see `Path` struct) where rays probe in
 multiple directions from a common point.
 
-### Out-of-Bounds Sentinel Pattern
+### 1.5.5. Out-of-Bounds Sentinel Pattern
 
 Functions that may fail to produce a valid ray return the out-of-bounds
 sentinel:
@@ -230,7 +230,7 @@ The sentinel uses `VECTOR__3i32F20__OUT_OF_BOUNDS` (`{BIT(31), BIT(31),
 BIT(31)}`) for both vectors and `ANGLE__OUT_OF_BOUNDS` (`MASK(10)`) for
 the angle, ensuring all validity checks trigger.
 
-### Fixed-Point Precision Hierarchy
+### 1.5.6. Fixed-Point Precision Hierarchy
 
 The ray system operates at i32F20 precision internally but interfaces
 with the rest of the engine at i32F4 precision:
@@ -247,7 +247,7 @@ When constructing a ray via `get_ray`, the i32F4 input is promoted to
 i32F20 via `vector_3i32F4_to__vector_3i32F20`. When reading results,
 use the appropriate extraction function for the desired precision level.
 
-### Squared Distance Convention
+### 1.5.7. Squared Distance Convention
 
 All distance functions return **squared** distances to avoid square root
 operations (which are expensive on fixed-point-only hardware). Comparisons
@@ -261,7 +261,7 @@ should use squared thresholds:
         // Ray endpoint is within 10 units of origin
     }
 
-### Precision Loss in Distance Functions
+### 1.5.8. Precision Loss in Distance Functions
 
 Both `get_squared_length_i32F4_of__ray` and
 `get_squared_length_i32F20_of__ray` convert the displacement to i32F4
@@ -272,7 +272,7 @@ same). This means the full i32F20 precision is **not** preserved in
 distance calculations. For most gameplay purposes (tile-range distances)
 this is acceptable.
 
-### Debug Logging
+### 1.5.9. Debug Logging
 
 `get_squared_length_i32F20_of__ray` contains a `debug_info` call that
 logs the delta vector components:
@@ -285,7 +285,7 @@ This is active in debug builds (when `NDEBUG` and `NLOG` are not
 defined) and can produce significant output during intensive raycasting.
 Consider this when profiling or reviewing log output.
 
-### Relationship to Path System
+### 1.5.10. Relationship to Path System
 
 The `Path` struct (defined in `defines.h`) uses `Ray__3i32F20` as its
 `leading_ray_of__path` field. The pathfinding system advances the ray
@@ -299,7 +299,7 @@ different directions at each node:
         ...
     } Path;
 
-### Relationship to Degree System
+### 1.5.11. Relationship to Degree System
 
 The ray system depends on `degree.h` for angle-to-offset conversion.
 Two precision levels are available:
@@ -312,14 +312,14 @@ Two precision levels are available:
 The `Degree__u9` type divides the circle into 512 steps, giving
 approximately 0.7° resolution per step.
 
-### Plane Mode Usage
+### 1.5.12. Plane Mode Usage
 
 Most 2D top-down gameplay uses `Ray_Plane_Mode__XY`. The XZ and YZ
 modes exist for 3D or side-view projections. The plane mode determines
 which two components of the 3D vector are affected by stepping; the
 third component remains constant throughout the ray's lifetime.
 
-### Preconditions
+### 1.5.13. Preconditions
 
 - `get_ray`: `starting_vector` should be a valid world-space position.
   `angle` should be less than `ANGLE__360` (512).
@@ -329,7 +329,7 @@ third component remains constant throughout the ray's lifetime.
   guards are present — the caller is responsible for null checks.
 - All `static inline` measurement functions: `p_ray` must be non-null.
 
-### Postconditions
+### 1.5.14. Postconditions
 
 - After `get_ray`: `ray_current_vector__3i32F20` equals
   `ray_starting_vector__3i32F20` (zero displacement).
@@ -338,7 +338,7 @@ third component remains constant throughout the ray's lifetime.
   `ray_plane_mode`. `ray_starting_vector__3i32F20` is unchanged.
 - After `get_ray__out_of_bounds`: `is_ray__out_of_bouds` returns true.
 
-### Error Handling
+### 1.5.15. Error Handling
 
 - `get_ray__out_of_bounds` provides a sentinel value for error cases.
 - `is_ray__out_of_bouds` checks both vector bounds and angle bounds.
@@ -346,7 +346,7 @@ third component remains constant throughout the ray's lifetime.
   debug output is a `debug_info` call in
   `get_squared_length_i32F20_of__ray`.
 
-### Thread Safety
+### 1.5.16. Thread Safety
 
 Ray operations are **not** thread-safe. Rays are typically stack-local
 or owned by a single `Path` instance. The engine's cooperative

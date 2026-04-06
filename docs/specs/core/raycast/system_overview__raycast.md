@@ -1,6 +1,6 @@
-# System Overview: Raycast System
+# 1. System Overview: Raycast System
 
-## Purpose
+## 1.1. Purpose
 
 The raycast system provides fixed-point ray construction, stepping, and
 measurement primitives for line-of-sight checks, pathfinding probes, and
@@ -9,9 +9,9 @@ fixed-point arithmetic (32-bit integers with 20 bits of fractional
 precision), ensuring deterministic behavior on platforms without
 floating-point hardware.
 
-## Architecture
+## 1.2. Architecture
 
-### Data Hierarchy
+### 1.2.1. Data Hierarchy
 
     Ray__3i32F20
     +-- Vector__3i32F20  ray_starting_vector__3i32F20  (origin, immutable after construction)
@@ -24,7 +24,7 @@ floating-point hardware.
     +-- Vector__3i32     path_nodes__3i32[PATH_VECTORS_MAX_QUANTITY_OF]
     +-- Degree__u9       obstruction_indicent_stack[PATH_VECTORS_MAX_QUANTITY_OF]
 
-### Key Types
+### 1.2.2. Key Types
 
 | Type | Role |
 |------|------|
@@ -36,7 +36,7 @@ floating-point hardware.
 | `Ray_Plane_Mode` | Enum selecting which 2D plane (XY, XZ, or YZ) the ray operates in. The third component remains constant throughout the ray's lifetime. |
 | `Path` | Pathfinding structure that owns a `Ray__3i32F20` as its leading probe. Uses ray extension to explore multiple directions from each node. |
 
-### Constants
+### 1.2.3. Constants
 
 | Constant | Value | Description |
 |----------|-------|-------------|
@@ -51,7 +51,7 @@ floating-point hardware.
 | `ANGLE__OUT_OF_BOUNDS` | `MASK(10)` | Sentinel for invalid/out-of-bounds angles. |
 | `VECTOR__3i32F20__OUT_OF_BOUNDS` | `{BIT(31), BIT(31), BIT(31)}` | Sentinel for invalid/out-of-bounds vectors. |
 
-### Plane Modes
+### 1.2.4. Plane Modes
 
 | Value | Description |
 |-------|-------------|
@@ -59,7 +59,7 @@ floating-point hardware.
 | `Ray_Plane_Mode__XZ` | Ray steps in the X-Z plane. |
 | `Ray_Plane_Mode__YZ` | Ray steps in the Y-Z plane. |
 
-## Fixed-Point Precision Hierarchy
+## 1.3. Fixed-Point Precision Hierarchy
 
 The ray system operates at i32F20 precision internally but interfaces
 with the rest of the engine at lower precisions:
@@ -77,9 +77,9 @@ i32F20 via `vector_3i32F4_to__vector_3i32F20`. When reading results,
 the appropriate extraction function is used for the desired precision
 level.
 
-## Lifecycle
+## 1.4. Lifecycle
 
-### 1. Construction
+### 1.4.1. Construction
 
 A ray is constructed from a world-space position (typically an entity's
 hitbox position in i32F4), a direction angle, and a plane mode:
@@ -100,7 +100,7 @@ starting vector (zero displacement).
 **Postconditions:**
 - `ray_current_vector__3i32F20` equals `ray_starting_vector__3i32F20`.
 
-### 2. Iterative Stepping
+### 1.4.2. Iterative Stepping
 
 Rays are advanced incrementally using one of three step functions, each
 providing a different granularity:
@@ -126,7 +126,7 @@ Tile boundaries for `step_p_ray_until__next_tile` are determined by
   `angle_of__ray` within the specified `ray_plane_mode`.
 - `ray_starting_vector__3i32F20` is unchanged.
 
-### 3. Endpoint Extraction
+### 1.4.3. Endpoint Extraction
 
 After stepping, the ray's current endpoint can be extracted at the
 desired precision:
@@ -134,7 +134,7 @@ desired precision:
     Vector__3i32F4 pos_f4 = get_ray_endpoint_as__vector_3i32F4(&ray);
     Vector__3i32   pos_i  = get_ray_endpoint_as__vector_3i32(&ray);
 
-### 4. Distance Measurement
+### 1.4.4. Distance Measurement
 
 All distance functions return **squared** distances to avoid square root
 operations (which are expensive on fixed-point-only hardware):
@@ -152,7 +152,7 @@ before computing the squared distance. The full i32F20 precision is
 **not** preserved in distance calculations. For most gameplay purposes
 (tile-range distances) this is acceptable.
 
-### 5. Validity Checking
+### 1.4.5. Validity Checking
 
 Rays can become invalid (out-of-bounds). The sentinel pattern is used
 for error cases:
@@ -173,7 +173,7 @@ trigger.
 **Note:** The function name `is_ray__out_of_bouds` contains a typo
 (`bouds` instead of `bounds`). This is the canonical name.
 
-### 6. Ray Extension
+### 1.4.6. Ray Extension
 
 A new ray can be constructed from an existing ray's current endpoint,
 inheriting the source ray's plane mode:
@@ -188,7 +188,7 @@ a common point.
 **Preconditions:**
 - `p_ray` must be non-null and not out-of-bounds.
 
-## Typical Usage Pattern: Tile-Based Raycasting
+## 1.5. Typical Usage Pattern: Tile-Based Raycasting
 
     Ray__3i32F20 ray = get_ray(origin, angle, Ray_Plane_Mode__XY);
 
@@ -209,7 +209,7 @@ a common point.
         }
     }
 
-## Displacement Measurement
+## 1.6. Displacement Measurement
 
 The displacement from a ray's origin to its current endpoint can be
 queried as a full vector or per-component:
@@ -221,7 +221,7 @@ queried as a full vector or per-component:
 | `get_y_offset_i32F4_of__ray` | `i32F4` | Y component of displacement, converted to i32F4. |
 | `get_z_offset_i32F4_of__ray` | `i32F4` | Z component of displacement, converted to i32F4. |
 
-## Integration with Path System
+## 1.7. Integration with Path System
 
 The `Path` struct uses `Ray__3i32F20` as its `leading_ray_of__path`
 field. The pathfinding system advances the ray along candidate routes,
@@ -237,7 +237,7 @@ At each path node, the leading ray is extended in candidate directions.
 The resulting endpoint positions are recorded in `path_nodes__3i32`, and
 any obstruction angles are pushed onto `obstruction_indicent_stack`.
 
-## Integration with Degree System
+## 1.8. Integration with Degree System
 
 The ray system depends on `degree.h` for angle-to-offset conversion.
 Two precision levels are available:
@@ -253,7 +253,7 @@ provide conversion between angles and cardinal/ordinal directions,
 angle arithmetic with wrapping, and angle computation between two
 world-space points.
 
-## Integration with Collision System
+## 1.9. Integration with Collision System
 
 Rays are used for line-of-sight checks across the tile grid. The
 typical pattern is:
@@ -268,7 +268,7 @@ The ray system itself does not directly reference `Collision_Node` or
 `Hitbox_AABB` types. Integration occurs at the caller level, where ray
 endpoints are used to index into spatial structures.
 
-## Debug Logging
+## 1.10. Debug Logging
 
 `get_squared_length_i32F20_of__ray` contains a `debug_info` call that
 logs the delta vector components:
@@ -282,7 +282,7 @@ defined) and can produce significant output during intensive raycasting.
 No other debug output (`debug_abort`, `debug_error`, `debug_warning`)
 is emitted by the ray module.
 
-## Capacity Constraints
+## 1.11. Capacity Constraints
 
 - Rays are stack-local or embedded in `Path` instances. There is no
   global ray pool or allocation limit.
@@ -292,13 +292,13 @@ is emitted by the ray module.
   resolution (~0.7° per step) and the `LENGTH_OF_RAY__i32F20` step
   size (255 i32F20 units per step).
 
-## Thread Safety
+## 1.12. Thread Safety
 
 Ray operations are **not** thread-safe. Rays are typically stack-local
 or owned by a single `Path` instance. The engine's cooperative
 scheduling model ensures all ray operations occur on a single thread.
 
-## Error Handling
+## 1.13. Error Handling
 
 - `get_ray__out_of_bounds` provides a sentinel value for error cases.
 - `is_ray__out_of_bouds` checks both vector bounds and angle bounds.
