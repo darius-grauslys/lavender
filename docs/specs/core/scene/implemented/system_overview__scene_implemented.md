@@ -1,6 +1,6 @@
-# System Overview: Implemented Scene Types and Registration
+# 1. System Overview: Implemented Scene Types and Registration
 
-## Purpose
+## 1.1. Purpose
 
 The `implemented/` directory under the scene system contains
 project-extensible types and registration entry points. These files ship
@@ -12,9 +12,9 @@ The project's copies are then compiled as part of the project's build,
 allowing game developers to extend enumerations and provide
 project-specific scene registration logic.
 
-## Architecture
+## 1.2. Architecture
 
-### Deployment Flow
+### 1.2.1. Deployment Flow
 
     Engine Source Tree                      Project Directory
     ========================               ========================
@@ -34,7 +34,7 @@ project-specific scene registration logic.
                                                scene__main.c
                                                (provided by project)
 
-### Guard Macro System
+### 1.2.2. Guard Macro System
 
 The engine's `defines_weak.h` includes `scene_kind.h` and checks for a
 guard macro. If the project has not provided its own definition, a minimal
@@ -52,7 +52,7 @@ fallback is used:
 When the project's copy defines `DEFINE_SCENE_KIND`, the fallback is
 suppressed and the project's extended definition takes precedence.
 
-### Key Components
+### 1.2.3. Key Components
 
 | Component | File | Role |
 |-----------|------|------|
@@ -60,9 +60,9 @@ suppressed and the project's extended definition takes precedence.
 | `register_scenes` | `scene/implemented/scene_registrar.h` | Batch registration entry point. Called during game initialization to register all project scenes into the `Scene_Manager`. |
 | `register_scene__main` | `scene/implemented/scene__main.h` | Registers the main/primary scene. Called from within `register_scenes`. |
 
-## Scene_Kind Enumeration
+## 1.3. Scene_Kind Enumeration
 
-### Default Definition
+### 1.3.1. Default Definition
 
     typedef enum Scene_Kind {
         Scene_Kind__None = 0,
@@ -74,7 +74,7 @@ suppressed and the project's extended definition takes precedence.
 | `Scene_Kind__None` | 0 | Default/empty scene. Reserved. |
 | `Scene_Kind__Unknown` | (last) | Sentinel value. Always the final entry. Used as the array size for `Scene_Manager.scenes[]`. |
 
-### Extension Pattern
+### 1.3.2. Extension Pattern
 
 Game projects add new scene kinds between `Scene_Kind__None` and
 `Scene_Kind__Unknown`:
@@ -89,22 +89,22 @@ Game projects add new scene kinds between `Scene_Kind__None` and
         Scene_Kind__Unknown
     } Scene_Kind;
 
-### Extension Rules
+### 1.3.3. Extension Rules
 
 - `Scene_Kind__None` must remain at value 0.
 - `Scene_Kind__Unknown` must remain the final entry.
 - `DEFINE_SCENE_KIND` must be defined to suppress the engine fallback.
 - Adding entries increases `Scene_Manager.scenes[]` size accordingly.
 
-## Registration System
+## 1.4. Registration System
 
-### Initialization Sequence
+### 1.4.1. Initialization Sequence
 
     initialize_scene_manager(p_scene_manager);
     register_scenes(p_scene_manager);
     set_active_scene_for__scene_manager(p_scene_manager, Scene_Kind__Title_Screen);
 
-### register_scenes
+### 1.4.2. register_scenes
 
 Declared in `scene_registrar.h`. The game project provides the
 implementation. This function is the single entry point for registering
@@ -125,7 +125,7 @@ all game scenes:
 - All game scenes are registered and ready to be activated via
   `set_active_scene_for__scene_manager`.
 
-### register_scene__main
+### 1.4.3. register_scene__main
 
 Declared in `scene__main.h`. The game project provides the
 implementation. Registers the main/primary scene's load, enter, and
@@ -142,7 +142,7 @@ unload handlers into the `Scene_Manager`:
 - The main scene is registered and can be activated via
   `set_active_scene_for__scene_manager`.
 
-### Modular Registration Convention
+### 1.4.4. Modular Registration Convention
 
 The engine encourages a pattern where each scene has its own
 `register_scene__<name>` function declared in a corresponding
@@ -153,7 +153,7 @@ to:
 - Remove scenes by not calling their registration function.
 - Keep scene handler implementations organized per-scene.
 
-### Adding a New Scene
+### 1.4.5. Adding a New Scene
 
 To add a new scene to a game project:
 
@@ -174,7 +174,7 @@ To add a new scene to a game project:
    `register_scene__inventory(p_scene_manager)` in the project's
    `register_scenes` implementation.
 
-## Relationship to Scene_Manager
+## 1.5. Relationship to Scene_Manager
 
 The implemented types directly affect `Scene_Manager` behavior:
 
@@ -188,7 +188,7 @@ The `Scene_Manager` itself is an engine type — it is not an implemented
 type and is not copied into game projects. Only the scene kinds and
 registration functions are project-extensible.
 
-## Relationship to defines_weak.h
+## 1.6. Relationship to defines_weak.h
 
 The inclusion chain for `Scene_Kind`:
 

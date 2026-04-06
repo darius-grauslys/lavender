@@ -1,13 +1,13 @@
-# Specification: core/include/scene/implemented/scene__main.h
+# 1. Specification: core/include/scene/implemented/scene__main.h
 
-## Overview
+## 1.1. Overview
 
 Declares the `register_scene__main` function, which registers the
 main/primary scene into the `Scene_Manager`. This file is an **implemented
 type** header — it ships with the engine as a default template but is not
 compiled as part of the engine build process.
 
-## Deployment
+## 1.2. Deployment
 
 This file resides at `core/include/scene/implemented/scene__main.h` within
 the engine source tree. When a new game project is created via
@@ -20,21 +20,21 @@ The game project is expected to provide the implementation of
 `register_scene__main` in a corresponding `.c` file. This function is
 typically called from within `register_scenes` (see `scene_registrar.h`).
 
-## Dependencies
+## 1.3. Dependencies
 
 - `defines.h` (for `Scene_Manager`)
 
-## Functions
+## 1.4. Functions
 
-### Registration
+### 1.4.1. Registration
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `register_scene__main` | `(Scene_Manager*) -> void` | Registers the main scene's load, enter, and unload handlers into the `Scene_Manager`. The specific `Scene_Kind` used is determined by the game project. |
 
-## Agentic Workflow
+## 1.5. Agentic Workflow
 
-### Usage Pattern
+### 1.5.1. Usage Pattern
 
 `register_scene__main` is intended to be called from within
 `register_scenes` as part of the batch registration of all game scenes:
@@ -47,7 +47,7 @@ typically called from within `register_scenes` (see `scene_registrar.h`).
 This pattern allows each scene to encapsulate its own registration logic
 in a dedicated function, keeping `register_scenes` clean and modular.
 
-### Modular Scene Registration Convention
+### 1.5.2. Modular Scene Registration Convention
 
 The engine encourages a pattern where each scene has its own
 `register_scene__<name>` function declared in a corresponding
@@ -58,14 +58,14 @@ to:
 - Remove scenes by simply not calling their registration function.
 - Keep scene handler implementations organized per-scene.
 
-### Preconditions
+### 1.5.3. Preconditions
 
 - `p_scene_manager` must be non-null and previously initialized via
   `initialize_scene_manager`.
 - The `Scene_Kind` used internally by this function must be valid and
   defined in the project's `scene_kind.h`.
 
-### Postconditions
+### 1.5.4. Postconditions
 
 - After `register_scene__main` returns, the main scene is registered in
   the `Scene_Manager` and can be activated via

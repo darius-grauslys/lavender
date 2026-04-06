@@ -1,20 +1,20 @@
-# Specification: core/include/scene/scene.h
+# 1. Specification: core/include/scene/scene.h
 
-## Overview
+## 1.1. Overview
 
 Provides initialization and basic query utilities for the `Scene` struct —
 the engine's unit of high-level game state (e.g. title screen, gameplay,
 pause menu). Each `Scene` encapsulates load, enter (main loop), and unload
 handlers that the `Scene_Manager` drives as a state machine.
 
-## Dependencies
+## 1.2. Dependencies
 
 - `defines.h` (for `Scene`, `Scene_Manager`, `Game`, `m_Enter_Scene`)
 - `game.h` (for `get_p_scene_manager_from__game`)
 
-## Types
+## 1.3. Types
 
-### Scene (struct)
+### 1.3.1. Scene (struct)
 
 Defined in `defines.h`:
 
@@ -38,30 +38,30 @@ Defined in `defines.h`:
 | `p_scene_data` | `void*` | Opaque pointer to scene-specific data (e.g. `Scene_Data__Game`). |
 | `is_active` | `bool` | Whether this scene is currently active. |
 
-### Handler Signatures
+### 1.3.2. Handler Signatures
 
     typedef void (*m_Load_Scene)(Scene *p_this_scene, Game *p_game);
     typedef void (*m_Enter_Scene)(Scene *p_this_scene, Game *p_game);
     typedef void (*m_Unload_Scene)(Scene *p_this_scene, Game *p_game);
 
-## Functions
+## 1.4. Functions
 
-### Initialization
+### 1.4.1. Initialization
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `initialize_scene` | `(Scene*) -> void` | Zeroes all handler pointers, sets `p_parent_scene` and `p_scene_data` to null, and sets `is_active` to false. |
 
-### Queries (static inline)
+### 1.4.2. Queries (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `is_scene__valid` | `(Scene*) -> bool` | `bool` | Returns true if `m_enter_scene_handler` is non-null. A scene without an enter handler is considered invalid/unregistered. |
 | `poll_is__scene_active` | `(Game*, Scene*) -> bool` | `bool` | Returns true if the given scene is the currently active scene in the game's `Scene_Manager`. Compares against `p_active_scene`. |
 
-## Agentic Workflow
+## 1.5. Agentic Workflow
 
-### Scene Lifecycle
+### 1.5.1. Scene Lifecycle
 
     [Unregistered] --> register_scene_into__scene_manager --> [Registered/Inactive]
                                                                      |
@@ -80,14 +80,14 @@ Defined in `defines.h`:
                                                                      |
                                                              [Registered/Inactive]
 
-### Validity Convention
+### 1.5.2. Validity Convention
 
 A scene is considered valid if and only if it has a non-null
 `m_enter_scene_handler`. The `m_load_scene_handler` and
 `m_unload_scene_handler` are optional — a scene may have no setup or
 teardown requirements.
 
-### Scene Data Convention
+### 1.5.3. Scene Data Convention
 
 The `p_scene_data` pointer is opaque and its lifetime is managed by the
 scene's load and unload handlers. Common patterns:
@@ -96,12 +96,12 @@ scene's load and unload handlers. Common patterns:
 - **Dynamic data**: Allocate in `m_load_scene_handler`, free in
   `m_unload_scene_handler`.
 
-### Preconditions
+### 1.5.4. Preconditions
 
 - `is_scene__valid`: requires a non-null `p_scene`.
 - `poll_is__scene_active`: requires a non-null `p_game` and `p_scene`.
 
-### Postconditions
+### 1.5.5. Postconditions
 
 - After `initialize_scene`: all handlers are null, `is_active` is false,
   `p_parent_scene` and `p_scene_data` are null.

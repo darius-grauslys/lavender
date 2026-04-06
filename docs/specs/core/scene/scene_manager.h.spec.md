@@ -1,21 +1,21 @@
-# Specification: core/include/scene/scene_manager.h
+# 1. Specification: core/include/scene/scene_manager.h
 
-## Overview
+## 1.1. Overview
 
 Provides initialization, registration, lookup, and active-scene management
 for the `Scene_Manager` — the engine's scene state machine driver. The
 `Scene_Manager` holds a fixed-size array of `Scene` slots indexed by
 `Scene_Kind` and maintains a pointer to the currently active scene.
 
-## Dependencies
+## 1.2. Dependencies
 
 - `defines.h` (for `Scene_Manager`, `Scene`, `Scene_Kind`,
   `m_Load_Scene`, `m_Enter_Scene`, `m_Unload_Scene`)
 - `defines_weak.h` (forward declarations)
 
-## Types
+## 1.3. Types
 
-### Scene_Manager (struct)
+### 1.3.1. Scene_Manager (struct)
 
 Defined in `defines.h`:
 
@@ -29,7 +29,7 @@ Defined in `defines.h`:
 | `scenes` | `Scene[Scene_Kind__Unknown]` | Fixed-size array of scene slots. Indexed by `Scene_Kind`. The array size is determined by the `Scene_Kind__Unknown` sentinel value. |
 | `p_active_scene` | `Scene*` | Pointer to the currently active scene, or null if no scene is active. |
 
-### Scene_Kind (enum)
+### 1.3.2. Scene_Kind (enum)
 
 Defined via `types/implemented/scene_kind.h`. The default (engine-shipped)
 definition is:
@@ -48,43 +48,43 @@ define their own scene kinds (e.g. `Scene_Kind__Title_Screen`,
 `Scene_Kind__Gameplay`, etc.), ensuring `Scene_Kind__Unknown` remains the
 final sentinel value.
 
-## Functions
+## 1.4. Functions
 
-### Initialization
+### 1.4.1. Initialization
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `initialize_scene_manager` | `(Scene_Manager*) -> void` | Initializes all scene slots via `initialize_scene` and sets `p_active_scene` to null. |
 
-### Registration
+### 1.4.2. Registration
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `register_scene_into__scene_manager` | `(Scene_Manager*, Scene_Kind, m_Load_Scene, m_Enter_Scene, m_Unload_Scene) -> void` | Registers a scene's handlers into the slot indexed by the given `Scene_Kind`. Overwrites any previously registered handlers for that slot. |
 
-### Lookup
+### 1.4.3. Lookup
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `get_p_scene_from__scene_manager` | `(Scene_Manager*, Scene_Kind) -> Scene*` | `Scene*` | Returns a pointer to the scene slot for the given `Scene_Kind`. |
 | `get_p_active_scene_from__scene_manager` | `(Scene_Manager*) -> Scene*` | `Scene*` | Returns `p_active_scene`. (static inline) |
 
-### Active Scene Management
+### 1.4.4. Active Scene Management
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `set_active_scene_for__scene_manager` | `(Scene_Manager*, Scene_Kind) -> void` | Transitions to a new active scene. If a scene is currently active, its `m_unload_scene_handler` is called. The new scene's `m_load_scene_handler` is then called, and `p_active_scene` is updated. |
 | `quit_scene_state_machine` | `(Scene_Manager*) -> void` | Unloads the current active scene (if any) and sets `p_active_scene` to null, effectively stopping the scene state machine. |
 
-### Queries (static inline)
+### 1.4.5. Queries (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `is_p_scene_the__active_scene_in__scene_manager` | `(Scene_Manager*, Scene*) -> bool` | `bool` | Returns true if the given scene pointer equals `p_active_scene`. |
 
-## Agentic Workflow
+## 1.5. Agentic Workflow
 
-### Scene State Machine
+### 1.5.1. Scene State Machine
 
 The `Scene_Manager` operates as a simple state machine:
 
@@ -112,7 +112,7 @@ The `Scene_Manager` operates as a simple state machine:
                                     |
                             [No Active Scene]
 
-### Registration Pattern
+### 1.5.2. Registration Pattern
 
 Scenes are typically registered during game initialization, before any
 scene is made active. The `register_scenes` function (declared in
@@ -123,7 +123,7 @@ registration:
     register_scenes(p_scene_manager);  // registers all game scenes
     set_active_scene_for__scene_manager(p_scene_manager, Scene_Kind__Title);
 
-### Scene_Kind Extension
+### 1.5.3. Scene_Kind Extension
 
 The `Scene_Kind` enum determines the number of scene slots available.
 When extending `Scene_Kind` in a game project:
@@ -133,7 +133,7 @@ When extending `Scene_Kind` in a game project:
   the array size sentinel for `scenes[Scene_Kind__Unknown]`.
 - `Scene_Kind__None` (value 0) is reserved as the default/empty scene.
 
-### Preconditions
+### 1.5.4. Preconditions
 
 - `initialize_scene_manager`: requires a non-null `Scene_Manager*`.
 - `register_scene_into__scene_manager`: `Scene_Kind` must be less than
@@ -145,7 +145,7 @@ When extending `Scene_Kind` in a game project:
 - `get_p_scene_from__scene_manager`: `Scene_Kind` must be less than
   `Scene_Kind__Unknown`.
 
-### Postconditions
+### 1.5.5. Postconditions
 
 - After `initialize_scene_manager`: all scene slots are initialized
   (handlers null, `is_active` false), `p_active_scene` is null.
@@ -155,7 +155,7 @@ When extending `Scene_Kind` in a game project:
 - After `quit_scene_state_machine`: the previous scene (if any) has
   been unloaded, and `p_active_scene` is null.
 
-### Error Handling
+### 1.5.6. Error Handling
 
 - Out-of-bounds `Scene_Kind` values (>= `Scene_Kind__Unknown`) will
   result in array out-of-bounds access. Debug builds should guard

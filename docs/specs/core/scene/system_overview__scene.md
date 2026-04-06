@@ -1,6 +1,6 @@
-# System Overview: Scene State Machine
+# 1. System Overview: Scene State Machine
 
-## Purpose
+## 1.1. Purpose
 
 The scene system provides a high-level state machine for managing discrete
 game states (e.g. title screen, gameplay, pause menu). Each state is
@@ -8,9 +8,9 @@ represented by a `Scene` struct containing load, enter, and unload handler
 callbacks. The `Scene_Manager` drives transitions between scenes, ensuring
 orderly teardown of the outgoing scene and setup of the incoming scene.
 
-## Architecture
+## 1.2. Architecture
 
-### Data Hierarchy
+### 1.2.1. Data Hierarchy
 
     Game
     +-- Scene_Manager
@@ -29,7 +29,7 @@ orderly teardown of the outgoing scene and setup of the incoming scene.
     |   |
     |   +-- Scene *p_active_scene  --> points to one of scenes[0..N-1]
 
-### Key Types
+### 1.2.2. Key Types
 
 | Type | Role |
 |------|------|
@@ -39,7 +39,7 @@ orderly teardown of the outgoing scene and setup of the incoming scene.
 | `Scene_Data__Game` | A concrete scene data struct used by the gameplay scene. Contains HUD and typer animation timers. Accessed via inline accessors that cast `Scene.p_scene_data`. |
 | `Serialization_Header` | UUID and struct size metadata embedded in each `Scene` for pool management and identification. |
 
-### Handler Function Pointer Types
+### 1.2.3. Handler Function Pointer Types
 
 | Type | Signature | Role |
 |------|-----------|------|
@@ -47,16 +47,16 @@ orderly teardown of the outgoing scene and setup of the incoming scene.
 | `m_Enter_Scene` | `void (*)(Scene*, Game*)` | Called each frame while the scene is active. Functions as the scene's main loop. |
 | `m_Unload_Scene` | `void (*)(Scene*, Game*)` | Called once when a scene is unloaded (transition out). Cleans up game state. |
 
-### Limits
+### 1.2.4. Limits
 
 | Constraint | Determined By | Description |
 |------------|---------------|-------------|
 | Number of scene slots | `Scene_Kind__Unknown` | The sentinel value of the `Scene_Kind` enum. Adding entries before it increases the slot count. |
 | Active scenes | 1 | Only one scene may be active at a time. |
 
-## State Machine
+## 1.3. State Machine
 
-### Transition Diagram
+### 1.3.1. Transition Diagram
 
     [No Active Scene]
             |
@@ -87,7 +87,7 @@ orderly teardown of the outgoing scene and setup of the incoming scene.
             v
     [No Active Scene]  (p_active_scene = NULL)
 
-### Transition Rules
+### 1.3.2. Transition Rules
 
 - Transitioning to a new scene always unloads the current scene first
   (if one is active), then loads the new scene.
@@ -96,16 +96,16 @@ orderly teardown of the outgoing scene and setup of the incoming scene.
 - A scene is considered valid if and only if its `m_enter_scene_handler`
   is non-null. The load and unload handlers are optional.
 
-## Lifecycle
+## 1.4. Lifecycle
 
-### 1. Initialization
+### 1.4.1. Initialization
 
     initialize_scene_manager(&game.scene_manager);
         -> All Scene slots: handlers set to null, is_active = false,
            p_scene_data = NULL, p_parent_scene = NULL.
         -> p_active_scene = NULL.
 
-### 2. Registration
+### 1.4.2. Registration
 
 Scenes are registered during game initialization, before any scene is
 made active. The project provides a `register_scenes` function that
@@ -127,7 +127,7 @@ Internally, `register_scenes` calls per-scene registration functions
 Registration overwrites any previously registered handlers for the given
 `Scene_Kind` slot.
 
-### 3. Activation
+### 1.4.3. Activation
 
     set_active_scene_for__scene_manager(
         &game.scene_manager,
@@ -137,7 +137,7 @@ Registration overwrites any previously registered handlers for the given
         -> Calls the new scene's m_load_scene_handler.
         -> Sets p_active_scene to the new scene's slot.
 
-### 4. Per-Frame Execution
+### 1.4.4. Per-Frame Execution
 
 Each frame, the game loop invokes the active scene's enter handler:
 
@@ -147,7 +147,7 @@ Each frame, the game loop invokes the active scene's enter handler:
         p_active->m_enter_scene_handler(p_active, &game);
     }
 
-### 5. Scene Data Access
+### 1.4.5. Scene Data Access
 
 Scene-specific data is stored via the opaque `p_scene_data` pointer.
 Accessor functions cast this pointer to the appropriate type:
@@ -163,13 +163,13 @@ handlers. Common patterns include pointing to static/global data or
 dynamically allocating in the load handler and freeing in the unload
 handler.
 
-### 6. Shutdown
+### 1.4.6. Shutdown
 
     quit_scene_state_machine(&game.scene_manager);
         -> Calls the active scene's m_unload_scene_handler (if any).
         -> Sets p_active_scene = NULL.
 
-## Scene Validity
+## 1.5. Scene Validity
 
 A `Scene` is considered valid when `m_enter_scene_handler` is non-null.
 This is the minimum requirement — a scene must have a main loop. The load
@@ -184,7 +184,7 @@ currently active scene in the game's `Scene_Manager`:
     poll_is__scene_active(p_game, p_scene)
         -> p_scene == get_p_active_scene_from__scene_manager(...)
 
-## Scene_Kind Extension
+## 1.6. Scene_Kind Extension
 
 The `Scene_Kind` enum is an **implemented type** — it ships with the engine
 as a minimal default but is copied into game projects for extension. The
@@ -203,7 +203,7 @@ Extension rules:
 - The `DEFINE_SCENE_KIND` guard macro must be defined to suppress the
   engine's fallback definition in `defines_weak.h`.
 
-## Hierarchical Scenes
+## 1.7. Hierarchical Scenes
 
 Each `Scene` has a `p_parent_scene` pointer, enabling hierarchical scene
 relationships. This allows scenes to reference a parent scene for
@@ -211,7 +211,7 @@ delegation or context. The engine does not enforce any particular
 hierarchical behavior — the semantics of `p_parent_scene` are determined
 by the game project's scene handler implementations.
 
-## Relationship to Game
+## 1.8. Relationship to Game
 
 The `Scene_Manager` lives within the `Game` struct and is accessed via
 `get_p_scene_manager_from__game`. All scene handler callbacks receive
@@ -219,7 +219,7 @@ both the `Scene*` (self) and `Game*` (engine context), giving handlers
 full access to the engine's subsystems (graphics, audio, world, entities,
 etc.) through the `Game` struct.
 
-## Capacity Constraints
+## 1.9. Capacity Constraints
 
 - Only **one scene** may be active at any time. The `Scene_Manager` does
   not support concurrent or stacked active scenes.

@@ -1,13 +1,13 @@
-# Specification: core/include/types/implemented/scene_kind.h
+# 1. Specification: core/include/types/implemented/scene_kind.h
 
-## Overview
+## 1.1. Overview
 
 Defines the `Scene_Kind` enumeration, which discriminates between the
 different scenes available in the game. This file is an **implemented type**
 — it ships with the engine as a default template but is not compiled as part
 of the engine build process.
 
-## Deployment
+## 1.2. Deployment
 
 This file resides at `core/include/types/implemented/scene_kind.h` within
 the engine source tree. When a new game project is created via
@@ -23,7 +23,7 @@ project has not provided its own definition), a minimal fallback is used.
 To override the default, the project's copy must define `DEFINE_SCENE_KIND`
 before the enum definition.
 
-## Guard Macro
+## 1.3. Guard Macro
 
     #define DEFINE_SCENE_KIND
 
@@ -31,7 +31,7 @@ When this macro is defined, the fallback definition in `defines_weak.h` is
 suppressed. The project's `scene_kind.h` must define this macro to ensure
 its definition takes precedence.
 
-## Default Definition
+## 1.4. Default Definition
 
     #define DEFINE_SCENE_KIND
 
@@ -45,7 +45,7 @@ its definition takes precedence.
 | `Scene_Kind__None` | 0 | Default/empty scene. Reserved. |
 | `Scene_Kind__Unknown` | 1 | Sentinel value. Must always be the last entry. Used as the array size for `Scene_Manager.scenes[]`. |
 
-## Extension Convention
+## 1.5. Extension Convention
 
 Game projects extend this enum by adding new scene kinds between
 `Scene_Kind__None` and `Scene_Kind__Unknown`:
@@ -65,7 +65,7 @@ Game projects extend this enum by adding new scene kinds between
 
     #endif
 
-### Rules
+### 1.5.1. Rules
 
 - `Scene_Kind__None` must remain at value 0.
 - `Scene_Kind__Unknown` must remain the final entry.
@@ -74,15 +74,15 @@ Game projects extend this enum by adding new scene kinds between
 - Adding entries increases the size of `Scene_Manager.scenes[]`
   accordingly.
 
-## Agentic Workflow
+## 1.6. Agentic Workflow
 
-### When to Modify
+### 1.6.1. When to Modify
 
 This file should be modified when a game project needs to add, remove, or
 reorder scene kinds. It is modified in the **project directory**, not in
 the engine source tree.
 
-### Relationship to Scene_Manager
+### 1.6.2. Relationship to Scene_Manager
 
 The `Scene_Kind` enum directly determines:
 
@@ -91,7 +91,7 @@ The `Scene_Kind` enum directly determines:
   `register_scene_into__scene_manager`, `get_p_scene_from__scene_manager`,
   and `set_active_scene_for__scene_manager`.
 
-### Relationship to defines_weak.h
+### 1.6.3. Relationship to defines_weak.h
 
 The inclusion chain is:
 
@@ -104,12 +104,12 @@ The inclusion chain is:
 If the project provides its own `scene_kind.h` with `DEFINE_SCENE_KIND`
 defined, the fallback is skipped and the project's definition is used.
 
-### Preconditions
+### 1.6.4. Preconditions
 
 - `Scene_Kind__Unknown` must be the last enumerator.
 - `Scene_Kind__None` must be 0.
 
-### Postconditions
+### 1.6.5. Postconditions
 
 - After modification and rebuild, `Scene_Manager` will have the correct
   number of scene slots for all defined scene kinds.
