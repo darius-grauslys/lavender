@@ -1,6 +1,6 @@
-# System Overview: World Processes
+# 1 System Overview: World Processes
 
-## Purpose
+## 1.1 Purpose
 
 The world process subsystem declares cooperative process handlers for
 persisting world data. These handlers follow the engine's cooperative
@@ -8,9 +8,9 @@ process model — they are polled once per frame, perform incremental work,
 and yield promptly to avoid blocking the main loop. Each handler is
 responsible for serializing a specific unit of world data to the filesystem.
 
-## Architecture
+## 1.2 Architecture
 
-### Process Handlers
+### 1.2.1 Process Handlers
 
 | Handler | Declared In | Serializes | Data Source |
 |---------|-------------|------------|-------------|
@@ -18,7 +18,7 @@ responsible for serializing a specific unit of world data to the filesystem.
 | `m_process__save_collision_node` | `process__save_collision_node.h` | Collision node spatial index | `p_process->p_process_data` (Collision_Node) |
 | `m_process__save_local_space_node` | `process__save_local_space_node.h` | Local space node data | `p_process->p_process_data` (Local_Space) |
 
-### Related Handlers (declared elsewhere)
+### 1.2.2 Related Handlers (declared elsewhere)
 
 | Handler | Declared In | Purpose |
 |---------|-------------|---------|
@@ -28,19 +28,19 @@ responsible for serializing a specific unit of world data to the filesystem.
 | `m_process__deserialize_region` | `region.h` | Region bitmap deserialization. |
 | `m_process__serialize_global_space` | `global_space.h` | Global space serialization orchestrator. |
 
-### Note: process__load_chunk.h
+### 1.2.3 Note: process__load_chunk.h
 
 The `process__load_chunk.h` header is currently a placeholder with no
 function declarations. Chunk deserialization is handled by
 `m_process__deserialize_chunk` declared in `chunk.h`.
 
-## Cooperative Process Model
+## 1.3 Cooperative Process Model
 
 All process handlers conform to the `m_Process` function pointer signature:
 
     typedef void (*m_Process)(Process *p_this_process, Game *p_game);
 
-### Conventions
+### 1.3.1 Conventions
 
 1. **Data access**: The world data to serialize is accessed via
    `p_process->p_process_data`.
@@ -53,7 +53,7 @@ All process handlers conform to the `m_Process` function pointer signature:
    They are dispatched by the global space serialization system
    (e.g., `dispatch_process__serialize_global_space`).
 
-## Dispatch Flow
+## 1.4 Dispatch Flow
 
     World save triggered (leaving world)
         |
@@ -70,7 +70,7 @@ All process handlers conform to the `m_Process` function pointer signature:
     For each Region needing save:
         m_process__serialize_region (bitmap data)
 
-## Integration Points
+## 1.5 Integration Points
 
 | System | Integration |
 |--------|-------------|

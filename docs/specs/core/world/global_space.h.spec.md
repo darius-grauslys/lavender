@@ -1,6 +1,6 @@
-# Specification: core/include/world/global_space.h
+# 1 Specification: core/include/world/global_space.h
 
-## Overview
+## 1.1 Overview
 
 Defines operations on `Global_Space` — the engine's representation of a
 single chunk-sized region of the world that tracks its chunk data, collision
@@ -8,15 +8,15 @@ node, generation process, reference count, and lifecycle state. Global spaces
 use reference counting and a multi-phase construction/deconstruction state
 machine.
 
-## Dependencies
+## 1.2 Dependencies
 
 - `defines.h` (for `Global_Space`, `Chunk`, `Collision_Node`, `Process`, `Identifier__u64`)
 - `defines_weak.h` (forward declarations)
 - `serialization/serialization_header.h` (for `is_serialized_struct__deallocated__uuid_64`)
 
-## Types
+## 1.3 Types
 
-### Global_Space (struct)
+### 1.3.1 Global_Space (struct)
 
     typedef struct Global_Space_t {
         Serialization_Header__UUID_64 _serialization_header;
@@ -38,7 +38,7 @@ machine.
 | `quantity_of__references` | `Quantity__u16` | Reference count. 0=deallocated, 1=awaiting, 2+=active. |
 | `global_space_flags__u8` | `Global_Space_Flags__u8` | Lifecycle state flags. |
 
-### Global_Space_Flags__u8 (u8)
+### 1.3.2 Global_Space_Flags__u8 (u8)
 
 | Flag | Bit | Description |
 |------|-----|-------------|
@@ -48,16 +48,16 @@ machine.
 | `GLOBAL_SPACE_FLAG__IS_AWAITING__DECONSTRUCTION` | 3 | Queued for deconstruction. |
 | `GLOBAL_SPACE_FLAG__IS_DIRTY` | 4 | Data has been modified. |
 
-## Functions
+## 1.4 Functions
 
-### Initialization
+### 1.4.1 Initialization
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `initialize_global_space` | `(Global_Space*) -> void` | Initializes to deallocated empty state. |
 | `initialize_global_space_as__allocated` | `(Global_Space*, Identifier__u64) -> void` | Initializes as allocated with the given UUID. |
 
-### Serialization Process Dispatchers
+### 1.4.2 Serialization Process Dispatchers
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -65,20 +65,20 @@ machine.
 | `dispatch_process__deserialize_global_space` | `(Game*, Global_Space*) -> Process*` | `Process*` | Dispatches a deserialization process. |
 | `dispatch_process__serialize_global_space` | `(Game*, Global_Space*) -> Process*` | `Process*` | Dispatches a serialization process. |
 
-### Reference Counting (static inline)
+### 1.4.3 Reference Counting (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `hold_global_space` | `(Global_Space*) -> void` | `void` | Increments reference count. |
 | `drop_global_space` | `(Global_Space*) -> bool` | `bool` | Decrements reference count. Returns true if all references dropped (count reaches 1). Clamps to minimum of 1. |
 
-### Allocation Query (static inline)
+### 1.4.4 Allocation Query (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `is_global_space__allocated` | `(Global_Space*) -> bool` | `bool` | True if non-null, not deallocated, and has references. |
 
-### Lifecycle State Queries (static inline)
+### 1.4.5 Lifecycle State Queries (static inline)
 
 | Function | Returns | Description |
 |----------|---------|-------------|
@@ -89,7 +89,7 @@ machine.
 | `is_global_space__dirty` | `bool` | True if data modified. Null-safe. |
 | `is_global_space__active` | `bool` | True if allocated and NOT in any construction/deconstruction state. |
 
-### Lifecycle State Mutations (static inline)
+### 1.4.6 Lifecycle State Mutations (static inline)
 
 | Function | Description |
 |----------|-------------|
@@ -104,7 +104,7 @@ machine.
 | `set_global_space_as__dirty` | Sets dirty flag. |
 | `set_global_space_as__NOT_dirty` | Clears dirty flag. |
 
-### Sub-Component Access (static inline)
+### 1.4.7 Sub-Component Access (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -113,9 +113,9 @@ machine.
 | `get_p_collision_node_from__global_space` | `(Global_Space*) -> Collision_Node*` | `Collision_Node*` | Returns collision node pointer. |
 | `set_collision_node_for__global_space` | `(Global_Space*, Collision_Node*) -> void` | `void` | Sets the collision node pointer. |
 
-## Agentic Workflow
+## 1.5 Agentic Workflow
 
-### Lifecycle State Machine
+### 1.5.1 Lifecycle State Machine
 
     [deallocated] → initialize_global_space_as__allocated → [allocated, awaiting_construction]
         → set_global_space_as__constructing → [constructing]
@@ -124,7 +124,7 @@ machine.
         → set_global_space_as__deconstructing → [deconstructing]
         → set_global_space_as__NOT_deconstructing → [deallocated]
 
-### Reference Count Convention
+### 1.5.2 Reference Count Convention
 
 | Count | Meaning |
 |-------|---------|
@@ -132,11 +132,11 @@ machine.
 | `1` | Awaiting usage or deallocation. |
 | `2+` | Actively referenced. |
 
-### Preconditions
+### 1.5.3 Preconditions
 
 - All functions require non-null `p_global_space` unless noted as null-safe.
 - `is_global_space__allocated` and `is_global_space__dirty` are null-safe.
 
-## Header Guard
+## 1.6 Header Guard
 
 `GLOBAL_SPACE_H`
