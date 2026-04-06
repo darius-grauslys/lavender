@@ -1,6 +1,6 @@
-# System Overview: Game Action Dispatch and Processing
+# 1. System Overview: Game Action Dispatch and Processing
 
-## Purpose
+## 1.1. Purpose
 
 The game action system is the engine's primary command/event mechanism.
 Whenever a state modifying interaction occurs, the implementation of that 
@@ -17,9 +17,9 @@ supports three runtime modes (offline, client, server) and provides
 flag-based sanitization, process-based asynchronous execution, and
 multi-packet TCP delivery for large payloads.
 
-## Architecture
+## 1.2. Architecture
 
-### Data Hierarchy
+### 1.2.1. Data Hierarchy
 
     Game
     +-- Game_Action_Logic_Table
@@ -40,7 +40,7 @@ multi-packet TCP delivery for large payloads.
         +-- Game_Action_Manager (outbound)
             +-- Game_Action[0..MAX_QUANTITY_OF__GAME_ACTIONS-1]
 
-### Key Types
+### 1.2.2. Key Types
 
 | Type | Role |
 |------|------|
@@ -53,16 +53,16 @@ multi-packet TCP delivery for large payloads.
 | `Game_Action_Registrar` | Implemented hook that populates the logic table for offline, client, or server mode. |
 | `Process` | Asynchronous execution unit. When a game action has `IS_WITH_PROCESS`, a `Process` is allocated with the game action as `p_process_data`. |
 
-### Limits
+### 1.2.3. Limits
 
 | Macro | Default | Description |
 |-------|---------|-------------|
 | `MAX_QUANTITY_OF__GAME_ACTIONS` | 512 | Maximum game actions per `Game_Action_Manager`. |
 | `Game_Action_Kind__Unknown` | (enum bound) | Array size for the logic table. |
 
-## Dispatch Pipeline
+## 1.3. Dispatch Pipeline
 
-### Overview
+### 1.3.1. Overview
 
     1. Create Game_Action on stack
     2. initialize_game_action(...)
@@ -75,9 +75,9 @@ multi-packet TCP delivery for large payloads.
     8. If IS_WITH_PROCESS: allocate Process via Process_Manager
     9. Process runs m_process handler with Game_Action as p_process_data
 
-### Detailed Steps
+### 1.3.2. Detailed Steps
 
-#### Step 1–3: Creation and Initialization
+#### 1.3.2.1. Step 1–3: Creation and Initialization
 
 A game action is created on the stack and initialized in two phases:
 
@@ -90,7 +90,7 @@ The generic `initialize_game_action` zeroes the struct. The kind-specific
 initializer sets the `Game_Action_Kind` discriminator and populates the
 payload union fields.
 
-#### Step 4: Dispatch Entry Point
+#### 1.3.2.2. Step 4: Dispatch Entry Point
 
 Two dispatch paths exist:
 
@@ -104,7 +104,7 @@ Both invoke function pointers on `Game`:
 - `m_game_action_handler__receive` for inbound actions.
 - `m_game_action_handler__resolve` for resolution.
 
-#### Step 5–6: Logic Table Lookup
+#### 1.3.2.3. Step 5–6: Logic Table Lookup
 
 The dispatch handler retrieves the `Game_Action_Logic_Entry`:
 
@@ -115,7 +115,7 @@ The dispatch handler retrieves the `Game_Action_Logic_Entry`:
 
 Returns NULL if the kind is out of range (`>= Game_Action_Kind__Unknown`).
 
-#### Step 7: Flag Sanitization
+#### 1.3.2.4. Step 7: Flag Sanitization
 
 Before processing, the entry sanitizes the game action's flags:
 
@@ -128,7 +128,7 @@ Sanitization applies:
 This prevents spoofed flags (e.g. a client claiming an action is a
 broadcast when the server disallows it).
 
-#### Step 8–9: Process Dispatch
+#### 1.3.2.5. Step 8–9: Process Dispatch
 
 If the entry specifies `IS_WITH_PROCESS`, a `Process` is allocated:
 
@@ -146,9 +146,9 @@ The process stores the game action as `p_process_data`. The registered
 
 The process runs on the next `Process_Manager` poll cycle.
 
-## Registration
+## 1.4. Registration
 
-### Three Runtime Modes
+### 1.4.1. Three Runtime Modes
 
 The `Game_Action_Registrar` provides three entry points:
 
@@ -161,13 +161,13 @@ The `Game_Action_Registrar` provides three entry points:
 Each calls kind-specific `register_game_action__*` functions that populate
 the logic table entries with appropriate handlers, flags, and priorities.
 
-### Registration Sequence
+### 1.4.2. Registration Sequence
 
     initialize_game_action_logic_table(&game.game_action_logic_table);
     register_game_actions__offline(&game.game_action_logic_table);
     // or: register_game_actions__client / register_game_actions__server
 
-### Entry Configuration Variants
+### 1.4.3. Entry Configuration Variants
 
 | Convenience Initializer | Outbound | Inbound | Description |
 |------------------------|----------|---------|-------------|
@@ -180,9 +180,9 @@ the logic table entries with appropriate handlers, flags, and priorities.
 | `initialize_game_action_logic_entry_as__broadcast__server` | Broadcast | — | Server-side broadcast. |
 | `initialize_game_action_logic_entry_as__message_response` | — | Response | Inbound processed as response. |
 
-## Game Action Kinds by Domain
+## 1.5. Game Action Kinds by Domain
 
-### TCP Handshake
+### 1.5.1. TCP Handshake
 
 | Kind | Direction | Description |
 |------|-----------|-------------|
@@ -193,7 +193,7 @@ the logic table entries with appropriate handlers, flags, and priorities.
 | `TCP_Disconnect` | Either | Terminates the connection. |
 | `TCP_Delivery` | Either | Carries a payload fragment for multi-packet transfer. |
 
-### Global Space (Chunk Management)
+### 1.5.2. Global Space (Chunk Management)
 
 | Kind | Direction | Description |
 |------|-----------|-------------|
@@ -201,44 +201,44 @@ the logic table entries with appropriate handlers, flags, and priorities.
 | `Global_Space__Resolve` | Server → Client | Signals chunk is ready. |
 | `Global_Space__Store` | Client → Server | Requests chunk serialization to disk. |
 
-### Entity
+### 1.5.3. Entity
 
 | Kind | Direction | Description |
 |------|-----------|-------------|
 | `Entity__Spawn` | Either (+ broadcast) | Requests entity creation of a given kind. |
 | `Entity__Get` | Client → Server | Requests entity data synchronization. |
 
-### Hitbox
+### 1.5.4. Hitbox
 
 | Kind | Direction | Description |
 |------|-----------|-------------|
 | `Hitbox__Set_Position` | Client → Server | Updates hitbox position, velocity, acceleration with collision node migration. |
 
-### Input
+### 1.5.5. Input
 
 | Kind | Direction | Description |
 |------|-----------|-------------|
 | `Input` | Client → Server | Transmits player input state. No-op in offline mode. |
 
-### World
+### 1.5.6. World
 
 | Kind | Direction | Description |
 |------|-----------|-------------|
 | `World__Load_World` | Client → Server | Requests world initialization for a client. |
 | `World__Load_Client` | Client → Server | Requests client persistent data load from disk. |
 
-### Error
+### 1.5.7. Error
 
 | Kind | Direction | Description |
 |------|-----------|-------------|
 | `Bad_Request` | Server → Client | Rejects an invalid or unauthorized action with an error code. |
 
-## Multi-Packet Transfer via TCP_Delivery
+## 1.6. Multi-Packet Transfer via TCP_Delivery
 
 Large data structures (e.g. `Chunk`, `Entity` data) cannot fit in a single
 `TCP_Packet`. The `TCP_Delivery` game action provides fragmented transfer:
 
-### Payload Sizing
+### 1.6.1. Payload Sizing
 
     GA_KIND__TCP_DELIVERY__PAYLOAD_SIZE_IN__BYTES =
         sizeof(TCP_Packet)
@@ -247,7 +247,7 @@ Large data structures (e.g. `Chunk`, `Entity` data) cannot fit in a single
 
 Each delivery action carries one fragment of this size.
 
-### Fragment Tracking
+### 1.6.2. Fragment Tracking
 
 The receiver uses a `Serialization_Request` with a bitmap to track
 which fragments have arrived:
@@ -256,13 +256,13 @@ which fragments have arrived:
     TCP_PAYLOAD_BITMAP__QUANTITY_OF__BYTES(type)     // bitmap byte count
     TCP_PAYLOAD_BITMAP(type, name)                   // declares bitmap array
 
-### Correlation
+### 1.6.3. Correlation
 
 The `uuid_of__game_action__responding_to` header field correlates delivery
 fragments with the original request (e.g. a `Global_Space__Request` or
 `Entity__Get`).
 
-### Transfer Flow
+### 1.6.4. Transfer Flow
 
     1. Sender calculates fragment count for the data type.
     2. For each fragment index:
@@ -271,9 +271,9 @@ fragments with the original request (e.g. a `Global_Space__Request` or
     3. Receiver updates bitmap on each fragment receipt.
     4. Once all fragments received, data is reassembled.
 
-## Error Handling
+## 1.7. Error Handling
 
-### Bad Request Pattern
+### 1.7.1. Bad Request Pattern
 
 When a received game action cannot be fulfilled:
 
@@ -288,19 +288,19 @@ The bad request action:
 - References the original action's UUID via `uuid_of__game_action__responding_to`.
 - Is dispatched back to the originating client.
 
-### Process Failure
+### 1.7.2. Process Failure
 
 Process handlers call `fail_process` on error and `complete_process` on
 success. Failed processes do not retry automatically.
 
-### Null Safety
+### 1.7.3. Null Safety
 
 - `is_game_action__allocated` is null-safe (returns false for NULL).
 - `get_p_game_action_logic_entry_by__game_action_kind` returns NULL for
   out-of-range kinds.
 - Allocation functions return NULL when pools are exhausted.
 
-## Capacity Constraints
+## 1.8. Capacity Constraints
 
 - Each `Game_Action_Manager` holds `MAX_QUANTITY_OF__GAME_ACTIONS` (512)
   slots. Allocation returns NULL when full.

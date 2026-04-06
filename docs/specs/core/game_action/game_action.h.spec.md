@@ -1,6 +1,6 @@
-# Specification: core/include/game_action/game_action.h
+# 1. Specification: core/include/game_action/game_action.h
 
-## Overview
+## 1.1. Overview
 
 Provides initialization and flag manipulation utilities for `Game_Action`,
 the engine's primary command/event object. Game actions are dispatched through
@@ -10,16 +10,16 @@ the `Game` struct's handler function pointers and may be processed as
 A `Game_Action` is a tagged union: the `Game_Action_Kind` discriminator
 selects which union member holds the payload data.
 
-## Dependencies
+## 1.2. Dependencies
 
 - `defines.h` (for `Game_Action`, `Game_Action_Kind`, `Game_Action_Flags`)
 - `defines_weak.h` (forward declarations)
 - `game.h` (for `dispatch_game_action`, `dispatch_game_action_to__server`,
   `receive_game_action`, `resolve_game_action`)
 
-## Types
+## 1.3. Types
 
-### Game_Action (struct)
+### 1.3.1. Game_Action (struct)
 
 A large tagged union. The header portion is shared across all kinds:
 
@@ -42,7 +42,7 @@ A large tagged union. The header portion is shared across all kinds:
 
 The header is also accessible as `_Game_Action_Header`.
 
-### Game_Action_Flags (u8)
+### 1.3.2. Game_Action_Flags (u8)
 
 | Flag | Bit | Description |
 |------|-----|-------------|
@@ -55,7 +55,7 @@ The header is also accessible as `_Game_Action_Header`.
 | `GAME_ACTION_FLAGS__BIT_IS_BROADCASTED` | 6 | If set: action is broadcast to multiple clients. |
 | `GAME_ACTION_FLAGS__BIT_IS_BAD_REQUEST` | 7 | If set: action represents an error/rejection. |
 
-### Sanitization Masks
+### 1.3.3. Sanitization Masks
 
 | Macro | Value | Description |
 |-------|-------|-------------|
@@ -64,7 +64,7 @@ The header is also accessible as `_Game_Action_Header`.
 | `GAME_ACTION_FLAGS__INBOUND_SANITIZE` | `IS_IN_OR__OUT_BOUND` | Flags forced on for inbound. |
 | `GAME_ACTION_FLAGS__OUTBOUND_SANITIZE` | `NONE` | Flags forced on for outbound. |
 
-### GA_UUID_SOURCE Macro
+### 1.3.4. GA_UUID_SOURCE Macro
 
     #define GA_UUID_SOURCE(game_action) \
         ((Game_Action*)game_action)->uuid_of__client__u32
@@ -72,22 +72,22 @@ The header is also accessible as `_Game_Action_Header`.
 Extracts the client UUID from a game action. Used when the game action is
 accessed through a `Process.p_process_data` pointer.
 
-## Functions
+## 1.4. Functions
 
-### Initialization
+### 1.4.1. Initialization
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `initialize_game_action` | `(Game_Action*) -> void` | Zeroes out the game action. |
 
-### Kind Accessors (static inline)
+### 1.4.2. Kind Accessors (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `set_the_kind_of__game_action` | `(Game_Action*, Game_Action_Kind) -> void` | `void` | Sets the action kind discriminator. |
 | `get_kind_of__game_action` | `(Game_Action*) -> Game_Action_Kind` | `Game_Action_Kind` | Returns the action kind. |
 
-### UUID Accessors (static inline)
+### 1.4.3. UUID Accessors (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -95,7 +95,7 @@ accessed through a `Process.p_process_data` pointer.
 | `get_response_uuid_from__game_action` | `(Game_Action*) -> Identifier__u32` | `Identifier__u32` | Returns `uuid_of__game_action__responding_to`. |
 | `get_broadcast_point_of__game_action` | `(Game_Action*) -> Vector__3i32F4` | `Vector__3i32F4` | Returns the broadcast point (overlaps client UUID fields). |
 
-### Flag Accessors (static inline)
+### 1.4.4. Flag Accessors (static inline)
 
 | Function | Returns | Description |
 |----------|---------|-------------|
@@ -118,9 +118,9 @@ accessed through a `Process.p_process_data` pointer.
 | `set_game_action_as__bad_request` | `void` | Sets bad request flag. |
 | `set_game_action_as__NOT_bad_request` | `void` | Clears bad request flag. |
 
-## Agentic Workflow
+## 1.5. Agentic Workflow
 
-### Dispatching a Game Action
+### 1.5.1. Dispatching a Game Action
 
 1. Create a `Game_Action` on the stack.
 2. Call `initialize_game_action(...)`.
@@ -133,18 +133,18 @@ The dispatch function is a function pointer on `Game`:
 - `m_game_action_handler__receive` for inbound.
 - `m_game_action_handler__resolve` for resolution.
 
-### Preconditions
+### 1.5.2. Preconditions
 
 - `initialize_game_action` must be called before setting any fields.
 - The `Game_Action_Kind` must be set before dispatch.
 - For TCP actions, the client UUID must be valid.
 
-### Postconditions
+### 1.5.3. Postconditions
 
 - After dispatch, the game action may be copied into a `Game_Action_Manager`
   pool and processed asynchronously via a `Process`.
 
-### Important Notes
+### 1.5.4. Important Notes
 
 - `Game_Action` is sized to fit within a `TCP_Packet` for network transmission.
 - The `_serialiation_header` field has a typo (missing 'z') that is consistent
