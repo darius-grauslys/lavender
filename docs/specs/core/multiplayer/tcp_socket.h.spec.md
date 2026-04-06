@@ -1,6 +1,6 @@
-# Specification: core/include/multiplayer/tcp_socket.h
+# 1. Specification: core/include/multiplayer/tcp_socket.h
 
-## Overview
+## 1.1 Overview
 
 Provides initialization, lifecycle management, data transmission, and
 state queries for individual `TCP_Socket` instances. A `TCP_Socket`
@@ -10,16 +10,16 @@ connection state machine, and UUID-based identity for pool management.
 This is the per-connection building block of the multiplayer system.
 `TCP_Socket_Manager` allocates and manages collections of these sockets.
 
-## Dependencies
+## 1.2 Dependencies
 
 - `defines.h` (for `TCP_Socket`, `TCP_Socket_State`, `TCP_Socket_Flags__u8`,
   `TCP_Packet`, `IPv4_Address`, `Identifier__u32`, `Quantity__u32`,
   `PLATFORM_TCP_Socket`, `PLATFORM_TCP_Context`, `u8`, `i32`)
 - `defines_weak.h` (forward declarations)
 
-## Types
+## 1.3 Types
 
-### TCP_Socket (struct)
+### 1.3.1 TCP_Socket (struct)
 
     typedef struct TCP_Socket_t {
         Serialization_Header _serialization_header;
@@ -45,7 +45,7 @@ This is the per-connection building block of the multiplayer system.
 | `tcp_socket__state_of` | `TCP_Socket_State` | Current connection state. |
 | `tcp_socket_flags__u8` | `TCP_Socket_Flags__u8` | Behavioral flags. |
 
-### TCP_Socket_State (enum)
+### 1.3.2 TCP_Socket_State (enum)
 
     typedef enum TCP_Socket_State {
         TCP_Socket_State__None = 0,
@@ -67,7 +67,7 @@ This is the per-connection building block of the multiplayer system.
 | `Authenticated` | Session validated, ready for game actions. |
 | `Unknown` | Sentinel/invalid value. |
 
-### TCP_Packet (struct)
+### 1.3.3 TCP_Packet (struct)
 
     typedef struct TCP_Packet_t {
         u8 tcp_packet_bytes[MAX_SIZE_OF__TCP_PACKET];
@@ -77,13 +77,13 @@ This is the per-connection building block of the multiplayer system.
 |-------|------|-------------|
 | `tcp_packet_bytes` | `u8[MAX_SIZE_OF__TCP_PACKET]` | Raw byte payload. Default size: `BIT(9)` (512 bytes). Must be a power of 2. |
 
-### TCP_Socket_Flags__u8 (u8)
+### 1.3.4 TCP_Socket_Flags__u8 (u8)
 
 | Flag | Bit | Description |
 |------|-----|-------------|
 | `TCP_SOCKET_FLAG__IS_MANUALLY_DRIVEN` | 0 | When set, the socket is skipped during automatic polling and must be driven externally. |
 
-### TCP_DELIVERY Macro
+### 1.3.5 TCP_DELIVERY Macro
 
     #define TCP_DELIVERY(type, name) \
         union { \
@@ -94,29 +94,29 @@ This is the per-connection building block of the multiplayer system.
 Convenience macro for overlaying a typed struct with a `TCP_Packet` for
 zero-copy transmission.
 
-### TCP Error Constants
+### 1.3.6 TCP Error Constants
 
 | Constant | Value | Description |
 |----------|-------|-------------|
 | `TCP_ERROR__DESTINATION_OVERFLOW` | -1 | Destination buffer has run out of space. |
 | `TCP_ERROR__QUEUE_FULL` | -2 | Socket queue is full; read contents before acquiring more. |
 
-## Functions
+## 1.4 Functions
 
-### Initialization
+### 1.4.1 Initialization
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `initialize_tcp_socket` | `(TCP_Socket*, IPv4_Address, Identifier__u32 uuid) -> void` | Initializes a socket with the given address and UUID. Sets up the packet queue and connection state. |
 | `initialize_tcp_socket_as__deallocated` | `(TCP_Socket*) -> void` | Marks the socket as deallocated and available for reuse. |
 
-### Connection
+### 1.4.2 Connection
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `poll_tcp_socket_for__connection` | `(TCP_Socket*) -> TCP_Socket_State` | `TCP_Socket_State` | Polls a non-server socket for connection progress. Call repeatedly after opening until a terminal state (`Connected` or `Disconnected`) is returned. Delegates to `PLATFORM_tcp_poll_connect`. |
 
-### Data Transfer
+### 1.4.3 Data Transfer
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -124,14 +124,14 @@ zero-copy transmission.
 | `receive_bytes_over__tcp_socket` | `(TCP_Socket*) -> i32` | `i32` | Receives bytes into the socket's packet queue via `PLATFORM_tcp_recieve`. Returns quantity of bytes received, or a `TCP_ERROR__XXX` value on failure. |
 | `get_latest__delivery_from__tcp_socket` | `(TCP_Socket*, TCP_Packet *p_out) -> bool` | `bool` | Dequeues the latest packet from the socket's queue into `p_out`. Returns true if a packet was available, false if the queue is empty. |
 
-### Binding
+### 1.4.4 Binding
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `bind_tcp_socket` | `(TCP_Socket*, PLATFORM_TCP_Socket*) -> void` | Associates a platform socket handle with this `TCP_Socket`. |
 | `unbind_tcp_socket` | `(PLATFORM_TCP_Context*, TCP_Socket*) -> void` | Disassociates and releases the platform socket handle via `PLATFORM_tcp_close_socket`. |
 
-### Queries (static inline)
+### 1.4.5 Queries (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -143,9 +143,9 @@ zero-copy transmission.
 | `set_tcp_socket_as__manually_driven` | `(TCP_Socket*) -> void` | `void` | Sets the manually driven flag. |
 | `set_tcp_socket_as__automatically_driven` | `(TCP_Socket*) -> void` | `void` | Clears the manually driven flag. |
 
-## Agentic Workflow
+## 1.5 Agentic Workflow
 
-### Connection Lifecycle
+### 1.5.1 Connection Lifecycle
 
     [Deallocated] --> initialize_tcp_socket --> [None]
                                                   |
@@ -167,7 +167,7 @@ zero-copy transmission.
                                   |
                              [Deallocated]
 
-### Packet Queue Model
+### 1.5.2 Packet Queue Model
 
 The `TCP_Socket` maintains a circular buffer of `TCP_Packet` entries
 indexed by `index_of__enqueue_begin`. The buffer size
@@ -184,7 +184,7 @@ enable bitmask-based index wrapping.
         → decrement quantity_of__received_packets
         → return true (or false if empty)
 
-### Manually Driven Sockets
+### 1.5.3 Manually Driven Sockets
 
 When `TCP_SOCKET_FLAG__IS_MANUALLY_DRIVEN` is set, the
 `TCP_Socket_Manager` will skip this socket during its automatic poll
@@ -192,7 +192,7 @@ loop. This is used for sockets that require special handling (e.g.
 server accept sockets, or sockets in a connection handshake driven
 by a `Process`).
 
-### Preconditions
+### 1.5.4 Preconditions
 
 - All functions require a non-null `TCP_Socket*`.
 - `bind_tcp_socket`: the `PLATFORM_TCP_Socket*` must be a valid,
@@ -202,7 +202,7 @@ by a `Process`).
 - `receive_bytes_over__tcp_socket`: the socket must be in `Connected`
   state or later.
 
-### Postconditions
+### 1.5.5 Postconditions
 
 - After `initialize_tcp_socket`: socket is initialized with the given
   UUID and address, packet queue is empty, state is `None`.
@@ -212,7 +212,7 @@ by a `Process`).
 - After `unbind_tcp_socket`: `p_PLATFORM_tcp_socket` is null, platform
   resources are released.
 
-### Error Handling
+### 1.5.6 Error Handling
 
 - `receive_bytes_over__tcp_socket` returns `TCP_ERROR__DESTINATION_OVERFLOW`
   or `TCP_ERROR__QUEUE_FULL` on failure.

@@ -1,22 +1,22 @@
-# Specification: core/include/multiplayer/session_token.h
+# 1. Specification: core/include/multiplayer/session_token.h
 
-## Overview
+## 1.1 Overview
 
 Provides utility functions for `Session_Token` manipulation, specifically
 the compression of 64-bit player UUIDs into 32-bit entity-compatible UUIDs.
 Session tokens are the authentication primitive for multiplayer sessions,
 linking a player's account identity to their in-game entity representation.
 
-## Dependencies
+## 1.2 Dependencies
 
 - `defines.h` (for `Session_Token`, `Identifier__u32`, `Identifier__u64`)
 - `defines_weak.h` (forward declarations)
 - `numerics.h` (for `ARITHMETRIC_L_SHIFT`, `MASK`)
 - `serialization/serialization_header.h` (for `BRAND_UUID`, `GET_UUID_BRANDING`)
 
-## Types
+## 1.3 Types
 
-### Session_Token (struct)
+### 1.3.1 Session_Token (struct)
 
     typedef struct Session_Token_t {
         Identifier__u64 player_uuid;
@@ -31,15 +31,15 @@ linking a player's account identity to their in-game entity representation.
 The `Game` struct initializes its `session_token` field to
 `{0, 0}` (both fields zero) at game initialization.
 
-## Functions
+## 1.4 Functions
 
-### UUID Compression (static inline)
+### 1.4.1 UUID Compression (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `get_uuid_u32_of__session_token_player_uuid_u64` | `(Session_Token) -> Identifier__u32` | `Identifier__u32` | Compresses the 64-bit `player_uuid` into a 32-bit UUID suitable for entity system use. The result is branded with `Lavender_Type__Player`. |
 
-### Compression Algorithm
+### 1.4.2 Compression Algorithm
 
 The 64-bit UUID is compressed to 32 bits by XOR-folding:
 
@@ -60,9 +60,9 @@ type of object a UUID refers to.
 is responsible for managing UUID collisions that may arise from the
 64-to-32-bit reduction.
 
-## Agentic Workflow
+## 1.5 Agentic Workflow
 
-### Authentication Flow
+### 1.5.1 Authentication Flow
 
 Session tokens are used during the multiplayer connection handshake:
 
@@ -78,25 +78,25 @@ Session tokens are used during the multiplayer connection handshake:
           get_uuid_u32_of__session_token_player_uuid_u64(...)
         → Use compressed UUID for entity allocation
 
-### UUID Branding
+### 1.5.2 UUID Branding
 
 The compressed UUID is branded with `Lavender_Type__Player` to
 distinguish player entity UUIDs from other entity types in the
 serialization system. This branding is applied via `BRAND_UUID`
 and can be checked via `GET_UUID_BRANDING`.
 
-### Preconditions
+### 1.5.3 Preconditions
 
 - The `Session_Token` must have a valid `player_uuid`. A zero
   `player_uuid` will produce a zero compressed UUID (before branding).
 
-### Postconditions
+### 1.5.4 Postconditions
 
 - The returned `Identifier__u32` is branded with `Lavender_Type__Player`.
 - The compression is deterministic: the same `player_uuid` always
   produces the same `Identifier__u32`.
 
-### Collision Risk
+### 1.5.5 Collision Risk
 
 The XOR-folding compression means that distinct 64-bit UUIDs can
 map to the same 32-bit UUID. The server must detect and handle

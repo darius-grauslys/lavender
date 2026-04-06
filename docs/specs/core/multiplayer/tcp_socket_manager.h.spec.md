@@ -1,6 +1,6 @@
-# Specification: core/include/multiplayer/tcp_socket_manager.h
+# 1. Specification: core/include/multiplayer/tcp_socket_manager.h
 
-## Overview
+## 1.1 Overview
 
 Provides pool management, connection lifecycle orchestration, and polling
 for `TCP_Socket` instances. The `TCP_Socket_Manager` is the central
@@ -12,7 +12,7 @@ The manager supports both client and server roles through its pluggable
 `m_Poll_TCP_Socket_Manager` callback, which is set during initialization
 to either a client or server polling strategy.
 
-## Dependencies
+## 1.2 Dependencies
 
 - `defines.h` (for `TCP_Socket_Manager`, `TCP_Socket`, `IPv4_Address`,
   `Identifier__u32`, `Index__u16`, `Quantity__u32`, `PLATFORM_TCP_Socket`,
@@ -22,9 +22,9 @@ to either a client or server polling strategy.
 - `serialization/hashing.h` (for `dehash_identitier_u32_in__contigious_array`)
 - `serialization/serialization_header.h` (for `is_serialized_struct__deallocated`)
 
-## Types
+## 1.3 Types
 
-### TCP_Socket_Manager (struct)
+### 1.3.1 TCP_Socket_Manager (struct)
 
     typedef struct TCP_Socket_Manager_t {
         TCP_Socket tcp_sockets[MAX_QUANTITY_OF__TCP_SOCKETS];
@@ -46,7 +46,7 @@ to either a client or server polling strategy.
 | `ipv4__pending_connection` | `IPv4_Address` | Address of the pending inbound connection. |
 | `quantity_of__connections` | `Quantity__u32` | Number of currently active connections. |
 
-### m_Poll_TCP_Socket_Manager (function pointer)
+### 1.3.2 m_Poll_TCP_Socket_Manager (function pointer)
 
     typedef void (*m_Poll_TCP_Socket_Manager)(
             TCP_Socket_Manager *p_tcp_socket_manager,
@@ -56,15 +56,15 @@ The polling callback invoked each frame to drive socket I/O and
 connection management. The implementation determines whether the
 manager operates as a client or server.
 
-## Functions
+## 1.4 Functions
 
-### Initialization
+### 1.4.1 Initialization
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `initialize_tcp_socket_manager` | `(TCP_Socket_Manager*, m_Poll_TCP_Socket_Manager) -> void` | Initializes the socket pool, clears all sockets as deallocated, and sets the polling callback. |
 
-### Connection Management
+### 1.4.2 Connection Management
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -73,7 +73,7 @@ manager operates as a client or server.
 | `open_server_socket_on__tcp_socket_manager__ipv4` | `(TCP_Socket_Manager*, Identifier__u32 uuid, Index__u16 port) -> TCP_Socket*` | `TCP_Socket*` | Opens a server (listening) socket on the given port via `PLATFORM_tcp_server`. Returns null on failure. |
 | `close_socket_on__tcp_socket_manager__ipv4` | `(TCP_Socket_Manager*, TCP_Socket*) -> void` | `void` | Closes the given socket, releases platform resources via `unbind_tcp_socket`, and returns the slot to the pool. |
 
-### Pending Connection Handling (Server Mode)
+### 1.4.3 Pending Connection Handling (Server Mode)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -81,7 +81,7 @@ manager operates as a client or server.
 | `reject_pending_connection` | `(TCP_Socket_Manager*) -> void` | `void` | Rejects and closes the pending inbound connection via `PLATFORM_tcp_close_socket`. Clears `p_PLATFORM_tcp_socket__pending_connection`. |
 | `accept_pending_connection` | `(TCP_Socket_Manager*, Identifier__u32 uuid) -> TCP_Socket*` | `TCP_Socket*` | Accepts the pending inbound connection into the pool with the given UUID. Delegates to `accept_socket_on__tcp_socket_manager__ipv4`. Returns the allocated `TCP_Socket`, or null if acceptance failed. Clears `p_PLATFORM_tcp_socket__pending_connection`. |
 
-### Queries (static inline)
+### 1.4.4 Queries (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -89,9 +89,9 @@ manager operates as a client or server.
 | `get_p_PLATFORM_tcp_context_from__tcp_socket_manager` | `(TCP_Socket_Manager*) -> PLATFORM_TCP_Context*` | `PLATFORM_TCP_Context*` | Returns the platform TCP context. |
 | `get_quantity_of__active_tcp_sockets` | `(TCP_Socket_Manager*) -> Quantity__u32` | `Quantity__u32` | Returns the number of active connections. |
 
-## Agentic Workflow
+## 1.5 Agentic Workflow
 
-### Initialization Flow
+### 1.5.1 Initialization Flow
 
     PLATFORM_tcp_begin(p_game)
         → returns PLATFORM_TCP_Context*
@@ -100,7 +100,7 @@ manager operates as a client or server.
         → clears all TCP_Socket slots as deallocated
         → sets m_poll_tcp_socket_manager to client or server strategy
 
-### Server Lifecycle
+### 1.5.2 Server Lifecycle
 
     open_server_socket_on__tcp_socket_manager__ipv4(manager, uuid, port)
         → PLATFORM_tcp_server(context, port)
@@ -126,7 +126,7 @@ manager operates as a client or server.
         → unbind_tcp_socket(...)
         → decrements quantity_of__connections
 
-### Client Lifecycle
+### 1.5.3 Client Lifecycle
 
     open_socket_on__tcp_socket_manager__ipv4(manager, ipv4, uuid)
         → PLATFORM_tcp_connect(context, &ipv4)
@@ -144,7 +144,7 @@ manager operates as a client or server.
         → unbind_tcp_socket(...)
         → decrements quantity_of__connections
 
-### UUID-Based Lookup
+### 1.5.4 UUID-Based Lookup
 
 Sockets are stored in a contiguous pool and looked up by UUID using
 hash-based search via `dehash_identitier_u32_in__contigious_array`.
@@ -156,7 +156,7 @@ This provides O(1) average-case lookup:
         // socket not found or deallocated
     }
 
-### Preconditions
+### 1.5.5 Preconditions
 
 - `initialize_tcp_socket_manager`: `p_tcp_socket_manager` must be non-null.
   `m_poll_tcp_socket_manager` should be a valid polling callback.
@@ -167,7 +167,7 @@ This provides O(1) average-case lookup:
 - `close_socket_on__tcp_socket_manager__ipv4`: the socket must be a valid,
   allocated socket from this manager's pool.
 
-### Postconditions
+### 1.5.6 Postconditions
 
 - After `initialize_tcp_socket_manager`: all socket slots are deallocated,
   `quantity_of__connections` is 0, polling callback is set.
@@ -186,7 +186,7 @@ This provides O(1) average-case lookup:
   deallocated, platform resources are released, `quantity_of__connections`
   is decremented.
 
-### Error Handling
+### 1.5.7 Error Handling
 
 - Functions returning `TCP_Socket*` return null on allocation failure or
   platform-level errors.

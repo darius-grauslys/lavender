@@ -1,18 +1,18 @@
-# Specification: core/include/multiplayer/multiplayer.h
+# 1. Specification: core/include/multiplayer/multiplayer.h
 
-## Overview
+## 1.1 Overview
 
 Provides top-level multiplayer state queries for the game session.
 These functions determine whether the game is in a multiplayer context
 and what role the local instance plays (host or client).
 
-## Dependencies
+## 1.2 Dependencies
 
 - `defines.h` (for `Game`, `Game_Flags__u32`)
 
-## Functions
+## 1.3 Functions
 
-### State Queries
+### 1.3.1 State Queries
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -20,9 +20,9 @@ and what role the local instance plays (host or client).
 | `is_host` | `(Game*) -> bool` | `bool` | Returns true if the local game instance is the host (server) of the multiplayer session. |
 | `get_user_id` | `(Game*) -> USER_ID` | `USER_ID` | Returns the local user's identifier for the current session. |
 
-## Agentic Workflow
+## 1.4 Agentic Workflow
 
-### Role Determination
+### 1.4.1 Role Determination
 
 The multiplayer system supports two roles, determined by the
 `GAME_FLAG__IS_SERVER_OR__CLIENT` flag in `Game.game_flags__u32`:
@@ -34,14 +34,14 @@ The multiplayer system supports two roles, determined by the
   receives world state updates. The `TCP_Socket_Manager` uses
   `m_poll_tcp_socket_manager_as__client__default`.
 
-### Single-Player Detection
+### 1.4.2 Single-Player Detection
 
 When `Game.max_quantity_of__clients == 0`, the game operates in
 single-player mode. In this case `is_in_multiplayer_game` returns
 false, and the game uses `Game.input` directly instead of per-client
 input from `Client.input_of__client`.
 
-### Usage Pattern
+### 1.4.3 Usage Pattern
 
 These queries are used throughout the engine to branch behavior
 based on multiplayer context:
@@ -56,7 +56,7 @@ based on multiplayer context:
         // Single-player logic
     }
 
-### Relationship to TCP_Socket_Manager
+### 1.4.4 Relationship to TCP_Socket_Manager
 
 - When `is_in_multiplayer_game` returns true, the game's
   `pM_tcp_socket_manager` is expected to be initialized and active.
@@ -65,10 +65,10 @@ based on multiplayer context:
 - When `is_host` returns false (client), the `TCP_Socket_Manager` uses
   the client polling strategy.
 
-### Preconditions
+### 1.4.5 Preconditions
 
 - `p_game` must be non-null and initialized.
 
-### Postconditions
+### 1.4.6 Postconditions
 
 - These are pure query functions with no side effects.

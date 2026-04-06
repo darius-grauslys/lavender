@@ -1,28 +1,28 @@
-# Specification: core/include/multiplayer/client__default.h
+# 1. Specification: core/include/multiplayer/client__default.h
 
-## Overview
+## 1.1 Overview
 
 Provides the default client-side polling implementation for the
 `TCP_Socket_Manager`. This is the standard `m_Poll_TCP_Socket_Manager`
 callback used when the game is operating as a client in a multiplayer
 session.
 
-## Dependencies
+## 1.2 Dependencies
 
 - `defines.h` (for `TCP_Socket_Manager`, `Game`)
 - `defines_weak.h` (forward declarations)
 
-## Functions
+## 1.3 Functions
 
-### Polling
+### 1.3.1 Polling
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `m_poll_tcp_socket_manager_as__client__default` | `(TCP_Socket_Manager*, Game*) -> void` | Default client-side polling callback. Drives the client's TCP socket I/O each frame, handling connection state transitions, packet reception, and packet dispatch for all active sockets in the manager's pool. |
 
-## Agentic Workflow
+## 1.4 Agentic Workflow
 
-### Role in TCP_Socket_Manager
+### 1.4.1 Role in TCP_Socket_Manager
 
 This function is passed to `initialize_tcp_socket_manager` as the
 `m_Poll_TCP_Socket_Manager` callback when the game is configured as
@@ -32,7 +32,7 @@ a client (i.e. `GAME_FLAG__IS_SERVER_OR__CLIENT` indicates client mode):
         p_tcp_socket_manager,
         m_poll_tcp_socket_manager_as__client__default);
 
-### Per-Frame Behavior
+### 1.4.2 Per-Frame Behavior
 
 Each frame, the `TCP_Socket_Manager` invokes this callback:
 
@@ -47,7 +47,7 @@ The default client implementation:
        d. Process received packets as inbound game actions via the
           Client's game_action_manager__inbound.
 
-### Client vs Server
+### 1.4.3 Client vs Server
 
 The client polling strategy differs from the server strategy in that:
 
@@ -56,12 +56,12 @@ The client polling strategy differs from the server strategy in that:
 - It focuses on maintaining a single outbound connection to the server
   and processing server-originated game actions.
 
-### Preconditions
+### 1.4.4 Preconditions
 
 - `p_tcp_socket_manager` must be initialized via `initialize_tcp_socket_manager`.
 - `p_game` must be valid and in a multiplayer client state.
 
-### Postconditions
+### 1.4.5 Postconditions
 
 - All non-manually-driven sockets have been polled for I/O.
 - Received packets have been enqueued as inbound game actions.

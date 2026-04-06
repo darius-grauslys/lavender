@@ -1,28 +1,28 @@
-# Specification: core/include/multiplayer/server__default.h
+# 1. Specification: core/include/multiplayer/server__default.h
 
-## Overview
+## 1.1 Overview
 
 Provides the default server-side polling implementation for the
 `TCP_Socket_Manager`. This is the standard `m_Poll_TCP_Socket_Manager`
 callback used when the game is operating as a server (host) in a
 multiplayer session.
 
-## Dependencies
+## 1.2 Dependencies
 
 - `defines.h` (for `TCP_Socket_Manager`, `Game`)
 - `defines_weak.h` (forward declarations)
 
-## Functions
+## 1.3 Functions
 
-### Polling
+### 1.3.1 Polling
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `m_poll_tcp_socket_manager_as__server__default` | `(TCP_Socket_Manager*, Game*) -> void` | Default server-side polling callback. Drives the server's TCP socket I/O each frame, handling inbound connection acceptance/rejection, packet reception from connected clients, and packet dispatch. |
 
-## Agentic Workflow
+## 1.4 Agentic Workflow
 
-### Role in TCP_Socket_Manager
+### 1.4.1 Role in TCP_Socket_Manager
 
 This function is passed to `initialize_tcp_socket_manager` as the
 `m_Poll_TCP_Socket_Manager` callback when the game is configured as
@@ -32,7 +32,7 @@ a server (i.e. `GAME_FLAG__IS_SERVER_OR__CLIENT` indicates server mode):
         p_tcp_socket_manager,
         m_poll_tcp_socket_manager_as__server__default);
 
-### Per-Frame Behavior
+### 1.4.2 Per-Frame Behavior
 
 Each frame, the `TCP_Socket_Manager` invokes this callback:
 
@@ -53,7 +53,7 @@ The default server implementation:
        d. Send any queued outbound game actions from the Client's
           game_action_manager__outbound.
 
-### Server vs Client
+### 1.4.3 Server vs Client
 
 The server polling strategy differs from the client strategy in that:
 
@@ -63,7 +63,7 @@ The server polling strategy differs from the client strategy in that:
 - It is responsible for connection acceptance/rejection decisions.
 - It may broadcast outbound game actions to multiple clients.
 
-### Connection Acceptance Flow
+### 1.4.4 Connection Acceptance Flow
 
     poll_tcp_socket_manager_for__pending_connections(...)
         → PLATFORM_tcp_poll_accept(...)
@@ -78,13 +78,13 @@ The server polling strategy differs from the client strategy in that:
                 → PLATFORM_tcp_close_socket(...)
                 → clears p_PLATFORM_tcp_socket__pending_connection
 
-### Preconditions
+### 1.4.5 Preconditions
 
 - `p_tcp_socket_manager` must be initialized with a server socket open
   via `open_server_socket_on__tcp_socket_manager__ipv4`.
 - `p_game` must be valid and in a multiplayer server state.
 
-### Postconditions
+### 1.4.6 Postconditions
 
 - Pending connections have been accepted or rejected.
 - All non-manually-driven client sockets have been polled for I/O.
