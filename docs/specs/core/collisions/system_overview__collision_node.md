@@ -1,6 +1,6 @@
-# System Overview: Collision Node Spatial Partitioning
+# 1 System Overview: Collision Node Spatial Partitioning
 
-## Purpose
+## 1.1 Purpose
 
 The collision node system provides chunk-aligned spatial partitioning for
 hitbox collision detection. Each loaded chunk (`Global_Space`) is associated
@@ -9,9 +9,9 @@ chunk's spatial region. This allows the collision resolver to efficiently
 narrow down collision candidates to only those hitboxes sharing the same
 chunk.
 
-## Architecture
+## 1.2 Architecture
 
-### Data Hierarchy
+### 1.2.1 Data Hierarchy
 
     World
     +-- Collision_Node_Pool
@@ -35,7 +35,7 @@ chunk.
         +-- Entity[0..MAX_QUANTITY_OF__ENTITIES-1]
             +-- (UUID matches Collision_Node_Entry.uuid_of__hitbox__u32)
 
-### Key Types
+### 1.2.2 Key Types
 
 | Type | Role |
 |------|------|
@@ -45,16 +45,16 @@ chunk.
 | `Global_Space` | Represents a loaded chunk. Holds a pointer to its associated `Collision_Node`. |
 | `Global_Space_Manager` | Manages the pool of `Global_Space` instances. Lives in `World`. |
 
-### Limits
+### 1.2.3 Limits
 
 | Macro | Default | Description |
 |-------|---------|-------------|
 | `QUANTITY_OF__GLOBAL_SPACE` | Platform-defined | Number of simultaneously loaded chunks. Determines `Collision_Node` pool size. |
 | `MAX_QUANTITY_OF__HITBOX_AABB` | 256 | Maximum number of hitboxes. Determines `Collision_Node_Entry` pool size. |
 
-## Spatial Partitioning Strategy
+## 1.3 Spatial Partitioning Strategy
 
-### Chunk-Aligned Buckets
+### 1.3.1 Chunk-Aligned Buckets
 
 The world is divided into chunks of fixed size (`CHUNK__WIDTH` x `CHUNK__HEIGHT`
 tiles). Each loaded chunk has exactly one `Global_Space`, and each
@@ -76,7 +76,7 @@ entry must be migrated to the new chunk's `Collision_Node`.
     | Entries: 1  | Entries: 3  | Entries: 0  |
     +-------------+-------------+-------------+
 
-### UUID Derivation
+### 1.3.2 UUID Derivation
 
 `Collision_Node` instances use 64-bit UUIDs derived from chunk coordinates.
 This allows O(1) lookup via hashing in the `Collision_Node_Pool`:
@@ -88,7 +88,7 @@ This allows O(1) lookup via hashing in the `Collision_Node_Pool`:
 The hashing function (`dehash_identitier_u64_in__contigious_array`) maps the
 64-bit UUID to an index in the contiguous `collision_nodes` array.
 
-### Linked List Structure
+### 1.3.3 Linked List Structure
 
 Each `Collision_Node` maintains a singly-linked list of `Collision_Node_Entry`
 records, linked from tail to head via `p_previous_entry`:
@@ -105,15 +105,15 @@ records, linked from tail to head via `p_previous_entry`:
 New entries are appended at the tail. Removal unlinks the entry from the chain
 and returns it to the `Collision_Node_Pool`'s entry pool.
 
-## Lifecycle
+## 1.4 Lifecycle
 
-### 1. Initialization
+### 1.4.1 Initialization
 
     initialize_collision_node_pool(&world.collision_node_pool);
         -> All Collision_Node slots: UUID-64 set to deallocated sentinel.
         -> All Collision_Node_Entry slots: marked as available.
 
-### 2. Node Allocation (Chunk Load)
+### 1.4.2 Node Allocation (Chunk Load)
 
 When a `Global_Space` is activated (chunk loaded):
 
@@ -126,7 +126,7 @@ When a `Global_Space` is activated (chunk loaded):
 
     global_space.p_collision_node = p_node;
 
-### 3. Entry Addition (Hitbox Enters Chunk)
+### 1.4.3 Entry Addition (Hitbox Enters Chunk)
 
 When a hitbox's center position falls within a chunk:
 
@@ -141,7 +141,7 @@ When a hitbox's center position falls within a chunk:
         -> Appends to the tail of the node's linked list.
         -> Returns false if the entry pool is exhausted.
 
-### 4. Entry Removal (Hitbox Leaves Chunk)
+### 1.4.4 Entry Removal (Hitbox Leaves Chunk)
 
 When a hitbox moves to a different chunk:
 
@@ -156,7 +156,7 @@ When a hitbox moves to a different chunk:
 
 Then add the entry to the new chunk's node (step 3).
 
-### 5. Collision Polling
+### 1.4.5 Collision Polling
 
 During per-frame collision resolution:
 
@@ -174,7 +174,7 @@ During per-frame collision resolution:
             -> Calls is_hitbox_aabb__colliding(subject, candidate).
             -> If collision detected, invokes f_hitbox_aabb_collision_handler.
 
-### 6. Node Deallocation (Chunk Unload)
+### 1.4.6 Node Deallocation (Chunk Unload)
 
 When a `Global_Space` is deactivated:
 
@@ -187,7 +187,7 @@ When a `Global_Space` is deactivated:
         -> The node slot is marked as deallocated.
         -> global_space.p_collision_node = NULL.
 
-## Integration with Collision Resolver
+## 1.5 Integration with Collision Resolver
 
 The `poll_collision_resolver_aabb` function (from `collision_resolver_aabb.h`)
 drives the full collision detection loop:
@@ -205,7 +205,7 @@ This two-phase approach (spatial partitioning via `Collision_Node`, then
 per-tile checks via `Local_Space_Manager`) keeps the collision system
 efficient even with many active hitboxes.
 
-## Entity Iteration
+## 1.6 Entity Iteration
 
 The collision node system also supports iterating entities within a spatial
 region:
@@ -225,7 +225,7 @@ This resolves each `Collision_Node_Entry.uuid_of__hitbox__u32` to an `Entity`
 via the `Entity_Manager`, enabling spatial queries like "find all entities in
 this chunk."
 
-## Capacity Constraints
+## 1.7 Capacity Constraints
 
 - Each hitbox can occupy **exactly one** `Collision_Node_Entry` at a time.
   The entry pool size (`MAX_QUANTITY_OF__HITBOX_AABB` = 256) matches the
@@ -237,7 +237,7 @@ this chunk."
   containing its **center position** only. Cross-boundary collisions are
   handled by checking adjacent collision nodes during the resolution phase.
 
-## Relationship to Hitbox Management
+## 1.8 Relationship to Hitbox Management
 
 The collision node system and the hitbox management system (see
 `system_overview__hitbox.md`) are complementary but separate:

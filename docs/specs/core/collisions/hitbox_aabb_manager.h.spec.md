@@ -1,6 +1,6 @@
-# Specification: core/include/collisions/core/aabb/hitbox_aabb_manager.h
+# 1 Specification: core/include/collisions/core/aabb/hitbox_aabb_manager.h
 
-## Overview
+## 1.1 Overview
 
 Provides pool management, allocation, deallocation, UUID-based lookup, and
 physics integration for `Hitbox_AABB` instances. The `Hitbox_AABB_Manager`
@@ -13,7 +13,7 @@ by the `Hitbox_Context` registration system.
 
 See `module_topology__collision.mmd` for the type hierarchy.
 
-## Dependencies
+## 1.2 Dependencies
 
 - `defines.h` (for `Hitbox_AABB_Manager`, `Hitbox_AABB`,
   `Hitbox_Manager_Type`, `Hitbox_Flags__u8`, `Identifier__u32`,
@@ -22,9 +22,9 @@ See `module_topology__collision.mmd` for the type hierarchy.
 - `defines_weak.h` (forward declarations)
 - `serialization/hashing.h` (for UUID-based lookup)
 
-## Types
+## 1.3 Types
 
-### Hitbox_AABB_Manager (struct)
+### 1.3.1 Hitbox_AABB_Manager (struct)
 
 Defined in `defines.h`:
 
@@ -47,7 +47,7 @@ Defined in `defines.h`:
 | `pM_ptr_array_of__hitbox_records` | `Hitbox_AABB**` | Pointer array for active hitbox tracking. Dynamically allocated by the factory. |
 | `index_of__next_hitbox_aabb_in__records` | `Index__u32` | Tracks the next available slot in the pointer array for allocation. |
 
-### Hitbox_Manager_Intrinsic (struct)
+### 1.3.2 Hitbox_Manager_Intrinsic (struct)
 
 Defined in `defines.h`:
 
@@ -60,9 +60,9 @@ The `Hitbox_AABB_Manager` can be safely cast to `Hitbox_Manager_Intrinsic*`
 via the union. This is the interface contract that all hitbox managers must
 satisfy for use with CORE.
 
-## Functions
+## 1.4 Functions
 
-### Hitbox_Context Registration Callbacks
+### 1.4.1 Hitbox_Context Registration Callbacks
 
 These functions are registered with `Hitbox_Context` via
 `register_hitbox_manager` and are invoked through the invocation table.
@@ -73,41 +73,41 @@ These functions are registered with `Hitbox_Context` via
 | `f_hitbox_manager__deallocator_AABB` | `(void* pM_hitbox_manager, Hitbox_Manager_Type) -> void` | `void` | Frees the backing pools and the manager itself using `free`. |
 | `f_hitbox_manager__opaque_property_access_of__hitbox_AABB` | `(void* pV_hitbox, void* pV_dims, void* pV_pos, void* pV_vel, void* pV_acc, Hitbox_Flags__u8*, bool is_set) -> bool` | `bool` | Opaque property accessor. Reads or writes hitbox properties through void pointers. Used by `Hitbox_Context.opaque_access_to__hitbox`. |
 
-### Initialization
+### 1.4.2 Initialization
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `initialize_hitbox_aabb_manager` | `(Hitbox_AABB_Manager*, void* pM_pool, void** pM_ptr_array, Quantity__u32 quantity) -> void` | Initializes the manager with pre-allocated pool and pointer array. Sets all hitboxes to unallocated state. |
 
-### Allocation
+### 1.4.3 Allocation
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `allocate_hitbox_aabb_from__hitbox_aabb_manager` | `(Hitbox_AABB_Manager*, Identifier__u32 uuid) -> Hitbox_AABB*` | `Hitbox_AABB*` | Allocates a hitbox from the pool with the given UUID. Returns NULL if the pool is exhausted. |
 | `release_hitbox_aabb_from__hitbox_aabb_manager` | `(Game*, Hitbox_AABB_Manager*, Hitbox_AABB*) -> void` | `void` | Returns the hitbox to the pool. Marks it as deallocated. |
 
-### Lookup
+### 1.4.4 Lookup
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `get_p_hitbox_aabb_by__uuid_u32_from__hitbox_aabb_manager` | `(Hitbox_AABB_Manager*, Identifier__u32 uuid) -> Hitbox_AABB*` | `Hitbox_AABB*` | Looks up a hitbox by its 32-bit UUID. Returns NULL if not found. |
 
-### Physics Integration
+### 1.4.5 Physics Integration
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `poll_hitbox_manager_for__movement` | `(Game*, Hitbox_AABB_Manager*) -> void` | Iterates all active hitboxes. For each: applies acceleration to velocity, applies velocity to position, and marks the hitbox as dirty if it moved. |
 
-### Convenience Accessors (static inline)
+### 1.4.6 Convenience Accessors (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `get_p_hitbox_aabb_by__entity_from__hitbox_aabb_manager` | `(Hitbox_AABB_Manager*, Entity*) -> Hitbox_AABB*` | `Hitbox_AABB*` | Looks up a hitbox using the entity's UUID. Delegates to `get_p_hitbox_aabb_by__uuid_u32_from__hitbox_aabb_manager`. |
 | `get_p_hitbox_aabb_by__index_from__hitbox_aabb_manager` | `(Hitbox_AABB_Manager*, Index__u32) -> Hitbox_AABB*` | `Hitbox_AABB*` | Returns the hitbox at the given index in the pointer array. Debug builds check bounds and call `debug_error` on overflow. |
 
-## Agentic Workflow
+## 1.5 Agentic Workflow
 
-### Manager Lifecycle
+### 1.5.1 Manager Lifecycle
 
     [Uninitialized]
         |
@@ -132,7 +132,7 @@ These functions are registered with `Hitbox_Context` via
         |
     [Deallocated]
 
-### Integration with Hitbox_Context
+### 1.5.2 Integration with Hitbox_Context
 
 The `Hitbox_AABB_Manager` is not used directly by most game code. Instead,
 it is accessed through the `Hitbox_Context` abstraction:
@@ -153,7 +153,7 @@ it is accessed through the `Hitbox_Context` abstraction:
 
     // The instance's pVM_hitbox_manager points to the Hitbox_AABB_Manager.
 
-### Physics Tick Sequence
+### 1.5.3 Physics Tick Sequence
 
     1. poll_hitbox_manager_for__movement(p_game, p_hitbox_aabb_manager)
        -> For each active hitbox:
@@ -164,7 +164,7 @@ it is accessed through the `Hitbox_Context` abstraction:
     2. poll_collision_resolver_aabb(...)
        -> Uses dirty flags to optimize checks
 
-### Preconditions
+### 1.5.4 Preconditions
 
 - `initialize_hitbox_aabb_manager`: All pointer arguments must be non-null.
   `quantity` must be > 0.
@@ -175,7 +175,7 @@ it is accessed through the `Hitbox_Context` abstraction:
 - `get_p_hitbox_aabb_by__index_from__hitbox_aabb_manager`: `index_of__hitbox`
   must be less than `quantity_of__hitboxes`.
 
-### Postconditions
+### 1.5.5 Postconditions
 
 - After `allocate_hitbox_aabb_from__hitbox_aabb_manager` (success): The
   returned hitbox has the requested UUID and is marked as allocated.
@@ -184,7 +184,7 @@ it is accessed through the `Hitbox_Context` abstraction:
 - After `poll_hitbox_manager_for__movement`: All active hitboxes have updated
   positions reflecting their velocity and acceleration.
 
-### Error Handling
+### 1.5.6 Error Handling
 
 - `allocate_hitbox_aabb_from__hitbox_aabb_manager` returns NULL on pool
   exhaustion.

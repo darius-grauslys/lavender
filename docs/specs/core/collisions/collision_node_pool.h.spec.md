@@ -1,6 +1,6 @@
-# Specification: core/include/collisions/collision_node_pool.h
+# 1 Specification: core/include/collisions/collision_node_pool.h
 
-## Overview
+## 1.1 Overview
 
 Provides pool management for `Collision_Node` and `Collision_Node_Entry`
 instances. The `Collision_Node_Pool` is the top-level owner of all spatial
@@ -10,7 +10,7 @@ fixed-size array of collision node entries (one per possible hitbox).
 
 See `system_overview__collision_node.md` for the full architectural context.
 
-## Dependencies
+## 1.2 Dependencies
 
 - `defines.h` (for `Collision_Node_Pool`, `Collision_Node`,
   `Collision_Node_Entry`, `Identifier__u64`, `QUANTITY_OF__GLOBAL_SPACE`,
@@ -19,9 +19,9 @@ See `system_overview__collision_node.md` for the full architectural context.
 - `platform_defines.h` (for `QUANTITY_OF__GLOBAL_SPACE`)
 - `serialization/hashing.h` (for `dehash_identitier_u64_in__contigious_array`)
 
-## Types
+## 1.3 Types
 
-### Collision_Node_Pool (struct)
+### 1.3.1 Collision_Node_Pool (struct)
 
 Defined in `defines.h`:
 
@@ -35,44 +35,44 @@ Defined in `defines.h`:
 | `collision_nodes` | `Collision_Node[QUANTITY_OF__GLOBAL_SPACE]` | Pool of collision nodes. Each slot corresponds to one loadable chunk. |
 | `collision_node_entries` | `Collision_Node_Entry[MAX_QUANTITY_OF__HITBOX_AABB]` | Pool of collision node entries. Each slot corresponds to one possible hitbox. |
 
-### Limits
+### 1.3.2 Limits
 
 | Macro | Default | Description |
 |-------|---------|-------------|
 | `QUANTITY_OF__GLOBAL_SPACE` | Platform-defined | Number of simultaneously loaded chunks. Determines collision node pool size. |
 | `MAX_QUANTITY_OF__HITBOX_AABB` | 256 | Maximum number of AABB hitboxes. Determines collision node entry pool size. |
 
-## Functions
+## 1.4 Functions
 
-### Initialization
+### 1.4.1 Initialization
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `initialize_collision_node_pool` | `(Collision_Node_Pool*) -> void` | Initializes all collision node slots with deallocated sentinel UUIDs and all entry slots as available. |
 
-### Node Allocation
+### 1.4.2 Node Allocation
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `allocate_collision_node_from__collision_node_pool` | `(Collision_Node_Pool*, Identifier__u64 uuid__u64) -> Collision_Node*` | `Collision_Node*` | Allocates a collision node slot using the 64-bit UUID (derived from chunk coordinates) as a hash key. Returns a pointer to the allocated node, or NULL on failure. |
 | `release_collision_node_from__collision_node_pool` | `(Collision_Node_Pool*, Collision_Node*) -> void` | `void` | Marks the given collision node slot as deallocated. All entries should have been removed prior to this call. |
 
-### Entry Allocation
+### 1.4.3 Entry Allocation
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `allocate_collision_node_entry_from__collision_node_pool` | `(Collision_Node_Pool*) -> Collision_Node_Entry*` | `Collision_Node_Entry*` | Allocates an available `Collision_Node_Entry` from the entry pool. Returns NULL if the pool is exhausted. |
 | `release_collision_node_entry_from__collision_node_pool` | `(Collision_Node_Pool*, Collision_Node_Entry*) -> void` | `void` | Returns the given entry to the pool, marking it as available. |
 
-### Lookup (static inline)
+### 1.4.4 Lookup (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `get_p_collision_node_by__uuid_64_from__collision_node_pool` | `(Collision_Node_Pool*, Identifier__u64 uuid__u64) -> Collision_Node*` | `Collision_Node*` | Performs O(1) lookup of a collision node by its 64-bit UUID using `dehash_identitier_u64_in__contigious_array`. Returns a pointer to the node, or NULL if not found. |
 
-## Agentic Workflow
+## 1.5 Agentic Workflow
 
-### Pool Lifecycle
+### 1.5.1 Pool Lifecycle
 
     initialize_collision_node_pool(&world.collision_node_pool)
         -> All node slots: UUID set to deallocated sentinel.
@@ -97,7 +97,7 @@ Defined in `defines.h`:
     // Chunk unload:
     release_collision_node_from__collision_node_pool(&pool, p_node);
 
-### Hashing Strategy
+### 1.5.2 Hashing Strategy
 
 The `get_p_collision_node_by__uuid_64_from__collision_node_pool` function
 uses `dehash_identitier_u64_in__contigious_array` to map a 64-bit UUID
@@ -107,7 +107,7 @@ uses `dehash_identitier_u64_in__contigious_array` to map a 64-bit UUID
 The UUID derivation from chunk coordinates is performed externally (typically
 via chunk vector hashing utilities). The pool itself does not compute UUIDs.
 
-### Relationship to Collision_Node
+### 1.5.3 Relationship to Collision_Node
 
 The pool is responsible for **allocation and deallocation** of nodes and
 entries. The `Collision_Node` (see `collision_node.h.spec.md`) is responsible
@@ -126,7 +126,7 @@ Note: `add_entry_to__collision_node` in `collision_node.h` internally calls
 the pool's entry allocator, so the caller typically does not need to call
 `allocate_collision_node_entry_from__collision_node_pool` directly.
 
-### Preconditions
+### 1.5.4 Preconditions
 
 - `initialize_collision_node_pool`: `p_collision_node_pool` must be non-null.
 - `allocate_collision_node_from__collision_node_pool`: The UUID must not
@@ -137,7 +137,7 @@ the pool's entry allocator, so the caller typically does not need to call
 - `release_collision_node_entry_from__collision_node_pool`: The entry must
   have been previously allocated and unlinked from any node's list.
 
-### Postconditions
+### 1.5.5 Postconditions
 
 - After `initialize_collision_node_pool`: All nodes report
   `is_collision_node__allocated` as false.
@@ -147,7 +147,7 @@ the pool's entry allocator, so the caller typically does not need to call
 - After `release_collision_node_from__collision_node_pool`:
   `is_collision_node__allocated` returns false for the node.
 
-### Error Handling
+### 1.5.6 Error Handling
 
 - `allocate_collision_node_from__collision_node_pool` returns NULL if the
   hash slot is already occupied or the pool is full.

@@ -1,6 +1,6 @@
-# System Overview: Collision System
+# 1 System Overview: Collision System
 
-## Purpose
+## 1.1 Purpose
 
 The collision system provides hitbox management, chunk-aligned spatial
 partitioning, and collision detection/resolution for the engine. It is
@@ -9,9 +9,9 @@ type registration and allocation, and `Collision_Node_Pool` (owned by
 `World`) for spatial indexing — enabling efficient narrowing of collision
 candidates to only those hitboxes sharing the same chunk.
 
-## Architecture
+## 1.2 Architecture
 
-### Ownership Split
+### 1.2.1 Ownership Split
 
     Game
     ├── Hitbox_Context                    (hitbox type system + manager pool)
@@ -43,7 +43,7 @@ candidates to only those hitboxes sharing the same chunk.
         ├── f_Hitbox_AABB_Collision_Handler   (entity-entity callback)
         └── f_Hitbox_AABB_Tile_Touch_Handler  (entity-tile callback)
 
-### Why Two Owners?
+### 1.2.2 Why Two Owners?
 
 The `Hitbox_Context` lives in `Game` because hitbox type registration
 and the manager pool are global concerns that persist across world
@@ -51,9 +51,9 @@ loads/unloads. The `Collision_Node_Pool` lives in `World` because
 spatial partitioning is tied to the currently loaded set of chunks —
 when the world is deallocated, all spatial indexing is invalidated.
 
-## Hitbox Type System
+## 1.3 Hitbox Type System
 
-### Registration
+### 1.3.1 Registration
 
 The `Hitbox_Context` supports multiple hitbox manager types through a
 registration pattern. Each `Hitbox_Manager_Type` (an enum) has:
@@ -72,7 +72,7 @@ Registration is performed at initialization:
         registration_record,
         invocation_table);
 
-### Manager Instances
+### 1.3.2 Manager Instances
 
 `Hitbox_Manager_Instance` is a slot in the `Hitbox_Context` pool. Each
 instance holds:
@@ -85,7 +85,7 @@ instance holds:
 The opaque pointer pattern allows the `Hitbox_Context` to manage
 different hitbox types uniformly without knowing their concrete layouts.
 
-### Hitbox_AABB_Manager (Concrete Manager)
+### 1.3.3 Hitbox_AABB_Manager (Concrete Manager)
 
 The default concrete manager for axis-aligned bounding boxes:
 
@@ -107,7 +107,7 @@ Each `Hitbox_AABB` contains:
 | `height__quantity_u32` | `Quantity__u32` | Hitbox height. |
 | `hitbox_aabb_flags__u8` | `Hitbox_Flags__u8` | Active/dirty flags. |
 
-### Hitbox_Manager_Intrinsic
+### 1.3.4 Hitbox_Manager_Intrinsic
 
 All concrete hitbox managers share a common leading layout
 (`Hitbox_Manager_Intrinsic`) via union cast, enabling the `Hitbox_Context`
@@ -118,7 +118,7 @@ knowing the concrete type:
     ├── Quantity__u32 quantity_of__hitboxes
     └── Serialization_Header *p_array_of__hitboxes
 
-### Opaque Access
+### 1.3.5 Opaque Access
 
 The `Hitbox_Context` provides opaque access to hitbox properties through
 the invocation table:
@@ -132,9 +132,9 @@ the invocation table:
 This resolves the hitbox through the correct manager and fills a
 properties struct without the caller needing to know the concrete type.
 
-## Spatial Partitioning
+## 1.4 Spatial Partitioning
 
-### Collision Nodes
+### 1.4.1 Collision Nodes
 
 The `Collision_Node_Pool` provides chunk-aligned spatial buckets. Each
 loaded chunk (`Global_Space`) is associated with exactly one
@@ -154,7 +154,7 @@ loaded chunk (`Global_Space`) is associated with exactly one
 Nodes use 64-bit UUIDs derived from chunk coordinates for O(1) lookup
 via hashing.
 
-### Linked List Structure
+### 1.4.2 Linked List Structure
 
 Each `Collision_Node` maintains entries linked from tail to head:
 
@@ -170,7 +170,7 @@ Each `Collision_Node` maintains entries linked from tail to head:
 New entries are appended at the tail. Removal unlinks the entry and
 returns it to the pool.
 
-### Entry Migration
+### 1.4.3 Entry Migration
 
 When a hitbox moves to a different chunk, its `Collision_Node_Entry`
 must be migrated:
@@ -178,9 +178,9 @@ must be migrated:
     remove_entry_from__collision_node(pool, old_node, hitbox_uuid)
     add_entry_to__collision_node(pool, new_node, chunk_vector, hitbox_uuid)
 
-## Collision Detection Flow
+## 1.5 Collision Detection Flow
 
-### Per-Frame Resolution
+### 1.5.1 Per-Frame Resolution
 
 The collision resolver drives the full detection loop each frame:
 
@@ -199,7 +199,7 @@ The collision resolver drives the full detection loop each frame:
              → Check tiles via Local_Space_Manager.
              → If touching, invoke f_hitbox_aabb_tile_touch_handler.
 
-### Physics Integration
+### 1.5.2 Physics Integration
 
 The `Hitbox_AABB_Manager` handles physics integration separately from
 collision detection:
@@ -211,9 +211,9 @@ collision detection:
 
 This runs before collision detection each frame.
 
-## Lifecycle
+## 1.6 Lifecycle
 
-### Initialization
+### 1.6.1 Initialization
 
     initialize_hitbox_context(&game.hitbox_context)
          → Clear all manager instance slots.
@@ -226,13 +226,13 @@ This runs before collision detection each frame.
          → All node slots: UUID-64 set to deallocated sentinel.
          → All entry slots: marked as available.
 
-### Chunk Load
+### 1.6.2 Chunk Load
 
     allocate_collision_node_from__collision_node_pool(pool, uuid_from_chunk)
     initialize_collision_node(p_node, uuid_from_chunk)
     global_space.p_collision_node = p_node
 
-### Hitbox Allocation
+### 1.6.3 Hitbox Allocation
 
     allocate_hitbox_manager_from__hitbox_context(&hitbox_context, type)
          → Allocates a Hitbox_Manager_Instance slot.
@@ -243,32 +243,32 @@ This runs before collision detection each frame.
          → Allocates a hitbox from the specified manager.
          → Returns opaque hitbox pointer.
 
-### Hitbox Enters Chunk
+### 1.6.4 Hitbox Enters Chunk
 
     add_entry_to__collision_node(pool, p_node, chunk_vector, hitbox_uuid)
          → Allocates a Collision_Node_Entry from the pool.
          → Appends to the node's linked list tail.
 
-### Hitbox Leaves Chunk
+### 1.6.5 Hitbox Leaves Chunk
 
     remove_entry_from__collision_node(pool, p_node, hitbox_uuid)
          → Finds entry by UUID in linked list.
          → Unlinks and returns to pool.
 
-### Chunk Unload
+### 1.6.6 Chunk Unload
 
     release_collision_node_from__collision_node_pool(pool, p_node)
          → All entries should have been removed prior.
          → Node slot marked as deallocated.
          → global_space.p_collision_node = NULL
 
-### Hitbox Deallocation
+### 1.6.7 Hitbox Deallocation
 
     release_hitbox_manager_from__hitbox_context(&hitbox_context, manager_uuid)
          → Calls the type's deallocator via invocation table.
          → Frees the Hitbox_Manager_Instance slot.
 
-## Entity Iteration via Collision Nodes
+## 1.7 Entity Iteration via Collision Nodes
 
 The collision node system supports spatial entity queries:
 
@@ -285,7 +285,7 @@ This resolves each entry's `uuid_of__hitbox__u32` to an `Entity` via
 the `Entity_Manager`, enabling queries like "find all entities in this
 chunk."
 
-## Capacity Constraints
+## 1.8 Capacity Constraints
 
 | Resource | Pool Size | Determined By |
 |----------|-----------|---------------|
@@ -299,7 +299,7 @@ hitbox straddles a chunk boundary, it is assigned to the chunk containing
 its center position. Cross-boundary collisions are handled by checking
 adjacent collision nodes during resolution.
 
-## Hitbox Kinds
+## 1.9 Hitbox Kinds
 
 The `Hitbox_Kind` enum defines supported hitbox shapes:
 
@@ -312,7 +312,7 @@ The `Hitbox_Kind` enum defines supported hitbox shapes:
 Additional kinds (AAABBB, Ball, Sphere) are reserved but not yet
 implemented.
 
-## Relationship Summary
+## 1.10 Relationship Summary
 
 | Concern | Managed By |
 |---------|------------|

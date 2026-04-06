@@ -1,6 +1,6 @@
-# Specification: core/include/collisions/collision_node.h
+# 1 Specification: core/include/collisions/collision_node.h
 
-## Overview
+## 1.1 Overview
 
 Provides initialization, entry management, collision polling, and iteration
 for the `Collision_Node` struct — a spatial bucket in the chunk-aligned
@@ -11,7 +11,7 @@ occupy that chunk's spatial region.
 
 See `system_overview__collision_node.md` for the full architectural context.
 
-## Dependencies
+## 1.2 Dependencies
 
 - `defines.h` (for `Collision_Node`, `Collision_Node_Entry`,
   `Collision_Node_Pool`, `Identifier__u64`, `Identifier__u32`,
@@ -22,9 +22,9 @@ See `system_overview__collision_node.md` for the full architectural context.
 - `serialization/serialization_header.h` (for
   `is_serialized_struct__deallocated__uuid_64`)
 
-## Types
+## 1.3 Types
 
-### Collision_Node (struct)
+### 1.3.1 Collision_Node (struct)
 
 Defined in `defines.h`:
 
@@ -38,7 +38,7 @@ Defined in `defines.h`:
 | `_serialization_header` | `Serialization_Header__UUID_64` | 64-bit UUID derived from chunk coordinates. Used for O(1) lookup via hashing. |
 | `p_linked_list__collision_node_entries__tail` | `Collision_Node_Entry*` | Tail of the singly-linked list of entries. NULL if empty. |
 
-### Collision_Node_Entry (struct)
+### 1.3.2 Collision_Node_Entry (struct)
 
 Defined in `defines.h`:
 
@@ -52,55 +52,55 @@ Defined in `defines.h`:
 | `uuid_of__hitbox__u32` | `Identifier__u32` | UUID of the hitbox occupying this entry's chunk. Resolved via `Hitbox_AABB_Manager`. |
 | `p_previous_entry` | `Collision_Node_Entry*` | Link toward the head of the list. NULL at the head. |
 
-## Functions
+## 1.4 Functions
 
-### Initialization
+### 1.4.1 Initialization
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `initialize_collision_node` | `(Collision_Node*, Identifier__u64 uuid__u64) -> void` | Initializes the node with the given 64-bit UUID and an empty entry list. |
 
-### Entry Management
+### 1.4.2 Entry Management
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `add_entry_to__collision_node` | `(Collision_Node_Pool*, Collision_Node*, Chunk_Vector__3i32, Identifier__u32 uuid_u32_of__entry) -> bool` | `bool` | Allocates a `Collision_Node_Entry` from the pool, sets its hitbox UUID, and appends it to the node's linked list tail. Returns false if the entry pool is exhausted. |
 | `remove_entry_from__collision_node` | `(Collision_Node_Pool*, Collision_Node*, Identifier__u32 uuid__u32) -> void` | `void` | Finds the entry with the given UUID in the linked list, unlinks it, and returns it to the pool. |
 
-### Queries
+### 1.4.3 Queries
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `get_quantity_of__entries_in__collision_node` | `(const Collision_Node*) -> Quantity__u32` | `Quantity__u32` | Traverses the linked list and returns the count of entries. |
 | `get_p_hitbox_aabb_at__vector_3i32F4_from__collision_node` | `(Hitbox_AABB_Manager*, Collision_Node*, Vector__3i32F4) -> Hitbox_AABB*` | `Hitbox_AABB*` | Iterates entries, resolves each to a `Hitbox_AABB`, and returns the first whose bounding box contains the given position. Returns NULL if none found. |
 
-### Collision Polling
+### 1.4.4 Collision Polling
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `poll_for__collisions_within_this__collision_node` | `(Game*, World*, Collision_Node*, f_Hitbox_AABB_Collision_Handler, Hitbox_AABB*) -> void` | Iterates all entries in the node. For each entry, resolves the hitbox UUID to a `Hitbox_AABB*` via the `Hitbox_AABB_Manager`. Tests collision between the subject hitbox and each candidate. Invokes the collision handler callback for each detected collision. |
 
-### Entity Iteration
+### 1.4.5 Entity Iteration
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `iterate_entities_in__collision_node_entry` | `(Entity_Manager*, Collision_Node_Entry**, Entity**) -> Entity*` | `Entity*` | Advances the entry pointer to the next entry in the linked list, resolves the entry's UUID to an `Entity*` via the `Entity_Manager`, and writes it to the entity output pointer. Returns the entity pointer, or NULL when the list is exhausted. |
 
-### Linked List Iteration (static inline)
+### 1.4.6 Linked List Iteration (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `iterate_collision_node__entry` | `(Collision_Node_Entry**) -> Collision_Node_Entry*` | `Collision_Node_Entry*` | Advances the entry pointer to `p_previous_entry` and returns the new current entry. Returns NULL at the head of the list. |
 
-### Allocation Query (static inline)
+### 1.4.7 Allocation Query (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `is_collision_node__allocated` | `(Collision_Node*) -> bool` | `bool` | Returns true if the node's 64-bit UUID is not the deallocated sentinel. Delegates to `is_serialized_struct__deallocated__uuid_64`. |
 
-## Agentic Workflow
+## 1.5 Agentic Workflow
 
-### Collision Node Lifecycle
+### 1.5.1 Collision Node Lifecycle
 
     [Deallocated]
         |
@@ -123,7 +123,7 @@ Defined in `defines.h`:
         |
     [Deallocated]
 
-### Entry Migration Pattern
+### 1.5.2 Entry Migration Pattern
 
 When a hitbox moves from one chunk to another:
 
@@ -140,7 +140,7 @@ When a hitbox moves from one chunk to another:
         new_chunk_vector__3i32,
         hitbox_uuid__u32);
 
-### Entity Iteration Pattern
+### 1.5.3 Entity Iteration Pattern
 
     Collision_Node_Entry *p_entry =
         p_collision_node->p_linked_list__collision_node_entries__tail;
@@ -153,7 +153,7 @@ When a hitbox moves from one chunk to another:
         // Process p_entity
     }
 
-### Preconditions
+### 1.5.4 Preconditions
 
 - `initialize_collision_node`: `p_collision_node` must be non-null.
 - `add_entry_to__collision_node`: The `Collision_Node_Pool` must have
@@ -163,7 +163,7 @@ When a hitbox moves from one chunk to another:
 - `poll_for__collisions_within_this__collision_node`: The node must be
   allocated. The subject hitbox must be non-null.
 
-### Postconditions
+### 1.5.5 Postconditions
 
 - After `add_entry_to__collision_node` (success):
   `get_quantity_of__entries_in__collision_node` increases by 1.
@@ -174,7 +174,7 @@ When a hitbox moves from one chunk to another:
   `is_collision_node__allocated` returns true.
   `get_quantity_of__entries_in__collision_node` returns 0.
 
-### Error Handling
+### 1.5.6 Error Handling
 
 - `add_entry_to__collision_node` returns false if the entry pool is
   exhausted.

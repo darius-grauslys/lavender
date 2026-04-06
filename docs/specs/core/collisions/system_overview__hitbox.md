@@ -1,6 +1,6 @@
-# System Overview: Hitbox Management
+# 1 System Overview: Hitbox Management
 
-## Purpose
+## 1.1 Purpose
 
 The hitbox management system provides a type-erased, pooled allocation scheme
 for collision primitives. It allows multiple hitbox manager types (e.g. AABB,
@@ -8,9 +8,9 @@ future AAABBB) to coexist under a single `Hitbox_Context`, each with its own
 pool of hitboxes, while exposing a uniform opaque access interface for
 cross-type operations.
 
-## Architecture
+## 1.2 Architecture
 
-### Data Hierarchy
+### 1.2.1 Data Hierarchy
 
     Game
     +-- Hitbox_Context
@@ -38,7 +38,7 @@ cross-type operations.
             +-- component quantities
             +-- fractional precision metadata
 
-### Key Types
+### 1.2.2 Key Types
 
 | Type | Role |
 |------|------|
@@ -52,7 +52,7 @@ cross-type operations.
 | `Hitbox_Flags__u8` | Bitmask for hitbox state (active, dirty). |
 | `Hitbox_Manager_Type` | Enum discriminating manager types: `AABB`, `AAABBB`, `Unknown`. |
 
-### Limits
+### 1.2.3 Limits
 
 | Macro | Default | Description |
 |-------|---------|-------------|
@@ -60,9 +60,9 @@ cross-type operations.
 | `MAX_QUANTITY_OF__HITBOX` | 256 | Collective hitbox limit across all manager pools. |
 | `MAX_QUANTITY_OF__HITBOX_AABB` | 256 | Maximum AABB hitboxes per manager. |
 
-## Lifecycle
+## 1.3 Lifecycle
 
-### 1. Initialization
+### 1.3.1 Initialization
 
     initialize_hitbox_context(&game.hitbox_context)
         -> All Hitbox_Manager_Instance slots marked as deallocated.
@@ -75,7 +75,7 @@ cross-type operations.
            f_hitbox_manager__opaque_property_access_of__hitbox_AABB.
         -> Populates Hitbox_Manager_Registration_Record with component metadata.
 
-### 2. Manager Allocation
+### 1.3.2 Manager Allocation
 
     Hitbox_Manager_Instance *p_instance =
         allocate_hitbox_manager_from__hitbox_context(
@@ -89,7 +89,7 @@ cross-type operations.
         -> Stores the returned opaque pointer in pVM_hitbox_manager.
         -> Sets the UUID and type tag.
 
-### 3. Hitbox Allocation
+### 1.3.3 Hitbox Allocation
 
     Hitbox_AABB *p_hitbox = (Hitbox_AABB*)
         allocate_pV_hitbox_from__hitbox_context(
@@ -102,7 +102,7 @@ cross-type operations.
         -> Finds a free slot in the pool via UUID hashing.
         -> Returns opaque pointer (caller casts to Hitbox_AABB*).
 
-### 4. Per-Frame Update
+### 1.3.4 Per-Frame Update
 
     poll_hitbox_manager_for__movement(p_game, p_hitbox_aabb_manager);
         -> For each active Hitbox_AABB:
@@ -120,7 +120,7 @@ cross-type operations.
             -> Check entity-tile collisions via Local_Space_Manager.
             -> Invoke handlers for each detected collision.
 
-### 5. Cleanup
+### 1.3.5 Cleanup
 
     release_hitbox_aabb_from__hitbox_aabb_manager(p_game, p_manager, p_hitbox);
         -> Deinitializes the hitbox.
@@ -130,7 +130,7 @@ cross-type operations.
         -> Invokes f_hitbox_manager__deallocator_AABB.
         -> Marks the Hitbox_Manager_Instance slot as deallocated.
 
-## Opaque Property Access
+## 1.4 Opaque Property Access
 
 The `opaque_access_to__hitbox` function provides type-erased get/set access
 to any hitbox through the `Hitbox_Context`. This is useful for cross-type code
@@ -153,7 +153,7 @@ manager instance, looks up the hitbox, and invokes the registered opaque access
 callback. The callback assumes the hitbox is dirty after any call, even reads.
 Prefer direct type-specific access when the hitbox type is known.
 
-## Type Registration Contract
+## 1.5 Type Registration Contract
 
 Any hitbox manager type registered with `Hitbox_Context` must satisfy:
 
@@ -170,7 +170,7 @@ Any hitbox manager type registered with `Hitbox_Context` must satisfy:
 3. The opaque property access callback must correctly interpret the void
    pointers according to the `Hitbox_Manager_Registration_Record` metadata.
 
-## Fixed-Point Conventions
+## 1.6 Fixed-Point Conventions
 
 | Component | Type | Fractional Bits | Description |
 |-----------|------|-----------------|-------------|
@@ -179,7 +179,7 @@ Any hitbox manager type registered with `Hitbox_Context` must satisfy:
 | Acceleration | `Vector__3i16F8` | 8 | Per-tick velocity change. |
 | Dimensions | `Quantity__u32` | 0 | Full width and height (integer). |
 
-## Dirty Flag Semantics
+## 1.7 Dirty Flag Semantics
 
 The `HITBOX_FLAG__IS_DIRTY` bit indicates that the hitbox's state has changed
 since the last time it was processed. The collision system uses this flag to
@@ -193,7 +193,7 @@ Note: `apply_*_velocity` functions (which accumulate velocity) do **not** set
 the dirty flag. The movement poll handles dirtying when it integrates velocity
 into position.
 
-## Relationship to Collision Nodes
+## 1.8 Relationship to Collision Nodes
 
 Hitboxes are spatially indexed via `Collision_Node` entries (see
 `system_overview__collision_node.md`). When a hitbox moves between chunks, its

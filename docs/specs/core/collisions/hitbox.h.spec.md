@@ -1,6 +1,6 @@
-# Specification: core/include/collisions/hitbox.h
+# 1 Specification: core/include/collisions/hitbox.h
 
-## Overview
+## 1.1 Overview
 
 Provides flag manipulation utilities for the `Hitbox_Flags__u8` type — a
 compact bitfield that tracks the runtime state of any hitbox regardless of
@@ -10,14 +10,14 @@ These are the lowest-level building blocks for hitbox state management. They
 are consumed by concrete hitbox types (e.g. `Hitbox_AABB`) which wrap them
 in type-specific inline accessors.
 
-## Dependencies
+## 1.2 Dependencies
 
 - `defines.h` (for `Hitbox_Flags__u8`, `HITBOX_FLAG__IS_DIRTY`,
   `HITBOX_FLAG__IS_ACTIVE`)
 
-## Types
+## 1.3 Types
 
-### Hitbox_Flags__u8 (typedef u8)
+### 1.3.1 Hitbox_Flags__u8 (typedef u8)
 
 Defined in `defines.h`:
 
@@ -32,11 +32,11 @@ Defined in `defines.h`:
 |----------|-------|-------------|
 | `HITBOX_FLAGS__NONE` | 0 | No flags set. |
 
-## Functions
+## 1.4 Functions
 
 All functions in this header are `static inline`.
 
-### Dirty Flag Management
+### 1.4.1 Dirty Flag Management
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -44,7 +44,7 @@ All functions in this header are `static inline`.
 | `set_hitbox_flags_as__dirty` | `(Hitbox_Flags__u8*) -> bool` | `bool` | Sets `HITBOX_FLAG__IS_DIRTY`. Returns the resulting flags. |
 | `set_hitbox_flags_as__not_dirty` | `(Hitbox_Flags__u8*) -> bool` | `bool` | Clears `HITBOX_FLAG__IS_DIRTY`. Returns the resulting flags. |
 
-### Active Flag Management
+### 1.4.2 Active Flag Management
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -52,9 +52,9 @@ All functions in this header are `static inline`.
 | `set_hitbox_flags_as__active` | `(Hitbox_Flags__u8*) -> bool` | `bool` | Sets `HITBOX_FLAG__IS_ACTIVE`. Returns the resulting flags. |
 | `set_hitbox_flags_as__disabled` | `(Hitbox_Flags__u8*) -> bool` | `bool` | Clears `HITBOX_FLAG__IS_ACTIVE`. Returns the resulting flags. |
 
-## Agentic Workflow
+## 1.5 Agentic Workflow
 
-### Flag Lifecycle
+### 1.5.1 Flag Lifecycle
 
     [HITBOX_FLAGS__NONE]
         |
@@ -76,7 +76,7 @@ All functions in this header are `static inline`.
         |
     [HITBOX_FLAGS__NONE]
 
-### Usage Pattern
+### 1.5.2 Usage Pattern
 
 These functions operate on a `Hitbox_Flags__u8*` pointer, not on a concrete
 hitbox struct. Concrete hitbox types (e.g. `Hitbox_AABB`) provide their own
@@ -91,7 +91,7 @@ inline wrappers that extract the flags pointer from the struct:
 This indirection allows the same flag logic to be reused across all hitbox
 manager types without code duplication.
 
-### Dirty Flag Convention
+### 1.5.3 Dirty Flag Convention
 
 The dirty flag is the primary mechanism for change detection in the collision
 system:
@@ -104,12 +104,12 @@ system:
 
 This avoids redundant collision checks for stationary hitboxes.
 
-### Preconditions
+### 1.5.4 Preconditions
 
 - All functions require a non-null `Hitbox_Flags__u8*`. No null checks are
   performed; passing null is undefined behavior.
 
-### Postconditions
+### 1.5.5 Postconditions
 
 - After `set_hitbox_flags_as__dirty`: `is_hitbox_flags__dirty` returns true.
 - After `set_hitbox_flags_as__not_dirty`: `is_hitbox_flags__dirty` returns
@@ -119,6 +119,6 @@ This avoids redundant collision checks for stationary hitboxes.
 - After `set_hitbox_flags_as__disabled`: `is_hitbox_flags__active` returns
   false.
 
-### Error Handling
+### 1.5.6 Error Handling
 
 - No error handling is performed. These are raw bitfield operations.

@@ -1,6 +1,6 @@
-# Specification: core/include/collisions/core/aabb/hitbox_aabb.h
+# 1 Specification: core/include/collisions/core/aabb/hitbox_aabb.h
 
-## Overview
+## 1.1 Overview
 
 Provides initialization, collision detection, position/velocity/acceleration
 management, and spatial queries for the `Hitbox_AABB` struct — the engine's
@@ -13,7 +13,7 @@ spatial partitioning system.
 
 See `module_topology__collision.mmd` for the type hierarchy.
 
-## Dependencies
+## 1.2 Dependencies
 
 - `defines.h` (for `Hitbox_AABB`, `Vector__3i32F4`, `Vector__3i32`,
   `Vector__3i16F8`, `Direction__u8`, `Identifier__u32`, `Quantity__u32`,
@@ -23,9 +23,9 @@ See `module_topology__collision.mmd` for the type hierarchy.
 - `world/chunk_vectors.h` (for chunk coordinate extraction)
 - `collisions/hitbox.h` (for `Hitbox_Flags__u8` manipulation)
 
-## Types
+## 1.3 Types
 
-### Hitbox_AABB (struct)
+### 1.3.1 Hitbox_AABB (struct)
 
 Defined in `defines.h`:
 
@@ -49,22 +49,22 @@ Defined in `defines.h`:
 | `height__quantity_u32` | `Quantity__u32` | Full height of the bounding box. |
 | `hitbox_aabb_flags__u8` | `Hitbox_Flags__u8` | Active and dirty flags. See `hitbox.h.spec.md`. |
 
-### Constants
+### 1.3.2 Constants
 
 | Constant | Value | Description |
 |----------|-------|-------------|
 | `COLLISION_DELTA_THRESHOLD` | 4096 | Minimum axis delta to consider for displacement. Allows sliding along surfaces. |
 
-## Functions
+## 1.4 Functions
 
-### Initialization
+### 1.4.1 Initialization
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `initialize_hitbox_aabb` | `(Hitbox_AABB*) -> void` | Zero-initializes all fields. Hitbox is inactive and not allocated. |
 | `initialize_hitbox_aabb_as__allocated` | `(Hitbox_AABB*, Identifier__u32 uuid, Quantity__u32 width, Quantity__u32 height, Vector__3i32F4 position) -> void` | Initializes with UUID, dimensions, and position. Sets the hitbox as active and dirty. |
 
-### Collision Detection
+### 1.4.2 Collision Detection
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -72,14 +72,14 @@ Defined in `defines.h`:
 | `is_this_hitbox_aabb__overlapping_this_hitbox_aabb` | `(Hitbox_AABB* one, Hitbox_AABB* two) -> Direction__u8` | `Direction__u8` | Checks if corners of `one` are inside `two`. Returns direction bitmask. Note: if `two` is fully inside `one`, returns `DIRECTION__NONE`. |
 | `is_this_hitbox_aabb__fully_inside_this_hitbox_aabb__without_velocity` | `(Hitbox_AABB* one, Hitbox_AABB* two) -> bool` | `bool` | Returns true if `one` is entirely contained within `two`, ignoring velocity. |
 
-### Point-In-Box Tests
+### 1.4.3 Point-In-Box Tests
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `is_vector_3i32F4_inside__hitbox_aabb` | `(Vector__3i32F4, Hitbox_AABB*) -> bool` | `bool` | Returns true if the fixed-point vector is inside the AABB. |
 | `is_vector_3i32_inside__hitbox_aabb` | `(Vector__3i32, Hitbox_AABB*) -> bool` | `bool` | Returns true if the integer vector is inside the AABB. |
 
-### Bounding Box Extraction
+### 1.4.4 Bounding Box Extraction
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
@@ -90,7 +90,7 @@ Defined in `defines.h`:
 | `initialize_vector_3i32_as__aa_bb` | `(Vector__3i32*, Hitbox_AABB*, Direction__u8 corner) -> void` | Integer version with velocity offset. |
 | `initialize_vector_3i32_as__aa_bb_without__velocity` | `(Vector__3i32*, Hitbox_AABB*, Direction__u8 corner) -> void` | Integer version without velocity offset. |
 
-### Position Management
+### 1.4.5 Position Management
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
@@ -98,14 +98,14 @@ Defined in `defines.h`:
 | `set_hitbox_aabb__position_with__3i32` | `(Hitbox_AABB*, Vector__3i32) -> void` | Sets position from integer vector. Same caveat as above. |
 | `clamp_p_vector_3i32_to__hitbox_aabb` | `(Hitbox_AABB*, Vector__3i32*) -> void` | Clamps the given vector to be within the AABB bounds. |
 
-### Direction Queries
+### 1.4.6 Direction Queries
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `get_movement_direction_of__hitbox_aabb` | `(Hitbox_AABB*) -> Direction__u8` | `Direction__u8` | Returns a direction bitmask based on the current velocity vector. |
 | `get_tile_transition_direction_of__hitbox_aabb` | `(Hitbox_AABB*, Vector__3i32F4* aa, Vector__3i32F4* bb) -> Direction__u8` | `Direction__u8` | Returns the direction of tile boundary crossings based on the AABB corners. |
 
-### Flag Accessors (static inline)
+### 1.4.7 Flag Accessors (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -116,7 +116,7 @@ Defined in `defines.h`:
 | `set_hitbox_aabb_as__active` | `(Hitbox_AABB*) -> bool` | `bool` | Delegates to `set_hitbox_flags_as__active`. |
 | `set_hitbox_aabb_as__disabled` | `(Hitbox_AABB*) -> bool` | `bool` | Delegates to `set_hitbox_flags_as__disabled`. |
 
-### Position Getters (static inline)
+### 1.4.8 Position Getters (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -125,7 +125,7 @@ Defined in `defines.h`:
 | `get_velocity_3i32F4_of__hitbox_aabb` | `(Hitbox_AABB*) -> Vector__3i32F4` | `Vector__3i32F4` | Returns velocity. Debug builds call `debug_error` and return `VECTOR__3i32F4__0_0_0` on null. |
 | `get_acceleration_3i16F8_of__hitbox_aabb` | `(Hitbox_AABB*) -> Vector__3i16F8` | `Vector__3i16F8` | Returns acceleration. Debug builds call `debug_error` and return `VECTOR__3i16F8__0_0_0` on null. |
 
-### Dimension Getters (static inline)
+### 1.4.9 Dimension Getters (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -133,7 +133,7 @@ Defined in `defines.h`:
 | `get_height_u32_of__hitbox_aabb` | `(Hitbox_AABB*) -> Quantity__u32` | `Quantity__u32` | Returns height. Debug builds call `debug_error` and return 0 on null. |
 | `set_size_of__hitbox_aabb` | `(Hitbox_AABB*, Quantity__u32 width, Quantity__u32 height) -> void` | `void` | Sets dimensions and marks dirty. Debug builds call `debug_error` on null. |
 
-### Velocity Setters (static inline)
+### 1.4.10 Velocity Setters (static inline)
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
@@ -146,7 +146,7 @@ Defined in `defines.h`:
 | `set_z_velocity_to__hitbox_aabb` | `(Hitbox_AABB*, i32F4) -> void` | Sets z velocity. Marks dirty. |
 | `set_velocity_to__hitbox_aabb` | `(Hitbox_AABB*, Vector__3i32F4) -> void` | Sets full velocity vector. Marks dirty. |
 
-### Acceleration Setters (static inline)
+### 1.4.11 Acceleration Setters (static inline)
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
@@ -155,7 +155,7 @@ Defined in `defines.h`:
 | `set_z_acceleration_to__hitbox` | `(Hitbox_AABB*, i16F8) -> void` | Sets z acceleration. Marks dirty. |
 | `set_acceleration_to__hitbox_aabb` | `(Hitbox_AABB*, Vector__3i16F8) -> void` | Sets full acceleration vector. Marks dirty. |
 
-### Position Setters (static inline, TODO: REMOVE)
+### 1.4.12 Position Setters (static inline, TODO: REMOVE)
 
 These are marked for removal. Use `dispatch_game_action__hitbox` instead
 when the hitbox is registered in the collision system.
@@ -169,7 +169,7 @@ when the hitbox is registered in the collision system.
 | `offset_y_position_to__hitbox_aabb` | `(Hitbox_AABB*, i32F4) -> void` | Adds to y position. Marks dirty. |
 | `offset_z_position_to__hitbox_aabb` | `(Hitbox_AABB*, i32F4) -> void` | Adds to z position. Marks dirty. |
 
-### Chunk Coordinate Getters (static inline)
+### 1.4.13 Chunk Coordinate Getters (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -183,9 +183,9 @@ when the hitbox is registered in the collision system.
 | `get_chunk_y_i32_from__hitbox_aabb` | `(Hitbox_AABB*) -> Signed_Index__i32` | `Signed_Index__i32` | Returns chunk y coordinate derived from position. |
 | `get_chunk_z_i32_from__hitbox_aabb` | `(Hitbox_AABB*) -> Signed_Index__i32` | `Signed_Index__i32` | Returns chunk z coordinate derived from position. |
 
-## Agentic Workflow
+## 1.5 Agentic Workflow
 
-### Hitbox AABB Lifecycle
+### 1.5.1 Hitbox AABB Lifecycle
 
     [Uninitialized]
         |
@@ -212,7 +212,7 @@ when the hitbox is registered in the collision system.
         |
     [Allocated, Inactive]
 
-### Dirty Flag Contract
+### 1.5.2 Dirty Flag Contract
 
 All setter functions (`set_*_velocity_to__hitbox_aabb`,
 `set_*_acceleration_to__hitbox_aabb`, `set_*_position_to__hitbox_aabb`,
@@ -221,7 +221,7 @@ All setter functions (`set_*_velocity_to__hitbox_aabb`,
 are additive and typically called during physics integration which already
 manages the dirty state).
 
-### Position Modification Warning
+### 1.5.3 Position Modification Warning
 
 Functions marked `TODO: REMOVE` (`set_x_position_to__hitbox_aabb`,
 `offset_x_position_to__hitbox_aabb`, etc.) directly modify position without
@@ -230,7 +230,7 @@ collision system (i.e. has a `Collision_Node_Entry`), direct position
 modification can cause the hitbox to be in the wrong `Collision_Node`,
 leading to missed collisions. Use `dispatch_game_action__hitbox` instead.
 
-### Preconditions
+### 1.5.4 Preconditions
 
 - All `static inline` functions require a non-null `p_hitbox_aabb`. Debug
   builds call `debug_error` on null and return a safe default value.
@@ -238,13 +238,13 @@ leading to missed collisions. Use `dispatch_game_action__hitbox` instead.
   `set_hitbox_aabb__position_with__3i32`: Must not be called on hitboxes
   registered in the collision system. Use game actions instead.
 
-### Postconditions
+### 1.5.5 Postconditions
 
 - After `initialize_hitbox_aabb_as__allocated`: `is_hitbox_aabb__active`
   returns true, `is_hitbox_aabb__dirty` returns true.
 - After any setter: `is_hitbox_aabb__dirty` returns true.
 
-### Error Handling
+### 1.5.6 Error Handling
 
 - All `static inline` getters return safe defaults (zero vectors, zero
   dimensions, out-of-bounds vectors) on null in debug builds.

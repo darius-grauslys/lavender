@@ -1,6 +1,6 @@
-# Specification: core/include/collisions/hitbox_context.h
+# 1 Specification: core/include/collisions/hitbox_context.h
 
-## Overview
+## 1.1 Overview
 
 Provides the top-level abstraction layer for managing multiple hitbox manager
 types. The `Hitbox_Context` owns a pool of `Hitbox_Manager_Instance` slots,
@@ -14,7 +14,7 @@ hitbox manager type.
 
 See `module_topology__collision.mmd` for the type hierarchy.
 
-## Dependencies
+## 1.2 Dependencies
 
 - `defines.h` (for `Hitbox_Context`, `Hitbox_Manager_Instance`,
   `Hitbox_Manager_Instance__Invocation_Table`,
@@ -25,9 +25,9 @@ See `module_topology__collision.mmd` for the type hierarchy.
   `MAX_QUANTITY_OF__HITBOX_MANAGERS`)
 - `defines_weak.h` (forward declarations)
 
-## Types
+## 1.3 Types
 
-### Hitbox_Context (struct)
+### 1.3.1 Hitbox_Context (struct)
 
 Defined in `defines.h`:
 
@@ -46,7 +46,7 @@ Defined in `defines.h`:
 | `hitbox_manager_instance__invocation_table` | `Hitbox_Manager_Instance__Invocation_Table[Hitbox_Manager_Type__Unknown]` | Per-type callback table. Indexed by `Hitbox_Manager_Type`. Contains allocator, deallocator, and opaque property access callbacks. |
 | `hitbox_manager_registration_records` | `Hitbox_Manager_Registration_Record[Hitbox_Manager_Type__Unknown]` | Per-type metadata. Describes component sizes, quantities, and fractional precision for each registered hitbox type. |
 
-### Hitbox_Manager_Instance (struct)
+### 1.3.2 Hitbox_Manager_Instance (struct)
 
 Defined in `defines.h`:
 
@@ -62,7 +62,7 @@ Defined in `defines.h`:
 | `pVM_hitbox_manager` | `void*` | Opaque pointer to the concrete hitbox manager (e.g. `Hitbox_AABB_Manager*`). |
 | `type_of__hitbox_manager` | `Hitbox_Manager_Type` | Discriminator for the concrete type. |
 
-### Hitbox_Manager_Instance__Invocation_Table (struct)
+### 1.3.3 Hitbox_Manager_Instance__Invocation_Table (struct)
 
 Defined in `defines.h`:
 
@@ -73,7 +73,7 @@ Defined in `defines.h`:
             f_hitbox_manager__get_properties_of__hitbox;
     } Hitbox_Manager_Instance__Invocation_Table;
 
-### Hitbox_Manager_Registration_Record (struct)
+### 1.3.4 Hitbox_Manager_Registration_Record (struct)
 
 Defined in `defines.h`:
 
@@ -99,7 +99,7 @@ Defined in `defines.h`:
 | `fractional_percision_of__pos_vel` | Fractional bit count for position/velocity (e.g. 4). |
 | `fractional_percision_of__acceleration` | Fractional bit count for acceleration (e.g. 8). |
 
-### Hitbox_Manager_Type (enum)
+### 1.3.5 Hitbox_Manager_Type (enum)
 
 Defined in `defines.h`:
 
@@ -110,7 +110,7 @@ Defined in `defines.h`:
         Hitbox_Manager_Type__Unknown
     } Hitbox_Manager_Type;
 
-### Constants
+### 1.3.6 Constants
 
 | Macro | Default | Description |
 |-------|---------|-------------|
@@ -119,7 +119,7 @@ Defined in `defines.h`:
 | `OPAQUE_HITBOX_ACCESS__SET` | `true` | Pass to `opaque_access_to__hitbox` to write properties. |
 | `OPAQUE_HITBOX_ACCESS__GET` | `false` | Pass to `opaque_access_to__hitbox` to read properties. |
 
-### Clarity Macros
+### 1.3.7 Clarity Macros
 
 These macros exist solely to improve readability at registration call sites:
 
@@ -129,40 +129,40 @@ These macros exist solely to improve readability at registration call sites:
 | `SIZE_OF__HITBOX_COMPONENTS(description, n)` | `(n)` | Documents the meaning of a component size argument. |
 | `FRACTIONAL_PERCISION_OF__HITBOX_COMPONENTS(description, n)` | `(n)` | Documents the meaning of a fractional precision argument. |
 
-## Functions
+## 1.4 Functions
 
-### Initialization
+### 1.4.1 Initialization
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `initialize_hitbox_context` | `(Hitbox_Context*) -> void` | Initializes all manager instance slots as deallocated, clears invocation tables and registration records. |
 
-### Registration
+### 1.4.2 Registration
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `register_hitbox_manager` | `(Hitbox_Context*, f_Hitbox_Manager__Allocator, f_Hitbox_Manager__Deallocator, f_Hitbox_Manager__Opaque_Property_Access_Of__Hitbox, Hitbox_Manager_Type, u8 qty_dims, u8 qty_pos_vel_acc, u8 size_dims, u8 size_pos_vel, u8 size_acc, u8 frac_dims, u8 frac_pos_vel, u8 frac_acc) -> void` | Registers a hitbox manager type by populating its invocation table entry and registration record. Must be called before allocating managers of that type. |
 
-### Manager Allocation
+### 1.4.3 Manager Allocation
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `allocate_hitbox_manager_from__hitbox_context` | `(Hitbox_Context*, Identifier__u32 uuid, Hitbox_Manager_Type, Quantity__u32 quantity) -> Hitbox_Manager_Instance*` | `Hitbox_Manager_Instance*` | Allocates a manager instance slot, invokes the registered allocator callback to create the concrete manager, and stores the result. Returns the instance, or NULL on failure. |
 | `release_hitbox_manager_from__hitbox_context` | `(Hitbox_Context*, Identifier__u32 uuid) -> void` | `void` | Finds the manager instance by UUID, invokes the registered deallocator callback, and marks the slot as deallocated. |
 
-### Hitbox Allocation
+### 1.4.4 Hitbox Allocation
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `allocate_pV_hitbox_from__hitbox_context` | `(Hitbox_Context*, Identifier__u32 uuid_of_manager, Identifier__u32 uuid_of_hitbox) -> void*` | `void*` | Allocates a hitbox from the specified manager instance. Returns an opaque pointer to the hitbox. |
 
-### Opaque Property Access
+### 1.4.5 Opaque Property Access
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `opaque_access_to__hitbox` | `(Hitbox_Context*, Identifier__u32 uuid_of_manager, Identifier__u32 uuid_of_hitbox, void* pV_dims, void* pV_pos, void* pV_vel, void* pV_acc, Hitbox_Flags__u8*, bool is_set) -> bool` | `bool` | Resolves the hitbox by UUID, then invokes the registered opaque property access callback. Any non-null optional pointer is read from or written to depending on `is_set`. Returns true if the access was performed. |
 
-### Lookup
+### 1.4.6 Lookup
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -170,15 +170,15 @@ These macros exist solely to improve readability at registration call sites:
 | `get_max_quantity_of__hitboxes_in__hitbox_manager` | `(Hitbox_Context*, Identifier__u32 uuid) -> Quantity__u32` | `Quantity__u32` | Returns the pool capacity of the specified manager instance. |
 | `get_pV_hitbox_from__hitbox_context` | `(Hitbox_Context*, Identifier__u32 uuid_of_manager, Identifier__u32 uuid_of_hitbox) -> void*` | `void*` | Returns an opaque pointer to the hitbox with the given UUID in the specified manager. |
 
-### Convenience Accessor (static inline)
+### 1.4.7 Convenience Accessor (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `get_pV_hitbox_manager_from__hitbox_context` | `(Hitbox_Context*, Identifier__u32 uuid) -> void*` | `void*` | Returns the opaque `pVM_hitbox_manager` pointer from the manager instance with the given UUID. Delegates to `get_p_hitbox_manager_instance_using__uuid_from__hitbox_context`. |
 
-## Agentic Workflow
+## 1.5 Agentic Workflow
 
-### Hitbox Context Lifecycle
+### 1.5.1 Hitbox Context Lifecycle
 
     [Uninitialized]
         |
@@ -210,7 +210,7 @@ These macros exist solely to improve readability at registration call sites:
         |
     [Manager Slot Freed]
 
-### Registration Pattern
+### 1.5.2 Registration Pattern
 
 Registration is typically performed once during game initialization by the
 platform-specific `hitbox_manager_registrar.h`:
@@ -235,7 +235,7 @@ platform-specific `hitbox_manager_registrar.h`:
                 FRACTIONAL_PERCISION_8__BIT_SIZE));
     }
 
-### Opaque Access Pattern
+### 1.5.3 Opaque Access Pattern
 
 The opaque access system is designed for infrequent, type-agnostic hitbox
 manipulation. For performance-critical code, obtain the concrete manager
@@ -252,7 +252,7 @@ pointer and work with it directly:
         p_mgr, hb_uuid);
     Vector__3i32F4 pos = p_hb->position__3i32F4;
 
-### Preconditions
+### 1.5.4 Preconditions
 
 - `initialize_hitbox_context`: `p_hitbox_context` must be non-null.
 - `register_hitbox_manager`: The type must not already be registered.
@@ -261,7 +261,7 @@ pointer and work with it directly:
   registered. There must be an available instance slot.
 - `opaque_access_to__hitbox`: The manager and hitbox UUIDs must be valid.
 
-### Postconditions
+### 1.5.5 Postconditions
 
 - After `register_hitbox_manager`: The invocation table and registration
   record for the given type are populated.
@@ -272,7 +272,7 @@ pointer and work with it directly:
   is available for reuse. `is_p_hitbox_manager_instance__valid` returns
   false for the old UUID.
 
-### Error Handling
+### 1.5.6 Error Handling
 
 - `allocate_hitbox_manager_from__hitbox_context` returns NULL if no
   instance slots are available or if the allocator callback fails.
