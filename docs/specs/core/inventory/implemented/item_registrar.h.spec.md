@@ -1,6 +1,6 @@
-# Specification: core/include/inventory/implemented/item_registrar.h
+# 1 Specification: core/include/inventory/implemented/item_registrar.h
 
-## Overview
+## 1.1 Overview
 
 Declares the game-specific item registration entry point. This header is
 a **template file** shipped with the engine under the `implemented/`
@@ -17,13 +17,13 @@ all extensible enums, data structs, and registration entry points (e.g.,
 `item_kind.h`, `item_data.h`, `entity_kind.h`, `entity_data.h`,
 `tile_kind.h`, `scene_kind.h`, etc.).
 
-## Dependencies
+## 1.2 Dependencies
 
 - `defines.h` (for `Item_Manager`)
 
-## Template Convention
+## 1.3 Template Convention
 
-### How `implemented/` Works
+### 1.3.1 How `implemented/` Works
 
 1. The engine ships `core/include/inventory/implemented/item_registrar.h`
    as a **template**.
@@ -35,13 +35,13 @@ all extensible enums, data structs, and registration entry points (e.g.,
 4. At compile time, the game project's copy is found first on the include
    path, overriding the engine template.
 
-### Two Override Mechanisms
+### 1.3.2 Two Override Mechanisms
 
 The `implemented/` convention uses two distinct override mechanisms
 depending on whether the file is a **type definition header** or a
 **behavioral header**:
 
-#### Type Definition Headers (Preprocessor Guard Pattern)
+#### 1.3.2.1 Type Definition Headers (Preprocessor Guard Pattern)
 
 Files like `item_kind.h`, `item_data.h`, `entity_kind.h`, and
 `entity_data.h` use a **`#define` guard** to override the engine's
@@ -63,7 +63,7 @@ and provides its own enum, the fallback in `defines_weak.h` is suppressed.
 This is a **preprocessor-level** override — both the template and the
 fallback exist in the source tree, but only one compiles.
 
-#### Behavioral Headers (Include Path Replacement)
+#### 1.3.2.2 Behavioral Headers (Include Path Replacement)
 
 Files like `item_registrar.h` declare function signatures whose
 implementations are provided in `.c` files. The game project's copy of
@@ -71,7 +71,7 @@ the `.c` file physically replaces the template on the include/source path.
 There is no preprocessor guard involved — the linker sees exactly one
 implementation of `register_items`.
 
-### Relationship to Other `implemented/` Templates
+### 1.3.3 Relationship to Other `implemented/` Templates
 
 | Template File | Mechanism | Purpose |
 |---------------|-----------|---------|
@@ -88,7 +88,7 @@ The `item_registrar.h` template is the **behavioral counterpart** to the
 define what item kinds and data exist, while the registrar template defines
 how those items are registered into the `Item_Manager` at initialization.
 
-### Preprocessor Guard Pattern Detail
+### 1.3.4 Preprocessor Guard Pattern Detail
 
 Each type definition template follows the same structure:
 
@@ -131,15 +131,15 @@ The `Item_Kind__Unknown` sentinel must always be the last value, as it is
 used for array sizing (`Item item_templates[(u16)Item_Kind__Unknown]` in
 `Item_Manager`) and bounds checking.
 
-## Functions
+## 1.4 Functions
 
-### Registration Entry Point
+### 1.4.1 Registration Entry Point
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `register_items` | `(Item_Manager*) -> void` | Registers all game-specific item templates into the item manager. Called after `register_core_items_into__item_manager` during engine initialization. |
 
-### Template Implementation
+### 1.4.2 Template Implementation
 
 The engine template declares only the function signature:
 
@@ -165,9 +165,9 @@ implementation:
 If the game project does not modify the template, a default stub
 implementation is compiled (typically empty or registering no items).
 
-## Agentic Workflow
+## 1.5 Agentic Workflow
 
-### Registration Sequence
+### 1.5.1 Registration Sequence
 
     initialize_item_manager(p_item_manager)
         |
@@ -179,7 +179,7 @@ implementation is compiled (typically empty or registering no items).
         |
     [Item_Manager fully populated]
 
-### Two-Phase Registration
+### 1.5.2 Two-Phase Registration
 
 The engine enforces a two-phase registration pattern:
 
@@ -199,7 +199,7 @@ This separation ensures that:
 - The game developer has full control over game-specific items without
   modifying engine source.
 
-### Coordination with `item_kind.h` and `item_data.h`
+### 1.5.3 Coordination with `item_kind.h` and `item_data.h`
 
 For `register_items` to register a game-specific item, the corresponding
 `Item_Kind` enum value must exist. This means the game project must also
@@ -234,7 +234,7 @@ must be coordinated for the item system to function correctly:
 2. `item_data.h` defines the per-item payload (what data items carry).
 3. `item_registrar.h` registers templates (how items are initialized).
 
-### Build System Integration
+### 1.5.4 Build System Integration
 
 The `implemented/` copy mechanism is a build-system concern. The engine
 uses two complementary strategies:
@@ -253,7 +253,7 @@ In both cases:
 - No runtime dispatch or function pointer indirection is involved.
 - The override is resolved entirely at compile/link time.
 
-### Preconditions
+### 1.5.5 Preconditions
 
 - `p_item_manager` must be initialized via `initialize_item_manager`
   before calling `register_items`.
@@ -262,14 +262,14 @@ In both cases:
 - The game project's `item_kind.h` must define all `Item_Kind` values
   that `register_items` will reference.
 
-### Postconditions
+### 1.5.6 Postconditions
 
 - After `register_items`: all game-specific item kinds have corresponding
   templates in the `Item_Manager`.
 - `get_item_from__item_manager(p_item_manager, Item_Kind__X)` returns a
   valid `Item` for every kind registered by the game.
 
-### Error Handling
+### 1.5.7 Error Handling
 
 - Implementation-defined. Typically delegates to
   `register_item_in__item_manager` which calls `debug_error` and returns

@@ -1,6 +1,6 @@
-# Specification: core/include/inventory/inventory.h
+# 1 Specification: core/include/inventory/inventory.h
 
-## Overview
+## 1.1 Overview
 
 Provides initialization, serialization, item management, and query utilities
 for the `Inventory` struct — a fixed-size container of `Item_Stack` slots
@@ -16,7 +16,7 @@ system (`ENTITY_FLAG__IS_WITH_INVENTORY__SERIALIZATION`), and the
 `Serialized_Field` union provides `p_serialized_field__inventory` for
 ECS-level inventory references.
 
-## Dependencies
+## 1.2 Dependencies
 
 - `defines.h` (for `Inventory`, `Item_Stack`, `Item`, `Item_Kind`,
   `Identifier__u32`, `Identifier__u16`, `Index__u8`, `Quantity__u8`,
@@ -25,9 +25,9 @@ ECS-level inventory references.
 - `defines_weak.h` (forward declarations for `PLATFORM_File_System_Context`,
   `Serialization_Request`, `Item_Manager`)
 
-## Types
+## 1.3 Types
 
-### Inventory (struct)
+### 1.3.1 Inventory (struct)
 
     typedef struct Inventory_t {
         Serialization_Header    _serialization_header;
@@ -41,7 +41,7 @@ ECS-level inventory references.
 | `items` | `Item_Stack[INVENTORY_ITEM_MAXIMUM_QUANTITY_OF]` | Fixed-size array of item stack slots. |
 | `quantity_of__item_stacks` | `Quantity__u8` | Current number of occupied item stack slots. |
 
-### UUID Encoding
+### 1.3.2 UUID Encoding
 
 Inventory UUIDs encode ownership and spatial information in a single
 `Identifier__u32`:
@@ -60,7 +60,7 @@ Inventory UUIDs encode ownership and spatial information in a single
 | Bits 10-0 | `UUID_MASK__INVENTORY__CONTAINER__Y_AXIS` | Y coordinate for container inventories. |
 | Bits 24-0 (entity) | `UUID_MASK__INVENTORY__ENTITY` | Entity UUID portion. |
 
-### Limits
+### 1.3.3 Limits
 
 | Macro | Value | Description |
 |-------|-------|-------------|
@@ -68,23 +68,23 @@ Inventory UUIDs encode ownership and spatial information in a single
 | `INVENTORY_CONSUMABLES_QUANTITY_OF` | 3 | Reserved consumable slots. |
 | `MAX_QUANTITY_OF__INVENTORY` | 64 | Maximum number of inventories in the `Inventory_Manager` pool. |
 
-## Functions
+## 1.4 Functions
 
-### Initialization
+### 1.4.1 Initialization
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `initialize_inventory` | `(Inventory*, Identifier__u32 uuid) -> void` | Initializes the inventory with the given UUID and empty item stacks. |
 | `initialize_inventory_as__empty` | `(Inventory*) -> void` | Initializes as a fully empty inventory with no UUID. |
 
-### Serialization
+### 1.4.2 Serialization
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `serialize_inventory` | `(PLATFORM_File_System_Context*, Serialization_Request*, Inventory*) -> PLATFORM_Write_File_Error` | `PLATFORM_Write_File_Error` | Serializes the entire inventory (all item stacks) to persistent storage. |
 | `deserialize_inventory` | `(PLATFORM_File_System_Context*, Item_Manager*, Serialization_Request*, Inventory*) -> PLATFORM_Read_File_Error` | `PLATFORM_Read_File_Error` | Deserializes an inventory from persistent storage, resolving items through the item manager. |
 
-### Item Management
+### 1.4.3 Item Management
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -96,7 +96,7 @@ Inventory UUIDs encode ownership and spatial information in a single
 | `remove_this_many_item_kinds_from__inventory` | `(Inventory*, enum Item_Kind, Quantity__u32) -> void` | `void` | Removes a specified quantity of items of the given kind, spanning multiple stacks if necessary. |
 | `remove_all_item_stacks_from__inventory` | `(Inventory*) -> void` | `void` | Clears all item stacks from the inventory. |
 
-### Queries
+### 1.4.4 Queries
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -109,7 +109,7 @@ Inventory UUIDs encode ownership and spatial information in a single
 | `does_inventory_have__available_item_stacks` | `(Inventory*) -> bool` | `bool` | True if there is at least one empty slot. |
 | `does_inventory_have_this__item_kind` | `(Inventory*, enum Item_Kind) -> bool` | `bool` | True if any stack holds the given kind. (static inline, delegates to `get_first_p_item_stack_of__this_item_kind_from__inventory`) |
 
-### UUID Utilities (static inline)
+### 1.4.5 UUID Utilities (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -125,9 +125,9 @@ Inventory UUIDs encode ownership and spatial information in a single
 | `set_inventory_uuid__item_stack_index` | `(Identifier__u32*, Index__u8) -> void` | `void` | Encodes an item stack index into the UUID. |
 | `get_uuid_for__container` | `(Tile_Vector__3i32) -> Identifier__u32` | `Identifier__u32` | Constructs a container UUID from a tile position vector. |
 
-## Agentic Workflow
+## 1.5 Agentic Workflow
 
-### Inventory Lifecycle
+### 1.5.1 Inventory Lifecycle
 
     [Uninitialized] --> initialize_inventory / initialize_inventory_as__empty
                             |
@@ -149,7 +149,7 @@ Inventory UUIDs encode ownership and spatial information in a single
                             |
                     (release via Inventory_Manager)
 
-### Entity vs. Container Inventories
+### 1.5.2 Entity vs. Container Inventories
 
 The UUID encoding distinguishes two inventory ownership models:
 
@@ -166,7 +166,7 @@ The UUID encoding distinguishes two inventory ownership models:
        Inventory *p_inv = get_inventory_by__uuid_in__inventory_manager(
            p_inventory_manager, uuid);
 
-### ECS Integration
+### 1.5.3 ECS Integration
 
 Inventories participate in the ECS through several mechanisms:
 
@@ -181,7 +181,7 @@ Inventories participate in the ECS through several mechanisms:
   stored in the `Inventory_Manager` pool, which supports UUID-based
   hashing via the `hashing.h` utilities.
 
-### Item Search Iteration
+### 1.5.4 Item Search Iteration
 
 To iterate all stacks of a given kind:
 
@@ -193,7 +193,7 @@ To iterate all stacks of a given kind:
             p_inventory, p_stack, Item_Kind__Potion);
     }
 
-### Serialization Pattern
+### 1.5.5 Serialization Pattern
 
 Inventories are serialized as a whole, which internally serializes each
 item stack:
@@ -206,7 +206,7 @@ Deserialization requires the `Item_Manager` to resolve item kinds:
     PLATFORM_Read_File_Error err = deserialize_inventory(
         p_fs_context, p_item_manager, p_request, p_inventory);
 
-### Preconditions
+### 1.5.6 Preconditions
 
 - All functions require a non-null `p_inventory`.
 - `deserialize_inventory`: requires a valid, fully populated `Item_Manager`.
@@ -215,7 +215,7 @@ Deserialization requires the `Item_Manager` to resolve item kinds:
 - UUID utility functions: callers must ensure UUIDs are properly constructed
   for the intended ownership model.
 
-### Postconditions
+### 1.5.7 Postconditions
 
 - After `initialize_inventory_as__empty`: `is_inventory__empty` returns
   true.
@@ -224,7 +224,7 @@ Deserialization requires the `Item_Manager` to resolve item kinds:
 - After `remove_all_item_stacks_from__inventory`: `is_inventory__empty`
   returns true.
 
-### Error Handling
+### 1.5.8 Error Handling
 
 - `serialize_inventory` returns `PLATFORM_Write_File_Error` on I/O failure.
 - `deserialize_inventory` returns `PLATFORM_Read_File_Error` on I/O failure.

@@ -1,6 +1,6 @@
-# Specification: core/include/inventory/inventory_manager.h
+# 1 Specification: core/include/inventory/inventory_manager.h
 
-## Overview
+## 1.1 Overview
 
 Provides initialization, allocation, release, and lookup utilities for the
 `Inventory_Manager` — a pool-based manager for `Inventory` instances. The
@@ -13,16 +13,16 @@ The `Inventory_Manager` is owned by `World` and accessed from `Game` via
 This means inventories are tied to the currently loaded world — when the
 world is deallocated, all inventories are invalidated.
 
-## Dependencies
+## 1.2 Dependencies
 
 - `defines.h` (for `Inventory_Manager`, `Inventory`, `Identifier__u32`)
 - `defines_weak.h` (forward declarations)
 - `game.h` (for `Game` context access)
 - `serialization/hashing.h` (for UUID-based pool allocation and lookup)
 
-## Types
+## 1.3 Types
 
-### Inventory_Manager (struct)
+### 1.3.1 Inventory_Manager (struct)
 
     typedef struct Inventory_Manager_t {
         Inventory inventories[MAX_QUANTITY_OF__INVENTORY];
@@ -32,36 +32,36 @@ world is deallocated, all inventories are invalidated.
 |-------|------|-------------|
 | `inventories` | `Inventory[MAX_QUANTITY_OF__INVENTORY]` | Fixed-size pool of inventory instances, managed via `Serialization_Header` UUID hashing. |
 
-### Limits
+### 1.3.2 Limits
 
 | Macro | Value | Description |
 |-------|-------|-------------|
 | `MAX_QUANTITY_OF__INVENTORY` | 64 | Maximum number of inventories in the pool. |
 
-## Functions
+## 1.4 Functions
 
-### Initialization
+### 1.4.1 Initialization
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `initialize_inventory_manager` | `(Inventory_Manager*) -> void` | Initializes all inventory slots as empty/deallocated. Each inventory's `Serialization_Header` is set to indicate an unallocated state. |
 
-### Allocation and Release
+### 1.4.2 Allocation and Release
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `allocate_p_inventory_using__this_uuid_in__inventory_manager` | `(Inventory_Manager*, Identifier__u32 uuid) -> Inventory*` | `Inventory*` | Allocates an inventory from the pool with the given UUID. Uses UUID hashing to find an available slot. Returns null if no slots are available. |
 | `release_inventory_in__inventory_manager` | `(Inventory_Manager*, Inventory*) -> void` | `void` | Releases an inventory back to the pool, marking its `Serialization_Header` as deallocated. |
 
-### Lookup
+### 1.4.3 Lookup
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `get_inventory_by__uuid_in__inventory_manager` | `(Inventory_Manager*, Identifier__u32) -> Inventory*` | `Inventory*` | Finds and returns the inventory with the matching UUID via hash-based lookup. Returns null if not found. |
 
-## Agentic Workflow
+## 1.5 Agentic Workflow
 
-### Inventory_Manager Lifecycle
+### 1.5.1 Inventory_Manager Lifecycle
 
     [Uninitialized] --> initialize_inventory_manager
                             |
@@ -77,7 +77,7 @@ world is deallocated, all inventories are invalidated.
                             |
                         [Slot Deallocated — available for reuse]
 
-### UUID Hashing
+### 1.5.2 UUID Hashing
 
 The `Inventory_Manager` uses the engine's UUID hashing system (from
 `serialization/hashing.h`) to manage its pool. Each `Inventory` has a
@@ -92,7 +92,7 @@ utilities provide:
 - **Collision handling**: `poll_for__uuid_collision` handles hash
   collisions within the contiguous array.
 
-### Allocation Patterns
+### 1.5.3 Allocation Patterns
 
 **Entity inventory allocation:**
 
@@ -107,7 +107,7 @@ utilities provide:
         p_inventory_manager,
         container_uuid);
 
-### Lookup Pattern
+### 1.5.4 Lookup Pattern
 
 Inventories are retrieved by UUID, which works for both entity and container
 inventories:
@@ -119,7 +119,7 @@ inventories:
         // inventory not found or not allocated
     }
 
-### ECS Integration
+### 1.5.5 ECS Integration
 
 The `Inventory_Manager` is the central pool through which the ECS accesses
 inventories:
@@ -137,7 +137,7 @@ inventories:
   all inventories are implicitly scoped to the current world. World
   load/unload cycles reset the entire inventory pool.
 
-### Preconditions
+### 1.5.6 Preconditions
 
 - `initialize_inventory_manager`: requires non-null pointer.
 - `allocate_p_inventory_using__this_uuid_in__inventory_manager`: requires
@@ -149,7 +149,7 @@ inventories:
 - `get_inventory_by__uuid_in__inventory_manager`: no preconditions beyond
   non-null manager pointer.
 
-### Postconditions
+### 1.5.7 Postconditions
 
 - After `initialize_inventory_manager`: all inventory slots are empty and
   available for allocation.
@@ -160,7 +160,7 @@ inventories:
 - `get_inventory_by__uuid_in__inventory_manager` returns null if no
   inventory with the given UUID is currently allocated.
 
-### Error Handling
+### 1.5.8 Error Handling
 
 - Allocation returns null if the pool is exhausted.
 - Lookup returns null if no matching UUID is found.

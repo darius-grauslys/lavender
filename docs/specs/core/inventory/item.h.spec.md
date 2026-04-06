@@ -1,6 +1,6 @@
-# Specification: core/include/inventory/item.h
+# 1 Specification: core/include/inventory/item.h
 
-## Overview
+## 1.1 Overview
 
 Provides initialization and query utilities for the `Item` struct — the
 engine's representation of a single item type. An `Item` is a lightweight
@@ -9,14 +9,14 @@ opaque `Item_Data` payload defined by the platform. Items are stored inside
 `Item_Stack` structs, which add quantity tracking on top of the base item
 identity.
 
-## Dependencies
+## 1.2 Dependencies
 
 - `defines.h` (for `Item`, `Item_Kind`, `Item_Data`)
 - `defines_weak.h` (forward declarations)
 
-## Types
+## 1.3 Types
 
-### Item (struct)
+### 1.3.1 Item (struct)
 
     typedef struct Item_t {
         enum Item_Kind      the_kind_of_item__this_item_is;
@@ -28,7 +28,7 @@ identity.
 | `the_kind_of_item__this_item_is` | `enum Item_Kind` | Discriminator identifying the kind of item. `Item_Kind__None` indicates an empty/invalid item. |
 | `item_data` | `Item_Data` | Platform-defined payload. Declared via `DEFINE_ITEM_DATA` or defaults to an empty struct. |
 
-### Item_Data (struct, platform-defined)
+### 1.3.2 Item_Data (struct, platform-defined)
 
 Declared via `types/implemented/item_data.h`. If `DEFINE_ITEM_DATA` is not
 provided by the platform, defaults to an empty struct:
@@ -36,7 +36,7 @@ provided by the platform, defaults to an empty struct:
     typedef struct Item_Data_t {
     } Item_Data;
 
-### Item_Kind (enum)
+### 1.3.3 Item_Kind (enum)
 
 Defined externally via `DEFINE_ITEM_KIND` or defaults to:
 
@@ -53,9 +53,9 @@ Defined externally via `DEFINE_ITEM_KIND` or defaults to:
 Platform or game implementations extend this enum with concrete item kinds
 between `None` and `Unknown`.
 
-## Functions
+## 1.4 Functions
 
-### Initialization
+### 1.4.1 Initialization
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
@@ -63,23 +63,23 @@ between `None` and `Unknown`.
 | `initialize_item_as__empty` | `(Item*) -> void` | Initializes the item as `Item_Kind__None`. |
 | `get_item__empty` | `(void) -> Item` | Returns a value-type empty item (`Item_Kind__None`). |
 
-### Queries (static inline)
+### 1.4.2 Queries (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `get_item_kind_of__item` | `(Item*) -> Item_Kind` | `Item_Kind` | Returns the item's kind discriminator. |
 | `is_p_item__empty` | `(Item*) -> bool` | `bool` | True if the item's kind is `Item_Kind__None`. |
 
-## Agentic Workflow
+## 1.5 Agentic Workflow
 
-### Item as a Value Type
+### 1.5.1 Item as a Value Type
 
 `Item` is a small value type (an enum plus platform-defined data). It is
 designed to be copied freely and embedded inside `Item_Stack`. It carries
 no heap-allocated pointers, so no lifecycle management is needed beyond
 initialization.
 
-### Item Lifecycle
+### 1.5.2 Item Lifecycle
 
     [Uninitialized] --> initialize_item / initialize_item_as__empty --> [Initialized]
                                                                             |
@@ -87,7 +87,7 @@ initialization.
                                                                             |
                                                                     (copied / queried freely)
 
-### Relationship to Item_Manager
+### 1.5.3 Relationship to Item_Manager
 
 Items are not typically constructed in isolation. They are created via the
 `Item_Manager` template system and embedded into `Item_Stack` structs:
@@ -98,7 +98,7 @@ Items are not typically constructed in isolation. They are created via the
 The `Item_Manager` stores one `Item` template per `Item_Kind`. Calling
 `get_item_from__item_manager` returns a value copy of the template.
 
-### Relationship to ECS
+### 1.5.4 Relationship to ECS
 
 In the engine's ECS design, items do not exist as standalone entities.
 They exist only as data within `Item_Stack` slots inside `Inventory`
@@ -107,18 +107,18 @@ instances. Entities reference inventories by UUID (via
 union provides `p_serialized_field__item_stack` for serialization of
 individual item stacks within the ECS serialization pipeline.
 
-### Preconditions
+### 1.5.5 Preconditions
 
 - `get_item_kind_of__item`: requires non-null `p_item`.
 - `is_p_item__empty`: requires non-null `p_item`.
 
-### Postconditions
+### 1.5.6 Postconditions
 
 - After `initialize_item_as__empty`: `is_p_item__empty` returns true.
 - After `initialize_item` with a non-`None` kind: `is_p_item__empty`
   returns false.
 
-### Error Handling
+### 1.5.7 Error Handling
 
 - No debug assertions in the current implementation. Callers are responsible
   for passing valid pointers.

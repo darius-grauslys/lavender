@@ -1,6 +1,6 @@
-# Specification: core/include/inventory/item_manager.h
+# 1 Specification: core/include/inventory/item_manager.h
 
-## Overview
+## 1.1 Overview
 
 Provides initialization, registration, and lookup utilities for the
 `Item_Manager` — a template registry that maps each `Item_Kind` to a
@@ -11,14 +11,14 @@ up by kind to produce `Item` values for use in item stacks and inventories.
 The `Item_Manager` is owned by `World` and accessed from `Game` via
 `get_p_item_manager_from__game` → `get_p_item_manager_from__world`.
 
-## Dependencies
+## 1.2 Dependencies
 
 - `defines.h` (for `Item_Manager`, `Item`, `Item_Kind`)
 - `debug/debug.h` (for `debug_error` in debug builds)
 
-## Types
+## 1.3 Types
 
-### Item_Manager (struct)
+### 1.3.1 Item_Manager (struct)
 
     typedef struct Item_Manager_t {
         Item item_templates[(u16)Item_Kind__Unknown];
@@ -31,35 +31,35 @@ The `Item_Manager` is owned by `World` and accessed from `Game` via
 The array size is `(u16)Item_Kind__Unknown`, which serves as the
 upper-bound sentinel of the `Item_Kind` enum.
 
-## Functions
+## 1.4 Functions
 
-### Initialization
+### 1.4.1 Initialization
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `initialize_item_manager` | `(Item_Manager*) -> void` | Initializes all item template slots to empty/default state. |
 
-### Registration (static inline)
+### 1.4.2 Registration (static inline)
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `register_item_in__item_manager` | `(Item_Manager*, enum Item_Kind, Item) -> void` | Registers an item template at the slot corresponding to the given kind. In debug builds, calls `debug_error` and returns early if the kind is out of bounds (`>= Item_Kind__Unknown`). |
 
-### Lookup
+### 1.4.3 Lookup
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `get_item_from__item_manager` | `(Item_Manager*, enum Item_Kind) -> Item` | `Item` | Returns a value copy of the registered item template for the given kind. |
 
-### Core Registration
+### 1.4.4 Core Registration
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `register_core_items_into__item_manager` | `(Item_Manager*) -> void` | Registers all engine-level (core) item templates. Called during initialization before platform-specific registration. |
 
-## Agentic Workflow
+## 1.5 Agentic Workflow
 
-### Item_Manager Lifecycle
+### 1.5.1 Item_Manager Lifecycle
 
     [Uninitialized] --> initialize_item_manager
                             |
@@ -77,7 +77,7 @@ upper-bound sentinel of the `Item_Kind` enum.
                             |
                         (Item values returned for use in Item_Stacks)
 
-### Registration Pattern
+### 1.5.2 Registration Pattern
 
 Items are registered in two phases:
 
@@ -94,13 +94,13 @@ to its `Item_Kind`:
     initialize_item(&sword_item, Item_Kind__Sword);
     register_item_in__item_manager(p_item_manager, Item_Kind__Sword, sword_item);
 
-### Lookup Pattern
+### 1.5.3 Lookup Pattern
 
 After registration, items are retrieved by kind as value copies:
 
     Item item = get_item_from__item_manager(p_item_manager, Item_Kind__Sword);
 
-### Deserialization Dependency
+### 1.5.4 Deserialization Dependency
 
 The `Item_Manager` is a critical dependency during deserialization. When
 item stacks or inventories are deserialized from persistent storage, the
@@ -113,7 +113,7 @@ the `Item_Manager`:
 This means the `Item_Manager` must be fully populated before any
 deserialization occurs.
 
-### Preconditions
+### 1.5.5 Preconditions
 
 - `register_item_in__item_manager`: `the_kind_of__item` must be less than
   `Item_Kind__Unknown`. Debug builds emit `debug_error` on out-of-bounds.
@@ -121,14 +121,14 @@ deserialization occurs.
   registered. Behavior for unregistered kinds depends on the default
   initialization state (empty item).
 
-### Postconditions
+### 1.5.6 Postconditions
 
 - After `initialize_item_manager`: all template slots are in their default
   (empty) state.
 - After `register_item_in__item_manager`: `get_item_from__item_manager`
   with the same kind returns the registered item.
 
-### Error Handling
+### 1.5.7 Error Handling
 
 - `register_item_in__item_manager`: calls `debug_error` and returns early
   on out-of-bounds kind in debug builds. In release builds, the write is

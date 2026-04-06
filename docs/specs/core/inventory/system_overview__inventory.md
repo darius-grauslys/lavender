@@ -1,6 +1,6 @@
-# System Overview: Inventory System
+# 1 System Overview: Inventory System
 
-## Purpose
+## 1.1 Purpose
 
 The inventory system provides item definition, quantified item storage,
 inventory management, and serialization for the engine. It enables entities
@@ -16,9 +16,9 @@ templates), `Item_Stack_Manager` (item stack factories), and
 `Inventory_Manager` are owned by `World`; the `Item_Stack_Manager` is
 standalone.
 
-## Architecture
+## 1.2 Architecture
 
-### Ownership Hierarchy
+### 1.2.1 Ownership Hierarchy
 
     Game
     └── World* (pM_world)
@@ -49,7 +49,7 @@ standalone.
         ├── bool is_allocated :1
         └── f_Item_Stack__Create f_item_stack__create
 
-### Why Three Managers?
+### 1.2.2 Why Three Managers?
 
 - **Item_Manager** (owned by `World`): A read-only template registry. Maps
   each `Item_Kind` to a pre-configured `Item` archetype. This allows items
@@ -71,7 +71,7 @@ standalone.
   from a single pool. Uses the engine's UUID hashing system
   (`serialization/hashing.h`) for O(1) average-case allocation and lookup.
 
-### World Ownership
+### 1.2.3 World Ownership
 
 Because `Inventory_Manager` and `Item_Manager` are owned by `World`, all
 inventories and item templates are scoped to the currently loaded world.
@@ -81,9 +81,9 @@ This is consistent with the engine's design where world-specific state
 concerns (hitbox type registration, process management) are owned by
 `Game`.
 
-## Item Type System
+## 1.3 Item Type System
 
-### Item Definition
+### 1.3.1 Item Definition
 
 An `Item` is a lightweight value type containing an `Item_Kind`
 discriminator and a platform-defined `Item_Data` payload:
@@ -96,7 +96,7 @@ Items carry no heap-allocated pointers and are freely copyable. The
 `Item_Data` struct is defined via `types/implemented/item_data.h` and
 defaults to an empty struct if the platform does not provide one.
 
-### Item_Kind Enum
+### 1.3.2 Item_Kind Enum
 
 The `Item_Kind` enum is extensible via the `DEFINE_ITEM_KIND` pattern:
 
@@ -109,7 +109,7 @@ The `Item_Kind` enum is extensible via the `DEFINE_ITEM_KIND` pattern:
 `Item_Kind__Unknown` serves as the array size for `Item_Manager` templates
 and as a bounds-checking sentinel.
 
-### Item Registration
+### 1.3.3 Item Registration
 
 Items are registered in two phases during initialization:
 
@@ -127,7 +127,7 @@ After registration, items are retrieved by kind as value copies:
 
     Item item = get_item_from__item_manager(&item_manager, Item_Kind__Sword);
 
-### Item Stack Creation
+### 1.3.4 Item Stack Creation
 
 The `Item_Stack_Manager` provides data-driven item stack creation. Each
 `Item_Kind` can register a factory function through an
@@ -148,9 +148,9 @@ This invokes the registered factory function, which configures the item
 stack with kind-specific defaults (e.g., max stack size of 99 for potions
 vs. 1 for weapons).
 
-## Inventory Management
+## 1.4 Inventory Management
 
-### Inventory Pool
+### 1.4.1 Inventory Pool
 
 The `Inventory_Manager` maintains a fixed-size pool of 64 `Inventory`
 instances. Inventories are allocated with a UUID and retrieved by UUID
@@ -162,7 +162,7 @@ using the engine's hash-based pool management (`hashing.h`):
     Inventory *p_found = get_inventory_by__uuid_in__inventory_manager(
         &inventory_manager, uuid);
 
-### UUID Encoding
+### 1.4.2 UUID Encoding
 
 Inventory UUIDs encode ownership and spatial information in a single
 `Identifier__u32`:
@@ -181,7 +181,7 @@ Container UUIDs are constructed from tile positions:
 
     Identifier__u32 uuid = get_uuid_for__container(tile_position);
 
-### Item Stack Slots
+### 1.4.3 Item Stack Slots
 
 Each `Inventory` contains a fixed array of 27 `Item_Stack` slots
 (`INVENTORY_ITEM_MAXIMUM_QUANTITY_OF`), plus 3 reserved consumable slots
@@ -191,7 +191,7 @@ Each `Inventory` contains a fixed array of 27 `Item_Stack` slots
 - An `Item` (the item type with kind and platform data).
 - A quantity and max quantity.
 
-### Item Operations
+### 1.4.4 Item Operations
 
 Items are added, removed, and queried through the `Inventory` API:
 
@@ -222,7 +222,7 @@ Items are added, removed, and queried through the `Inventory` API:
         // player has enough arrows
     }
 
-### Merge and Swap
+### 1.4.5 Merge and Swap
 
 When item stacks interact (e.g., drag-and-drop in a UI):
 
@@ -232,9 +232,9 @@ When item stacks interact (e.g., drag-and-drop in a UI):
 - **Same item kind**: quantities merge. Overflow remains in the source.
 - **Different item kinds**: the two stacks swap entirely.
 
-## ECS Integration
+## 1.5 ECS Integration
 
-### Entity-Inventory Association
+### 1.5.1 Entity-Inventory Association
 
 In the engine's ECS design, entities do not embed inventories directly.
 Instead, the association is by UUID:
@@ -246,7 +246,7 @@ Instead, the association is by UUID:
 3. At runtime, the inventory is looked up via
    `get_inventory_by__uuid_in__inventory_manager`.
 
-### Container-Inventory Association
+### 1.5.2 Container-Inventory Association
 
 World containers (tiles with `TILE_FLAGS__BIT_IS_CONTAINER`) have
 inventories allocated using spatially-encoded UUIDs:
@@ -258,7 +258,7 @@ inventories allocated using spatially-encoded UUIDs:
 This enables O(1) lookup of a container's inventory given its tile
 position.
 
-### Serialized_Field Integration
+### 1.5.3 Serialized_Field Integration
 
 The `Serialized_Field` union (used throughout the ECS serialization
 pipeline) includes direct pointers for inventory types:
@@ -273,7 +273,7 @@ pipeline) includes direct pointers for inventory types:
 This enables the serialization system to treat inventories and item stacks
 as first-class serializable components alongside entities and chunks.
 
-### UUID Hashing
+### 1.5.4 UUID Hashing
 
 The `Inventory_Manager` uses the engine's UUID hashing utilities from
 `serialization/hashing.h`:
@@ -286,9 +286,9 @@ The `Inventory_Manager` uses the engine's UUID hashing utilities from
 - **Collision handling**: The hashing system handles UUID collisions
   (congruent UUIDs after modulo) by probing adjacent slots.
 
-## Serialization
+## 1.6 Serialization
 
-### Inventory Serialization
+### 1.6.1 Inventory Serialization
 
 Inventories support full serialization to and from persistent storage:
 
@@ -302,7 +302,7 @@ Serialization writes each item stack in the inventory. Deserialization
 requires the `Item_Manager` to resolve serialized `Item_Kind` values back
 into fully initialized `Item` structs.
 
-### Item Stack Serialization
+### 1.6.2 Item Stack Serialization
 
 Individual item stacks are serialized as a packed struct:
 
@@ -316,9 +316,9 @@ The `Item_Kind` is the key that bridges serialization and runtime: it is
 written to disk as an enum value and resolved back through the
 `Item_Manager` on load.
 
-## Lifecycle
+## 1.7 Lifecycle
 
-### Initialization
+### 1.7.1 Initialization
 
     initialize_item_manager(&world.item_manager)
         → All item template slots set to default/empty.
@@ -337,7 +337,7 @@ written to disk as an enum value and resolved back through the
     initialize_inventory_manager(&world.inventory_manager)
         → All inventory slots set to empty/deallocated.
 
-### Inventory Allocation
+### 1.7.2 Inventory Allocation
 
     allocate_p_inventory_using__this_uuid_in__inventory_manager(
         &inventory_manager, uuid)
@@ -346,7 +346,7 @@ written to disk as an enum value and resolved back through the
         → Initializes the inventory with the given UUID.
         → Returns pointer to the allocated inventory.
 
-### Item Addition
+### 1.7.3 Item Addition
 
     add_item_to__inventory(p_inventory, item, quantity, max_quantity)
         → Finds the first empty item stack slot.
@@ -354,7 +354,7 @@ written to disk as an enum value and resolved back through the
         → Increments quantity_of__item_stacks.
         → Returns pointer to the populated item stack.
 
-### Inventory Release
+### 1.7.4 Inventory Release
 
     release_inventory_in__inventory_manager(
         &inventory_manager, p_inventory)
@@ -362,14 +362,14 @@ written to disk as an enum value and resolved back through the
         → The slot becomes available for reuse.
         → The released pointer should not be dereferenced.
 
-### World Unload
+### 1.7.5 World Unload
 
 When the world is deallocated, the entire `Inventory_Manager` pool is
 invalidated. All inventory pointers held by external systems become
 dangling. Systems must release their inventory references before world
 unload.
 
-## Capacity Constraints
+## 1.8 Capacity Constraints
 
 | Resource | Pool Size | Determined By |
 |----------|-----------|---------------|
@@ -378,7 +378,7 @@ unload.
 | `Item` template | `Item_Kind__Unknown` | Number of distinct item kinds (platform-defined). |
 | `Item_Stack_Allocation_Specifier` | `ITEM_STACK_RECORD_MAX_QUANTITY_OF` (256) | Maximum registered item stack factories. |
 
-## Relationship Summary
+## 1.9 Relationship Summary
 
 | Concern | Managed By |
 |---------|------------|
