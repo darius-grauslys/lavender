@@ -1,6 +1,6 @@
-# Specification: core/include/game_action/core/hitbox/game_action__hitbox.h
+# 1. Specification: core/include/game_action/core/hitbox/game_action__hitbox.h
 
-## Overview
+## 1.1. Overview
 
 Provides initialization, registration, and dispatch for hitbox-related
 game actions (`Game_Action_Kind__Hitbox__Set_Position`). This is the
@@ -8,7 +8,7 @@ game actions (`Game_Action_Kind__Hitbox__Set_Position`). This is the
 for entities registered in the collision system, as it ensures collision
 node consistency.
 
-## Dependencies
+## 1.2. Dependencies
 
 - `defines.h` (for `Game_Action`, `Game_Action_Logic_Table`,
   `Vector__3i32F4`, `Vector__3i16F8`, `Hitbox_Kind`)
@@ -17,11 +17,11 @@ node consistency.
 - `collisions/hitbox_context.h` (for hitbox context access)
 - `types/implemented/hitbox_kind.h` (for `Hitbox_Kind` enum)
 
-## Game_Action_Kind
+## 1.3. Game_Action_Kind
 
 `Game_Action_Kind__Hitbox__Set_Position`
 
-## Payload Fields
+## 1.4. Payload Fields
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -31,9 +31,9 @@ node consistency.
 | `ga_kind__hitbox__acceleration__3i16F8` | `Vector__3i16F8` | New acceleration. |
 | `ga_kind__hitbox__the_kind_of__hitbox` | `Hitbox_Kind` | Discriminator for the hitbox type (e.g. `Hitbox_Kind__AABB`). |
 
-## Functions
+## 1.5. Functions
 
-### Registration
+### 1.5.1. Registration
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
@@ -41,21 +41,21 @@ node consistency.
 | `register_game_action__hitbox_for__offline` | `(Game_Action_Logic_Table*) -> void` | Delegates to `register_game_action__hitbox_for__server`. (static inline) |
 | `register_game_action__hitbox_for__client` | `(Game_Action_Logic_Table*) -> void` | Registers the hitbox action for client-side processing. |
 
-### Initialization
+### 1.5.2. Initialization
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `initialize_game_action_for__hitbox` | `(Game_Action*, Identifier__u32 target_uuid, Vector__3i32F4 position, Vector__3i32F4 velocity, Vector__3i16F8 acceleration, Hitbox_Kind kind) -> void` | Initializes a hitbox update action with all kinematic properties. |
 
-### Dispatch (static inline)
+### 1.5.3. Dispatch (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `dispatch_game_action__hitbox` | `(Game*, Identifier__u32 target_uuid, Vector__3i32F4 position, Vector__3i32F4 velocity, Vector__3i16F8 acceleration, Hitbox_Kind kind) -> bool` | `bool` | Creates and dispatches a hitbox update to the server. |
 
-## Agentic Workflow
+## 1.6. Agentic Workflow
 
-### Why Use Game Actions for Hitbox Updates
+### 1.6.1. Why Use Game Actions for Hitbox Updates
 
 Directly calling `set_hitbox_aabb__position_with__3i32F4` on a hitbox
 that is registered in the collision system will **not** update its
@@ -66,7 +66,7 @@ the collision resolver.
 1. The hitbox position, velocity, and acceleration are updated.
 2. The collision node entry is migrated if the hitbox crossed a chunk boundary.
 
-### Process Handler
+### 1.6.2. Process Handler
 
 The AABB variant (`m_process__game_action__hitbox__aabb` in
 `game_action__hitbox__aabb.h`) performs:
@@ -79,17 +79,17 @@ The AABB variant (`m_process__game_action__hitbox__aabb` in
    entry if needed.
 6. Completes or fails the process based on the result.
 
-### Preconditions
+### 1.6.3. Preconditions
 
 - The target hitbox UUID must exist in the active `Hitbox_AABB_Manager`.
 - The world must be loaded and have a valid hitbox context.
 
-### Postconditions
+### 1.6.4. Postconditions
 
 - The hitbox's kinematic properties are updated.
 - The collision node entry is consistent with the new position.
 
-### Error Handling
+### 1.6.5. Error Handling
 
 - If the hitbox manager is null, the process fails with `debug_error`.
 - If the collision node update fails, the process fails with `debug_error`.

@@ -1,31 +1,31 @@
-# System Overview: Entity Game Actions (Spawn and Synchronization)
+# 1. System Overview: Entity Game Actions (Spawn and Synchronization)
 
-## Purpose
+## 1.1. Purpose
 
 The entity game actions handle entity creation and data synchronization
 between client and server. Two actions cover these concerns: spawning a
 new entity of a given kind, and requesting full entity data for an entity
 the client does not have locally.
 
-## Architecture
+## 1.2. Architecture
 
-### Action Kinds
+### 1.2.1. Action Kinds
 
 | Kind | Direction | Description |
 |------|-----------|-------------|
 | `Game_Action_Kind__Entity__Spawn` | Either (+ broadcast) | Requests creation of an entity with a specified kind and optional UUID. |
 | `Game_Action_Kind__Entity__Get` | Client → Server | Requests entity data synchronization for a specific entity UUID. |
 
-### Payload Summary
+### 1.2.2. Payload Summary
 
 | Kind | Key Fields |
 |------|------------|
 | `Entity__Spawn` | `Identifier__u32` entity UUID, `Entity_Kind` kind. |
 | `Entity__Get` | `Identifier__u32` entity UUID, `TCP_PAYLOAD_BITMAP` for entity data fragments. |
 
-## Entity Spawn Flow
+## 1.3. Entity Spawn Flow
 
-### Targeted Spawn
+### 1.3.1. Targeted Spawn
 
 A targeted spawn sends the request to the server for authoritative
 processing:
@@ -38,7 +38,7 @@ processing:
       |                                   |-- (initializes via f_entity_initializer)
       |                                   |
 
-### Broadcast Spawn
+### 1.3.2. Broadcast Spawn
 
 A broadcast spawn notifies all clients near a spatial point:
 
@@ -56,14 +56,14 @@ A broadcast spawn notifies all clients near a spatial point:
 Use `VECTOR__3i32F4__OUT_OF_BOUNDS` as the broadcast point for global
 broadcast (all clients receive it regardless of position).
 
-### Registration
+### 1.3.3. Registration
 
 | Function | Mode |
 |----------|------|
 | `register_game_action__entity__spawn_for__server` | Server |
 | `register_game_action__entity__spawn_for__client` | Client |
 
-## Entity Data Synchronization Flow
+## 1.4. Entity Data Synchronization Flow
 
 When a client needs full entity data it does not have locally:
 
@@ -80,7 +80,7 @@ When a client needs full entity data it does not have locally:
       |   (all fragments received)        |
       |   (entity data reassembled)       |
 
-### Fragment Tracking
+### 1.4.1. Fragment Tracking
 
 The `Entity__Get` payload includes a `TCP_PAYLOAD_BITMAP` that tracks
 which `TCP_Delivery` fragments have been received:
@@ -91,14 +91,14 @@ The bitmap size is determined by:
 
     TCP_PAYLOAD_BITMAP__QUANTITY_OF__PAYLOADS(Entity)
 
-### Registration
+### 1.4.2. Registration
 
 | Function | Mode |
 |----------|------|
 | `register_game_action__entity__get_for__server` | Server |
 | `register_game_action__entity__get_for__client` | Client |
 
-## Integration with Entity Manager
+## 1.5. Integration with Entity Manager
 
 The entity game actions interact with the `Entity_Manager` (see entity
 module topology):
@@ -111,9 +111,9 @@ module topology):
   `get_p_entity_by__uuid_from__entity_manager`, then serializes and
   sends the entity data via `TCP_Delivery` fragments.
 
-## Preconditions and Postconditions
+## 1.6. Preconditions and Postconditions
 
-### Entity__Spawn
+### 1.6.1. Entity__Spawn
 
 **Preconditions:**
 - The entity kind must be valid (not `Entity_Kind__Unknown`).
@@ -123,7 +123,7 @@ module topology):
 - The server creates the entity.
 - In broadcast mode, all relevant clients are notified.
 
-### Entity__Get
+### 1.6.2. Entity__Get
 
 **Preconditions:**
 - The target UUID must be a valid entity UUID known to the server.
@@ -132,7 +132,7 @@ module topology):
 - The server sends entity data back to the requesting client via
   `TCP_Delivery` fragments.
 
-## Error Handling
+## 1.7. Error Handling
 
 - If the entity UUID is unknown to the server, a `Bad_Request` may be
   dispatched back to the client.
