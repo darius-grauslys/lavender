@@ -1,6 +1,6 @@
-# System Overview: TCP Game Action Handshake and Delivery
+# 1. System Overview: TCP Game Action Handshake and Delivery
 
-## Purpose
+## 1.1. Purpose
 
 The TCP game action subsystem manages the multiplayer connection lifecycle
 and provides fragmented payload delivery over TCP. It encompasses the
@@ -8,9 +8,9 @@ full handshake sequence (connect begin, connect, accept/reject) and the
 multi-packet delivery mechanism used to transfer large data structures
 between client and server.
 
-## Architecture
+## 1.2. Architecture
 
-### Handshake Action Kinds
+### 1.2.1. Handshake Action Kinds
 
 | Kind | Initiator | Description |
 |------|-----------|-------------|
@@ -20,15 +20,15 @@ between client and server.
 | `Game_Action_Kind__TCP_Connect__Reject` | Server | Rejects the client's connection. |
 | `Game_Action_Kind__TCP_Disconnect` | Either | Terminates the connection. |
 
-### Delivery Action Kind
+### 1.2.2. Delivery Action Kind
 
 | Kind | Initiator | Description |
 |------|-----------|-------------|
 | `Game_Action_Kind__TCP_Delivery` | Either | Carries a single payload fragment for multi-packet data transfer. |
 
-## Connection Handshake Sequence
+## 1.3. Connection Handshake Sequence
 
-### Normal Flow (Accepted)
+### 1.3.1. Normal Flow (Accepted)
 
     Client                              Server
       |                                   |
@@ -44,7 +44,7 @@ between client and server.
       |   [Connection established]        |
       |   [Client can send game actions]  |
 
-### Rejected Flow
+### 1.3.2. Rejected Flow
 
     Client                              Server
       |                                   |
@@ -57,7 +57,7 @@ between client and server.
       |   [Connection refused]            |
       |   [Server cleans up socket]       |
 
-### Disconnection
+### 1.3.3. Disconnection
 
     Either side                         Other side
       |                                   |
@@ -65,9 +65,9 @@ between client and server.
       |                                   |
       |   [Connection terminated]         |
 
-## Handshake Details
+## 1.4. Handshake Details
 
-### TCP_Connect__Begin (Client → Server)
+### 1.4.1. TCP_Connect__Begin (Client → Server)
 
 The client initiates the connection by providing:
 
@@ -84,7 +84,7 @@ Preconditions:
 - The game must have multiplayer initialized (`begin_multiplayer_for__game`).
 - The `IPv4_Address` must have valid IP bytes and port.
 
-### TCP_Connect (Server → Client)
+### 1.4.2. TCP_Connect (Server → Client)
 
 The server responds with a session token confirmation:
 
@@ -94,7 +94,7 @@ The server responds with a session token confirmation:
 This step occurs between `TCP_Connect__Begin` and the final
 accept/reject decision.
 
-### TCP_Connect__Accept (Server → Client)
+### 1.4.3. TCP_Connect__Accept (Server → Client)
 
 The server accepts the connection. No kind-specific payload fields —
 the client UUID in the header identifies the accepted client.
@@ -106,7 +106,7 @@ Preconditions:
 Postconditions:
 - The client is informed of acceptance and can begin sending game actions.
 
-### TCP_Connect__Reject (Server → Client)
+### 1.4.4. TCP_Connect__Reject (Server → Client)
 
 The server rejects the connection. No kind-specific payload fields —
 the client UUID in the header identifies the rejected client.
@@ -115,16 +115,16 @@ Postconditions:
 - The client is informed of rejection.
 - The server should clean up the client's TCP socket after dispatch.
 
-## Multi-Packet Delivery
+## 1.5. Multi-Packet Delivery
 
-### Purpose
+### 1.5.1. Purpose
 
 `Game_Action` instances are sized to fit within a single `TCP_Packet`.
 When data larger than a single packet must be transmitted (e.g. `Chunk`
 data, `Entity` data), the `TCP_Delivery` action provides fragmented
 transfer.
 
-### Payload Sizing
+### 1.5.2. Payload Sizing
 
     GA_KIND__TCP_DELIVERY__PAYLOAD_SIZE_IN__BYTES =
         sizeof(TCP_Packet)
@@ -133,7 +133,7 @@ transfer.
 
 Each `TCP_Delivery` action carries exactly one fragment of this size.
 
-### Fragment Tracking with Bitmaps
+### 1.5.3. Fragment Tracking with Bitmaps
 
 The receiver tracks which fragments have arrived using a bitmap:
 
@@ -145,21 +145,21 @@ The receiver tracks which fragments have arrived using a bitmap:
 | `TCP_PAYLOAD_BIT(index)` | Bit position within a bitmap byte for fragment `index`. |
 | `TCP_PAYLOAD_BYTE(index)` | Byte index within the bitmap for fragment `index`. |
 
-### Delivery Payload Fields
+### 1.5.4. Delivery Payload Fields
 
 | Field | Type | Description |
 |-------|------|-------------|
 | `ga_kind__tcp_delivery__payload` | `u8[PAYLOAD_SIZE]` | The payload fragment. |
 | `ga_kind__tcp_delivery__packet_index` | `Quantity__u16` | Index of this fragment in the reassembly sequence. |
 
-### Fragment Correlation
+### 1.5.5. Fragment Correlation
 
 The `uuid_of__game_action__responding_to` header field correlates delivery
 fragments with the original request that triggered the transfer. This is
 the only game action kind that uses the response UUID field for fragment
 correlation rather than actual response semantics.
 
-### Transfer Flow
+### 1.5.6. Transfer Flow
 
     Sender                              Receiver
       |                                   |
@@ -173,7 +173,7 @@ correlation rather than actual response semantics.
       |                                   |
       |                                   |  All bits set -> reassemble
 
-### Integration with Serialization_Request
+### 1.5.7. Integration with Serialization_Request
 
 The `Serialization_Request` in TCP mode tracks delivery reassembly:
 
@@ -181,7 +181,7 @@ The `Serialization_Request` in TCP mode tracks delivery reassembly:
 - `pM_packet_bitmap`: bitmap of received fragments.
 - `quantity_of__tcp_packets__anticipated`: total expected fragments.
 
-### Consumers
+### 1.5.8. Consumers
 
 The following game action kinds use `TCP_Delivery` for multi-packet
 transfer:
@@ -191,9 +191,9 @@ transfer:
 | `Global_Space__Request` | Chunk data (server → client in multiplayer). |
 | `Entity__Get` | Entity data (server → client). |
 
-## Lifecycle
+## 1.6. Lifecycle
 
-### 1. Initialization
+### 1.6.1. Initialization
 
     initialize_game_action_logic_table(&game.game_action_logic_table);
 
@@ -206,7 +206,7 @@ transfer:
     //   register_game_action__tcp_connect__reject(...)
     //   register_game_action__tcp_delivery(...)
 
-### 2. Client Connects
+### 1.6.2. Client Connects
 
     // Client side:
     dispatch_game_action__connect__begin(
@@ -217,7 +217,7 @@ transfer:
     // or:
     dispatch_game_action__connect__reject(p_game, p_client);
 
-### 3. Data Transfer
+### 1.6.3. Data Transfer
 
     // Server sends chunk data to client:
     for (Index__u16 i = 0; i < fragment_count; i++) {
@@ -227,13 +227,13 @@ transfer:
             PAYLOAD_SIZE, i);
     }
 
-### 4. Disconnection
+### 1.6.4. Disconnection
 
     // Either side:
     // TCP_Disconnect game action is dispatched.
     // Connection is terminated and resources cleaned up.
 
-## Error Handling
+## 1.7. Error Handling
 
 - If the server rejects a connection, `TCP_Connect__Reject` is sent and
   the server cleans up the socket.

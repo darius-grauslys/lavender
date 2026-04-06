@@ -1,6 +1,6 @@
-# Specification: core/include/game_action/core/tcp/game_action__tcp_delivery.h
+# 1. Specification: core/include/game_action/core/tcp/game_action__tcp_delivery.h
 
-## Overview
+## 1.1. Overview
 
 Provides initialization, registration, and dispatch for the
 `Game_Action_Kind__TCP_Delivery` game action. This action is the
@@ -8,25 +8,25 @@ engine's mechanism for transmitting arbitrary payloads over TCP by
 splitting them into packet-sized chunks. Each delivery carries a
 payload fragment and a packet index for reassembly.
 
-## Dependencies
+## 1.2. Dependencies
 
 - `defines.h` (for `Game_Action`, `Game_Action_Logic_Table`,
   `TCP_Packet`, `_Game_Action_Header`)
 - `game.h` (for `dispatch_game_action`)
 - `platform.h` (for TCP platform functions)
 
-## Game_Action_Kind
+## 1.3. Game_Action_Kind
 
 `Game_Action_Kind__TCP_Delivery`
 
-## Payload Fields
+## 1.4. Payload Fields
 
 | Field | Type | Description |
 |-------|------|-------------|
 | `ga_kind__tcp_delivery__payload` | `u8[GA_KIND__TCP_DELIVERY__PAYLOAD_SIZE_IN__BYTES]` | The payload fragment for this packet. |
 | `ga_kind__tcp_delivery__packet_index` | `Quantity__u16` | Index of this fragment in the reassembly sequence. |
 
-### Payload Size Calculation
+### 1.4.1. Payload Size Calculation
 
     GA_KIND__TCP_DELIVERY__PAYLOAD_SIZE_IN__BYTES =
         sizeof(TCP_Packet)
@@ -35,7 +35,7 @@ payload fragment and a packet index for reassembly.
 
 This ensures the delivery action fits within a single `TCP_Packet`.
 
-### Payload Bitmap Macros
+### 1.4.2. Payload Bitmap Macros
 
 For tracking which fragments have been received:
 
@@ -47,29 +47,29 @@ For tracking which fragments have been received:
 | `TCP_PAYLOAD_BIT(index)` | Bit position within a bitmap byte for fragment `index`. |
 | `TCP_PAYLOAD_BYTE(index)` | Byte index within the bitmap for fragment `index`. |
 
-## Functions
+## 1.5. Functions
 
-### Registration
+### 1.5.1. Registration
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `register_game_action__tcp_delivery` | `(Game_Action_Logic_Table*) -> void` | Registers the TCP delivery action kind. |
 
-### Initialization
+### 1.5.2. Initialization
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `initialize_game_action_for__tcp_delivery` | `(Game_Action*, Identifier__u32 client_uuid, Identifier__u32 response_uuid, u8* payload, u32 payload_bytes, Index__u16 packet_index) -> void` | Initializes a delivery action with the payload fragment, target client, response UUID, and packet index. |
 
-### Dispatch (static inline)
+### 1.5.3. Dispatch (static inline)
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `dispatch_game_action__tcp_delivery` | `(Game*, Identifier__u32 client_uuid, Identifier__u32 response_uuid, u8* payload, u32 payload_bytes, Index__u16 packet_index) -> void` | Creates and dispatches a delivery action. |
 
-## Agentic Workflow
+## 1.6. Agentic Workflow
 
-### Multi-Packet Transfer Pattern
+### 1.6.1. Multi-Packet Transfer Pattern
 
 To send a large struct (e.g. `Chunk`) over TCP:
 
@@ -81,25 +81,25 @@ To send a large struct (e.g. `Chunk`) over TCP:
    to track which fragments have arrived.
 4. Once all fragments are received, the data is reassembled.
 
-### Relationship to Serialization_Request
+### 1.6.2. Relationship to Serialization_Request
 
 The `Serialization_Request` in TCP mode tracks delivery reassembly:
 - `p_tcp_packet_destination`: destination buffer for reassembled data.
 - `pM_packet_bitmap`: bitmap of received fragments.
 - `quantity_of__tcp_packets__anticipated`: total expected fragments.
 
-### Preconditions
+### 1.6.3. Preconditions
 
 - The payload pointer must be valid and contain at least
   `quantity_of__bytes_in__payload` bytes.
 - `packet_index` must be less than the total number of anticipated packets.
 
-### Postconditions
+### 1.6.4. Postconditions
 
 - A single delivery fragment is dispatched to the target client.
 - The receiver's serialization request bitmap is updated upon receipt.
 
-### Important Notes
+### 1.6.5. Important Notes
 
 - The `uuid_of__game_action__responding_to` field is used to correlate
   delivery fragments with the original request that triggered the transfer.
