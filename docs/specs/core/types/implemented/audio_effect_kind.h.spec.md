@@ -1,6 +1,6 @@
-# Specification: core/include/types/implemented/audio_effect_kind.h
+# 1 Specification: core/include/types/implemented/audio_effect_kind.h
 
-## Overview
+## 1.1 Overview
 
 Template header that defines the `Audio_Effect_Kind` enum — the set of
 audio sound effects available in the game. This file is copied to the game
@@ -8,7 +8,7 @@ project directory by `tools/lav_new_project` and is meant to be extended
 by the engine user. The contents are injected into `defines_weak.h` via
 conditional compilation using the `DEFINE_AUDIO_EFFECT_KIND` guard macro.
 
-## Template Behavior
+## 1.2 Template Behavior
 
 This file resides in `core/include/types/implemented/` and is copied to
 the game project's corresponding `types/implemented/` directory by the
@@ -20,13 +20,13 @@ If the game project does not provide this file (i.e. `DEFINE_AUDIO_EFFECT_KIND`
 is not defined after the `#include`), `defines_weak.h` falls back to a
 built-in default with only `None` and `Unknown`.
 
-## Dependencies
+## 1.3 Dependencies
 
 None (self-contained).
 
-## Types
+## 1.4 Types
 
-### Audio_Effect_Kind (enum)
+### 1.4.1 Audio_Effect_Kind (enum)
 
     typedef enum Audio_Effect_Kind {
         Audio_Effect_Kind__None,
@@ -38,7 +38,7 @@ None (self-contained).
 | `Audio_Effect_Kind__None` | No audio effect / sentinel. |
 | `Audio_Effect_Kind__Unknown` | End-of-enum sentinel. Used for array sizing. |
 
-## Injection Mechanism
+## 1.5 Injection Mechanism
 
 In `defines_weak.h`:
 
@@ -53,9 +53,9 @@ In `defines_weak.h`:
 The `#define DEFINE_AUDIO_EFFECT_KIND` at the top of this file prevents the
 fallback definition from being used when the game project provides its own.
 
-## Agentic Workflow
+## 1.6 Agentic Workflow
 
-### Extension Pattern
+### 1.6.1 Extension Pattern
 
 Add game-specific audio effect kinds between `None` and `Unknown`:
 
@@ -67,7 +67,7 @@ Add game-specific audio effect kinds between `None` and `Unknown`:
         Audio_Effect_Kind__Unknown
     } Audio_Effect_Kind;
 
-### Constraints
+### 1.6.2 Constraints
 
 - `Audio_Effect_Kind__None` must remain the first entry (value 0).
 - `Audio_Effect_Kind__Unknown` must remain the last entry.
@@ -75,6 +75,6 @@ Add game-specific audio effect kinds between `None` and `Unknown`:
   `PLATFORM_Audio_Context` (e.g. `audio_effects[NDS_MAX_QUANTITY_OF__AUDIO_EFFECTS]`).
 - The `#define DEFINE_AUDIO_EFFECT_KIND` line must not be removed.
 
-## Header Guard
+## 1.7 Header Guard
 
 `IMPL_AUDIO_EFFECT_KIND_H`

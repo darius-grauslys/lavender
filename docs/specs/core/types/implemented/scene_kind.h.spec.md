@@ -1,26 +1,26 @@
-# Specification: core/include/types/implemented/scene_kind.h
+# 1 Specification: core/include/types/implemented/scene_kind.h
 
-## Overview
+## 1.1 Overview
 
 Template header that defines the `Scene_Kind` enum — the set of game scenes
 (menus, gameplay states, etc.) available in the game. This file is copied to
 the game project directory by `tools/lav_new_project` and is meant to be
 extended by the engine user.
 
-## Template Behavior
+## 1.2 Template Behavior
 
 This file resides in `core/include/types/implemented/` and is copied to
 the game project's corresponding `types/implemented/` directory by the
 `lav_new_project` script. If `DEFINE_SCENE_KIND` is not defined after the
 `#include`, `defines_weak.h` falls back to a built-in default.
 
-## Dependencies
+## 1.3 Dependencies
 
 None (self-contained).
 
-## Types
+## 1.4 Types
 
-### Scene_Kind (enum)
+### 1.4.1 Scene_Kind (enum)
 
     typedef enum Scene_Kind {
         Scene_Kind__None = 0,
@@ -32,7 +32,7 @@ None (self-contained).
 | `Scene_Kind__None` | No scene / sentinel. |
 | `Scene_Kind__Unknown` | End-of-enum sentinel. Used for array sizing. |
 
-## Injection Mechanism
+## 1.5 Injection Mechanism
 
 In `defines_weak.h`:
 
@@ -41,9 +41,9 @@ In `defines_weak.h`:
     typedef enum Scene_Kind { ... } Scene_Kind;
     #endif
 
-## Agentic Workflow
+## 1.6 Agentic Workflow
 
-### Extension Pattern
+### 1.6.1 Extension Pattern
 
     typedef enum Scene_Kind {
         Scene_Kind__None = 0,
@@ -53,7 +53,7 @@ In `defines_weak.h`:
         Scene_Kind__Unknown
     } Scene_Kind;
 
-### Constraints
+### 1.6.2 Constraints
 
 - `Scene_Kind__None` must remain first (value 0).
 - `Scene_Kind__Unknown` must remain last.
@@ -61,6 +61,6 @@ In `defines_weak.h`:
   `Scene_Manager.scenes[Scene_Kind__Unknown]`.
 - The `#define DEFINE_SCENE_KIND` line must not be removed.
 
-## Header Guard
+## 1.7 Header Guard
 
 `IMPL_SCENE_KIND_H`

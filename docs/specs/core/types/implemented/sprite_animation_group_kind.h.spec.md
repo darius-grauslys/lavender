@@ -1,6 +1,6 @@
-# Specification: core/include/types/implemented/sprite_animation_group_kind.h
+# 1 Specification: core/include/types/implemented/sprite_animation_group_kind.h
 
-## Overview
+## 1.1 Overview
 
 Template header that defines the `Sprite_Animation_Group_Kind` enum — the
 set of sprite animation group types available in the game. Animation groups
@@ -8,7 +8,7 @@ define subregions within a sprite sheet for organizing related animations.
 This file is copied to the game project directory by `tools/lav_new_project`
 and is meant to be extended by the engine user.
 
-## Template Behavior
+## 1.2 Template Behavior
 
 This file resides in `core/include/types/implemented/` and is copied to
 the game project's corresponding `types/implemented/` directory by the
@@ -16,13 +16,13 @@ the game project's corresponding `types/implemented/` directory by the
 defined after the `#include`, `defines_weak.h` falls back to a built-in
 default.
 
-## Dependencies
+## 1.3 Dependencies
 
 None (self-contained).
 
-## Types
+## 1.4 Types
 
-### Sprite_Animation_Group_Kind (enum)
+### 1.4.1 Sprite_Animation_Group_Kind (enum)
 
     typedef enum Sprite_Animation_Group_Kind {
         Sprite_Animation_Group_Kind__None,
@@ -34,7 +34,7 @@ None (self-contained).
 | `Sprite_Animation_Group_Kind__None` | No group / sentinel. |
 | `Sprite_Animation_Group_Kind__Unknown` | End-of-enum sentinel. Used for array sizing. |
 
-## Injection Mechanism
+## 1.5 Injection Mechanism
 
 In `defines_weak.h`:
 
@@ -43,9 +43,9 @@ In `defines_weak.h`:
     typedef enum Sprite_Animation_Group_Kind { ... } Sprite_Animation_Group_Kind;
     #endif
 
-## Agentic Workflow
+## 1.6 Agentic Workflow
 
-### Extension Pattern
+### 1.6.1 Extension Pattern
 
     typedef enum Sprite_Animation_Group_Kind {
         Sprite_Animation_Group_Kind__None,
@@ -54,7 +54,7 @@ In `defines_weak.h`:
         Sprite_Animation_Group_Kind__Unknown
     } Sprite_Animation_Group_Kind;
 
-### Constraints
+### 1.6.2 Constraints
 
 - `Sprite_Animation_Group_Kind__None` must remain first.
 - `Sprite_Animation_Group_Kind__Unknown` must remain last.
@@ -63,6 +63,6 @@ In `defines_weak.h`:
 - Groups are registered via `register_sprite_animation_group_into__sprite_context`.
 - The `#define DEFINE_SPRITE_ANIMATION_GROUP_KIND` line must not be removed.
 
-## Header Guard
+## 1.7 Header Guard
 
 `IMPL_SPRITE_ANIMATION_GROUP_KIND_H`

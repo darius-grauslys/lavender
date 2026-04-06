@@ -1,6 +1,6 @@
-# Specification: core/include/types/implemented/ui_element_kind.h
+# 1 Specification: core/include/types/implemented/ui_element_kind.h
 
-## Overview
+## 1.1 Overview
 
 Template header that defines the `UI_Element_Kind` enum — the set of UI
 element types available in the engine. Unlike most implemented types, the
@@ -8,20 +8,20 @@ core engine defines all standard UI element kinds. This file is copied to
 the game project directory by `tools/lav_new_project` but typically does
 not need modification unless adding entirely new UI element categories.
 
-## Template Behavior
+## 1.2 Template Behavior
 
 This file resides in `core/include/types/implemented/` and is copied to
 the game project's corresponding `types/implemented/` directory by the
 `lav_new_project` script. If `DEFINE_UI_ELEMENT_KIND` is not defined after
 the `#include`, `defines_weak.h` falls back to a built-in default.
 
-## Dependencies
+## 1.3 Dependencies
 
 None (self-contained).
 
-## Types
+## 1.4 Types
 
-### UI_Element_Kind (enum)
+### 1.4.1 UI_Element_Kind (enum)
 
     typedef enum UI_Element_Kind {
         UI_Element_Kind__None,
@@ -49,7 +49,7 @@ None (self-contained).
 | `UI_Element_Kind__Window` | Element that owns a child `Graphics_Window`. |
 | `UI_Element_Kind__Unknown` | End-of-enum sentinel. |
 
-## Injection Mechanism
+## 1.5 Injection Mechanism
 
 In `defines_weak.h`:
 
@@ -58,15 +58,15 @@ In `defines_weak.h`:
     enum UI_Element_Kind { ... };
     #endif
 
-## Agentic Workflow
+## 1.6 Agentic Workflow
 
-### Extension Pattern
+### 1.6.1 Extension Pattern
 
 This enum is typically not extended. If adding a new UI element category,
 add it before `Unknown` and implement the corresponding initialization
 and handler functions.
 
-### Constraints
+### 1.6.2 Constraints
 
 - All listed kinds are used by core engine code (`ui_button.h`,
   `ui_draggable.h`, `ui_slider.h`, `ui_drop_zone.h`, `ui_text.h`,
@@ -74,6 +74,6 @@ and handler functions.
 - `UI_Element_Kind__Unknown` must remain last.
 - The `#define DEFINE_UI_ELEMENT_KIND` line must not be removed.
 
-## Header Guard
+## 1.7 Header Guard
 
 `IMPL_UI_ELEMENT_KIND_H`

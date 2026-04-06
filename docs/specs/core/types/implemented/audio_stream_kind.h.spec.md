@@ -1,13 +1,13 @@
-# Specification: core/include/types/implemented/audio_stream_kind.h
+# 1 Specification: core/include/types/implemented/audio_stream_kind.h
 
-## Overview
+## 1.1 Overview
 
 Template header that defines the `Audio_Stream_Kind` enum — the set of
 streaming audio tracks (music, ambient loops) available in the game. This
 file is copied to the game project directory by `tools/lav_new_project`
 and is meant to be extended by the engine user.
 
-## Template Behavior
+## 1.2 Template Behavior
 
 This file resides in `core/include/types/implemented/` and is copied to
 the game project's corresponding `types/implemented/` directory by the
@@ -16,13 +16,13 @@ game-specific audio stream kinds. If `DEFINE_AUDIO_STREAM_KIND` is not
 defined after the `#include`, `defines_weak.h` falls back to a built-in
 default.
 
-## Dependencies
+## 1.3 Dependencies
 
 None (self-contained).
 
-## Types
+## 1.4 Types
 
-### Audio_Stream_Kind (enum)
+### 1.4.1 Audio_Stream_Kind (enum)
 
     typedef enum Audio_Stream_Kind {
         Audio_Stream_Kind__None,
@@ -34,7 +34,7 @@ None (self-contained).
 | `Audio_Stream_Kind__None` | No stream / sentinel. |
 | `Audio_Stream_Kind__Unknown` | End-of-enum sentinel. Used for array sizing. |
 
-## Injection Mechanism
+## 1.5 Injection Mechanism
 
 In `defines_weak.h`:
 
@@ -46,9 +46,9 @@ In `defines_weak.h`:
     };
     #endif
 
-## Agentic Workflow
+## 1.6 Agentic Workflow
 
-### Extension Pattern
+### 1.6.1 Extension Pattern
 
     typedef enum Audio_Stream_Kind {
         Audio_Stream_Kind__None,
@@ -57,12 +57,12 @@ In `defines_weak.h`:
         Audio_Stream_Kind__Unknown
     } Audio_Stream_Kind;
 
-### Constraints
+### 1.6.2 Constraints
 
 - `Audio_Stream_Kind__None` must remain first (value 0).
 - `Audio_Stream_Kind__Unknown` must remain last.
 - The `#define DEFINE_AUDIO_STREAM_KIND` line must not be removed.
 
-## Header Guard
+## 1.7 Header Guard
 
 `IMPL_AUDIO_STREAM_KIND_H`

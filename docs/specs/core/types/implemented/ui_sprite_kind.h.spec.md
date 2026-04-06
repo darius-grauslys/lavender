@@ -1,26 +1,26 @@
-# Specification: core/include/types/implemented/ui_sprite_kind.h
+# 1 Specification: core/include/types/implemented/ui_sprite_kind.h
 
-## Overview
+## 1.1 Overview
 
 Template header that defines the `UI_Sprite_Kind` enum — the set of UI
 sprite types available for sprite-based UI rendering. This file is copied
 to the game project directory by `tools/lav_new_project` and is meant to
 be extended by the engine user.
 
-## Template Behavior
+## 1.2 Template Behavior
 
 This file resides in `core/include/types/implemented/` and is copied to
 the game project's corresponding `types/implemented/` directory by the
 `lav_new_project` script. If `DEFINE_UI_SPRITE_KIND` is not defined after
 the `#include`, `defines_weak.h` falls back to a built-in default.
 
-## Dependencies
+## 1.3 Dependencies
 
 None (self-contained).
 
-## Types
+## 1.4 Types
 
-### UI_Sprite_Kind (enum)
+### 1.4.1 UI_Sprite_Kind (enum)
 
     typedef enum UI_Sprite_Kind {
         UI_Sprite_Kind__None = 0,
@@ -40,7 +40,7 @@ None (self-contained).
 | `UI_Sprite_Kind__32x32` | 32x32 pixel UI sprite. Aliased to `16x16` by default. |
 | `UI_Sprite_Kind__Unknown` | End-of-enum sentinel. Aliased to `32x32` by default. |
 
-## Injection Mechanism
+## 1.5 Injection Mechanism
 
 In `defines_weak.h`:
 
@@ -49,9 +49,9 @@ In `defines_weak.h`:
     typedef enum UI_Sprite_Kind { ... } UI_Sprite_Kind;
     #endif
 
-## Agentic Workflow
+## 1.6 Agentic Workflow
 
-### Extension Pattern
+### 1.6.1 Extension Pattern
 
 Remove the aliases and add distinct sizes:
 
@@ -64,7 +64,7 @@ Remove the aliases and add distinct sizes:
         UI_Sprite_Kind__Unknown
     } UI_Sprite_Kind;
 
-### Constraints
+### 1.6.2 Constraints
 
 - The default template aliases all sizes together, meaning only one sprite
   allocation path exists. Games should break the aliases if they need
@@ -72,6 +72,6 @@ Remove the aliases and add distinct sizes:
 - Used by platform-specific sprite allocation (e.g. `NDS_allocate_sprite_for__ui`).
 - The `#define DEFINE_UI_SPRITE_KIND` line must not be removed.
 
-## Header Guard
+## 1.7 Header Guard
 
 `IMPL_UI_SPRITE_KIND_H`

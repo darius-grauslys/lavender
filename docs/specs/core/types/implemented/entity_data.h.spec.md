@@ -1,13 +1,13 @@
-# Specification: core/include/types/implemented/entity_data.h
+# 1 Specification: core/include/types/implemented/entity_data.h
 
-## Overview
+## 1.1 Overview
 
 Template header that defines the `Entity_Data` struct — the game-specific
 data payload embedded in every `Entity`. This file is copied to the game
 project directory by `tools/lav_new_project` and is meant to be extended
 by the engine user.
 
-## Template Behavior
+## 1.2 Template Behavior
 
 This file resides in `core/include/types/implemented/` and is copied to
 the game project's corresponding `types/implemented/` directory by the
@@ -15,13 +15,13 @@ the game project's corresponding `types/implemented/` directory by the
 `#include`, `defines.h` falls back to a built-in default containing only
 `the_kind_of__entity`.
 
-## Dependencies
+## 1.3 Dependencies
 
 - `defines_weak.h` (for `Entity_Flags__u32`, `Entity_Kind`)
 
-## Types
+## 1.4 Types
 
-### Entity_Data (struct)
+### 1.4.1 Entity_Data (struct)
 
     typedef struct Entity_Data_t {
         Entity_Flags__u32   entity_flags;
@@ -33,7 +33,7 @@ the game project's corresponding `types/implemented/` directory by the
 | `entity_flags` | `Entity_Flags__u32` | Bitfield of entity state flags. |
 | `the_kind_of__entity` | `Entity_Kind` | The entity's kind discriminator. |
 
-## Injection Mechanism
+## 1.5 Injection Mechanism
 
 In `defines.h`:
 
@@ -44,9 +44,9 @@ In `defines.h`:
     } Entity_Data;
     #endif
 
-## Agentic Workflow
+## 1.6 Agentic Workflow
 
-### Extension Pattern
+### 1.6.1 Extension Pattern
 
 Add game-specific fields after the required fields:
 
@@ -61,7 +61,7 @@ Add game-specific fields after the required fields:
         Inventory           *p_inventory;
     } Entity_Data;
 
-### Constraints
+### 1.6.2 Constraints
 
 - The struct is embedded directly in `Entity` (at `entity.entity_data`),
   so its size affects the total `Entity` size and therefore the
@@ -70,6 +70,6 @@ Add game-specific fields after the required fields:
 - `entity_flags` and `the_kind_of__entity` should be retained for
   compatibility with core engine code that accesses them.
 
-## Header Guard
+## 1.7 Header Guard
 
 `IMPL_ENTITY_DATA_H`

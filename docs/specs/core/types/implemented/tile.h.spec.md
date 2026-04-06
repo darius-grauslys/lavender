@@ -1,12 +1,12 @@
-# Specification: core/include/types/implemented/tile.h
+# 1 Specification: core/include/types/implemented/tile.h
 
-## Overview
+## 1.1 Overview
 
 Template header that defines the `Tile` struct — the per-tile data stored
 in every chunk. This file is copied to the game project directory by
 `tools/lav_new_project` and is meant to be extended by the engine user.
 
-## Template Behavior
+## 1.2 Template Behavior
 
 This file resides in `core/include/types/implemented/` and is copied to
 the game project's corresponding `types/implemented/` directory by the
@@ -14,13 +14,13 @@ the game project's corresponding `types/implemented/` directory by the
 `#include`, `defines.h` falls back to a built-in default containing only
 `the_kind_of__tile`.
 
-## Dependencies
+## 1.3 Dependencies
 
 - `defines_weak.h` (for `Tile_Kind`)
 
-## Types
+## 1.4 Types
 
-### Tile (struct)
+### 1.4.1 Tile (struct)
 
     typedef struct Tile_t {
         Tile_Kind the_kind_of__tile;
@@ -30,7 +30,7 @@ the game project's corresponding `types/implemented/` directory by the
 |-------|------|-------------|
 | `the_kind_of__tile` | `Tile_Kind` | The tile's kind discriminator. |
 
-## Injection Mechanism
+## 1.5 Injection Mechanism
 
 In `defines.h`:
 
@@ -41,9 +41,9 @@ In `defines.h`:
     } Tile;
     #endif
 
-## Agentic Workflow
+## 1.6 Agentic Workflow
 
-### Extension Pattern
+### 1.6.1 Extension Pattern
 
     typedef struct Tile_t {
         Tile_Kind the_kind_of__tile;
@@ -51,7 +51,7 @@ In `defines.h`:
         u8 tile_metadata;
     } Tile;
 
-### Constraints
+### 1.6.2 Constraints
 
 - The struct is stored in `Chunk.tiles[CHUNK__QUANTITY_OF__TILES]`, so its
   size directly affects chunk memory footprint. Default chunk has 128 tiles.
@@ -59,6 +59,6 @@ In `defines.h`:
   code.
 - The `#define DEFINE_TILE` line must not be removed.
 
-## Header Guard
+## 1.7 Header Guard
 
 `IMPL_TILE_H`

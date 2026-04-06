@@ -1,6 +1,6 @@
-# Specification: core/include/types/implemented/graphics_window_kind.h
+# 1 Specification: core/include/types/implemented/graphics_window_kind.h
 
-## Overview
+## 1.1 Overview
 
 Template header that defines the `Graphics_Window_Kind` enum — the set of
 graphics window types available in the game. Each kind corresponds to a
@@ -8,20 +8,20 @@ registered UI window with load/close callbacks. This file is copied to the
 game project directory by `tools/lav_new_project` and is meant to be
 extended by the engine user.
 
-## Template Behavior
+## 1.2 Template Behavior
 
 This file resides in `core/include/types/implemented/` and is copied to
 the game project's corresponding `types/implemented/` directory by the
 `lav_new_project` script. If `DEFINE_GRAPHICS_WINDOW_KIND` is not defined
 after the `#include`, `defines_weak.h` falls back to a built-in default.
 
-## Dependencies
+## 1.3 Dependencies
 
 None (self-contained).
 
-## Types
+## 1.4 Types
 
-### Graphics_Window_Kind (enum)
+### 1.4.1 Graphics_Window_Kind (enum)
 
     typedef enum Graphics_Window_Kind {
         Graphics_Window_Kind__None = 0,
@@ -33,7 +33,7 @@ None (self-contained).
 | `Graphics_Window_Kind__None` | No window / sentinel. |
 | `Graphics_Window_Kind__Unknown` | End-of-enum sentinel. Used for array sizing. |
 
-## Injection Mechanism
+## 1.5 Injection Mechanism
 
 In `defines_weak.h`:
 
@@ -42,9 +42,9 @@ In `defines_weak.h`:
     typedef enum Graphics_Window_Kind { ... } Graphics_Window_Kind;
     #endif
 
-## Agentic Workflow
+## 1.6 Agentic Workflow
 
-### Extension Pattern
+### 1.6.1 Extension Pattern
 
     typedef enum Graphics_Window_Kind {
         Graphics_Window_Kind__None = 0,
@@ -54,7 +54,7 @@ In `defines_weak.h`:
         Graphics_Window_Kind__Unknown
     } Graphics_Window_Kind;
 
-### Constraints
+### 1.6.2 Constraints
 
 - `Graphics_Window_Kind__None` must remain first (value 0).
 - `Graphics_Window_Kind__Unknown` must remain last.
@@ -64,6 +64,6 @@ In `defines_weak.h`:
   (see `ui/implemented/ui_window_registrar.h`).
 - The `#define DEFINE_GRAPHICS_WINDOW_KIND` line must not be removed.
 
-## Header Guard
+## 1.7 Header Guard
 
 `IMPL_GRAPHICS_WINDOW_KIND_H`

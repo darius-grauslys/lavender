@@ -1,6 +1,6 @@
-# System Overview: Implemented Types (Template Injection System)
+# 1 System Overview: Implemented Types (Template Injection System)
 
-## Purpose
+## 1.1 Purpose
 
 The `types/implemented/` directory contains **template headers** that define
 game-customizable types — enums, structs, and constants — which are injected
@@ -14,9 +14,9 @@ This system allows the engine to reference game-specific types (entity kinds,
 tile kinds, item kinds, etc.) without hard-coding them, while giving each
 game project full control over the concrete values.
 
-## Architecture
+## 1.2 Architecture
 
-### Injection Mechanism
+### 1.2.1 Injection Mechanism
 
 Every template header follows the same pattern:
 
@@ -50,14 +50,14 @@ If the game project provides its own copy of the template (which defines
 `DEFINE_EXAMPLE_KIND`), the fallback is suppressed. If the file is absent
 or empty, the fallback provides a minimal compilable definition.
 
-### Two Injection Targets
+### 1.2.2 Two Injection Targets
 
 | Target | Receives | Reason |
 |--------|----------|--------|
 | `defines_weak.h` | Enum types (forward-declarable discriminators) | These are used in forward declarations, function signatures, and weak typedefs throughout the engine. They must be available early in the include chain. |
 | `defines.h` | Struct types and constants | These depend on types from `defines_weak.h` (e.g. `Tile` contains `Tile_Kind`, `Entity_Data` contains `Entity_Kind`). They are available after full type definitions. |
 
-### Data Flow
+### 1.2.3 Data Flow
 
     tools/lav_new_project
         |
@@ -78,9 +78,9 @@ or empty, the fallback provides a minimal compilable definition.
         v
     Engine code references Tile_Kind, Entity_Kind, etc.
 
-## Template Categories
+## 1.3 Template Categories
 
-### 1. World & Tile Templates
+### 1.3.1 World & Tile Templates
 
 These templates define the types used by the world, chunk, and tile systems.
 
@@ -110,7 +110,7 @@ These templates define the types used by the world, chunk, and tile systems.
 4. Game developer adds chunk generator kinds and registers generators via
    `register_chunk_generators`.
 
-### 2. Entity Templates
+### 1.3.2 Entity Templates
 
 These templates define the types used by the entity management system.
 
@@ -146,7 +146,7 @@ These templates define the types used by the entity management system.
 - The six required handlers (`dispose`, `update`, `disable`, `enable`,
   `serialize`, `deserialize`) must not be removed or reordered.
 
-### 3. Item Templates
+### 1.3.3 Item Templates
 
 These templates define the types used by the inventory and item systems.
 
@@ -169,7 +169,7 @@ These templates define the types used by the inventory and item systems.
 2. Game developer extends `Item_Data` in `item_data.h` with game-specific
    fields (damage, durability, weight, etc.).
 
-### 4. Sprite & Animation Templates
+### 1.3.4 Sprite & Animation Templates
 
 These templates define the types used by the sprite rendering and animation
 systems.
@@ -198,7 +198,7 @@ systems.
 4. Registrations happen during game initialization via the corresponding
    registrar functions.
 
-### 5. Audio Templates
+### 1.3.5 Audio Templates
 
 These templates define the types used by the audio system.
 
@@ -219,7 +219,7 @@ These templates define the types used by the audio system.
 2. Game developer adds audio stream kinds to `audio_stream_kind.h`.
 3. Platform backends map these kinds to concrete audio resources.
 
-### 6. UI Templates
+### 1.3.6 UI Templates
 
 These templates define the types used by the UI system.
 
@@ -258,7 +258,7 @@ These templates define the types used by the UI system.
 4. Game developer optionally adjusts `UI_Sprite_Kind` aliases in
    `ui_sprite_kind.h`.
 
-### 7. Collision & Hitbox Templates
+### 1.3.7 Collision & Hitbox Templates
 
 These templates define the types used by the collision detection system.
 
@@ -286,7 +286,7 @@ These templates define the types used by the collision detection system.
 3. Core registers built-in hitbox managers; game can register additional
    ones.
 
-### 8. Game Action Templates
+### 1.3.8 Game Action Templates
 
 These templates define the types used by the game action / multiplayer
 communication system.
@@ -311,7 +311,7 @@ communication system.
 2. Game action logic is registered per-kind in the
    `Game_Action_Logic_Table`.
 
-### 9. Scene Templates
+### 1.3.9 Scene Templates
 
 These templates define the types used by the scene management system.
 
@@ -329,7 +329,7 @@ These templates define the types used by the scene management system.
    `Game`, `Pause`).
 2. Scenes are registered per-kind in the `Scene_Manager`.
 
-## Sentinel Conventions
+## 1.4 Sentinel Conventions
 
 All template enums follow a consistent sentinel pattern:
 
@@ -342,7 +342,7 @@ The `__Unknown` sentinel is critical: engine data structures use it to
 determine array dimensions at compile time. Adding entries before `__Unknown`
 automatically grows the corresponding arrays.
 
-## Cross-Template Dependencies
+## 1.5 Cross-Template Dependencies
 
     tile_kind.h ──────────> tile.h                  (Tile contains Tile_Kind)
     tile_kind.h ──────────> tile_logic_table_data.h (sized by Tile_Kind__Unknown)
@@ -352,7 +352,7 @@ automatically grows the corresponding arrays.
 All other templates are independent of each other at the type level, though
 they may interact at runtime through the systems that consume them.
 
-## Memory Impact
+## 1.6 Memory Impact
 
 Several template types are embedded in pooled structures. Extending them
 increases per-instance memory usage:
@@ -364,7 +364,7 @@ increases per-instance memory usage:
 | `Item_Data` | `Item.item_data` → `Item_Stack` → `Inventory` | `Inventory_Manager` | Cascading size increase through `Item` → `Item_Stack` → `Inventory` |
 | `UI_Element_Data` | `UI_Element.ui_element_data` | `UI_Manager` | `sizeof(UI_Element_Data) * max_quantity_of__ui_elements` |
 
-## Guard Macro Summary
+## 1.7 Guard Macro Summary
 
 Every template header defines a guard macro that suppresses the fallback
 definition. These macros must never be removed from the template files:
@@ -396,7 +396,7 @@ definition. These macros must never be removed from the template files:
 | `hitbox_kind.h` | `DEFINE_HITBOX_KIND` |
 | `hitbox_manager_type.h` | `DEFINE_HITBOX_MANAGER_TYPE` |
 
-## Agentic Workflow Summary
+## 1.8 Agentic Workflow Summary
 
 When extending any template:
 
