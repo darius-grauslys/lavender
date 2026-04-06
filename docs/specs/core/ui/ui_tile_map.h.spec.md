@@ -1,6 +1,6 @@
-# Specification: core/include/ui/ui_tile_map.h
+# 3 Specification: core/include/ui/ui_tile_map.h
 
-## Overview
+## 3.1 Overview
 
 Manages rectangular grids of `UI_Tile_Raw` values that back the visual
 composition of UI windows. Tile maps come in three size categories (Small,
@@ -8,16 +8,16 @@ Medium, Large) and are accessed through a uniform `UI_Tile_Map__Wrapper`
 abstraction. The wrapper provides size-agnostic access to the underlying
 tile data.
 
-## Dependencies
+## 3.2 Dependencies
 
 - `defines.h` (for all tile map types and flag macros)
 - `defines_weak.h` (forward declarations)
 - `platform_defaults.h` (for default tile map dimension macros)
 - `platform_defines.h` (platform-specific overrides)
 
-## Types
+## 3.3 Types
 
-### UI_Tile_Map_Size (enum)
+### 3.3.1 UI_Tile_Map_Size (enum)
 
     typedef enum UI_Tile_Map_Size {
         UI_Tile_Map_Size__None = 0,
@@ -27,13 +27,13 @@ tile data.
         UI_Tile_Map_Size__Unknown
     } UI_Tile_Map_Size;
 
-### UI_Tile_Map__Flags (u8)
+### 3.3.2 UI_Tile_Map__Flags (u8)
 
 | Flag | Bit | Description |
 |------|-----|-------------|
 | `UI_TILE_MAP__FLAG__IS_ALLOCATED` | 0 | Tile map is allocated. |
 
-### UI_Tile_Map__Wrapper (struct)
+### 3.3.3 UI_Tile_Map__Wrapper (struct)
 
     typedef struct UI_Tile_Map__Wrapper_t {
         UI_Tile_Raw *p_ui_tile_data;
@@ -49,12 +49,12 @@ tile data.
 | `height_of__ui_tile_map` | `Quantity__u32` | Utilized height in tiles. |
 | `catagory_size_of__ui_tile_map` | `UI_Tile_Map_Size` | Which pool the storage came from. |
 
-### UI_Tile_Map__Small / Medium / Large (structs)
+### 3.3.4 UI_Tile_Map__Small / Medium / Large (structs)
 
 Each contains a `UI_Tile_Map__Flags` and a fixed-size `UI_Tile_Raw` array
 dimensioned by the corresponding width × height macros.
 
-### Compile-Time Configuration
+### 3.3.5 Compile-Time Configuration
 
 | Macro | Default | Description |
 |-------|---------|-------------|
@@ -68,9 +68,9 @@ dimensioned by the corresponding width × height macros.
 | `UI_TILE_MAP__LARGE__WIDTH` | `32` | Width of large tile maps in tiles. |
 | `UI_TILE_MAP__LARGE__HEIGHT` | `32` | Height of large tile maps in tiles. |
 
-## Functions
+## 3.4 Functions
 
-### Initialization
+### 3.4.1 Initialization
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
@@ -79,7 +79,7 @@ dimensioned by the corresponding width × height macros.
 | `initialize_ui_tile_map__large_as__deallocated` | `(UI_Tile_Map__Large*) -> void` | Marks large tile map as deallocated and zeroes data. |
 | `initialize_ui_tile_map__wrapper` | `(UI_Tile_Map__Wrapper*, UI_Tile_Raw*, u32 width, u32 height, UI_Tile_Map_Size) -> void` | Initializes a wrapper to point at existing tile data. |
 
-### Tile Map Operations
+### 3.4.2 Tile Map Operations
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
@@ -89,7 +89,7 @@ dimensioned by the corresponding width × height macros.
 | `fill_ui_tile_map_in__this_region` | `(UI_Tile_Map__Wrapper*, UI_Tile, u32 x_start, u32 y_start, u32 width, u32 height) -> void` | Fills a rectangular sub-region. |
 | `copy_into_ui_tile_map` | `(UI_Tile_Map__Wrapper*, const UI_Tile_Raw*, u32 offset, u32 length) -> void` | Copies raw tile data at the given offset. |
 
-### Flag Management (static inline)
+### 3.4.3 Flag Management (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -97,7 +97,7 @@ dimensioned by the corresponding width × height macros.
 | `set_ui_tile_map_flags_as__allocated` | `(UI_Tile_Map__Flags*) -> void` | `void` | Sets `IS_ALLOCATED`. |
 | `set_ui_tile_map_flags_as__deallocated` | `(UI_Tile_Map__Flags*) -> void` | `void` | Clears `IS_ALLOCATED`. |
 
-### Validation (static inline)
+### 3.4.4 Validation (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -106,7 +106,7 @@ dimensioned by the corresponding width × height macros.
 | `is_ui_tile_map__wrapper_with__valid_size` | `(UI_Tile_Map__Wrapper*) -> bool` | `bool` | True if width > 0, height > 0, and size category is valid. |
 | `is_ui_tile_map__wrapper__valid` | `(UI_Tile_Map__Wrapper*) -> bool` | `bool` | True if has data and valid size. |
 
-### Construction (static inline)
+### 3.4.5 Construction (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -115,7 +115,7 @@ dimensioned by the corresponding width × height macros.
 | `ui_tile_map__medium_to__ui_tile_map_wrapper` | `(UI_Tile_Map__Medium*) -> UI_Tile_Map__Wrapper` | `UI_Tile_Map__Wrapper` | Creates wrapper from medium tile map. |
 | `ui_tile_map__large_to__ui_tile_map_wrapper` | `(UI_Tile_Map__Large*) -> UI_Tile_Map__Wrapper` | `UI_Tile_Map__Wrapper` | Creates wrapper from large tile map. |
 
-### Accessors (static inline)
+### 3.4.6 Accessors (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -123,20 +123,20 @@ dimensioned by the corresponding width × height macros.
 | `get_width_of__p_ui_tile_map__wrapper` | `(UI_Tile_Map__Wrapper*) -> Quantity__u32` | `Quantity__u32` | Returns width. |
 | `get_height_of__p_ui_tile_map__wrapper` | `(UI_Tile_Map__Wrapper*) -> Quantity__u32` | `Quantity__u32` | Returns height. |
 
-## Agentic Workflow
+## 3.5 Agentic Workflow
 
-### Usage Pattern
+### 3.5.1 Usage Pattern
 
 `Graphics_Window` contains a `UI_Tile_Map__Wrapper` for its backing tile
 data. `UI_Tile_Map_Manager` pools tile maps of each size category.
 `PLATFORM_compose_gfx_window` reads the tile map to render UI.
 `generate_ui_span_in__ui_tile_map` bridges `UI_Tile_Span` → tile map.
 
-### Preconditions
+### 3.5.2 Preconditions
 
 - All functions require non-null pointers.
 - `generate_ui_span_in__ui_tile_map`: region must fit within the tile map dimensions.
 
-## Header Guard
+## 3.6 Header Guard
 
 `UI_TILE_MAP_H`

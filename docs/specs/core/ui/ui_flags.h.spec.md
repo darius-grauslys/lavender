@@ -1,6 +1,6 @@
-# Specification: core/include/ui/ui_flags.h
+# 15 Specification: core/include/ui/ui_flags.h
 
-## Overview
+## 15.1 Overview
 
 Provides `static inline` helper functions for querying and mutating
 `UI_Flags__u16` values. These flags describe the runtime state of a
@@ -12,19 +12,19 @@ NOT defined in the current `defines.h`. The canonical flag operations now
 live as `static inline` functions directly in `ui_element.h`. New code
 should prefer the helpers in `ui_element.h`.
 
-## Dependencies
+## 15.2 Dependencies
 
 - `defines.h` (for `UI_Flags__u16` typedef and flag bit macros)
 
-## Types
+## 15.3 Types
 
-### UI_Flags__u16 (u16)
+### 15.3.1 UI_Flags__u16 (u16)
 
     typedef uint16_t UI_Flags__u16;
 
-## Functions
+## 15.4 Functions
 
-### Query Functions (static inline)
+### 15.4.1 Query Functions (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -35,7 +35,7 @@ should prefer the helpers in `ui_element.h`.
 | `is_ui_flags__being_dragged` | `(UI_Flags__u16) -> bool` | `bool` | True if `UI_FLAGS__BIT_IS_BEING_DRAGGED` is set. |
 | `is_ui_flags__focused` | `(UI_Flags__u16) -> bool` | `bool` | True if the element is being held OR dragged. |
 
-### Mutation Functions (static inline)
+### 15.4.2 Mutation Functions (static inline)
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
@@ -47,14 +47,14 @@ should prefer the helpers in `ui_element.h`.
 | `set_p_ui_flags__u8_as__enabled` | `(UI_Flags__u16*) -> void` | Sets `UI_FLAGS__BIT_IS_ENABLED`. |
 | `set_p_ui_flags__u8_as__disabled` | `(UI_Flags__u16*) -> void` | Clears `UI_FLAGS__BIT_IS_ENABLED`. |
 
-## Agentic Workflow
+## 15.5 Agentic Workflow
 
-### Deprecation
+### 15.5.1 Deprecation
 
 This header references undefined flag bits and uses a naming convention
 (`_u8`) inconsistent with the actual type (`UI_Flags__u16`). Prefer the
 equivalent helpers in `ui_element.h` for new code.
 
-## Header Guard
+## 15.6 Header Guard
 
 `UI_FLAGS_H`

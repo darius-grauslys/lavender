@@ -1,20 +1,20 @@
-# Specification: core/include/ui/ui_tile_span.h
+# 21 Specification: core/include/ui/ui_tile_span.h
 
-## Overview
+## 21.1 Overview
 
 Defines a 9-slice tile pattern (`UI_Tile_Span`) used to compose scalable UI
 panels. A tile span describes 4 corner tiles, 4 edge tiles, and 1 fill tile.
 When rendered into a tile map region, corners are placed at the extremes,
 edges are repeated along borders, and the fill tile covers the interior.
 
-## Dependencies
+## 21.2 Dependencies
 
 - `defines.h` (for `UI_Tile_Span`, `UI_Tile` struct definitions)
 - `defines_weak.h` (forward declarations)
 
-## Types
+## 21.3 Types
 
-### UI_Tile_Span (struct)
+### 21.3.1 UI_Tile_Span (struct)
 
     typedef struct UI_Tile_Span_t {
         union {
@@ -44,7 +44,7 @@ edges are repeated along borders, and the fill tile covers the interior.
     [edge_left] [fill ....   ] [edge_right]
     [corner_BL] [edge_bottom ] [corner_BR]
 
-## Functions
+## 21.4 Functions
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -52,9 +52,9 @@ edges are repeated along borders, and the fill tile covers the interior.
 | `initialize_ui_tile_span` | `(UI_Tile_Span*, UI_Tile[4] corners, UI_Tile[4] edges, UI_Tile fill) -> void` | `void` | Initializes with explicit corner, edge, and fill tiles. |
 | `get_ui_tile_of__ui_tile_span` | `(const UI_Tile_Span*, u32 width, u32 height, u32 index_x, u32 index_y) -> const UI_Tile*` | `const UI_Tile*` | Returns the appropriate tile for a position within a rectangular region. |
 
-## Agentic Workflow
+## 21.5 Agentic Workflow
 
-### 9-Slice Sampling
+### 21.5.1 9-Slice Sampling
 
 `get_ui_tile_of__ui_tile_span` determines which tile to return based on
 position within the span:
@@ -62,17 +62,17 @@ position within the span:
 - Border positions → edge tile.
 - Interior positions → fill tile.
 
-### Preconditions
+### 21.5.2 Preconditions
 
 - All functions require non-null `p_ui_tile_span`.
 - `get_ui_tile_of__ui_tile_span`: `index_x < width` and `index_y < height`.
 
-### Relationships
+### 21.5.3 Relationships
 
 - Used by `UI_Element` — each element contains a `UI_Tile_Span ui_tile_span`.
 - `generate_ui_span_in__ui_tile_map` (in `ui_tile_map.h`) writes a tile span
   into a tile map region.
 
-## Header Guard
+## 21.6 Header Guard
 
 `UI_TILE_SPAN_H`

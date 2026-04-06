@@ -1,19 +1,19 @@
-# Specification: core/include/ui/ui_text.h
+# 10 Specification: core/include/ui/ui_text.h
 
-## Overview
+## 10.1 Overview
 
 Specializes a `UI_Element` as a read-only text display. Text elements render
 a string using a `Font` and `Typer` for layout. The text buffer can be a
 const string, a mutable owned string, or an internally allocated buffer.
 
-## Dependencies
+## 10.2 Dependencies
 
 - `defines.h` (for `UI_Element`, `Typer`, `Font`)
 - `defines_weak.h` (forward declarations)
 
-## Types
+## 10.3 Types
 
-### Text-Specific Data (union members in UI_Element)
+### 10.3.1 Text-Specific Data (union members in UI_Element)
 
     struct {
         Typer typer;
@@ -29,9 +29,9 @@ const string, a mutable owned string, or an internally allocated buffer.
 | `size_of__char_buffer` | `Quantity__u32` | Length of the text. |
 | `index_of__cursor_in__char_buffer` | `Index__u32` | Cursor position. Not to be confused with typer's cursor which is for rendering only. |
 
-## Functions
+## 10.4 Functions
 
-### Initialization
+### 10.4.1 Initialization
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
@@ -39,7 +39,7 @@ const string, a mutable owned string, or an internally allocated buffer.
 | `initialize_ui_element_as__text_with__pM_c_str` | `(UI_Element*, Font*, char*, Quantity__u32) -> void` | Initializes with an owned mutable string. Takes ownership. |
 | `initialize_ui_element_as__text_with__buffer_size` | `(UI_Element*, Font*, Quantity__u32) -> void` | Initializes with an internally allocated buffer. |
 
-### Text Manipulation
+### 10.4.2 Text Manipulation
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
@@ -52,7 +52,7 @@ const string, a mutable owned string, or an internally allocated buffer.
 | `append_c_str_into__ui_text` | `(UI_Manager*, UI_Element*, const char*, Quantity__u32) -> void` | Appends a string. Marks manager dirty. |
 | `insert_c_str_into__ui_text` | `(UI_Manager*, UI_Element*, const char*, Quantity__u32, Index__u32) -> void` | Inserts a string at the given index. Marks manager dirty. |
 
-### Handlers
+### 10.4.3 Handlers
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
@@ -61,23 +61,23 @@ const string, a mutable owned string, or an internally allocated buffer.
 | `m_ui_element__transformed_handler__text__centered` | `(UI_Element*, Hitbox_AABB*, Vector__3i32, Game*, Graphics_Window*) -> void` | Variant that centers text within bounds. |
 | `m_ui_element__dispose_handler__text` | `(UI_Element*, Game*, Graphics_Window*) -> void` | Dispose handler for text elements. Frees owned buffers. |
 
-### Accessors (static inline)
+### 10.4.4 Accessors (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `get_p_const_c_str_text_of__ui_text` | `(UI_Element*, Quantity__u32*) -> const char*` | `const char*` | Returns text string. Writes size to `*p_OUT_size_of__text`. |
 | `get_p_typer_of__ui_text` | `(UI_Element*) -> Typer*` | `Typer*` | Returns pointer to the typer. |
 
-## Agentic Workflow
+## 10.5 Agentic Workflow
 
-### Preconditions
+### 10.5.1 Preconditions
 
 - All functions require non-null `p_ui_text`.
 
-### Relationships
+### 10.5.2 Relationships
 
 - `UI_Text_Box` (see `ui_text_box.h`) extends this with input handling.
 
-## Header Guard
+## 10.6 Header Guard
 
 `UI_TEXT_H`

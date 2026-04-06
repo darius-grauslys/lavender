@@ -1,6 +1,6 @@
-# Specification: core/include/ui/ui_element.h
+# 4 Specification: core/include/ui/ui_element.h
 
-## Overview
+## 4.1 Overview
 
 Defines the core operations on `UI_Element` — the fundamental building block
 of the UI system. A `UI_Element` is a polymorphic UI node that can act as a
@@ -13,7 +13,7 @@ held, typed, transformed, composed, disposed) and is identified by a
 `Serialization_Header` UUID. Spatial data (position, size) is stored in an
 externally-managed `Hitbox_AABB` looked up by UUID.
 
-## Dependencies
+## 4.2 Dependencies
 
 - `defines.h` (for `UI_Element`, `UI_Flags__u16`, handler typedefs, all core types)
 - `defines_weak.h` (forward declarations)
@@ -25,9 +25,9 @@ externally-managed `Hitbox_AABB` looked up by UUID.
 - `serialization/serialization_header.h` (for `GET_UUID_P`, `IS_DEALLOCATED_P`)
 - `vectors.h` (for `Vector__3i32`, `Vector__3i32F4` operations)
 
-## Types
+## 4.3 Types
 
-### UI_Element (struct)
+### 4.3.1 UI_Element (struct)
 
     typedef struct UI_Element_t {
         Serialization_Header    _serialization_header;
@@ -92,7 +92,7 @@ externally-managed `Hitbox_AABB` looked up by UUID.
 | `ui_element_data` | `UI_Element_Data` | Game-defined custom data. |
 | `the_kind_of_ui_element__this_is` | `enum UI_Element_Kind` | Element kind discriminator. |
 
-### Handler Signatures
+### 4.3.2 Handler Signatures
 
 | Typedef | Signature |
 |---------|-----------|
@@ -106,7 +106,7 @@ externally-managed `Hitbox_AABB` looked up by UUID.
 | `m_UI_Compose` | `void (*)(UI_Element*, Game*, Graphics_Window*)` |
 | `m_UI_Transformed` | `void (*)(UI_Element*, Hitbox_AABB*, Vector__3i32, Game*, Graphics_Window*)` |
 
-### UI_Flags__u16 (u16)
+### 4.3.3 UI_Flags__u16 (u16)
 
 | Flag | Bit | Description |
 |------|-----|-------------|
@@ -119,15 +119,15 @@ externally-managed `Hitbox_AABB` looked up by UUID.
 | `UI_FLAGS__BIT_IS_USING__SPRITE_OR_UI_TILE_SPAN` | 6 | 1=sprite, 0=tile span. |
 | `UI_FLAGS__BIT_CUSTOM_0` through `UI_FLAGS__BIT_CUSTOM_3` | 12-15 | Safe for game use. |
 
-## Functions
+## 4.4 Functions
 
-### Initialization
+### 4.4.1 Initialization
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `initialize_ui_element` | `(UI_Element*, UI_Element* parent, UI_Element* child, UI_Element* next, UI_Element_Kind, UI_Flags__u16) -> void` | Base initialization. Sets kind, flags, tree pointers. All handlers set to null. |
 
-### Default Handlers
+### 4.4.2 Default Handlers
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
@@ -137,13 +137,13 @@ externally-managed `Hitbox_AABB` looked up by UUID.
 | `m_ui_element__compose_handler__default_only_recursive` | `(UI_Element*, Game*, Graphics_Window*) -> void` | Composes only children, skipping this element. |
 | `m_ui_element__transformed_handler__default` | `(UI_Element*, Hitbox_AABB*, Vector__3i32, Game*, Graphics_Window*) -> void` | Default transformed handler. On first call, assume position is unknown. |
 
-### Hitbox Management
+### 4.4.3 Hitbox Management
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `allocate_hitbox_for__ui_element` | `(Game*, Graphics_Window*, UI_Element*, u32 width, u32 height, Vector__3i32 position) -> void` | Allocates a `Hitbox_AABB` and associates it with this element via UUID. |
 
-### Position and Size
+### 4.4.4 Position and Size
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
@@ -152,7 +152,7 @@ externally-managed `Hitbox_AABB` looked up by UUID.
 | `set_ui_element__size` | `(Game*, Graphics_Window*, UI_Element*, u32 width, u32 height) -> void` | Sets hitbox dimensions. |
 | `set_ui_element__hitbox` | `(Game*, Graphics_Window*, UI_Element*, u32 width, u32 height, Vector__3i32) -> void` | Sets both size and position. |
 
-### Sprite and Tile Span
+### 4.4.5 Sprite and Tile Span
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -162,7 +162,7 @@ externally-managed `Hitbox_AABB` looked up by UUID.
 | `get_ui_tile_span_of__ui_element` | `(Hitbox_AABB_Manager*, Graphics_Window*, UI_Element*, u32* width, u32* height, u32* x, u32* y) -> const UI_Tile_Span*` | `const UI_Tile_Span*` | Returns tile span and computes tile-space dimensions/position. |
 | `does_ui_element_have__sprite` | `(Sprite_Manager*, UI_Element*) -> bool` | `bool` | True if using sprite mode and has a valid sprite. |
 
-### Tree Management
+### 4.4.6 Tree Management
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
@@ -171,7 +171,7 @@ externally-managed `Hitbox_AABB` looked up by UUID.
 | `update_ui_element_origin__relative_to__recursively` | `(Game*, UI_Manager*, UI_Element*, Vector__3i32 old, Vector__3i32 new) -> void` | Recursively updates positions when parent origin changes. |
 | `update_ui_element_origin__relative_to` | `(Game*, UI_Manager*, UI_Element*, Vector__3i32 old, Vector__3i32 new) -> void` | Updates position of this element only (non-recursive). |
 
-### Hitbox Access (static inline)
+### 4.4.7 Hitbox Access (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -185,7 +185,7 @@ externally-managed `Hitbox_AABB` looked up by UUID.
 | `get_width_from__p_ui_element` | `(Hitbox_AABB_Manager*, UI_Element*) -> Quantity__u32` | `Quantity__u32` | Returns width from hitbox. |
 | `get_height_from__p_ui_element` | `(Hitbox_AABB_Manager*, UI_Element*) -> Quantity__u32` | `Quantity__u32` | Returns height from hitbox. |
 
-### Linked List (static inline)
+### 4.4.8 Linked List (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -197,13 +197,13 @@ externally-managed `Hitbox_AABB` looked up by UUID.
 | `iterate_to_parent_of__ui_element` | `(UI_Element* volatile*) -> UI_Element*` | `UI_Element*` | Returns current, advances to `p_parent`. Null-safe. |
 | `iterate_to_child_of__ui_element` | `(UI_Element* volatile*) -> UI_Element*` | `UI_Element*` | Returns current, advances to `p_child`. Null-safe. |
 
-### Kind Query (static inline)
+### 4.4.9 Kind Query (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `is_ui_element_of__this_kind` | `(UI_Element*, UI_Element_Kind) -> bool` | `bool` | True if element matches the given kind. |
 
-### Flag Queries (static inline)
+### 4.4.10 Flag Queries (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -221,7 +221,7 @@ externally-managed `Hitbox_AABB` looked up by UUID.
 | `does_ui_element_have__child` | `(UI_Element*) -> bool` | `bool` | Null-safe. True if has child. |
 | `does_ui_element_have__next` | `(UI_Element*) -> bool` | `bool` | Null-safe. True if has next. |
 
-### Flag Mutations (static inline)
+### 4.4.11 Flag Mutations (static inline)
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
@@ -241,7 +241,7 @@ externally-managed `Hitbox_AABB` looked up by UUID.
 | `set_ui_element_as__non_interactive` | `(UI_Element*) -> void` | Sets `IS_NON_INTERACTIVE`. Different from disabled: still composes but ignores input. Use for background overlays. |
 | `set_ui_element_as__interactive` | `(UI_Element*) -> void` | Clears `IS_NON_INTERACTIVE`. |
 
-### Handler Setters (static inline)
+### 4.4.12 Handler Setters (static inline)
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
@@ -255,7 +255,7 @@ externally-managed `Hitbox_AABB` looked up by UUID.
 | `set_ui_element__transformed_handler` | `(UI_Element*, m_UI_Transformed) -> void` | Sets transformed handler. |
 | `set_ui_element__compose_handler` | `(UI_Element*, m_UI_Compose) -> void` | Sets compose handler. **Side effect:** also calls `set_ui_element_as__using_ui_tile_span`. |
 
-### Handler Queries (static inline)
+### 4.4.13 Handler Queries (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -269,7 +269,7 @@ externally-managed `Hitbox_AABB` looked up by UUID.
 | `does_ui_element_have__transformed_handler` | `(UI_Element*) -> bool` | `bool` | Null-safe. |
 | `does_ui_element_have__compose_handler` | `(UI_Element*) -> bool` | `bool` | True only if using tile span mode AND compose handler is non-null. |
 
-### Handler Getters (static inline)
+### 4.4.14 Handler Getters (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -278,9 +278,9 @@ externally-managed `Hitbox_AABB` looked up by UUID.
 | `get_ui_element__compose_handler` | `(UI_Element*) -> m_UI_Compose` | `m_UI_Compose` | Returns raw function pointer. |
 | `get_ui_element__p_ui_tile_span` | `(UI_Element*) -> const UI_Tile_Span*` | `const UI_Tile_Span*` | Returns pointer to embedded tile span. |
 
-## Agentic Workflow
+## 4.5 Agentic Workflow
 
-### Spatial Model
+### 4.5.1 Spatial Model
 
 UI elements do NOT store position/size directly. Each element's UUID (from
 `_serialization_header`) is used to look up a `Hitbox_AABB` from a
@@ -290,7 +290,7 @@ a `Hitbox_AABB_Manager*`:
     Hitbox_AABB *p_hitbox = get_p_hitbox_aabb_of__ui_element(
         p_hitbox_aabb_manager, p_ui_element);
 
-### Rendering Modes
+### 4.5.2 Rendering Modes
 
 An element renders in one of two mutually exclusive modes:
 1. **Tile Span mode** (`is_ui_element__using_ui_tile_span`): The element's
@@ -299,30 +299,30 @@ An element renders in one of two mutually exclusive modes:
 2. **Sprite mode** (`is_ui_element__using_sprite`): A `Sprite` is rendered
    at the element's position.
 
-### Tree Structure
+### 4.5.3 Tree Structure
 
 - `p_parent` / `p_child`: Hierarchical ownership. Children are disposed when
   parents are disposed.
 - `p_next`: Sibling linked list for iteration.
 - Composition and transformation propagate through the tree.
 
-### Preconditions
+### 4.5.4 Preconditions
 
 - All non-null-safe functions require non-null `p_ui_element`.
 - `does_ui_element_have__parent/child/next` are null-safe.
 - `iterate_to_*` functions are null-safe.
 
-### Postconditions
+### 4.5.5 Postconditions
 
 - `set_ui_element__compose_handler` also sets tile span rendering mode.
 - `set_ui_element_as__dropped` clears both held and dragged flags.
 - `link_ui_element_to__this_ui_element` with self-link sets `p_next` to null.
 
-### Error Handling
+### 4.5.6 Error Handling
 
 - Debug builds use `debug_abort` / `debug_error` for null pointer violations
   in non-null-safe functions.
 
-## Header Guard
+## 4.6 Header Guard
 
 `UI_ELEMENT_H`

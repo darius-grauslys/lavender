@@ -1,6 +1,6 @@
-# System Overview: UI Subsystem
+# 19 System Overview: UI Subsystem
 
-## Purpose
+## 19.1 Purpose
 
 The UI subsystem provides a complete framework for building, composing,
 rendering, and interacting with user interface elements. It manages pools of
@@ -10,9 +10,9 @@ sprite-based rendering modes. The system is designed to be platform-agnostic
 at the core level, with platform-specific rendering delegated through
 function pointers.
 
-## Architecture
+## 19.2 Architecture
 
-### Data Hierarchy
+### 19.2.1 Data Hierarchy
 
     Game
     +-- Gfx_Context
@@ -63,7 +63,7 @@ function pointers.
         +-- Hitbox_AABB_Manager
             +-- Hitbox_AABB[...]  (spatial data for UI elements, by UUID)
 
-### Key Types
+### 19.2.2 Key Types
 
 | Type | Role |
 |------|------|
@@ -78,7 +78,7 @@ function pointers.
 | `Graphics_Window` | A renderable window surface. Contains a `UI_Tile_Map__Wrapper` for tile-based UI backing. |
 | `Hitbox_AABB` | Axis-aligned bounding box storing position and size. UI elements reference these by UUID for spatial data. |
 
-### Limits
+### 19.2.3 Limits
 
 | Macro | Default | Description |
 |-------|---------|-------------|
@@ -94,7 +94,7 @@ function pointers.
 | `UI_TILE_MAP__LARGE__HEIGHT` | `32` | Height of large tile maps in tiles. |
 | `UI_CONTAINER_PTR_ENTRIES_MAXIMUM_QUANTITY_OF` | `8` | Maximum children in a container element. |
 
-## Element Kind Specializations
+## 19.3 Element Kind Specializations
 
 `UI_Element` is a polymorphic type discriminated by `UI_Element_Kind`. Each
 kind activates a different union member and installs different default
@@ -111,9 +111,9 @@ handlers:
 | **Window** | `Graphics_Window*` | *(via child window)* | Element that owns and manages a child `Graphics_Window`. |
 | **Container** | *(external `UI_Container_Entries`)* | *(none specific)* | Logical grouping of up to 8 child elements in a flat array. |
 
-## Rendering Model
+## 19.4 Rendering Model
 
-### Two Rendering Modes
+### 19.4.1 Two Rendering Modes
 
 Each `UI_Element` renders in exactly one of two mutually exclusive modes,
 controlled by `UI_FLAGS__BIT_IS_USING__SPRITE_OR_UI_TILE_SPAN`:
@@ -127,7 +127,7 @@ controlled by `UI_FLAGS__BIT_IS_USING__SPRITE_OR_UI_TILE_SPAN`:
 2. **Sprite Mode** (flag set): A `Sprite` is rendered at the element's
    position. The sprite is managed through the `Sprite_Context`.
 
-### Tile Composition Pipeline
+### 19.4.2 Tile Composition Pipeline
 
     UI_Tile_Span (9-slice pattern)
         |
@@ -143,7 +143,7 @@ controlled by `UI_FLAGS__BIT_IS_USING__SPRITE_OR_UI_TILE_SPAN`:
         v
     Visible UI output
 
-### Composition Flow
+### 19.4.3 Composition Flow
 
     compose_all_ui_elements_in__ui_manager()
         |
@@ -160,7 +160,7 @@ controlled by `UI_FLAGS__BIT_IS_USING__SPRITE_OR_UI_TILE_SPAN`:
                         +-- default_non_recursive: this element only
                         +-- default_only_recursive: children only
 
-### Rendering Flow (Sprite Mode)
+### 19.4.4 Rendering Flow (Sprite Mode)
 
     render_all_ui_elements_in__ui_manager()
         |
@@ -170,7 +170,7 @@ controlled by `UI_FLAGS__BIT_IS_USING__SPRITE_OR_UI_TILE_SPAN`:
                 |
                 +-- Render sprite at element's hitbox position
 
-## Spatial Model
+## 19.5 Spatial Model
 
 UI elements do **not** store position or size directly. Each element's UUID
 (from `_serialization_header`) is used to look up a `Hitbox_AABB` from a
@@ -182,7 +182,7 @@ UI elements do **not** store position or size directly. Each element's UUID
 This indirection allows the collision/hitbox system to manage spatial data
 uniformly for both game entities and UI elements.
 
-### Position and Size Operations
+### 19.5.1 Position and Size Operations
 
 | Operation | Function |
 |-----------|----------|
@@ -194,7 +194,7 @@ uniformly for both game entities and UI elements.
 | Query position | `get_position_3i32_from__p_ui_element(hitbox_mgr, element)` |
 | Query size | `get_width_from__p_ui_element(hitbox_mgr, element)` / `get_height_from__p_ui_element(...)` |
 
-### Transform Propagation
+### 19.5.2 Transform Propagation
 
 When an element's position changes, its `m_ui_transformed_handler` is
 invoked. For tree structures, transforms propagate recursively:
@@ -204,7 +204,7 @@ invoked. For tree structures, transforms propagate recursively:
 
 This updates the element and all its children when a parent origin changes.
 
-## Tree Structure
+## 19.6 Tree Structure
 
 UI elements form a tree via three pointers:
 
@@ -224,7 +224,7 @@ UI elements form a tree via three pointers:
        v
     [Grandchild_A1] --p_next--> [Grandchild_A2] --p_next--> NULL
 
-### Tree Semantics
+### 19.6.1 Tree Semantics
 
 - **Composition** propagates downward: composing a parent composes its
   children (via `m_ui_element__compose_handler__default`).
@@ -234,9 +234,9 @@ UI elements form a tree via three pointers:
 - **Priority** is managed separately via the pointer array in `UI_Manager`,
   independent of tree structure.
 
-## Lifecycle
+## 19.7 Lifecycle
 
-### 1. System Initialization
+### 19.7.1 1. System Initialization
 
     initialize_ui_context(&gfx_context.ui_context);
         -> All UI_Manager slots initialized to empty.
@@ -245,7 +245,7 @@ UI elements form a tree via three pointers:
     initialize_ui_tile_map_manager(&gfx_context.ui_tile_map_manager);
         -> All tile map pools (Small, Medium, Large) marked as deallocated.
 
-### 2. Window Registration (Once at Startup)
+### 19.7.2 2. Window Registration (Once at Startup)
 
     register_ui_windows(&gfx_context);
         -> For each game-defined window type:
@@ -260,7 +260,7 @@ UI elements form a tree via three pointers:
 The `register_ui_windows` function is game-specific and implemented in the
 game project's `implemented/` directory.
 
-### 3. Window Opening
+### 19.7.3 3. Window Opening
 
     Graphics_Window *p_gfx_window =
         open_ui_window(p_game, Graphics_Window_Kind__My_Window);
@@ -282,7 +282,7 @@ This performs the following steps:
        -> Set up event handlers.
        -> Compose initial tile map content.
 
-### 4. Per-Frame Update
+### 19.7.4 4. Per-Frame Update
 
     poll_ui_manager__update(p_ui_manager, p_game, p_gfx_window);
         -> Process input against all elements (in priority order):
@@ -302,7 +302,7 @@ This performs the following steps:
             -> If element is clicked:
                 -> Invoke m_ui_clicked_handler.
 
-### 5. Composition (When Dirty)
+### 19.7.5 5. Composition (When Dirty)
 
     if (is_ui_manager__dirty(p_ui_manager)) {
         compose_all_ui_elements_in__ui_manager(
@@ -315,7 +315,7 @@ This performs the following steps:
         -> Default handler: write 9-slice tile span into tile map,
            then recursively compose children.
 
-### 6. Rendering (Each Frame)
+### 19.7.6 6. Rendering (Each Frame)
 
     render_all_ui_elements_in__ui_manager(
         p_ui_manager, p_game, p_gfx_window);
@@ -326,7 +326,7 @@ This performs the following steps:
     f_PLATFORM_compose_gfx_window(p_gfx_window);
     -> Platform reads UI_Tile_Map__Wrapper to produce visible tile output.
 
-### 7. Window Closing
+### 19.7.7 7. Window Closing
 
     close_ui_window(p_game, uuid_of__gfx_window);
 
@@ -344,9 +344,9 @@ This performs the following steps:
     -> Release tile map back to UI_Tile_Map_Manager.
     -> Release Graphics_Window.
 
-## Input Event Flow
+## 19.8 Input Event Flow
 
-### Event Handler Dispatch
+### 19.8.1 Event Handler Dispatch
 
     Input Event
         |
@@ -376,13 +376,13 @@ This performs the following steps:
             +-- Type --> m_ui_typed_handler
                 +-- Text_Box: append/insert character (with optional filter)
 
-### Focus Model
+### 19.8.2 Focus Model
 
 Only one element per `UI_Manager` can be focused at a time
 (`p_ui_element__focused`). Focus is set when a text box is clicked. The
 focused element receives typed events.
 
-## Priority System
+## 19.9 Priority System
 
 The `UI_Manager` maintains a pointer array (`pM_ptr_array_of__ui_elements`)
 that determines the order in which elements are polled for input and
@@ -400,7 +400,7 @@ same position.
 **Warning:** Element indices in the pointer array may change due to priority
 reordering. Use UUIDs for stable element references.
 
-## Dirty Flag Mechanism
+## 19.10 Dirty Flag Mechanism
 
 The `UI_Manager` has a dirty flag (`UI_MANAGER_FLAG__IS_DIRTY`) that signals
 when tile-based composition needs to be re-run. Operations that modify
@@ -415,9 +415,9 @@ The game loop checks the flag and re-composes only when necessary:
             compose_all_ui_elements_in__ui_manager(...)
             set_ui_manager_as__NOT_dirty(p_ui_manager)
 
-## Tile Map Subsystem
+## 19.11 Tile Map Subsystem
 
-### Tile Map Pooling
+### 19.11.1 Tile Map Pooling
 
 Tile maps come in three fixed-size categories, pooled by the
 `UI_Tile_Map_Manager`:
@@ -431,7 +431,7 @@ Tile maps come in three fixed-size categories, pooled by the
 Allocation returns a `UI_Tile_Map__Wrapper` that provides size-agnostic
 access to the underlying tile data.
 
-### 9-Slice Composition
+### 19.11.2 9-Slice Composition
 
 `UI_Tile_Span` defines a 9-slice pattern. When written into a tile map
 region via `generate_ui_span_in__ui_tile_map`, the pattern is expanded:
@@ -446,7 +446,7 @@ region via `generate_ui_span_in__ui_tile_map`, the pattern is expanded:
     |BL| Bottom |BR|
     +--+--------+--+
 
-### Tile Data
+### 19.11.3 Tile Data
 
 Each `UI_Tile` is a 16-bit value:
 - Bits [0..9]: `UI_Tile_Kind` — index into a tileset.
@@ -455,7 +455,7 @@ Each `UI_Tile` is a 16-bit value:
 
 Tiles are stored as `UI_Tile_Raw` (u16) in the tile map arrays.
 
-## Slider Mechanics
+## 19.12 Slider Mechanics
 
 Sliders are constrained draggables that move along a single axis:
 
@@ -475,7 +475,7 @@ Sliders are constrained draggables that move along a single axis:
 - The `m_ui_slider__dragged_handler__gfx_window__default` variant scrolls
   the associated `Graphics_Window` based on slider position.
 
-## Window Element Nesting
+## 19.13 Window Element Nesting
 
 A `UI_Element` of kind `Window` owns a child `Graphics_Window`. This enables
 nested UI windows:
@@ -498,9 +498,9 @@ The child window's lifetime is tied to the parent `UI_Element`'s lifetime.
 Opening is done via `initialize_ui_element_as__window_element_and__open_window`,
 which calls `open_ui_window_with__this_uuid_and__parent_uuid`.
 
-## Text Input Pipeline
+## 19.14 Text Input Pipeline
 
-### Text Element (Read-Only)
+### 19.14.1 Text Element (Read-Only)
 
     initialize_ui_element_as__text_with__const_c_str(element, font, "Hello", 5);
         -> Sets kind to Text.
@@ -511,7 +511,7 @@ which calls `open_ui_window_with__this_uuid_and__parent_uuid`.
         m_ui_element__compose_handler__text
             -> Uses Typer to lay out glyphs into the tile map.
 
-### Text Box (Editable)
+### 19.14.2 Text Box (Editable)
 
     initialize_ui_element_as__text_box_with__buffer_size(element, font, 128);
         -> Sets kind to Text_Box.
@@ -529,7 +529,7 @@ which calls `open_ui_window_with__this_uuid_and__parent_uuid`.
         m_ui_element__compose_handler__text_box
             -> Uses Typer to lay out current buffer contents.
 
-### Input Filters
+### 19.14.3 Input Filters
 
 | Handler | Accepts |
 |---------|---------|
@@ -537,7 +537,7 @@ which calls `open_ui_window_with__this_uuid_and__parent_uuid`.
 | `m_ui_element__typed_handler__text_box__numeric` | Numeric characters only. |
 | `m_ui_element__typed_handler__text_box__alphanumeric` | Alphanumeric characters only. |
 
-## Relationship to External Systems
+## 19.15 Relationship to External Systems
 
 | Concern | Managed By |
 |---------|------------|
@@ -555,7 +555,7 @@ The `UI_Element._serialization_header` UUID is the bridge between the UI
 system and the hitbox system: it references a `Hitbox_AABB` by UUID, which
 is resolved through the `Hitbox_AABB_Manager` for all spatial queries.
 
-## Capacity Constraints
+## 19.16 Capacity Constraints
 
 - Each `UI_Manager` has a fixed maximum element count set at allocation time
   (`allocate_ui_manager__members`). This determines both the pool size and
@@ -567,7 +567,7 @@ is resolved through the `Hitbox_AABB_Manager` for all spatial queries.
 - Container elements hold at most
   `UI_CONTAINER_PTR_ENTRIES_MAXIMUM_QUANTITY_OF` (default 8) children.
 
-## Error Handling
+## 19.17 Error Handling
 
 - Debug builds use `debug_abort` for null pointer violations in non-null-safe
   functions and for out-of-bounds index access in `UI_Manager`.

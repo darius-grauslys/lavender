@@ -1,20 +1,20 @@
-# Specification: core/include/ui/ui_text_box.h
+# 16 Specification: core/include/ui/ui_text_box.h
 
-## Overview
+## 16.1 Overview
 
 Specializes a `UI_Element` as an editable text box. Extends `UI_Text` with
 click-to-focus and typed input handling. Supports numeric-only and
 alphanumeric-only input filters.
 
-## Dependencies
+## 16.2 Dependencies
 
 - `defines.h` (for `UI_Element`, `Typer`, `Font`)
 - `defines_weak.h` (forward declarations)
 - `ui/ui_text.h` (for text manipulation functions, delegated to)
 
-## Functions
+## 16.3 Functions
 
-### Initialization
+### 16.3.1 Initialization
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
@@ -22,7 +22,7 @@ alphanumeric-only input filters.
 | `initialize_ui_element_as__text_box_with__pM_c_str` | `(UI_Element*, Font*, char*, Quantity__u32) -> void` | Initializes with owned string. Takes ownership. |
 | `initialize_ui_element_as__text_box_with__buffer_size` | `(UI_Element*, Font*, Quantity__u32) -> void` | Initializes with internally allocated buffer. |
 
-### Handlers
+### 16.3.2 Handlers
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
@@ -32,7 +32,7 @@ alphanumeric-only input filters.
 | `m_ui_element__typed_handler__text_box__numeric` | `(UI_Element*, Game*, Graphics_Window*, unsigned char) -> void` | Typed handler that only accepts numeric characters. |
 | `m_ui_element__typed_handler__text_box__alphanumeric` | `(UI_Element*, Game*, Graphics_Window*, unsigned char) -> void` | Typed handler that only accepts alphanumeric characters. |
 
-### Delegate Functions (static inline)
+### 16.3.3 Delegate Functions (static inline)
 
 All are thin wrappers that delegate to the corresponding `ui_text.h` function:
 
@@ -49,18 +49,18 @@ All are thin wrappers that delegate to the corresponding `ui_text.h` function:
 | `get_p_const_c_str_text_of__ui_text_box` | `get_p_const_c_str_text_of__ui_text` |
 | `get_p_typer_of__ui_text_box` | `get_p_typer_of__ui_text` |
 
-## Agentic Workflow
+## 16.4 Agentic Workflow
 
-### Usage Pattern
+### 16.4.1 Usage Pattern
 
 Text boxes extend text elements with input handling. The click handler sets
 focus, and the typed handler processes keyboard input. Use the typed handler
 variants to restrict input to numeric or alphanumeric characters.
 
-### Preconditions
+### 16.4.2 Preconditions
 
 - All functions require non-null `p_ui_text_box`.
 
-## Header Guard
+## 16.5 Header Guard
 
 `UI_TEXT_BOX_H`
