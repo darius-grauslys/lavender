@@ -1,6 +1,6 @@
-# Specification: core/include/rendering/sprite.h
+# 1. Specification: core/include/rendering/sprite.h
 
-## Overview
+## 1.1 Overview
 
 Defines operations on `Sprite` — the engine's representation of a renderable
 animated image. A sprite wraps a platform-specific `PLATFORM_Sprite`, a
@@ -8,7 +8,7 @@ sampling texture, an output texture, animation state, and rendering flags.
 Provides non-inline functions for animation polling and inline helpers for
 flag management.
 
-## Dependencies
+## 1.2 Dependencies
 
 - `defines_weak.h` (forward declarations)
 - `defines.h` (for `Sprite`, `Sprite_Flags`, `Sprite_Animation`, all flag macros)
@@ -18,9 +18,9 @@ flag management.
 - `types/implemented/sprite_animation_group_kind.h` (for `Sprite_Animation_Group_Kind` enum)
 - `types/implemented/sprite_animation_kind.h` (for `Sprite_Animation_Kind` enum)
 
-## Types
+## 1.3 Types
 
-### Sprite (struct)
+### 1.3.1 Sprite (struct)
 
     typedef struct Sprite_t {
         Serialization_Header _serialization_header;
@@ -52,7 +52,7 @@ flag management.
 | `direction__old__u8` | `Direction__u8` | Previous direction (for delta calculation). |
 | `direction__delta__u8` | `Direction__u8` | Direction change since last frame. |
 
-### Sprite_Flags (u8)
+### 1.3.2 Sprite_Flags (u8)
 
 | Flag | Bit | Description |
 |------|-----|-------------|
@@ -61,14 +61,14 @@ flag management.
 | `SPRITE_FLAG__BIT_IS_FLIPPED_X` | 2 | Sprite is horizontally flipped. |
 | `SPRITE_FLAG__BIT_IS_FLIPPED_Y` | 3 | Sprite is vertically flipped. |
 
-### m_Sprite_Animation_Handler (function pointer)
+### 1.3.3 m_Sprite_Animation_Handler (function pointer)
 
     typedef void (*m_Sprite_Animation_Handler)(
             Sprite *p_this_sprite,
             Game *p_game,
             Sprite_Context *p_sprite_context);
 
-### Sprite_Animation_Group_Set (struct)
+### 1.3.4 Sprite_Animation_Group_Set (struct)
 
     typedef struct Sprite_Animation_Group_Set_t {
         Quantity__u8 quantity_of__columns_in__sprite_animation_group__u4 :4;
@@ -78,9 +78,9 @@ flag management.
 
 Expresses subgroups within the sprite's sample texture.
 
-## Functions
+## 1.4 Functions
 
-### Animation
+### 1.4.1 Animation
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
@@ -88,13 +88,13 @@ Expresses subgroups within the sprite's sample texture.
 | `poll_sprite_for__animation` | `(Game*, Sprite*, Sprite_Context*) -> void` | Polls the sprite's animation handler. Called each frame for animated sprites. |
 | `set_sprite_animation` | `(Sprite_Context*, Sprite*, Sprite_Animation_Kind) -> void` | Sets the sprite's current animation to the registered animation of the given kind. |
 
-### Allocation State (static inline)
+### 1.4.2 Allocation State (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `is_sprite__deallocated` | `(Sprite*) -> bool` | `bool` | True if the sprite's serialization header indicates deallocation via `IS_DEALLOCATED_P`. |
 
-### Enabled State (static inline)
+### 1.4.3 Enabled State (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -102,7 +102,7 @@ Expresses subgroups within the sprite's sample texture.
 | `set_sprite_as__enabled` | `(Sprite*) -> bool` | `bool` | Sets `IS_ENABLED`. **Note:** returns `bool` (flags cast) — likely unintentional. |
 | `set_sprite_as__disabled` | `(Sprite*) -> bool` | `bool` | Clears `IS_ENABLED`. **Note:** returns `bool` (flags cast) — likely unintentional. |
 
-### Graphics Update (static inline)
+### 1.4.4 Graphics Update (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -110,13 +110,13 @@ Expresses subgroups within the sprite's sample texture.
 | `set_sprite_as__needing_graphics_update` | `(Sprite*) -> bool` | `bool` | Sets `IS_NEEDING_GRAPHICS_UPDATE`. |
 | `set_sprite_as__NOT_needing_graphics_update` | `(Sprite*) -> bool` | `bool` | Clears `IS_NEEDING_GRAPHICS_UPDATE`. |
 
-### Frame (static inline)
+### 1.4.5 Frame (static inline)
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `set_frame_index_of__sprite` | `(Sprite*, Index__u8) -> void` | Sets the frame index and marks the sprite as needing a graphics update. |
 
-### Flipping (static inline)
+### 1.4.6 Flipping (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -127,16 +127,16 @@ Expresses subgroups within the sprite's sample texture.
 | `set_sprite_as__flipped_y` | `(Sprite*) -> bool` | `bool` | Sets `IS_FLIPPED_Y`. |
 | `set_sprite_as__NOT_flipped_y` | `(Sprite*) -> bool` | `bool` | Clears `IS_FLIPPED_Y`. |
 
-### Animation Access (static inline)
+### 1.4.7 Animation Access (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `get_p_sprite_animation_from__sprite` | `(Sprite*) -> Sprite_Animation*` | `Sprite_Animation*` | Returns pointer to embedded animation. |
 | `get_the_kind_of__sprite_animation_group_of__this_sprite` | `(Sprite*) -> Sprite_Animation_Group_Kind` | `Sprite_Animation_Group_Kind` | Returns the animation group kind. |
 
-## Agentic Workflow
+## 1.5 Agentic Workflow
 
-### Relationships
+### 1.5.1 Relationships
 
 - Managed by `Sprite_Manager` (see `sprite_manager.h`).
 - Platform sprite allocated via `PLATFORM_allocate_sprite`.
@@ -144,10 +144,10 @@ Expresses subgroups within the sprite's sample texture.
 - Animation state driven by `Sprite_Context` (see `sprite_context.h`).
 - UI elements can reference sprites via `set_ui_element__sprite`.
 
-### Preconditions
+### 1.5.2 Preconditions
 
 - All functions require non-null `p_sprite`.
 
-## Header Guard
+## 1.6 Header Guard
 
 `SPRITE_H`

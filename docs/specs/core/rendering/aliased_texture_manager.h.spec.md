@@ -1,20 +1,20 @@
-# Specification: core/include/rendering/aliased_texture_manager.h
+# 1. Specification: core/include/rendering/aliased_texture_manager.h
 
-## Overview
+## 1.1 Overview
 
 Manages a pool of `Aliased_Texture` instances, providing allocation,
 lookup (by name or UUID), and release of named textures. This is the
 primary API for loading and accessing textures by human-readable names
 at runtime.
 
-## Dependencies
+## 1.2 Dependencies
 
 - `defines.h` (for `Aliased_Texture_Manager`, `Aliased_Texture`, `Texture`, `Texture_Flags`)
 - `defines_weak.h` (forward declarations)
 
-## Types
+## 1.3 Types
 
-### Aliased_Texture_Manager (struct)
+### 1.3.1 Aliased_Texture_Manager (struct)
 
     typedef struct Aliased_Texture_Manager_t {
         Aliased_Texture aliased_textures[MAX_QUANTITY_OF__ALIASED_TEXTURES];
@@ -26,28 +26,28 @@ at runtime.
 | `aliased_textures` | `Aliased_Texture[128]` | Fixed pool of aliased texture slots. |
 | `repeatable_psuedo_random_for__texture_uuid` | `Repeatable_Psuedo_Random` | UUID generator for texture entries. |
 
-### Constants
+### 1.3.2 Constants
 
 | Macro | Value | Description |
 |-------|-------|-------------|
 | `MAX_QUANTITY_OF__ALIASED_TEXTURES` | `128` | Maximum aliased textures. |
 
-## Functions
+## 1.4 Functions
 
-### Initialization
+### 1.4.1 Initialization
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `initialize_aliased_texture_manager` | `(Aliased_Texture_Manager*) -> void` | Initializes all aliased texture slots to empty. |
 
-### Allocation
+### 1.4.2 Allocation
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `allocate_texture_with__alias` | `(PLATFORM_Gfx_Context*, PLATFORM_Graphics_Window*, Aliased_Texture_Manager*, Texture_Name__c_str, Texture_Flags, Texture*) -> bool` | `bool` | Allocates a new platform texture and registers it with the given alias. Returns `true` on **failure**, `false` on success. |
 | `load_texture_from__path_with__alias` | `(PLATFORM_Gfx_Context*, PLATFORM_Graphics_Window*, Aliased_Texture_Manager*, Texture_Name__c_str, Texture_Flags, const char*, Texture*) -> bool` | `bool` | Loads a texture from a file path and registers it with the given alias. Returns `true` on **failure**, `false` on success. |
 
-### Lookup
+### 1.4.3 Lookup
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -55,7 +55,7 @@ at runtime.
 | `get_texture_by__alias` | `(Aliased_Texture_Manager*, Texture_Name__c_str, Texture*) -> bool` | `bool` | Looks up a texture by alias name. Returns `true` on **failure** (not found). |
 | `get_texture_by__uuid` | `(Aliased_Texture_Manager*, Identifier__u32, Texture*) -> bool` | `bool` | Looks up a texture by UUID. Returns `true` on **failure** (not found). |
 
-### Release
+### 1.4.4 Release
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
@@ -63,27 +63,27 @@ at runtime.
 | `release_aliased_texture_by__alias` | `(PLATFORM_Gfx_Context*, Aliased_Texture_Manager*, Texture_Name__c_str) -> void` | Releases a texture by alias name. |
 | `release_aliased_texture_by__uuid` | `(PLATFORM_Gfx_Context*, Aliased_Texture_Manager*, Identifier__u32) -> void` | Releases a texture by UUID. |
 
-## Agentic Workflow
+## 1.5 Agentic Workflow
 
-### Error Convention
+### 1.5.1 Error Convention
 
 Functions returning `bool` use **inverted convention**: `true` = failure,
 `false` = success. This is consistent across the aliased texture API.
 
-### Ownership
+### 1.5.2 Ownership
 
 Owned by `Gfx_Context` (at `gfx_context.aliased_texture_manager`).
 Individual entries are `Aliased_Texture` (see `aliased_texture.h`).
 Registered at game init via `register_aliased_textures` (see
 `implemented/aliased_texture_registrar.h`).
 
-### Preconditions
+### 1.5.3 Preconditions
 
 - All functions require non-null pointers.
 - `allocate_texture_with__alias`: repeated names will shadow textures in an
   unpredictable manner.
 - You do NOT own the returned texture — the manager owns it.
 
-## Header Guard
+## 1.6 Header Guard
 
 `ALIASED_TEXTURE_MANAGER_H`

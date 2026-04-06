@@ -1,9 +1,9 @@
-# Graphics Context Helpers Specification
+# 1. Graphics Context Helpers Specification
 
-## File
+## 1.1 File
 `core/include/rendering/gfx_context_helpers.h`
 
-## Purpose
+## 1.2 Purpose
 Provides convenience `static inline` functions for common multi-step
 graphics context operations at the Lavender CORE level — specifically
 allocating a `Graphics_Window` together with a `UI_Manager` and/or
@@ -16,7 +16,7 @@ signatures. The sprite pool functions reference a `Sprite_Pool` type that
 no longer exists. This file may not compile and should be considered
 **unstable/deprecated** until updated.
 
-## Dependencies
+## 1.3 Dependencies
 | Header | Purpose |
 |--------|---------|
 | `defines_weak.h` | Forward declarations |
@@ -27,6 +27,6 @@ no longer exists. This file may not compile and should be considered
 | `rendering/graphics_window_manager.h` | Window allocation |
 | `rendering/sprite_manager.h` | Sprite manager operations |
 
-## Functions
+## 1.4 Functions
 
-### `GFX_CONTEXT_allocate_graphics_window_with__ui_manager`
+### 1.4.1 `GFX_CONTEXT_allocate_graphics_window_with__ui_manager`

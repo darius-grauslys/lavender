@@ -1,18 +1,18 @@
-# Specification: core/include/rendering/aliased_texture.h
+# 1. Specification: core/include/rendering/aliased_texture.h
 
-## Overview
+## 1.1 Overview
 
 Provides operations on individual `Aliased_Texture` instances — textures
 that are associated with a human-readable string name (alias). This is the
 per-entry API; for pool management see `aliased_texture_manager.h`.
 
-## Dependencies
+## 1.2 Dependencies
 
 - `defines.h` (for `Aliased_Texture`, `Texture`, `Texture_Name__c_str`)
 
-## Types
+## 1.3 Types
 
-### Aliased_Texture (struct)
+### 1.3.1 Aliased_Texture (struct)
 
     typedef struct Aliased_Texture_t {
         Serialization_Header _serialization_header;
@@ -26,28 +26,28 @@ per-entry API; for pool management see `aliased_texture_manager.h`.
 | `name_of__texture__c_str` | `char[MAX_LENGTH_OF__TEXTURE_NAME]` | Human-readable alias name. |
 | `texture` | `Texture` | The wrapped texture. |
 
-### Constants
+### 1.3.2 Constants
 
 | Macro | Value | Description |
 |-------|-------|-------------|
 | `MAX_LENGTH_OF__TEXTURE_NAME` | `32` | Maximum alias name length. |
 
-## Functions
+## 1.4 Functions
 
-### Initialization
+### 1.4.1 Initialization
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `initialize_aliased_texture` | `(Aliased_Texture*) -> void` | Initializes to empty state. **WARNING:** double-calling will leak memory if the texture was previously allocated. |
 
-### Name Management
+### 1.4.2 Name Management
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `set_c_str_of__aliased_texture` | `(Aliased_Texture*, const char*) -> void` | `void` | Sets the alias name. Copies up to `MAX_LENGTH_OF__TEXTURE_NAME` bytes. |
 | `is_c_str_matching__aliased_texture` | `(Aliased_Texture*, const char*) -> bool` | `bool` | True if the alias name matches the given string. |
 
-### Texture Access (static inline)
+### 1.4.3 Texture Access (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -55,24 +55,24 @@ per-entry API; for pool management see `aliased_texture_manager.h`.
 | `get_texture_from__aliased_texture` | `(Aliased_Texture*) -> Texture` | `Texture` | Returns the `Texture` by value. Debug null-checked. |
 | `is_aliased_texture__used` | `(Aliased_Texture*) -> bool` | `bool` | True if the alias name is non-empty (first byte is non-zero). Null-safe. |
 
-## Agentic Workflow
+## 1.5 Agentic Workflow
 
-### Ownership
+### 1.5.1 Ownership
 
 Managed by `Aliased_Texture_Manager` (see `aliased_texture_manager.h`).
 The `Texture` within is allocated via `PLATFORM_allocate_texture` or
 `PLATFORM_allocate_texture_with__path`.
 
-### Preconditions
+### 1.5.2 Preconditions
 
 - `give_texture_to__aliased_texture` and `get_texture_from__aliased_texture`
   require non-null `p_aliased_texture` in debug builds.
 - `is_aliased_texture__used` is null-safe.
 
-### Error Handling
+### 1.5.3 Error Handling
 
 - Debug builds call `debug_error` on null pointer violations.
 
-## Header Guard
+## 1.6 Header Guard
 
 `ALIASED_TEXTURE_H`

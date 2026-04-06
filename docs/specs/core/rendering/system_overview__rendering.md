@@ -1,6 +1,6 @@
-# System Overview: Rendering
+# 1. System Overview: Rendering
 
-## Purpose
+## 1.1 Purpose
 
 The rendering system provides the engine's complete graphics pipeline:
 texture management, sprite rendering and animation, windowed composition,
@@ -8,9 +8,9 @@ font/text layout, and the bridge to platform-specific graphics backends.
 All rendering state is aggregated under a single `Gfx_Context` owned by
 `Game`.
 
-## Architecture
+## 1.2 Architecture
 
-### Data Hierarchy
+### 1.2.1 Data Hierarchy
 
     Game
     +-- Gfx_Context
@@ -66,7 +66,7 @@ All rendering state is aggregated under a single `Gfx_Context` owned by
     |   +-- UI_Tile_Map_Manager  (see UI specs)
     |   +-- PLATFORM_Gfx_Context*  (platform-specific state)
 
-### Key Types
+### 1.2.2 Key Types
 
 | Type | Role |
 |------|------|
@@ -88,7 +88,7 @@ All rendering state is aggregated under a single `Gfx_Context` owned by
 | `Font_Letter` | Compact glyph descriptor: width, height, x/y offsets (4 bits each), and 16-bit atlas index. |
 | `Typer` | Text layout engine. Renders strings into a `Texture` or `PLATFORM_Graphics_Window` using a `Font`, with cursor wrapping and line spacing. |
 
-### Limits
+### 1.2.3 Limits
 
 | Macro | Default | Description |
 |-------|---------|-------------|
@@ -98,7 +98,7 @@ All rendering state is aggregated under a single `Gfx_Context` owned by
 | `FONT_LETTER_MAX_QUANTITY_OF` | 256 | One glyph entry per ASCII code. |
 | `MAX_LENGTH_OF__TEXTURE_NAME` | 32 | Maximum alias name length (bytes). |
 
-## Graphics Window Resource Sharing Model
+## 1.3 Graphics Window Resource Sharing Model
 
 A `Graphics_Window` can **own** or **share** three resource managers,
 identified by UUID fields. If the manager UUID equals the window's own UUID,
@@ -119,7 +119,7 @@ window.
       uuid_of__sprite_manager = 0x100  --> OWNS this Sprite_Manager
       uuid_of__ui_manager     = 0x200  --> SHARES UI_Manager from window 0x200
 
-## Graphics Window Parent-Child Hierarchy
+## 1.4 Graphics Window Parent-Child Hierarchy
 
 Windows form a tree via `graphics_window__parent__uuid`. The manager provides
 functions to establish parent-child relationships, query ancestry, find root
@@ -136,11 +136,11 @@ platform layer during initialization and cannot be released by the engine.
 They are identified by the `GRAPHICS_WINDOW__FLAG__IS_PLATFORM_PROVIDED`
 flag and are reset (rather than released) during scene transitions.
 
-## Texture Pipeline
+## 1.5 Texture Pipeline
 
 Textures flow through the system in two paths:
 
-### Named Texture Path (Asset Loading)
+### 1.5.1 Named Texture Path (Asset Loading)
 
     Game initialization:
       register_aliased_textures(aliased_texture_manager, game)
@@ -166,7 +166,7 @@ Textures flow through the system in two paths:
 
     Note: bool return values use inverted convention: true = failure, false = success.
 
-### Sprite Texture Path (Per-Instance)
+### 1.5.2 Sprite Texture Path (Per-Instance)
 
     allocate_sprite_from__sprite_manager(
         gfx_context, sprite_manager, gfx_window, uuid, sample_texture, texture_flags)
@@ -174,12 +174,12 @@ Textures flow through the system in two paths:
       -> sprite.texture_for__sprite_to__sample = sample_texture (source sheet)
       -> sprite.texture_of__sprite = allocated output texture
 
-## Sprite Animation Pipeline
+## 1.6 Sprite Animation Pipeline
 
 Animations are registered globally in `Sprite_Context` and applied to
 individual `Sprite` instances:
 
-### 1. Registration (Game Initialization)
+### 1.6.1 Registration (Game Initialization)
 
     register_sprite_animations(p_sprite_manager)  [game-specific, from implemented/]
       -> register_sprite_animation_into__sprite_context(
@@ -190,25 +190,25 @@ individual `Sprite` instances:
              sprite_context, Sprite_Animation_Group_Kind__X, group_set)
          -> sprite_context.sprite_animation_groups[group_kind] = group_set
 
-### 2. Application (Runtime)
+### 1.6.2 Application (Runtime)
 
     set_sprite_animation(sprite_context, sprite, Sprite_Animation_Kind__X)
       -> Copies registered Sprite_Animation into sprite.animation
 
-### 3. Per-Frame Update
+### 1.6.3 Per-Frame Update
 
     poll_sprite_for__animation(game, sprite, sprite_context)
       -> Invokes sprite.m_sprite_animation_handler(sprite, game, sprite_context)
          -> Default handler: advances timer, updates frame index
          -> Sets SPRITE_FLAG__BIT_IS_NEEDING_GRAPHICS_UPDATE when frame changes
 
-### 4. Batch Rendering
+### 1.6.4 Batch Rendering
 
     render_sprites_in__sprite_manager(game, sprite_context, sprite_manager, gfx_window)
       -> For each enabled sprite in pool:
          -> PLATFORM_render_sprite(...)
 
-## Text Rendering Pipeline
+## 1.7 Text Rendering Pipeline
 
 Text rendering uses `Typer` with a `Font` to lay out and render characters:
 
@@ -233,9 +233,9 @@ Text rendering uses `Typer` with a `Font` to lay out and render characters:
             -> offset_typer_by__font_letter(&typer, p_font_letter)
                -> Advances cursor by glyph width
 
-## Lifecycle
+## 1.8 Lifecycle
 
-### 1. Initialization
+### 1.8.1 Initialization
 
     initialize_gfx_context(&game.gfx_context)
       -> initialize_graphics_window_manager(&graphics_window_manager)
@@ -248,7 +248,7 @@ Text rendering uses `Typer` with a `Font` to lay out and render characters:
       -> Platform-specific setup
       -> setup_platform_provided_graphics_windows(&gfx_context)
 
-### 2. Asset Registration (Game-Specific)
+### 1.8.2 Asset Registration (Game-Specific)
 
     register_aliased_textures(&aliased_texture_manager, p_game)
       -> allocate_texture_with__alias / load_texture_from__path_with__alias
@@ -260,7 +260,7 @@ Text rendering uses `Typer` with a `Font` to lay out and render characters:
       -> register_sprite_animation_group_into__sprite_context
          for each animation group kind
 
-### 3. Window Allocation
+### 1.8.3 Window Allocation
 
     Graphics_Window *p_window =
         allocate_graphics_window_from__graphics_window_manager(
@@ -276,7 +276,7 @@ Text rendering uses `Typer` with a `Font` to lay out and render characters:
     Or use convenience helpers (from gfx_context_helpers.h):
       GFX_CONTEXT_allocate_graphics_window_with__ui_manager(game, uuid, flags)
 
-### 4. Per-Frame Update
+### 1.8.4 Per-Frame Update
 
     For each active sprite:
       poll_sprite_for__animation(game, sprite, sprite_context)
@@ -290,7 +290,7 @@ Text rendering uses `Typer` with a `Font` to lay out and render characters:
          -> window.f_PLATFORM_render_gfx_window(game, window)
          -> render_sprites_in__sprite_manager(game, sprite_context, sprite_manager, window)
 
-### 5. Window Release
+### 1.8.5 Window Release
 
     release_graphics_window_from__graphics_window_manager(game, p_window)
       -> If window owns sprite manager: release_graphics_window_sprite_manager
@@ -298,7 +298,7 @@ Text rendering uses `Typer` with a `Font` to lay out and render characters:
       -> If window owns hitbox manager: release_graphics_window_hitbox_manager
       -> PLATFORM_release_gfx_window(...)
 
-### 6. Shutdown
+### 1.8.6 Shutdown
 
     release_all_aliased_textures(p_PLATFORM_gfx_context, &aliased_texture_manager)
       -> PLATFORM_release_texture for each allocated texture
@@ -307,7 +307,7 @@ Text rendering uses `Typer` with a `Font` to lay out and render characters:
     release_sprite_managers_from__sprite_context(&sprite_context)
       -> Frees heap-allocated sprite manager pool
 
-## Platform Integration
+## 1.9 Platform Integration
 
 The rendering system delegates all hardware-specific operations to platform
 functions. The platform layer provides:
@@ -335,9 +335,9 @@ Platform-specific state is held in opaque types:
 | `PLATFORM_Texture` | `Texture.p_PLATFORM_texture` |
 | `PLATFORM_Sprite` | `Sprite.p_PLATFORM_sprite` |
 
-## Error Conventions
+## 1.10 Error Conventions
 
-### Aliased Texture Manager
+### 1.10.1 Aliased Texture Manager
 
 Functions returning `bool` in the `Aliased_Texture_Manager` use an
 **inverted convention**: `true` = failure, `false` = success. This is
@@ -345,13 +345,13 @@ consistent across the aliased texture API but differs from most other
 engine APIs (e.g. `allocate_sprite_manager__members` returns `true` on
 success).
 
-### Debug Checks
+### 1.10.2 Debug Checks
 
 Most `static inline` accessor functions perform null-pointer checks in
 debug builds via `debug_error` and return safe defaults (null, false,
 `VECTOR__3i32__OUT_OF_BOUNDS`, `IDENTIFIER__UNKNOWN__u32`) on failure.
 
-## Convenience Helpers
+## 1.11 Convenience Helpers
 
 `gfx_context_helpers.h` provides `static inline` functions that combine
 multiple allocation steps:
@@ -368,9 +368,9 @@ functional. The sprite pool variants reference a removed
 deprecated. Prefer using `allocate_sprite_manager_for__graphics_window`
 directly after window allocation.
 
-## Deprecated Components
+## 1.12 Deprecated Components
 
-### animate_sprite.h
+### 1.12.1 animate_sprite.h
 
 This header previously contained sprite animation helpers but all function
 bodies are currently commented out. The animation system has been refactored
@@ -380,7 +380,7 @@ New code should use:
 - `set_sprite_animation` (from `sprite.h`)
 - `Sprite_Animation` flag helpers (from `sprite_animation.h`)
 
-## Relationship to Other Systems
+## 1.13 Relationship to Other Systems
 
 | Concern | Managed By |
 |---------|------------|

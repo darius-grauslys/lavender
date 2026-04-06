@@ -1,6 +1,6 @@
-# Specification: core/include/rendering/texture.h
+# 1. Specification: core/include/rendering/texture.h
 
-## Overview
+## 1.1 Overview
 
 Provides `static inline` helper functions for querying and mutating `Texture`
 and `Texture_Flags` values. Textures are the fundamental image resource type
@@ -9,14 +9,14 @@ engine-managed flags that encode size, format, render method, visibility,
 and read-only state. Also provides two non-inline functions for converting
 flag-encoded dimensions to pixel counts.
 
-## Dependencies
+## 1.2 Dependencies
 
 - `defines_weak.h` (for `Texture_Flags` typedef)
 - `defines.h` (for `Texture` struct, all `TEXTURE_FLAG__*` macros)
 
-## Types
+## 1.3 Types
 
-### Texture (struct)
+### 1.3.1 Texture (struct)
 
     typedef struct Texture_t {
         PLATFORM_Texture *p_PLATFORM_texture;
@@ -28,11 +28,11 @@ flag-encoded dimensions to pixel counts.
 | `p_PLATFORM_texture` | `PLATFORM_Texture*` | Platform-specific texture handle. |
 | `texture_flags` | `Texture_Flags` | Encoded size, format, render method, and core flags. |
 
-### Texture_Flags (u32)
+### 1.3.2 Texture_Flags (u32)
 
     typedef uint32_t Texture_Flags;
 
-#### Flag Layout (32 bits, MSB to LSB)
+#### 1.3.2.1 Flag Layout (32 bits, MSB to LSB)
 
     [32..21] Platform-specific flags
     [20..13] Core flags (hidden, readonly, reserved)
@@ -41,7 +41,7 @@ flag-encoded dimensions to pixel counts.
     [ 6.. 4] Width (3 bits)
     [ 3.. 1] Height (3 bits)
 
-#### Size Encoding
+#### 1.3.2.2 Size Encoding
 
 Width and height are each encoded as 3-bit indices:
 
@@ -58,7 +58,7 @@ Width and height are each encoded as 3-bit indices:
 
 Special mappings for sizes > 1024 (e.g. `TEXTURE_FLAG__SIZE_2048x2048`).
 
-#### Convenience Size Macros
+#### 1.3.2.3 Convenience Size Macros
 
 `TEXTURE_FLAG__SIZE_8x8`, `TEXTURE_FLAG__SIZE_16x16`,
 `TEXTURE_FLAG__SIZE_32x32`, `TEXTURE_FLAG__SIZE_64x64`,
@@ -67,37 +67,37 @@ Special mappings for sizes > 1024 (e.g. `TEXTURE_FLAG__SIZE_2048x2048`).
 `TEXTURE_FLAG__SIZE_2048x2048`, `TEXTURE_FLAG__SIZE_4096x4096`,
 `TEXTURE_FLAG__SIZE_8192x8192`, and various non-square combinations.
 
-#### Render Method (3 bits)
+#### 1.3.2.4 Render Method (3 bits)
 
 `TEXTURE_FLAG__RENDER_METHOD__0` through `TEXTURE_FLAG__RENDER_METHOD__7`.
 Platform-specific meaning (e.g. on NDS: oamMain vs oamSub).
 
-#### Format (3 bits)
+#### 1.3.2.5 Format (3 bits)
 
 `TEXTURE_FLAG__FORMAT__15_RGB` (default), plus 7 platform-defined formats.
 
-#### Core Flags
+#### 1.3.2.6 Core Flags
 
 | Flag | Description |
 |------|-------------|
 | `TEXTURE_FLAG__IS_HIDDEN` | Texture should not be rendered. |
 | `TEXTURE_FLAG__IS_READONLY` | Texture data is read-only. |
 
-#### Composite Macro
+#### 1.3.2.7 Composite Macro
 
     #define TEXTURE_FLAGS(size, method, format) ...
 
 Combines size, render method, and format into a single `Texture_Flags` value.
 
-## Functions
+## 1.4 Functions
 
-### Initialization (static inline)
+### 1.4.1 Initialization (static inline)
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `initialize_texture` | `(Texture) -> void` | Zeroes platform pointer and flags. **WARNING:** takes `Texture` by value — initializes a local copy only. Likely a bug; callers should initialize fields directly. |
 
-### Visibility (static inline)
+### 1.4.2 Visibility (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -105,7 +105,7 @@ Combines size, render method, and format into a single `Texture_Flags` value.
 | `set_texture_flags_as__visible` | `(Texture_Flags*) -> void` | `void` | Clears `TEXTURE_FLAG__IS_HIDDEN`. |
 | `is_texture_flags__hidden` | `(Texture_Flags) -> bool` | `bool` | True if `TEXTURE_FLAG__IS_HIDDEN` set. |
 
-### Read-Only (static inline)
+### 1.4.3 Read-Only (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -113,7 +113,7 @@ Combines size, render method, and format into a single `Texture_Flags` value.
 | `set_texture_flags_as__readonly` | `(Texture_Flags*) -> void` | `void` | Sets `TEXTURE_FLAG__IS_READONLY`. |
 | `set_texture_flags_as__not_readonly` | `(Texture_Flags*) -> void` | `void` | Clears `TEXTURE_FLAG__IS_READONLY`. |
 
-### Component Extraction (static inline)
+### 1.4.4 Component Extraction (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -123,16 +123,16 @@ Combines size, render method, and format into a single `Texture_Flags` value.
 | `get_texture_flags__height` | `(Texture_Flags) -> Texture_Flags` | `Texture_Flags` | Returns the 3-bit height index. |
 | `get_texture_flags__size` | `(Texture_Flags) -> Texture_Flags` | `Texture_Flags` | Returns the 6-bit combined size value. |
 
-### Pixel Dimension Conversion
+### 1.4.5 Pixel Dimension Conversion
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `get_length_of__texture_flag__width` | `(Texture_Flags) -> Quantity__u16` | `Quantity__u16` | Returns the width in pixels. |
 | `get_length_of__texture_flag__height` | `(Texture_Flags) -> Quantity__u16` | `Quantity__u16` | Returns the height in pixels. |
 
-## Agentic Workflow
+## 1.5 Agentic Workflow
 
-### Usage Pattern
+### 1.5.1 Usage Pattern
 
 `Texture_Flags` are passed to most allocation functions to specify desired
 dimensions, format, and render method. `Sprite` contains two `Texture`
@@ -141,11 +141,11 @@ fields: `texture_for__sprite_to__sample` and `texture_of__sprite`.
 `PLATFORM_allocate_texture` / `PLATFORM_release_texture` manage the
 underlying `PLATFORM_Texture`.
 
-### Preconditions
+### 1.5.2 Preconditions
 
 - Pointer-taking functions require non-null pointers.
 - Value-taking functions have no preconditions.
 
-## Header Guard
+## 1.6 Header Guard
 
 `TEXTURE_H`

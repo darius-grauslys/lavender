@@ -1,18 +1,18 @@
-# Sprite Animation Specification
+# 1. Sprite Animation Specification
 
-## File
+## 1.1 File
 `core/include/rendering/sprite_animation.h`
 
-## Purpose
+## 1.2 Purpose
 Provides inline helper functions for querying and mutating
 `Sprite_Animation` flag state — specifically the looping and
 direction-offset flags.
 
-## Dependencies
+## 1.3 Dependencies
 | Header | Purpose |
 |--------|---------|
 | `defines.h` | `Sprite_Animation`, `Sprite_Animation_Flags__u3`, flag macros |
 
-## Types
+## 1.4 Types
 
-### `Sprite_Animation` (defined in `defines.h`)
+### 1.4.1 `Sprite_Animation` (defined in `defines.h`)

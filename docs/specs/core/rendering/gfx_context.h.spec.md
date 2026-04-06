@@ -1,19 +1,19 @@
-# Specification: core/include/rendering/gfx_context.h
+# 1. Specification: core/include/rendering/gfx_context.h
 
-## Overview
+## 1.1 Overview
 
 Provides initialization and `static inline` accessor functions for
 `Gfx_Context` — the top-level graphics state container that aggregates all
 rendering subsystems.
 
-## Dependencies
+## 1.2 Dependencies
 
 - `defines.h` (for `Gfx_Context` and all sub-component types)
 - `defines_weak.h` (forward declarations)
 
-## Types
+## 1.3 Types
 
-### Gfx_Context (struct)
+### 1.3.1 Gfx_Context (struct)
 
     typedef struct Gfx_Context_t {
         Graphics_Window_Manager graphics_window_manager;
@@ -35,15 +35,15 @@ rendering subsystems.
 | `p_PLATFORM_gfx_context` | `PLATFORM_Gfx_Context*` | Platform-specific graphics context. |
 | `sprite_context` | `Sprite_Context` | Sprite manager pool and animation registries. |
 
-## Functions
+## 1.4 Functions
 
-### Initialization
+### 1.4.1 Initialization
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `initialize_gfx_context` | `(Gfx_Context*) -> void` | Initializes all sub-components: graphics window manager, aliased texture manager, UI context, UI tile map manager, font manager, and sprite context. |
 
-### Accessors (static inline)
+### 1.4.2 Accessors (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -55,18 +55,18 @@ rendering subsystems.
 | `get_p_font_manager_from__gfx_context` | `(Gfx_Context*) -> Font_Manager*` | `Font_Manager*` | Returns `&font_manager`. |
 | `get_p_sprite_context_from__gfx_context` | `(Gfx_Context*) -> Sprite_Context*` | `Sprite_Context*` | Returns `&sprite_context`. |
 
-## Agentic Workflow
+## 1.5 Agentic Workflow
 
-### Ownership
+### 1.5.1 Ownership
 
 Owned by `Game` (at `game.gfx_context`). Accessed via
 `get_p_gfx_context_from__game` (see `game.h`). Contains all rendering
 subsystem managers.
 
-### Preconditions
+### 1.5.2 Preconditions
 
 - All functions require non-null `p_gfx_context`.
 
-## Header Guard
+## 1.6 Header Guard
 
 `GFX_CONTEXT_H`

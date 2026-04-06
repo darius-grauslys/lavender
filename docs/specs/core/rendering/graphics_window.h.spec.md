@@ -1,13 +1,13 @@
-# Specification: core/include/rendering/graphics_window.h
+# 1. Specification: core/include/rendering/graphics_window.h
 
-## Overview
+## 1.1 Overview
 
 Defines operations on `Graphics_Window` — the engine's abstraction for a
 renderable surface that can contain UI elements, sprites, tile maps, and
 world rendering. Graphics windows form a parent-child hierarchy and can
 own or share `UI_Manager`, `Sprite_Manager`, and hitbox manager instances.
 
-## Dependencies
+## 1.2 Dependencies
 
 - `defines_weak.h` (forward declarations)
 - `defines.h` (for `Graphics_Window`, all sub-component types)
@@ -24,9 +24,9 @@ own or share `UI_Manager`, `Sprite_Manager`, and hitbox manager instances.
 - `vectors.h` (for `Vector__3i32`, `VECTOR__3i32__OUT_OF_BOUNDS`)
 - `collisions/hitbox_context.h` (for hitbox manager lookup)
 
-## Types
+## 1.3 Types
 
-### Graphics_Window (struct)
+### 1.3.1 Graphics_Window (struct)
 
     typedef struct Graphics_Window_t {
         Serialization_Header _serialization_header;
@@ -77,7 +77,7 @@ own or share `UI_Manager`, `Sprite_Manager`, and hitbox manager instances.
 | `priority_of__window` | `Index__u8` | Priority for composition/rendering order. |
 | `graphics_window__flags` | `Graphics_Window_Flags__u8` | State flags. |
 
-### Graphics_Window_Flags__u8 (u8)
+### 1.3.2 Graphics_Window_Flags__u8 (u8)
 
 | Flag | Bit | Description |
 |------|-----|-------------|
@@ -85,35 +85,35 @@ own or share `UI_Manager`, `Sprite_Manager`, and hitbox manager instances.
 | `GRAPHICS_WINDOW__FLAG__COMPOSE__DIRTY` | 1 | Needs recomposition. |
 | `GRAPHICS_WINDOW__FLAG__IS_PLATFORM_PROVIDED` | 2 | Provided by platform, cannot be released. |
 
-### f_PLATFORM_render_gfx_window (function pointer)
+### 1.3.3 f_PLATFORM_render_gfx_window (function pointer)
 
     typedef void (*f_PLATFORM_render_gfx_window)(
             Game *p_game,
             Graphics_Window *p_gfx_window);
 
-### Resource Sharing Model
+### 1.3.4 Resource Sharing Model
 
 Graphics windows can **own** or **share** three resource managers. If the
 manager UUID equals the window's own UUID, the window owns it. If the UUID
 differs but is valid, the resource is shared (borrowed from another window).
 
-## Functions
+## 1.4 Functions
 
-### Initialization
+### 1.4.1 Initialization
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `initialize_graphics_window` | `(Graphics_Window*) -> void` | Initializes to deallocated empty state. |
 | `initialize_graphics_window_as__allocated` | `(Graphics_Window*, PLATFORM_Graphics_Window*, Graphics_Window_Kind) -> void` | Initializes as allocated with platform handle and kind. |
 
-### Tile Map
+### 1.4.2 Tile Map
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `update_graphics_window__ui_tiles` | `(Graphics_Window*, const UI_Tile_Raw*, Quantity__u32) -> void` | Updates tile map data. |
 | `set_graphics_window__ui_tile_map` | `(Graphics_Window*, UI_Tile_Map__Wrapper) -> void` | Sets the tile map wrapper. |
 
-### Resource Allocation
+### 1.4.3 Resource Allocation
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -122,7 +122,7 @@ differs but is valid, the resource is shared (borrowed from another window).
 | `allocate_hitbox_manager_for__graphics_window` | `(Hitbox_Context*, Graphics_Window*, Hitbox_Manager_Type, Quantity__u32) -> void` | `void` | Allocates a hitbox manager for this window. |
 | `allocate_p_sprite_from__graphics_window` | `(Game*, Graphics_Window*, Identifier__u32, Texture, Texture_Flags) -> Sprite*` | `Sprite*` | Allocates a sprite from this window's sprite manager. |
 
-### Resource Release
+### 1.4.4 Resource Release
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
@@ -130,7 +130,7 @@ differs but is valid, the resource is shared (borrowed from another window).
 | `release_graphics_window_sprite_manager` | `(Game*, Graphics_Window*) -> void` | Releases the sprite manager if owned. |
 | `release_graphics_window_hitbox_manager` | `(Game*, Graphics_Window*) -> void` | Releases the hitbox manager if owned. |
 
-### Resource Sharing
+### 1.4.5 Resource Sharing
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
@@ -138,14 +138,14 @@ differs but is valid, the resource is shared (borrowed from another window).
 | `share_ui_manager_with__graphics_window` | `(Graphics_Window*, Identifier__u32) -> void` | Sets a shared (non-owned) UI manager UUID. |
 | `share_hitbox_manager_with__graphics_window` | `(Graphics_Window*, Identifier__u32) -> void` | Sets a shared (non-owned) hitbox manager UUID. |
 
-### Position
+### 1.4.6 Position
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `set_position_3i32_of__graphics_window` | `(Game*, Graphics_Window*, Vector__3i32) -> void` | Sets position. |
 | `set_position_3i32_of__graphics_window__relative_to` | `(Game*, Graphics_Window*, Vector__3i32 old, Vector__3i32 new) -> void` | Sets position relative to old/new origin. |
 
-### Reset and Composition
+### 1.4.7 Reset and Composition
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -153,14 +153,14 @@ differs but is valid, the resource is shared (borrowed from another window).
 | `is_graphics_window_in_need_of__composition` | `(Game*, Graphics_Window*) -> bool` | `bool` | True if window or its UI manager is dirty. |
 | `set_graphics_window_as__no_longer_needing__composition` | `(Game*, Graphics_Window*) -> void` | `void` | Clears dirty flags. |
 
-### Default Handlers
+### 1.4.8 Default Handlers
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `f_graphics_window__default_compose` | `(Game*, Graphics_Window*) -> void` | Default composition function. |
 | `f_graphics_window__default_render` | `(Game*, Graphics_Window*) -> void` | Default rendering function. |
 
-### Ownership Queries (static inline)
+### 1.4.9 Ownership Queries (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -171,7 +171,7 @@ differs but is valid, the resource is shared (borrowed from another window).
 | `does_graphics_window_share_a__ui_manager` | `(Graphics_Window*) -> bool` | `bool` | Same pattern. |
 | `does_graphics_window_share_a__hitbox_manager` | `(Graphics_Window*) -> bool` | `bool` | Same pattern. |
 
-### Sub-Component Access (static inline)
+### 1.4.10 Sub-Component Access (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -182,7 +182,7 @@ differs but is valid, the resource is shared (borrowed from another window).
 | `get_hitbox_manager_instance_from__graphics_window` | `(Game*, Graphics_Window*) -> Hitbox_Manager_Instance*` | `Hitbox_Manager_Instance*` | Looks up hitbox manager instance by UUID. |
 | `get_pV_hitbox_manager_from__graphics_window` | `(Game*, Graphics_Window*) -> void*` | `void*` | Returns opaque hitbox manager pointer. |
 
-### Position Accessors (static inline)
+### 1.4.11 Position Accessors (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -192,21 +192,21 @@ differs but is valid, the resource is shared (borrowed from another window).
 | `get_position_maximum_3i32_of__graphics_window` | `(Graphics_Window*) -> Vector__3i32` | `Vector__3i32` | Returns max scroll position. |
 | `get_position_minimum_3i32_of__graphics_window` | `(Graphics_Window*) -> Vector__3i32` | `Vector__3i32` | Returns min scroll position. |
 
-### Parent/Child (static inline)
+### 1.4.12 Parent/Child (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `get_p_parent_of__graphics_window` | `(Graphics_Window_Manager*, Graphics_Window*) -> Graphics_Window*` | `Graphics_Window*` | Looks up parent by `graphics_window__parent__uuid`. |
 | `is_graphics_window_a__child_of__this_graphics_window` | `(Graphics_Window* child, Graphics_Window* parent) -> bool` | `bool` | True if child's parent UUID matches parent's UUID. |
 
-### Kind (static inline)
+### 1.4.13 Kind (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `get_kind_of__p_graphics_window` | `(Graphics_Window*) -> Graphics_Window_Kind` | `Graphics_Window_Kind` | Returns window kind. |
 | `is_graphics_window_of__this_kind` | `(Graphics_Window*, Graphics_Window_Kind) -> bool` | `bool` | True if kind matches. |
 
-### Flags (static inline)
+### 1.4.14 Flags (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -218,20 +218,20 @@ differs but is valid, the resource is shared (borrowed from another window).
 | `set_graphics_window_as__no_longer__platform_provided` | `(Graphics_Window*) -> void` | `void` | Clears `IS_PLATFORM_PROVIDED`. |
 | `set_graphics_window_as__in_need_of__composition` | `(Graphics_Window*) -> void` | `void` | Sets `COMPOSE__DIRTY`. |
 
-### Camera (static inline)
+### 1.4.15 Camera (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `get_p_camera_from__graphics_window` | `(Graphics_Window*) -> Camera*` | `Camera*` | Returns camera pointer. |
 | `set_p_camera_of__graphics_window` | `(Graphics_Window*, Camera*) -> void` | `void` | Sets camera pointer. |
 
-### Allocation State (static inline)
+### 1.4.16 Allocation State (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `is_graphics_window__allocated` | `(Graphics_Window*) -> bool` | `bool` | True if non-null and has non-null `p_PLATFORM_gfx_window`. Null-safe. |
 
-### Texture UUIDs (static inline)
+### 1.4.17 Texture UUIDs (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -240,9 +240,9 @@ differs but is valid, the resource is shared (borrowed from another window).
 | `set_graphics_window__ui_tile_map__texture` | `(Graphics_Window*, Identifier__u32) -> void` | `void` | Sets UI tile map texture UUID. |
 | `get_uuid_of__ui_tile_map__texture_from__gfx_window` | `(Graphics_Window*) -> Identifier__u32` | `Identifier__u32` | Returns UI tile map texture UUID. |
 
-## Agentic Workflow
+## 1.5 Agentic Workflow
 
-### Resource Sharing Model
+### 1.5.1 Resource Sharing Model
 
 Graphics windows can **own** or **share** three resource managers:
 - `uuid_of__sprite_manager` — if equals window UUID, window owns it.
@@ -252,16 +252,16 @@ Graphics windows can **own** or **share** three resource managers:
 If the UUID differs from the window's own UUID but is valid, the resource
 is shared (borrowed from another window).
 
-### Preconditions
+### 1.5.2 Preconditions
 
 - All debug-checked functions require non-null pointers.
 - `is_graphics_window__allocated` is null-safe.
 
-### Error Handling
+### 1.5.3 Error Handling
 
 - Debug builds call `debug_error` on null pointer violations and return
   null/false/`VECTOR__3i32__OUT_OF_BOUNDS`/`IDENTIFIER__UNKNOWN__u32`.
 
-## Header Guard
+## 1.6 Header Guard
 
 `GRAPHICS_WINDOW_H`

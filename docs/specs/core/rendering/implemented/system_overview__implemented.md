@@ -1,6 +1,6 @@
-# System Overview: Implemented (Template) Headers
+# 1. System Overview: Implemented (Template) Headers
 
-## Purpose
+## 1.1 Purpose
 
 The `implemented/` directory contains **template headers** that declare
 game-specific registration functions. These files are part of the engine
@@ -9,9 +9,9 @@ the `lav_new_project` script. The game developer then modifies the copies
 to register their project's textures and animations. The originals in core
 serve as defaults/templates.
 
-## Architecture
+## 1.2 Architecture
 
-### Template Distribution Model
+### 1.2.1 Template Distribution Model
 
     Engine Core
     +-- core/include/rendering/implemented/
@@ -26,23 +26,23 @@ serve as defaults/templates.
         +-- aliased_texture_registrar.h   (game-specific copy)
         +-- sprite_animation_registrar.h  (game-specific copy)
 
-### Include Path Strategy
+### 1.2.2 Include Path Strategy
 
 The `implemented/` directory is **NOT** in the core include path. It is only
 in the game project's include path. This ensures that when the engine
 includes `rendering/implemented/aliased_texture_registrar.h`, it resolves
 to the game project's copy rather than the core template.
 
-### Registration Functions
+### 1.2.3 Registration Functions
 
 | File | Function | Signature | Called During |
 |------|----------|-----------|--------------|
 | `aliased_texture_registrar.h` | `register_aliased_textures` | `(Aliased_Texture_Manager*, Game*) -> void` | Game initialization |
 | `sprite_animation_registrar.h` | `register_sprite_animations` | `(Sprite_Manager*) -> void` | Game initialization |
 
-## Registration Function Details
+## 1.3 Registration Function Details
 
-### register_aliased_textures
+### 1.3.1 register_aliased_textures
 
 Registers all game-specific named textures into the `Aliased_Texture_Manager`.
 The game developer implements this function to call
@@ -83,7 +83,7 @@ The caller does not retain ownership of the `Texture` values.
 `load_texture_from__path_with__alias` return `true` on **failure** and
 `false` on success (inverted bool convention).
 
-### register_sprite_animations
+### 1.3.2 register_sprite_animations
 
 Registers all game-specific sprite animation definitions. The game developer
 implements this function to call `register_sprite_animation_into__sprite_context`
@@ -110,9 +110,9 @@ for each animation the game defines.
 registration target is the `Sprite_Context`. This signature may be updated
 in a future refactor.
 
-## Lifecycle Integration
+## 1.4 Lifecycle Integration
 
-### Initialization Sequence
+### 1.4.1 Initialization Sequence
 
 The registration functions are called during game initialization, after the
 core rendering subsystems have been initialized:
@@ -130,14 +130,14 @@ core rendering subsystems have been initialized:
     4. register_sprite_animations(p_sprite_manager)
        -> Game-specific animation registration
 
-### Dependencies
+### 1.4.2 Dependencies
 
 | Function | Requires Before Call |
 |----------|---------------------|
 | `register_aliased_textures` | `Aliased_Texture_Manager` initialized, `PLATFORM_Gfx_Context` available |
 | `register_sprite_animations` | `Sprite_Context` initialized |
 
-## Relationship to Rendering Subsystems
+## 1.5 Relationship to Rendering Subsystems
 
 | Registration Function | Target Subsystem | API Used |
 |-----------------------|------------------|----------|
@@ -149,7 +149,7 @@ The registered textures become available for runtime lookup via
 animations become available for application to sprites via
 `set_sprite_animation`.
 
-## Header Guards
+## 1.6 Header Guards
 
 | File | Guard |
 |------|-------|

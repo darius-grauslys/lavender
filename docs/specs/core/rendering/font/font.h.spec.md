@@ -1,17 +1,17 @@
-# Specification: core/include/rendering/font/font.h
+# 1. Specification: core/include/rendering/font/font.h
 
-## Overview
+## 1.1 Overview
 
 Defines operations on `Font` — a lookup table mapping ASCII character codes
 to `Font_Letter` glyph descriptors, paired with a texture atlas.
 
-## Dependencies
+## 1.2 Dependencies
 
 - `defines.h` (for `Font`, `Font_Letter`, `Font_Flags`, `Texture`)
 
-## Types
+## 1.3 Types
 
-### Font (struct)
+### 1.3.1 Font (struct)
 
     typedef struct Font_t {
         Font_Letter font_lookup_table[FONT_LETTER_MAX_QUANTITY_OF];
@@ -29,13 +29,13 @@ to `Font_Letter` glyph descriptors, paired with a texture atlas.
 | `max_height_of__font_letter` | `Quantity__u8` | Maximum glyph height. |
 | `font_flags` | `Font_Flags` | Allocation flag. |
 
-### Font_Flags (u8)
+### 1.3.2 Font_Flags (u8)
 
 | Flag | Bit | Description |
 |------|-----|-------------|
 | `FONT_FLAG__IS_ALLOCATED` | 0 | Font is allocated. |
 
-### Constants
+### 1.3.3 Constants
 
 | Macro | Value | Description |
 |-------|-------|-------------|
@@ -45,16 +45,16 @@ to `Font_Letter` glyph descriptors, paired with a texture atlas.
 | `FONT_LARGE__MAX_WIDTH` | `8` | Large font max glyph width. |
 | `FONT_LARGE__MAX_HEIGHT` | `8` | Large font max glyph height. |
 
-## Functions
+## 1.4 Functions
 
-### Initialization
+### 1.4.1 Initialization
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `initialize_font__letter` | `(Font_Letter*, u8 width, u8 height, u8 x_offset, u8 y_offset, u16 index) -> void` | Initializes a single font letter. |
 | `initialize_font` | `(Font*) -> void` | Initializes a font to empty state with all letters zeroed. |
 
-### Accessors (static inline)
+### 1.4.2 Accessors (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -63,17 +63,17 @@ to `Font_Letter` glyph descriptors, paired with a texture atlas.
 | `set_font_as__allocated` | `(Font*) -> void` | `void` | Sets `IS_ALLOCATED`. |
 | `set_font_as__deallocated` | `(Font*) -> void` | `void` | Clears `IS_ALLOCATED`. |
 
-## Agentic Workflow
+## 1.5 Agentic Workflow
 
-### Ownership
+### 1.5.1 Ownership
 
 Managed by `Font_Manager` (see `font_manager.h`). Referenced by `Typer`
 (at `typer.p_font`).
 
-### Preconditions
+### 1.5.2 Preconditions
 
 - All functions require non-null pointers.
 
-## Header Guard
+## 1.6 Header Guard
 
 `FONT_H`

@@ -1,14 +1,14 @@
-# Sprite Specification
+# 1. Sprite Specification
 
-## File
+## 1.1 File
 `core/include/rendering/sprite.h`
 
-## Purpose
+## 1.2 Purpose
 Defines operations on `Sprite` — the engine's representation of a renderable
 animated image. A sprite wraps a platform-specific `PLATFORM_Sprite`, a
 sampling texture, an output texture, animation state, and rendering flags.
 
-## Dependencies
+## 1.3 Dependencies
 | Header | Purpose |
 |--------|---------|
 | `defines_weak.h` | Forward declarations |
@@ -19,6 +19,6 @@ sampling texture, an output texture, animation state, and rendering flags.
 | `types/implemented/sprite_animation_group_kind.h` | `Sprite_Animation_Group_Kind` enum |
 | `types/implemented/sprite_animation_kind.h` | `Sprite_Animation_Kind` enum |
 
-## Types
+## 1.4 Types
 
-### `Sprite` (defined in `defines.h`)
+### 1.4.1 `Sprite` (defined in `defines.h`)

@@ -1,17 +1,17 @@
-# Specification: core/include/rendering/font/font_letter.h
+# 1. Specification: core/include/rendering/font/font_letter.h
 
-## Overview
+## 1.1 Overview
 
 Provides a convenience macro for declaring `Font_Letter` compound literals.
 Contains no functions.
 
-## Dependencies
+## 1.2 Dependencies
 
 - `defines.h` (for `Font_Letter` struct, `MASK` macro)
 
-## Types
+## 1.3 Types
 
-### Font_Letter (struct)
+### 1.3.1 Font_Letter (struct)
 
     typedef struct Font_Letter_t {
         Quantity__u8 width_of__font_letter       :4;
@@ -29,9 +29,9 @@ Contains no functions.
 | `y__offset_of__font_letter` | `u8` (4 bits) | Vertical offset in pixels (0-15). |
 | `index_of__character__in_font` | `u16` (16 bits) | Index into the font's texture atlas. |
 
-## Macros
+## 1.4 Macros
 
-### DECLARE_FONT_LETTER
+### 1.4.1 DECLARE_FONT_LETTER
 
     #define DECLARE_FONT_LETTER(letter, width, height, x__offset, y__offset) \
         (Font_Letter){ \
@@ -51,18 +51,18 @@ to 4 bits (0-15 range).
 - `x__offset` — horizontal offset in pixels (0-15).
 - `y__offset` — vertical offset in pixels (0-15).
 
-## Functions
+## 1.5 Functions
 
 None.
 
-## Agentic Workflow
+## 1.6 Agentic Workflow
 
-### Relationships
+### 1.6.1 Relationships
 
 - `Font_Letter` entries populate `Font.font_lookup_table[]`.
 - Used by `Typer` to compute cursor advancement and rendering positions.
 - Typically used in font initialization code.
 
-## Header Guard
+## 1.7 Header Guard
 
 `FONT_LETTER_H`

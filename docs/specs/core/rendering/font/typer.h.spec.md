@@ -1,22 +1,22 @@
-# Specification: core/include/rendering/font/typer.h
+# 1. Specification: core/include/rendering/font/typer.h
 
-## Overview
+## 1.1 Overview
 
 Defines operations on `Typer` — a text layout engine that renders character
 strings into either a `Texture` or a `PLATFORM_Graphics_Window` using a
 `Font`. The typer maintains a bounding box, cursor position, and line
 spacing for text wrapping.
 
-## Dependencies
+## 1.2 Dependencies
 
 - `defines_weak.h` (forward declarations)
 - `defines.h` (for `Typer`, `Font`, `Font_Letter`, `Hitbox_AABB`, `Texture`, `PLATFORM_Graphics_Window`)
 - `collisions/core/aabb/hitbox_aabb.h` (for `set_hitbox_aabb__position_with__3i32`, `set_size_of__hitbox_aabb`)
 - `vectors.h` (for `Vector__3i32`, `get_vector__3i32`)
 
-## Types
+## 1.3 Types
 
-### Typer (struct)
+### 1.3.1 Typer (struct)
 
     typedef struct Typer_t {
         Hitbox_AABB text_bounding_box;
@@ -40,23 +40,23 @@ spacing for text wrapping.
 | `quantity_of__space_in__pixels_between__lines` | `Quantity__u16` | Line spacing in pixels. |
 | `is_using_PLATFORM_texture_or__PLATFORM_graphics_window` | `bool` | `true` = texture target, `false` = graphics window target. |
 
-## Functions
+## 1.4 Functions
 
-### Initialization
+### 1.4.1 Initialization
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `initialize_typer` | `(Typer*, i32 x, i32 y, u32 width, u32 height, u32 spacing, i32 x_cursor, i32 y_cursor) -> void` | Initializes with bounding box position/size, line spacing, and initial cursor. Font is NOT set. |
 | `initialize_typer_with__font` | `(Typer*, i32 x, i32 y, u32 width, u32 height, u32 spacing, i32 x_cursor, i32 y_cursor, Font*) -> void` | Calls `initialize_typer` then assigns the font. (static inline) |
 
-### Text Rendering
+### 1.4.2 Text Rendering
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `poll_typer_for__cursor_wrapping` | `(Typer*, Font_Letter*) -> bool` | `bool` | Checks if the next character would exceed bounding box width and wraps to next line if needed. Returns `true` if wrapping occurred. |
 | `put_c_string_in__typer` | `(Gfx_Context*, Typer*, const char*, Quantity__u32) -> void` | `void` | Renders a string through the typer, calling `PLATFORM_put_char_in__typer` for each character. |
 
-### Position and Size (static inline)
+### 1.4.3 Position and Size (static inline)
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
@@ -65,19 +65,19 @@ spacing for text wrapping.
 | `set_typer__cursor` | `(Typer*, Vector__3i32) -> void` | Sets the cursor position directly. |
 | `reset_typer_cursor` | `(Typer*) -> void` | Resets cursor to `(0, 0, 0)`. |
 
-### Cursor Advancement (static inline)
+### 1.4.4 Cursor Advancement (static inline)
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `offset_typer_by__font_letter` | `(Typer*, Font_Letter*) -> void` | Advances cursor X by the font letter's width. |
 
-### Font Access (static inline)
+### 1.4.5 Font Access (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `get_p_font_letter_from__typer` | `(Typer*, unsigned char) -> Font_Letter*` | `Font_Letter*` | Returns the `Font_Letter` for the given character from the typer's font. |
 
-### Render Target (static inline)
+### 1.4.6 Render Target (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -86,21 +86,21 @@ spacing for text wrapping.
 | `is_typer_targetting__PLATFORM_texture` | `(Typer*) -> bool` | `bool` | True if rendering to texture. |
 | `is_typer_targetting__PLATFORM_graphics_window` | `(Typer*) -> bool` | `bool` | True if rendering to graphics window. |
 
-## Agentic Workflow
+## 1.5 Agentic Workflow
 
-### Relationships
+### 1.5.1 Relationships
 
 - Embedded in `UI_Element` (text union member) for text/text box elements.
 - Uses `Font` for glyph lookup (see `font.h`).
 - Renders via `PLATFORM_put_char_in__typer` (platform function).
 - Bounding box is a `Hitbox_AABB` (see `hitbox_aabb.h`).
 
-### Preconditions
+### 1.5.2 Preconditions
 
 - All functions require non-null `p_typer`.
 - `initialize_typer` does NOT set the font — use `initialize_typer_with__font`
   or assign `p_font` manually.
 
-## Header Guard
+## 1.6 Header Guard
 
 `TYPER_H`

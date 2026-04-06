@@ -1,14 +1,14 @@
-# Sprite Manager Specification
+# 1. Sprite Manager Specification
 
-## File
+## 1.1 File
 `core/include/rendering/sprite_manager.h`
 
-## Purpose
+## 1.2 Purpose
 Manages a pool of `Sprite` instances associated with a single
 `Graphics_Window`. Provides allocation, deallocation, lookup, and batch
 rendering of sprites.
 
-## Dependencies
+## 1.3 Dependencies
 | Header | Purpose |
 |--------|---------|
 | `defines.h` | `Sprite_Manager`, `Sprite`, `Gfx_Context`, `Graphics_Window` |
@@ -17,6 +17,6 @@ rendering of sprites.
 | `types/implemented/sprite_animation_group_kind.h` | `Sprite_Animation_Group_Kind` |
 | `types/implemented/sprite_animation_kind.h` | `Sprite_Animation_Kind` |
 
-## Types
+## 1.4 Types
 
-### `Sprite_Manager` (defined in `defines.h`)
+### 1.4.1 `Sprite_Manager` (defined in `defines.h`)

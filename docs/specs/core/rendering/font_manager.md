@@ -1,16 +1,16 @@
-# Font Manager Specification
+# 1. Font Manager Specification
 
-## File
+## 1.1 File
 `core/include/rendering/font/font_manager.h`
 
-## Purpose
+## 1.2 Purpose
 Manages a fixed-size pool of `Font` instances.
 
-## Dependencies
+## 1.3 Dependencies
 | Header | Purpose |
 |--------|---------|
 | `defines.h` | `Font_Manager`, `Font` |
 
-## Types
+## 1.4 Types
 
-### `Font_Manager` (defined in `defines.h`)
+### 1.4.1 `Font_Manager` (defined in `defines.h`)

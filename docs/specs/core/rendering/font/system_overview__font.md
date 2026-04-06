@@ -1,6 +1,6 @@
-# System Overview: Font and Text Rendering
+# 1. System Overview: Font and Text Rendering
 
-## Purpose
+## 1.1 Purpose
 
 The font subsystem provides bitmap font management and text layout. It maps
 ASCII character codes to glyph descriptors (`Font_Letter`), manages a pool
@@ -8,9 +8,9 @@ of `Font` instances via `Font_Manager`, and provides a `Typer` text layout
 engine that renders character strings into either a `Texture` or a
 `PLATFORM_Graphics_Window` with cursor wrapping and line spacing.
 
-## Architecture
+## 1.2 Architecture
 
-### Data Hierarchy
+### 1.2.1 Data Hierarchy
 
     Gfx_Context
     +-- Font_Manager
@@ -38,7 +38,7 @@ engine that renders character strings into either a `Texture` or a
     +-- Quantity__u16 quantity_of__space_in__pixels_between__lines
     +-- bool is_using_PLATFORM_texture_or__PLATFORM_graphics_window
 
-### Key Types
+### 1.2.2 Key Types
 
 | Type | Role |
 |------|------|
@@ -48,7 +48,7 @@ engine that renders character strings into either a `Texture` or a
 | `Font_Flags` | Single-bit flag indicating allocation state (`FONT_FLAG__IS_ALLOCATED`). |
 | `Typer` | Text layout engine. Maintains a bounding box (as `Hitbox_AABB`), cursor position, font reference, and render target. Handles cursor advancement and line wrapping. |
 
-### Limits
+### 1.2.3 Limits
 
 | Macro | Default | Description |
 |-------|---------|-------------|
@@ -59,7 +59,7 @@ engine that renders character strings into either a `Texture` or a
 | `FONT_LARGE__MAX_WIDTH` | 8 | Large font max glyph width (pixels). |
 | `FONT_LARGE__MAX_HEIGHT` | 8 | Large font max glyph height (pixels). |
 
-## Glyph Descriptor Layout
+## 1.3 Glyph Descriptor Layout
 
 Each `Font_Letter` is a compact bitfield structure totaling 32 bits:
 
@@ -76,22 +76,22 @@ Each `Font_Letter` is a compact bitfield structure totaling 32 bits:
 The `DECLARE_FONT_LETTER` macro creates `Font_Letter` compound literals
 with all dimension values masked to 4 bits via the `MASK(4)` macro.
 
-## Font Lifecycle
+## 1.4 Font Lifecycle
 
-### 1. Initialization
+### 1.4.1 Initialization
 
     initialize_font_manager(&gfx_context.font_manager)
       -> All Font slots: font_flags cleared (deallocated).
       -> All Font_Letter entries: zeroed.
 
-### 2. Font Allocation
+### 1.4.2 Font Allocation
 
     Font *p_font = allocate_font_from__font_manager(&font_manager)
       -> Finds first deallocated slot.
       -> Sets FONT_FLAG__IS_ALLOCATED.
       -> Returns Font* or null if pool exhausted.
 
-### 3. Font Population
+### 1.4.3 Font Population
 
     initialize_font(p_font)
       -> Zeroes all Font_Letter entries and clears state.
@@ -110,15 +110,15 @@ with all dimension values masked to 4 bits via the `MASK(4)` macro.
       p_font->max_width_of__font_letter = max_width;
       p_font->max_height_of__font_letter = max_height;
 
-### 4. Font Release
+### 1.4.4 Font Release
 
     release_font_from__font_manager(&font_manager, p_font)
       -> Clears FONT_FLAG__IS_ALLOCATED.
       -> Slot becomes available for reuse.
 
-## Typer Lifecycle
+## 1.5 Typer Lifecycle
 
-### 1. Initialization
+### 1.5.1 Initialization
 
     initialize_typer(
         &typer,
@@ -134,7 +134,7 @@ with all dimension values masked to 4 bits via the `MASK(4)` macro.
           &typer, x, y, w, h, spacing, cx, cy, p_font)
         -> Calls initialize_typer then assigns p_font.
 
-### 2. Render Target Assignment
+### 1.5.2 Render Target Assignment
 
 The typer renders into one of two target types, selected via a union:
 
@@ -150,7 +150,7 @@ The typer renders into one of two target types, selected via a union:
       is_typer_targetting__PLATFORM_texture(&typer)       -> true if texture
       is_typer_targetting__PLATFORM_graphics_window(&typer) -> true if gfx window
 
-### 3. Text Output
+### 1.5.3 Text Output
 
     put_c_string_in__typer(gfx_context, &typer, "Hello", 5)
       -> For each character in the string:
@@ -172,7 +172,7 @@ The typer renders into one of two target types, selected via a union:
          4. offset_typer_by__font_letter(&typer, p_font_letter)
             -> cursor_x += font_letter.width_of__font_letter
 
-### 4. Cursor Management
+### 1.5.4 Cursor Management
 
     set_typer__cursor(&typer, position)
       -> Sets cursor position directly.
@@ -186,16 +186,16 @@ The typer renders into one of two target types, selected via a union:
     set_typer__bounding_box_size(&typer, width, height)
       -> Resizes text area via set_size_of__hitbox_aabb.
 
-## Integration Points
+## 1.6 Integration Points
 
-### Ownership
+### 1.6.1 Ownership
 
 - `Font_Manager` is owned by `Gfx_Context` at `gfx_context.font_manager`.
 - Accessed via `get_p_font_manager_from__gfx_context`.
 - `Typer` instances are typically embedded in `UI_Element` (text/text box
   elements) or created on the stack for one-shot rendering.
 
-### Dependencies on Other Subsystems
+### 1.6.2 Dependencies on Other Subsystems
 
 - `Typer` uses `Hitbox_AABB` from the collision system for its bounding box
   geometry. This provides position and dimension storage without requiring
@@ -203,13 +203,13 @@ The typer renders into one of two target types, selected via a union:
 - `Font` holds a `Texture` for its atlas, which wraps a `PLATFORM_Texture*`
   managed by the `Aliased_Texture_Manager` or allocated directly.
 
-### Platform Integration
+### 1.6.3 Platform Integration
 
 | Platform Function | Purpose |
 |-------------------|---------|
 | `PLATFORM_put_char_in__typer` | Renders a single glyph at the typer's cursor position into the active render target (texture or graphics window). |
 
-## Capacity Constraints
+## 1.7 Capacity Constraints
 
 - The `Font_Manager` holds at most `MAX_QUANTITY_OF__FONT` (8) fonts
   simultaneously. Each font consumes a fixed 256-entry lookup table

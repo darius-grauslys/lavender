@@ -1,19 +1,19 @@
-# Graphics Context Specification
+# 1. Graphics Context Specification
 
-## File
+## 1.1 File
 `core/include/rendering/gfx_context.h`
 
-## Purpose
+## 1.2 Purpose
 Provides initialization and inline accessor functions for `Gfx_Context` —
 the top-level graphics state container that aggregates all rendering
 subsystems.
 
-## Dependencies
+## 1.3 Dependencies
 | Header | Purpose |
 |--------|---------|
 | `defines.h` | `Gfx_Context` and all sub-component types |
 | `defines_weak.h` | Forward declarations |
 
-## Types
+## 1.4 Types
 
-### `Gfx_Context` (defined in `defines.h`)
+### 1.4.1 `Gfx_Context` (defined in `defines.h`)

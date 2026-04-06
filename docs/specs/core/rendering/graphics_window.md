@@ -1,15 +1,15 @@
-# Graphics Window Specification
+# 1. Graphics Window Specification
 
-## File
+## 1.1 File
 `core/include/rendering/graphics_window.h`
 
-## Purpose
+## 1.2 Purpose
 Defines operations on `Graphics_Window` — the engine's abstraction for a
 renderable surface that can contain UI elements, sprites, tile maps, and
 world rendering. Graphics windows form a parent-child hierarchy and can
 own or share `UI_Manager`, `Sprite_Manager`, and hitbox manager instances.
 
-## Dependencies
+## 1.3 Dependencies
 | Header | Purpose |
 |--------|---------|
 | `defines_weak.h` | Forward declarations |
@@ -27,6 +27,6 @@ own or share `UI_Manager`, `Sprite_Manager`, and hitbox manager instances.
 | `vectors.h` | `Vector__3i32`, `VECTOR__3i32__OUT_OF_BOUNDS` |
 | `collisions/hitbox_context.h` | `Hitbox_Context` accessors, hitbox manager lookup |
 
-## Types
+## 1.4 Types
 
-### `Graphics_Window` (defined in `defines.h`)
+### 1.4.1 `Graphics_Window` (defined in `defines.h`)
