@@ -1,6 +1,6 @@
-# Specification: core/include/entity/entity.h
+# 1 Specification: core/include/entity/entity.h
 
-## Overview
+## 1.1 Overview
 
 Provides initialization, lifecycle handlers, serialization, and flag/state
 query utilities for the `Entity` struct — the engine's fundamental game
@@ -14,7 +14,7 @@ disable, serialize, deserialize). The `Entity_Data` and `Entity_Functions`
 types are both implementable — game projects override them via
 `types/implemented/entity_data.h` and `types/implemented/entity_functions.h`.
 
-## Dependencies
+## 1.2 Dependencies
 
 - `defines.h` (for `Entity`, `Entity_Kind`, `Entity_Flags__u32`,
   `Entity_Data`, `Entity_Functions`, `Serialization_Header`,
@@ -23,9 +23,9 @@ types are both implementable — game projects override them via
 - `defines_weak.h` (forward declarations for `Game`, `World`, `Entity`)
 - `serialization/serialization_header.h` (for `is_serialized_struct__deallocated`)
 
-## Types
+## 1.3 Types
 
-### Entity (struct)
+### 1.3.1 Entity (struct)
 
 Defined in `defines.h`:
 
@@ -41,7 +41,7 @@ Defined in `defines.h`:
 | `entity_data` | `Entity_Data` | Per-instance state. Contains at minimum `the_kind_of__entity` and `entity_flags`. Game projects extend this via `types/implemented/entity_data.h`. |
 | `entity_functions` | `Entity_Functions` | Function table for this entity instance. Populated from `Entity_Manager`'s registered functions on allocation or deserialization. |
 
-### Entity_Data (struct, implementable)
+### 1.3.2 Entity_Data (struct, implementable)
 
 Default definition (overridden by `types/implemented/entity_data.h` when
 `DEFINE_ENTITY_DATA` is set):
@@ -61,7 +61,7 @@ Game projects extend this with additional fields (hitbox references,
 inventory references, health, AI state, etc.). The `the_kind_of__entity`
 field must always be present.
 
-### Entity_Functions (struct, implementable)
+### 1.3.3 Entity_Functions (struct, implementable)
 
 Default definition (overridden by `types/implemented/entity_functions.h`
 when `DEFINE_ENTITY_FUNCTIONS` is set):
@@ -99,7 +99,7 @@ will occur otherwise.
 | `m_entity_serialize_handler` | `m_Entity_Serialization_Handler` | `(Entity*, Game*, PLATFORM_File_System_Context*, World*, Serialization_Request*) -> PLATFORM_Write_File_Error` | Writes entity state to storage. |
 | `m_entity_deserialize_handler` | `m_Entity_Deserialization_Handler` | `(Entity*, Game*, PLATFORM_File_System_Context*, World*, Serialization_Request*) -> PLATFORM_Read_File_Error` | Reads entity state from storage. |
 
-### Entity_Kind (enum, implementable)
+### 1.3.4 Entity_Kind (enum, implementable)
 
 Default definition (overridden by `types/implemented/entity_kind.h` when
 `DEFINE_ENTITY_KIND` is set):
@@ -113,7 +113,7 @@ Default definition (overridden by `types/implemented/entity_kind.h` when
 populate this enum with all entity types (e.g. `Entity_Kind__Player`,
 `Entity_Kind__Skeleton`, etc.).
 
-### Entity_Flags__u32 (u32)
+### 1.3.5 Entity_Flags__u32 (u32)
 
 | Flag | Bit | Description |
 |------|-----|-------------|
@@ -132,7 +132,7 @@ Note: `IS_WITH_HITBOX__SERIALIZATION` and `IS_WITH_INVENTORY__SERIALIZATION`
 are **not** reliable runtime indicators. They are only meaningful during
 serialization/deserialization.
 
-### Handler Signatures
+### 1.3.6 Handler Signatures
 
     typedef void (*m_Entity_Handler)(
             Entity *p_entity_self,
@@ -153,15 +153,15 @@ serialization/deserialization.
             World *p_world,
             Serialization_Request *p_serialization_request);
 
-## Functions
+## 1.4 Functions
 
-### Initialization
+### 1.4.1 Initialization
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `initialize_entity` | `(Entity*, Entity_Kind) -> void` | Initializes entity with the given kind. Sets up serialization header and entity data. |
 
-### Default Handlers
+### 1.4.2 Default Handlers
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
@@ -171,14 +171,14 @@ serialization/deserialization.
 | `m_entity_serialization_handler__default` | `(Entity*, Game*, PLATFORM_File_System_Context*, World*, Serialization_Request*) -> PLATFORM_Write_File_Error` | Default serialization handler. Writes base entity state. |
 | `m_entity_deserialization_handler__default` | `(Entity*, Game*, PLATFORM_File_System_Context*, World*, Serialization_Request*) -> PLATFORM_Read_File_Error` | Default deserialization handler. Reads base entity state. |
 
-### Serialization
+### 1.4.3 Serialization
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `serialize_entity` | `(Game*, Serialization_Request*, Entity*) -> PLATFORM_Write_File_Error` | Writes entity to storage via the serialization request. |
 | `deserialize_entity` | `(Game*, Serialization_Request*, Entity*) -> PLATFORM_Read_File_Error` | Reads entity from storage via the serialization request. |
 
-### State Queries (static inline)
+### 1.4.4 State Queries (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -187,28 +187,28 @@ serialization/deserialization.
 | `is_entity__serialized_with__hitbox` | `(Entity*) -> bool` | `bool` | True if `ENTITY_FLAG__IS_WITH_HITBOX__SERIALIZATION` is set. |
 | `is_entity__serialized_with__inventory` | `(Entity*) -> bool` | `bool` | True if `ENTITY_FLAG__IS_WITH_INVENTORY__SERIALIZATION` is set. |
 
-### State Mutation (static inline)
+### 1.4.5 State Mutation (static inline)
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `set_entity_as__enabled` | `(Entity*) -> void` | Sets `ENTITY_FLAG__IS_ENABLED` in `entity_data.entity_flags`. |
 | `set_entity_as__disabled` | `(Entity*) -> void` | Clears `ENTITY_FLAG__IS_ENABLED` in `entity_data.entity_flags`. |
 
-### Kind Query (static inline)
+### 1.4.6 Kind Query (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `get_kind_of__entity` | `(Entity*) -> Entity_Kind` | `Entity_Kind` | Returns `entity_data.the_kind_of__entity`. |
 
-### Handler Mutation (static inline)
+### 1.4.7 Handler Mutation (static inline)
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `set_m_entity_update_handler_for__entity` | `(Entity*, m_Entity_Handler) -> void` | Overrides the update handler for a specific entity instance. |
 
-## Agentic Workflow
+## 1.5 Agentic Workflow
 
-### Entity Lifecycle
+### 1.5.1 Entity Lifecycle
 
     [Deallocated] --> allocate_entity_in__entity_manager
                           |
@@ -234,7 +234,7 @@ serialization/deserialization.
                           |
                       [Deallocated]
 
-### Allocation Pattern
+### 1.5.2 Allocation Pattern
 
 Entities are never created directly. They are always allocated through
 `Entity_Manager`:
@@ -247,7 +247,7 @@ Entities are never created directly. They are always allocated through
         return;
     }
 
-### Function Table Pattern
+### 1.5.3 Function Table Pattern
 
 Entity behavior is determined by the function table registered per
 `Entity_Kind` in the `Entity_Manager`. When an entity is allocated,
@@ -260,7 +260,7 @@ the entity instance. This means:
 3. Individual entities can override specific handlers after allocation
    (e.g. `set_m_entity_update_handler_for__entity`).
 
-### Implementable Types Pattern
+### 1.5.4 Implementable Types Pattern
 
 `Entity_Data`, `Entity_Functions`, and `Entity_Kind` are all
 **implementable types**. The engine provides minimal defaults, and game
@@ -281,7 +281,7 @@ For `Entity_Functions`, the implementable header notes:
 This constraint exists because the engine may perform bulk operations
 on the function table assuming uniform pointer-sized fields.
 
-### Serialization IO Flags
+### 1.5.5 Serialization IO Flags
 
 The `ENTITY_FLAG__IS_WITH_HITBOX__SERIALIZATION` and
 `ENTITY_FLAG__IS_WITH_INVENTORY__SERIALIZATION` flags are **only**
@@ -290,7 +290,7 @@ which optional components to read/write. They are **not** reliable
 indicators of whether an entity currently has a hitbox or inventory
 at runtime.
 
-### Preconditions
+### 1.5.6 Preconditions
 
 - `is_entity__allocated`: `p_entity` may be null (returns false).
 - All other `static inline` functions: `p_entity` must be non-null.
@@ -299,14 +299,14 @@ at runtime.
 - `initialize_entity`: `p_entity` must point to valid memory (typically
   from the `Entity_Manager` pool).
 
-### Postconditions
+### 1.5.7 Postconditions
 
 - After `initialize_entity`: entity has the given kind set, flags are
   cleared, serialization header is initialized.
 - After `set_entity_as__enabled`: `is_entity__enabled` returns true.
 - After `set_entity_as__disabled`: `is_entity__enabled` returns false.
 
-### Error Handling
+### 1.5.8 Error Handling
 
 - `is_entity__allocated` gracefully handles null by returning false.
 - Serialization functions return `PLATFORM_Write_File_Error` or

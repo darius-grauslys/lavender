@@ -1,6 +1,6 @@
-# System Overview: Input System
+# 1 System Overview: Input System
 
-## Purpose
+## 1.1 Purpose
 
 The input system provides a unified, platform-independent abstraction for
 capturing and querying user input each frame. It tracks three simultaneous
@@ -10,9 +10,9 @@ buffer for text entry. All platform-specific input hardware access is
 delegated to a single `PLATFORM_poll_input` function, while all query and
 consumption logic is platform-independent.
 
-## Architecture
+## 1.2 Architecture
 
-### Data Hierarchy
+### 1.2.1 Data Hierarchy
 
     Game
     +-- Input                              (primary input, singleplayer)
@@ -32,7 +32,7 @@ consumption logic is platform-independent.
         +-- Client[0..N]
             +-- Input input_of__client                 (per-client input)
 
-### Key Types
+### 1.2.2 Key Types
 
 | Type | Role |
 |------|------|
@@ -42,7 +42,7 @@ consumption logic is platform-independent.
 | `Input_Code__u32` | Sequential integer identifiers (0–13) for each logical input. Used to map between code indices and bitmask flags. |
 | `Vector__3i32` | 3-component signed integer vector used for cursor position tracking. |
 
-### Constants
+### 1.2.3 Constants
 
 | Macro | Default | Description |
 |-------|---------|-------------|
@@ -51,7 +51,7 @@ consumption logic is platform-independent.
 | `INPUT_NONE` | 0 | No input flag set. |
 | `INPUT_FORWARD` through `INPUT_CLICK` | `BIT(0)` through `BIT(12)` | Individual input flag bits. |
 
-## Three-State Input Model
+## 1.3 Three-State Input Model
 
 Every logical button exists in three simultaneous bitmask fields each frame:
 
@@ -74,7 +74,7 @@ Every logical button exists in three simultaneous bitmask fields each frame:
 The platform backend is responsible for computing these three states from
 raw hardware input during `PLATFORM_poll_input`.
 
-## Cursor and Click/Drag Detection
+## 1.4 Cursor and Click/Drag Detection
 
 The input system tracks two cursor positions per frame:
 
@@ -90,7 +90,7 @@ These two positions enable distinguishing between stationary holds and drags:
 
 Cursor comparison uses `is_vectors_3i32__equal` from the vector utilities.
 
-## Writing Buffer
+## 1.5 Writing Buffer
 
 Text entry uses a power-of-2 sized circular buffer with separate read and
 write indices:
@@ -117,9 +117,9 @@ keyboard/character input into the writing buffer via
 `buffer_input_for__writing` instead of (or in addition to) setting
 button flags.
 
-## Lifecycle
+## 1.6 Lifecycle
 
-### 1. Initialization
+### 1.6.1 Initialization
 
     initialize_input(p_input);
         -> All flag fields set to INPUT_NONE (0).
@@ -127,7 +127,7 @@ button flags.
         -> Writing buffer zeroed, read/write indices set to 0.
         -> input_mode__u8 set to INPUT_MODE__NORMAL (0).
 
-### 2. Per-Frame Polling
+### 1.6.2 Per-Frame Polling
 
 Called once per frame in `manage_game__post_render`:
 
@@ -140,7 +140,7 @@ Called once per frame in `manage_game__post_render`:
             - cursor__3i32          (current cursor/touch position)
         -> cursor__old__3i32 is preserved from the previous frame.
 
-### 3. Query Phase
+### 1.6.3 Query Phase
 
 Game systems and UI query input state using static inline helpers:
 
@@ -151,7 +151,7 @@ Game systems and UI query input state using static inline helpers:
         // Handle drag gesture
     }
 
-### 4. Consumption
+### 1.6.4 Consumption
 
 When a system handles an input, it consumes it to prevent propagation:
 
@@ -159,14 +159,14 @@ When a system handles an input, it consumes it to prevent propagation:
         -> Clears INPUT_USE from pressed, held, and released simultaneously.
         -> Downstream systems will no longer see INPUT_USE this frame.
 
-### 5. Clear
+### 1.6.5 Clear
 
     clear_input(p_input);
         -> Saves cursor__3i32 into cursor__old__3i32.
         -> Zeroes cursor__3i32.
         -> Clears pressed, held, and released flags to INPUT_NONE.
 
-## Integration with UI System
+## 1.7 Integration with UI System
 
 The UI system is a primary consumer of input state. The `UI_Manager` queries
 input to determine which `UI_Element` is focused and dispatches input events
@@ -183,7 +183,7 @@ to element handlers:
         -> Consumes input after handling to prevent gameplay systems
            from responding to UI interactions.
 
-## Integration with Multiplayer
+## 1.8 Integration with Multiplayer
 
 In multiplayer mode, each `Client` maintains its own `Input` struct:
 
@@ -198,7 +198,7 @@ In multiplayer mode, each `Client` maintains its own `Input` struct:
 - When clients are active, `get_p_input_from__game(p_game)` returns the
   appropriate per-client input.
 
-## Input Frame Lifecycle Summary
+## 1.9 Input Frame Lifecycle Summary
 
     +-----------------------------------------------------------------+
     | manage_game__post_render (once per frame)                       |
@@ -218,7 +218,7 @@ In multiplayer mode, each `Client` maintains its own `Input` struct:
     |  5. End of frame — next poll_input overwrites state            |
     +-----------------------------------------------------------------+
 
-## Platform Implementation Requirements
+## 1.10 Platform Implementation Requirements
 
 When implementing a new platform backend, the following must be provided:
 
@@ -237,7 +237,7 @@ When implementing a new platform backend, the following must be provided:
    route character input into the writing buffer via
    `buffer_input_for__writing(p_input, symbol)`.
 
-## Capacity Constraints
+## 1.11 Capacity Constraints
 
 - The writing buffer holds at most
   `MAX_QUANTITY_OF__SYMBOLS_IN__INPUT_WRITING_BUFFER` (default 8)
@@ -249,7 +249,7 @@ When implementing a new platform backend, the following must be provided:
 - There is exactly one `Input` per `Game` (singleplayer) or one per
   `Client` (multiplayer).
 
-## Preconditions
+## 1.12 Preconditions
 
 - All functions require `p_input` to be non-null. No debug guards are
   present in the static inline functions — the caller is responsible for
@@ -259,7 +259,7 @@ When implementing a new platform backend, the following must be provided:
 - `buffer_input_for__writing` should only be called by the platform input
   polling implementation when `input_mode__u8` is `INPUT_MODE__WRITING`.
 
-## Postconditions
+## 1.13 Postconditions
 
 - After `initialize_input`: all flags are zero, cursor is at origin,
   writing buffer is empty, mode is `INPUT_MODE__NORMAL`.
@@ -269,13 +269,13 @@ When implementing a new platform backend, the following must be provided:
 - After `consume_input(p_input, flags)`: the specified bits are cleared
   from pressed, held, and released fields.
 
-## Error Handling
+## 1.14 Error Handling
 
 No error reporting is performed by input functions. All query functions
 return `false` / `0` for invalid or zero input. There are no `debug_abort`
 or `debug_error` calls in the input header.
 
-## Thread Safety
+## 1.15 Thread Safety
 
 Input operations are **not** thread-safe. The engine's cooperative
 scheduling model ensures all input operations occur on a single thread.

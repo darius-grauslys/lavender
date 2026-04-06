@@ -1,6 +1,6 @@
-# System Overview: Debug & Console Output
+# 1 System Overview: Debug & Console Output
 
-## Purpose
+## 1.1 Purpose
 
 The debug output system provides two independent text output mechanisms
 for the engine: a conditional, severity-leveled debug logging system
@@ -8,9 +8,9 @@ for the engine: a conditional, severity-leveled debug logging system
 (`console.h`). Together they cover the full range of text output needs
 from developer diagnostics to runtime user-facing messages.
 
-## Architecture
+## 1.2 Architecture
 
-### Subsystem Relationship
+### 1.2.1 Subsystem Relationship
 
     +-------------------------------------------------------+
     |                   Text Output Layer                    |
@@ -33,7 +33,7 @@ from developer diagnostics to runtime user-facing messages.
     |  +---------+ +----------+    +------------------+    |
     +-------------------------------------------------------+
 
-### Key Distinction
+### 1.2.2 Key Distinction
 
 The two subsystems are **independent** — neither depends on the other,
 and they serve different audiences with different guarantees:
@@ -47,9 +47,9 @@ and they serve different audiences with different guarantees:
 | Intended audience | Developer diagnostics | Runtime/user output |
 | Newline behavior | Always appended automatically | Not implicitly appended |
 
-## Debug Logging Subsystem (debug.h)
+## 1.3 Debug Logging Subsystem (debug.h)
 
-### Severity Escalation
+### 1.3.1 Severity Escalation
 
 The debug functions follow a strict severity escalation pattern:
 
@@ -59,7 +59,7 @@ The debug functions follow a strict severity escalation pattern:
     debug_error(...)            // Serious problems, core dump, continues
     debug_abort(...)            // Unrecoverable, halts execution
 
-### Compilation Flag Control
+### 1.3.2 Compilation Flag Control
 
 Three preprocessor flags control which debug functions produce output:
 
@@ -69,7 +69,7 @@ Three preprocessor flags control which debug functions produce output:
 | `NLOG` | Suppresses all log output across all debug functions. |
 | `VERBOSE` | Enables `debug_info__verbose` and `debug_warning__verbose`. These produce no output unless `VERBOSE` is defined. |
 
-#### Effective Visibility Matrix
+#### 1.3.2.1 Effective Visibility Matrix
 
 | Function | Default (no flags) | `VERBOSE` set | `NLOG` set | `NDEBUG` set |
 |----------|-------------------|---------------|------------|--------------|
@@ -87,7 +87,7 @@ suppressed.
 Note: `debug_error` always calls `PLATFORM_coredump()` when output is
 active. It does **not** halt execution.
 
-### Platform Hooks
+### 1.3.3 Platform Hooks
 
 The debug subsystem depends on three platform-implemented functions:
 
@@ -97,7 +97,7 @@ The debug subsystem depends on three platform-implemented functions:
 | `PLATFORM_abort()` | `debug_abort` (unconditional) | Halt execution |
 | `PLATFORM_coredump()` | `debug_error` (when output active) | Create a core dump if possible |
 
-### Common Usage Pattern: Null Pointer Guard
+### 1.3.4 Common Usage Pattern: Null Pointer Guard
 
 Many `static inline` functions throughout the engine use `debug_abort`
 as a null-pointer guard in debug builds:
@@ -116,7 +116,7 @@ as a null-pointer guard in debug builds:
 This provides fail-fast behavior during development while compiling to
 zero overhead in release builds.
 
-### Error Message Convention
+### 1.3.5 Error Message Convention
 
 Error and abort messages follow the pattern:
 
@@ -127,16 +127,16 @@ For example:
     debug_abort("complete_process, p_process is null.");
     debug_error("enqueue_process, cannot enqueue itself.");
 
-## Console Subsystem (console.h)
+## 1.4 Console Subsystem (console.h)
 
-### Functions
+### 1.4.1 Functions
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `print_console` | `(const char *str) -> void` | Outputs a null-terminated string to the console display surface. |
 | `clear_console` | `(void) -> void` | Clears all content from the console display surface. |
 
-### Console Struct
+### 1.4.2 Console Struct
 
     typedef struct Console_t {
     } Console;
@@ -145,7 +145,7 @@ An empty struct serving as a placeholder for platform-specific console
 state. Backends may extend this with platform-specific fields via the
 implemented types pattern if needed.
 
-### Usage
+### 1.4.3 Usage
 
 The console functions provide direct text output without formatting,
 severity levels, or conditional compilation:
@@ -154,12 +154,12 @@ severity levels, or conditional compilation:
     // ... perform work ...
     clear_console();
 
-## Platform Implementation Requirements
+## 1.5 Platform Implementation Requirements
 
 When implementing a new backend, the following must be provided for the
 debug and console output system:
 
-### From debug.h
+### 1.5.1 From debug.h
 
 1. **All six debug functions** — `debug_info__verbose`,
    `debug_warning__verbose`, `debug_info`, `debug_warning`,
@@ -168,7 +168,7 @@ debug and console output system:
 Implementations must respect the `NDEBUG`, `NLOG`, and `VERBOSE`
 preprocessor flags as described above.
 
-### From console.h
+### 1.5.2 From console.h
 
 1. **`print_console`** — output a string to whatever display surface
    the platform uses as its console.
@@ -177,7 +177,7 @@ preprocessor flags as described above.
 These are separate from the `PLATFORM_pre_abort` / `PLATFORM_abort` /
 `PLATFORM_coredump` functions required by `debug.h`.
 
-### Error Handling
+### 1.5.3 Error Handling
 
 Console functions do not report errors. If the console is unavailable
 on a given platform, implementations should silently no-op.
@@ -186,7 +186,7 @@ Debug functions do not validate their own output success. The critical
 guarantee is that `debug_abort` always invokes `PLATFORM_pre_abort()`
 and `PLATFORM_abort()` regardless of output success or flag state.
 
-## Thread Safety
+## 1.6 Thread Safety
 
 Neither subsystem is thread-safe. The engine's cooperative scheduling
 model means all debug and console output occurs on a single thread,

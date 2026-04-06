@@ -1,6 +1,6 @@
-# Specification: core/include/audio/audio_effect.h
+# 1 Specification: core/include/audio/audio_effect.h
 
-## Overview
+## 1.1 Overview
 
 Provides initialization, playback, and `static inline` flag management
 functions for `Audio_Effect` — the engine's representation of a single
@@ -8,7 +8,7 @@ sound effect instance. An audio effect wraps a platform-specific audio
 handle with a timer, kind discriminator, and flags controlling active
 state, looping, and auto-release behavior.
 
-## Dependencies
+## 1.2 Dependencies
 
 - `defines.h` (for `Audio_Effect`, `Audio_Flags__u8`, `Audio_Effect_Kind`,
   `Timer__u32`, all flag macros)
@@ -16,9 +16,9 @@ state, looping, and auto-release behavior.
 - `platform.h` (for `PLATFORM_Audio_Context`, `PLATFORM_allocate_audio_effect`,
   `PLATFORM_play_audio_effect`)
 
-## Types
+## 1.3 Types
 
-### Audio_Effect (struct, defined in `defines.h`)
+### 1.3.1 Audio_Effect (struct, defined in `defines.h`)
 
     typedef struct Audio_Effect_t {
         void                    *p_audio_instance_handle;
@@ -34,7 +34,7 @@ state, looping, and auto-release behavior.
 | `the_kind_of__audio_effect` | `enum Audio_Effect_Kind` | Discriminator identifying which sound effect this is. |
 | `audio_flags__u8` | `Audio_Flags__u8` | Bitfield controlling active state, looping, and auto-release. |
 
-### Audio_Flags__u8 (u8, defined in `defines.h`)
+### 1.3.2 Audio_Flags__u8 (u8, defined in `defines.h`)
 
 | Flag | Bit | Description |
 |------|-----|-------------|
@@ -42,7 +42,7 @@ state, looping, and auto-release behavior.
 | `AUDIO_FLAG__RELEASE_ON_COMPLETE` | 1 | Automatically release the effect when its timer expires. |
 | `AUDIO_FLAG__IS_LOOPING` | 2 | Audio effect loops continuously. |
 
-### Audio_Effect_Kind (enum, defined in `types/implemented/audio_effect_kind.h`)
+### 1.3.3 Audio_Effect_Kind (enum, defined in `types/implemented/audio_effect_kind.h`)
 
     typedef enum Audio_Effect_Kind {
         Audio_Effect_Kind__None,
@@ -53,27 +53,27 @@ Games extend this enum in their `types/implemented/audio_effect_kind.h` copy.
 `Audio_Effect_Kind__None` is the sentinel (value 0).
 `Audio_Effect_Kind__Unknown` is the end-of-enum sentinel.
 
-## Functions
+## 1.4 Functions
 
-### Initialization
+### 1.4.1 Initialization
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `initialize_audio_effect` | `(Audio_Effect*, void* p_audio_handle, Audio_Effect_Kind, Audio_Flags__u8, Timer__u32 duration) -> void` | Full initialization. Sets the audio handle, kind, flags, and duration timer. |
 
-### Convenience Initialization (static inline)
+### 1.4.2 Convenience Initialization (static inline)
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `set_audio_effect` | `(Audio_Effect*, Audio_Effect_Kind, Audio_Flags__u8, Timer__u32 duration) -> void` | Re-initializes an audio effect while preserving its existing `p_audio_instance_handle` and `IS_ACTIVE` flag. Calls `initialize_audio_effect` internally, passing the existing handle and OR-ing the existing `IS_ACTIVE` state into the new flags. |
 
-### Playback
+### 1.4.3 Playback
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `play_audio_effect_and__forget` | `(PLATFORM_Audio_Context*, Audio_Effect_Kind, Audio_Flags__u8, Timer__u32 duration) -> Audio_Effect*` | `Audio_Effect*` | Allocates an audio effect from the platform audio context, initializes it, and begins playback. Returns a pointer to the allocated effect, or null on failure. The caller does not need to manage the returned effect — it will be released automatically if `AUDIO_FLAG__RELEASE_ON_COMPLETE` is set in the flags. |
 
-### Flag Queries (static inline)
+### 1.4.4 Flag Queries (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -81,7 +81,7 @@ Games extend this enum in their `types/implemented/audio_effect_kind.h` copy.
 | `is_audio__released_on_completion` | `(Audio_Effect*) -> bool` | `bool` | True if `AUDIO_FLAG__RELEASE_ON_COMPLETE` is set. |
 | `is_audio__looping` | `(Audio_Effect*) -> bool` | `bool` | True if `AUDIO_FLAG__IS_LOOPING` is set. |
 
-### Flag Mutations (static inline)
+### 1.4.5 Flag Mutations (static inline)
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
@@ -92,9 +92,9 @@ Games extend this enum in their `types/implemented/audio_effect_kind.h` copy.
 | `set_audio_as__looping` | `(Audio_Effect*) -> void` | Sets `AUDIO_FLAG__IS_LOOPING`. |
 | `set_audio_as__not_looping` | `(Audio_Effect*) -> void` | Clears `AUDIO_FLAG__IS_LOOPING`. |
 
-## Agentic Workflow
+## 1.5 Agentic Workflow
 
-### Usage Pattern — Fire and Forget
+### 1.5.1 Usage Pattern — Fire and Forget
 
 The most common usage is `play_audio_effect_and__forget`:
 
@@ -108,7 +108,7 @@ This allocates, initializes, and plays the effect in one call. The effect
 is automatically released when its timer expires because
 `AUDIO_FLAG__RELEASE_ON_COMPLETE` is set.
 
-### Usage Pattern — Managed Playback
+### 1.5.2 Usage Pattern — Managed Playback
 
 For effects that need to be controlled after creation (e.g. looping ambient
 sounds):
@@ -127,7 +127,7 @@ sounds):
     // Later:
     set_audio_as__inactive(p_effect);
 
-### Usage Pattern — Re-initialization with `set_audio_effect`
+### 1.5.3 Usage Pattern — Re-initialization with `set_audio_effect`
 
 `set_audio_effect` preserves the platform audio handle and the active state,
 allowing you to change the kind, flags, or duration of an already-allocated
@@ -142,32 +142,32 @@ effect without reallocating:
 The `IS_ACTIVE` flag from the existing effect is preserved via OR into the
 new flags. The `p_audio_instance_handle` is reused.
 
-### Ownership
+### 1.5.4 Ownership
 
 Audio effects are pooled in `PLATFORM_Audio_Context`. The pool size is
 platform-defined. The platform backend manages allocation and deallocation
 of the pool via `PLATFORM_allocate_audio_effect`.
 
-### Polling
+### 1.5.5 Polling
 
 `PLATFORM_poll_audio_effects` is called each frame to update timers and
 release completed effects. This is a platform function, not declared in
 this header.
 
-### Preconditions
+### 1.5.6 Preconditions
 
 - All functions require non-null `p_audio_effect`.
 - `play_audio_effect_and__forget` requires non-null `p_PLATFORM_audio_context`.
 - `play_audio_effect_and__forget` returns null if the platform audio pool
   is exhausted.
 
-### Postconditions
+### 1.5.7 Postconditions
 
 - `initialize_audio_effect` overwrites all fields of the `Audio_Effect`.
 - `set_audio_effect` preserves `p_audio_instance_handle` and the existing
   `IS_ACTIVE` state.
 - Flag mutation functions modify only the targeted bit, preserving all others.
 
-## Header Guard
+## 1.6 Header Guard
 
 `AUDIO_EFFECT_H`

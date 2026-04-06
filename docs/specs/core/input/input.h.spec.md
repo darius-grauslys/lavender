@@ -1,6 +1,6 @@
-# Specification: core/include/input/input.h
+# 1 Specification: core/include/input/input.h
 
-## Overview
+## 1.1 Overview
 
 Provides initialization, polling, and query utilities for the `Input`
 struct — the engine's unified input abstraction. The `Input` struct
@@ -12,7 +12,7 @@ Input polling is platform-dependent (`PLATFORM_poll_input`), but all
 query functions are platform-independent and implemented as `static
 inline` helpers in this header.
 
-## Dependencies
+## 1.2 Dependencies
 
 - `defines.h` (for `Input`, `Input_Flags__u32`, `Input_Mode__u8`,
   `Input_Code__u32`, `Vector__3i32`, `Game`)
@@ -22,9 +22,9 @@ inline` helpers in this header.
   `MAX_QUANTITY_OF__SYMBOLS_IN__INPUT_WRITING_BUFFER`)
 - `vectors.h` (for `initialize_3i32_vector`, `is_vectors_3i32__equal`)
 
-## Types
+## 1.3 Types
 
-### Input (struct)
+### 1.3.1 Input (struct)
 
 Defined in `defines.h`:
 
@@ -57,7 +57,7 @@ Defined in `defines.h`:
 | `index_of__writing_buffer__write` | `Index__u8` | Write index into the circular writing buffer. |
 | `input_mode__u8` | `Input_Mode__u8` | Current input mode (normal, writing, etc.). |
 
-### Input_Flags__u32 (u32)
+### 1.3.2 Input_Flags__u32 (u32)
 
 A bitmask where each bit corresponds to a logical input button. The
 default bit assignments are defined in `platform_defaults.h` (guarded
@@ -84,14 +84,14 @@ The `INPUT_CODE_*` macros are sequential integer identifiers (0–13).
 The `INPUT_*` flag macros are bitmask values (each a single bit).
 `QUANTITY_OF__INPUTS` (default: 14) defines the total count.
 
-### Input_Mode__u8 (u8)
+### 1.3.3 Input_Mode__u8 (u8)
 
 | Constant | Value | Description |
 |----------|-------|-------------|
 | `INPUT_MODE__NONE` / `INPUT_MODE__NORMAL` | 0 | Normal gameplay input. |
 | `INPUT_MODE__WRITING` | `BIT(1)` | Text entry mode. Input is routed to the writing buffer. |
 
-### ASCII Constants
+### 1.3.4 ASCII Constants
 
 Defined in `defines_weak.h`:
 
@@ -111,21 +111,21 @@ Note: The `ASCII_LAVENDER__*` constants are **not** standard ASCII.
 They use values 128–131 which are outside the 7-bit ASCII range. These
 are safe to use only within the engine's input and UI systems.
 
-## Functions
+## 1.4 Functions
 
-### Initialization
+### 1.4.1 Initialization
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `initialize_input` | `(Input*) -> void` | Initializes all input state to zero/default. |
 
-### Polling
+### 1.4.2 Polling
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `poll_input` | `(Game*, Input*) -> void` | Polls platform input and updates the `Input` struct. **Do not call directly** — called by `manage_game__post_render` in `game.c` each frame. Internally calls `PLATFORM_poll_input`. |
 
-### Writing Buffer
+### 1.4.3 Writing Buffer
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -133,13 +133,13 @@ are safe to use only within the engine's input and UI systems.
 | `buffer_input_for__writing` | `(Input*, char) -> void` | `void` | Enqueues a character into the circular writing buffer. |
 | `get_last_symbol_of__input_for__writing` | `(Input*) -> unsigned char` | `unsigned char` | Returns `last_symbol` without consuming it from the buffer. (static inline) |
 
-### Clear (static inline)
+### 1.4.4 Clear (static inline)
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `clear_input` | `(Input*) -> void` | Clears pressed, held, and released flags to `INPUT_NONE`. Saves current cursor to `cursor__old__3i32` and zeroes `cursor__3i32`. |
 
-### Button State Queries — Released (static inline)
+### 1.4.5 Button State Queries — Released (static inline)
 
 All return `bool`. Parameter: `(Input*)`.
 
@@ -160,7 +160,7 @@ All return `bool`. Parameter: `(Input*)`.
 | `is_input__none_released` | `input_flags__released & INPUT_NONE` |
 | `is_input__click_released` | `input_flags__released & INPUT_CLICK` |
 
-### Button State Queries — Pressed (static inline)
+### 1.4.6 Button State Queries — Pressed (static inline)
 
 All return `bool`. Parameter: `(Input*)`.
 
@@ -181,7 +181,7 @@ All return `bool`. Parameter: `(Input*)`.
 | `is_input__none_pressed` | `input_flags__pressed & INPUT_NONE` |
 | `is_input__click_pressed` | `input_flags__pressed & INPUT_CLICK` |
 
-### Button State Queries — Held (static inline)
+### 1.4.7 Button State Queries — Held (static inline)
 
 All return `bool`. Parameter: `(Input*)`.
 
@@ -201,29 +201,29 @@ All return `bool`. Parameter: `(Input*)`.
 | `is_input__turn_right_held` | `input_flags__held & INPUT_TURN_RIGHT` |
 | `is_input__none_held` | `input_flags__held & INPUT_NONE` |
 
-### Composite Input Queries (static inline)
+### 1.4.8 Composite Input Queries (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `is_input__click_held` | `(Input*) -> bool` | `bool` | True if `INPUT_CLICK` is held **and** cursor has not moved (`cursor__3i32` equals `cursor__old__3i32` via `is_vectors_3i32__equal`). Distinguishes a stationary hold from a drag. |
 | `is_input__click_dragged` | `(Input*) -> bool` | `bool` | True if `INPUT_CLICK` is held **and** cursor has moved (`cursor__3i32` differs from `cursor__old__3i32`). Distinguishes a drag from a stationary hold. |
 
-### Input Consumption (static inline)
+### 1.4.9 Input Consumption (static inline)
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `consume_input` | `(Input*, Input_Flags__u32) -> void` | Clears the specified input flag bits from all three state fields (pressed, held, released). Used to prevent input from propagating to lower-priority handlers. |
 
-### Mode Management (static inline)
+### 1.4.10 Mode Management (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `get_input_mode_of__input` | `(Input*) -> Input_Mode__u8` | `Input_Mode__u8` | Returns the current input mode. |
 | `set_input_mode_of__input` | `(Input*, Input_Mode__u8) -> void` | `void` | Sets the input mode (e.g. switch between normal and writing). |
 
-## Agentic Workflow
+## 1.5 Agentic Workflow
 
-### Input Frame Lifecycle
+### 1.5.1 Input Frame Lifecycle
 
 Each frame, the engine processes input in this order (see
 `manage_game__post_render` in `game.c`):
@@ -240,7 +240,7 @@ Note: `poll_input` is called in `manage_game__post_render`, which runs
 after the scene's render pass. This means input is sampled at the end
 of each frame and is available for the next frame's logic.
 
-### Three-State Input Model
+### 1.5.2 Three-State Input Model
 
 Every logical button exists in three simultaneous states each frame:
 
@@ -255,7 +255,7 @@ A button that is pressed for one frame will appear in `pressed` and
 appear only in `held`. On the frame it is released, it appears in
 `released`.
 
-### Click vs. Drag Detection
+### 1.5.3 Click vs. Drag Detection
 
 The engine distinguishes between a stationary click-hold and a drag
 using cursor position comparison:
@@ -271,7 +271,7 @@ Both functions require `INPUT_CLICK` to be in the held state. The
 distinction is made by comparing `cursor__3i32` to `cursor__old__3i32`
 via `is_vectors_3i32__equal`.
 
-### Input Consumption Pattern
+### 1.5.4 Input Consumption Pattern
 
 When a UI element or system handles an input, it should consume it
 to prevent lower-priority systems from also responding:
@@ -285,7 +285,7 @@ to prevent lower-priority systems from also responding:
 `consume_input` clears the specified bits from all three state fields
 (pressed, held, released) simultaneously.
 
-### Writing Mode Pattern
+### 1.5.5 Writing Mode Pattern
 
 Text entry uses a circular buffer and a separate input mode:
 
@@ -311,7 +311,7 @@ The writing buffer is a power-of-2 sized circular buffer (default size
 8, controlled by `MAX_QUANTITY_OF__SYMBOLS_IN__INPUT_WRITING_BUFFER__BIT_SHIFT`).
 Read and write indices wrap using the buffer size as a mask.
 
-### Client Input in Multiplayer
+### 1.5.6 Client Input in Multiplayer
 
 In multiplayer mode, each `Client` has its own `Input` struct:
 
@@ -328,7 +328,7 @@ When `max_quantity_of__clients == 0` in `Game`, the engine uses
 `Game.input` directly. Otherwise, it uses the per-client input from
 the client pool.
 
-### Relationship to Game
+### 1.5.7 Relationship to Game
 
 The `Game` struct contains a top-level `Input` field:
 
@@ -342,7 +342,7 @@ the per-client `input_of__client` fields are used instead. The
 `poll_input` call in `manage_game__post_render` always targets
 `get_p_input_from__game(p_game)`.
 
-### Platform Implementation Requirements
+### 1.5.8 Platform Implementation Requirements
 
 When implementing a new backend, the following must be provided:
 
@@ -356,7 +356,7 @@ defining `PLATFORM_INPUT` before `platform_defaults.h` is included,
 then providing its own `INPUT_CODE_*`, `INPUT_*`, and
 `QUANTITY_OF__INPUTS` definitions.
 
-### Preconditions
+### 1.5.9 Preconditions
 
 - All functions require `p_input` to be non-null. No debug guards
   are present in the `static inline` functions — the caller is
@@ -367,7 +367,7 @@ then providing its own `INPUT_CODE_*`, `INPUT_*`, and
   input polling implementation when `input_mode__u8` is
   `INPUT_MODE__WRITING`.
 
-### Postconditions
+### 1.5.10 Postconditions
 
 - After `initialize_input`: all flags are zero, cursor is at origin,
   writing buffer is empty, mode is `INPUT_MODE__NORMAL`.
@@ -377,13 +377,13 @@ then providing its own `INPUT_CODE_*`, `INPUT_*`, and
 - After `consume_input(p_input, flags)`: the specified bits are
   cleared from pressed, held, and released fields.
 
-### Error Handling
+### 1.5.11 Error Handling
 
 No error reporting is performed by input functions. All query functions
 return `false` / `0` for invalid or zero input. There are no
 `debug_abort` or `debug_error` calls in this header.
 
-### Thread Safety
+### 1.5.12 Thread Safety
 
 Input operations are **not** thread-safe. The engine's cooperative
 scheduling model (see `process.h` specification) ensures all input

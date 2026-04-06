@@ -1,6 +1,6 @@
-# Specification: core/include/debug/console.h
+# 1 Specification: core/include/debug/console.h
 
-## Overview
+## 1.1 Overview
 
 Provides a minimal console abstraction for text output and clearing.
 The `Console` struct and its associated functions offer a simple
@@ -11,13 +11,13 @@ This is a lightweight utility intended for basic text display,
 separate from the more feature-rich debug logging system in `debug.h`
 and the UI-based `Typer`/`Log` systems.
 
-## Dependencies
+## 1.2 Dependencies
 
 - None (self-contained header).
 
-## Types
+## 1.3 Types
 
-### Console (struct)
+### 1.3.1 Console (struct)
 
     typedef struct Console_t {
 
@@ -32,16 +32,16 @@ etc.) if needed.
 |-------|------|-------------|
 | *(none)* | — | The struct is currently empty. It exists as a forward-looking type for potential platform-specific extensions. |
 
-## Functions
+## 1.4 Functions
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `print_console` | `(const char *str) -> void` | Outputs the given null-terminated string to the console. |
 | `clear_console` | `(void) -> void` | Clears all content from the console. |
 
-## Agentic Workflow
+## 1.5 Agentic Workflow
 
-### Usage Patterns
+### 1.5.1 Usage Patterns
 
 The console functions provide direct text output without the formatting,
 severity levels, or conditional compilation of the `debug.h` functions.
@@ -52,7 +52,7 @@ be suppressed by `NDEBUG` or `NLOG`.
     // ... perform work ...
     clear_console();
 
-### Relationship to debug.h
+### 1.5.2 Relationship to debug.h
 
 | Aspect | `console.h` | `debug.h` |
 |--------|-------------|-----------|
@@ -63,7 +63,7 @@ be suppressed by `NDEBUG` or `NLOG`.
 | Intended audience | Runtime/user output | Developer diagnostics |
 | Newline behavior | Not implicitly appended | Always appended |
 
-### Platform Implementation Requirements
+### 1.5.3 Platform Implementation Requirements
 
 When implementing a new backend, the following must be provided:
 
@@ -75,18 +75,18 @@ When implementing a new backend, the following must be provided:
 These are separate from the `PLATFORM_pre_abort` / `PLATFORM_abort` /
 `PLATFORM_coredump` functions required by `debug.h`.
 
-### Preconditions
+### 1.5.4 Preconditions
 
 - `print_console`: `str` must be a valid, non-null, null-terminated
   C string.
 
-### Postconditions
+### 1.5.5 Postconditions
 
 - `print_console`: the string content is displayed on the console.
   No newline is implicitly appended (unlike `debug.h` functions).
 - `clear_console`: the console display surface is empty.
 
-### Error Handling
+### 1.5.6 Error Handling
 
 These functions do not report errors. If the console is unavailable
 on a given platform, implementations should silently no-op.

@@ -1,6 +1,6 @@
-# Specification: core/include/debug/debug.h
+# 1 Specification: core/include/debug/debug.h
 
-## Overview
+## 1.1 Overview
 
 Provides platform-independent debug logging, warning, and error reporting
 functions. These are the engine's primary diagnostic output mechanisms,
@@ -14,14 +14,14 @@ implementation. The reference implementation in
 
 All debug print helpers append a trailing newline automatically.
 
-## Dependencies
+## 1.2 Dependencies
 
 - `<stdarg.h>` (for `va_list`, `va_start`, `va_end` in implementations)
 - `<stdio.h>` (for `printf`, `vprintf` in the reference implementation)
 - `platform.h` (for `PLATFORM_pre_abort`, `PLATFORM_abort`,
   `PLATFORM_coredump` used by `debug_abort` and `debug_error`)
 
-## Compilation Flags
+## 1.3 Compilation Flags
 
 | Flag | Effect |
 |------|--------|
@@ -29,7 +29,7 @@ All debug print helpers append a trailing newline automatically.
 | `NLOG` | When defined, suppresses all log output (`debug_info`, `debug_warning`, `debug_error`, `debug_abort`, `debug_info__verbose`, `debug_warning__verbose`). |
 | `VERBOSE` | When defined, enables `debug_info__verbose` and `debug_warning__verbose`. These functions produce no output unless `VERBOSE` is defined. |
 
-### Effective Visibility Matrix
+### 1.3.1 Effective Visibility Matrix
 
 | Function | `NDEBUG` unset, `NLOG` unset, `VERBOSE` unset | `VERBOSE` set | `NLOG` set | `NDEBUG` set |
 |----------|-----------------------------------------------|---------------|------------|--------------|
@@ -47,34 +47,34 @@ suppressed by `NDEBUG`/`NLOG`.
 Note: `debug_error` always calls `PLATFORM_coredump()` when output is
 active. It does **not** halt execution.
 
-## Types
+## 1.4 Types
 
 This header defines no types.
 
-## Functions
+## 1.5 Functions
 
-### Verbose Logging
+### 1.5.1 Verbose Logging
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `debug_info__verbose` | `(const char *msg_fmt, ...) -> void` | Prints a verbose informational message. Only produces output when both `VERBOSE` is defined and `NLOG` is not defined. Reference implementation prefixes with `"\033[37;1m(V) info:\033[0m "`. |
 | `debug_warning__verbose` | `(const char *msg_fmt, ...) -> void` | Prints a verbose warning message. Only produces output when both `VERBOSE` is defined and `NLOG` is not defined. Reference implementation prefixes with `"\033[33;1m(V) warning:\033[0m "`. |
 
-### Standard Logging
+### 1.5.2 Standard Logging
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `debug_info` | `(const char *msg_fmt, ...) -> void` | Prints an informational message. Suppressed by `NDEBUG` or `NLOG`. Reference implementation prefixes with `"\033[30;1minfo:\033[0m "`. |
 | `debug_warning` | `(const char *msg_fmt, ...) -> void` | Prints a warning message. Suppressed by `NDEBUG` or `NLOG`. Reference implementation prefixes with `"\033[33;1mwarning:\033[0m "`. |
 
-### Error Reporting
+### 1.5.3 Error Reporting
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `debug_error` | `(const char *msg_fmt, ...) -> void` | Prints an error message and triggers `PLATFORM_coredump()`. Does **not** halt execution. Suppressed by `NDEBUG` or `NLOG`. Reference implementation prefixes with `"\033[31;1merror:\033[0m "`. |
 | `debug_abort` | `(const char *msg_fmt, ...) -> void` | Calls `PLATFORM_pre_abort()`, prints an error message, then calls `PLATFORM_abort()` to halt execution. Output is suppressed by `NDEBUG` or `NLOG`, but `PLATFORM_pre_abort()` and `PLATFORM_abort()` are **always** called unconditionally. Reference implementation prefixes with `"\033[31;1mabort:\033[0m "`. |
 
-### ANSI Color Reference (Reference Implementation)
+### 1.5.4 ANSI Color Reference (Reference Implementation)
 
 | Prefix | ANSI Code | Color |
 |--------|-----------|-------|
@@ -85,21 +85,9 @@ This header defines no types.
 | `error:` | `\033[31;1m` | Bold red |
 | `abort:` | `\033[31;1m` | Bold red |
 
-### Reference Implementation Control Flow
+### 1.5.5 Reference Implementation Control Flow
 
-#### debug_info__verbose
-
-    #ifndef NLOG
-    #ifdef VERBOSE
-        va_start(...)
-        printf prefix
-        vprintf msg_fmt
-        va_end(...)
-        printf newline
-    #endif
-    #endif
-
-#### debug_warning__verbose
+#### 1.5.5.1 debug_info__verbose
 
     #ifndef NLOG
     #ifdef VERBOSE
@@ -111,7 +99,19 @@ This header defines no types.
     #endif
     #endif
 
-#### debug_info
+#### 1.5.5.2 debug_warning__verbose
+
+    #ifndef NLOG
+    #ifdef VERBOSE
+        va_start(...)
+        printf prefix
+        vprintf msg_fmt
+        va_end(...)
+        printf newline
+    #endif
+    #endif
+
+#### 1.5.5.3 debug_info
 
     #ifndef NLOG
     #ifndef NDEBUG
@@ -123,7 +123,7 @@ This header defines no types.
     #endif
     #endif
 
-#### debug_warning
+#### 1.5.5.4 debug_warning
 
     #ifndef NDEBUG
     #ifndef NLOG
@@ -135,7 +135,7 @@ This header defines no types.
     #endif
     #endif
 
-#### debug_error
+#### 1.5.5.5 debug_error
 
     #ifndef NDEBUG
     #ifndef NLOG
@@ -148,7 +148,7 @@ This header defines no types.
     #endif
     #endif
 
-#### debug_abort
+#### 1.5.5.6 debug_abort
 
     PLATFORM_pre_abort()          // UNCONDITIONAL
     #ifndef NDEBUG
@@ -162,9 +162,9 @@ This header defines no types.
     #endif
     PLATFORM_abort()              // UNCONDITIONAL
 
-## Agentic Workflow
+## 1.6 Agentic Workflow
 
-### Usage Patterns
+### 1.6.1 Usage Patterns
 
 Debug functions are used throughout the engine for runtime diagnostics.
 They follow a severity escalation pattern:
@@ -175,7 +175,7 @@ They follow a severity escalation pattern:
     debug_error(...)            // Serious problems, core dump, continues
     debug_abort(...)            // Unrecoverable, halts execution
 
-### Null Pointer Guard Pattern
+### 1.6.2 Null Pointer Guard Pattern
 
 Many `static inline` functions throughout the engine use `debug_abort`
 as a null-pointer guard in debug builds:
@@ -195,13 +195,13 @@ This pattern provides fail-fast behavior during development while
 compiling to zero overhead in release builds. See `process.h` for
 extensive examples of this pattern.
 
-### Format String Convention
+### 1.6.3 Format String Convention
 
 All functions accept `printf`-style format strings with variadic
 arguments. Implementations use `va_list` / `va_start` / `va_end`
 with `vprintf` (or platform equivalent) internally.
 
-### Error Message Convention
+### 1.6.4 Error Message Convention
 
 Error and abort messages throughout the engine follow the pattern:
 
@@ -212,12 +212,12 @@ For example:
     debug_abort("complete_process, p_process is null.");
     debug_error("enqueue_process, cannot enqueue itself.");
 
-### Preconditions
+### 1.6.5 Preconditions
 
 - `msg_fmt` must be a valid, non-null `printf`-style format string.
 - Variadic arguments must match the format specifiers in `msg_fmt`.
 
-### Postconditions
+### 1.6.6 Postconditions
 
 - `debug_info__verbose`, `debug_warning__verbose`, `debug_info`,
   `debug_warning`: no side effects beyond output.
@@ -227,7 +227,7 @@ For example:
   (if not suppressed), then `PLATFORM_abort()` is called. Control does
   **not** return to the caller.
 
-### Thread Safety
+### 1.6.7 Thread Safety
 
 These functions are **not** thread-safe. The engine's cooperative
 scheduling model (see `process.h` specification) means all debug

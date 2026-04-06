@@ -1,6 +1,6 @@
-# Specification: core/include/entity/entity_manager.h
+# 1 Specification: core/include/entity/entity_manager.h
 
-## Overview
+## 1.1 Overview
 
 Provides pool-based allocation, deallocation, function table registration,
 and lookup utilities for `Entity` instances. The `Entity_Manager` owns a
@@ -12,7 +12,7 @@ The `Entity_Manager` also maintains a per-`Entity_Kind` function table
 registry. When an entity is allocated or deserialized, its function table
 is populated from this registry via `sanitize_entity_functions`.
 
-## Dependencies
+## 1.2 Dependencies
 
 - `defines.h` (for `Entity`, `Entity_Manager`, `Entity_Kind`,
   `Entity_Functions`, `Identifier__u32`, `MAX_QUANTITY_OF__ENTITIES`)
@@ -26,9 +26,9 @@ Note: This header unconditionally includes `debug/debug.h`, unlike most
 headers which only include it via `defines.h` when `NDEBUG` is not defined.
 The debug guards within the inline functions still use `#ifndef NDEBUG`.
 
-## Types
+## 1.3 Types
 
-### Entity_Manager (struct)
+### 1.3.1 Entity_Manager (struct)
 
 Defined in `defines.h`:
 
@@ -50,7 +50,7 @@ Defined in `defines.h`:
 | `p_ptr_entity__next_in_ptr_array` | `Entity**` | Points to the next available slot in `ptr_array_of__entities`. |
 | `f_entity_initializer` | `f_Entity_Initializer` | Game-provided callback invoked after allocation to perform game-specific entity setup. |
 
-### f_Entity_Initializer (function pointer)
+### 1.3.2 f_Entity_Initializer (function pointer)
 
     typedef void (*f_Entity_Initializer)(
             Game *p_game,
@@ -61,63 +61,63 @@ Called after an entity is allocated and its function table is set.
 Used by game projects to perform kind-specific initialization (e.g.
 setting up hitboxes, sprites, AI state).
 
-### Limits
+### 1.3.3 Limits
 
 | Macro | Default | Description |
 |-------|---------|-------------|
 | `MAX_QUANTITY_OF__ENTITIES` | Platform-defined | Maximum number of entities in the pool. Defined in `platform_defines.h`. |
 
-## Functions
+## 1.4 Functions
 
-### Initialization
+### 1.4.1 Initialization
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `initialize_entity_manager` | `(Entity_Manager*) -> void` | Initializes the entity pool, pointer array, randomizer, and clears all registered function tables. |
 
-### Registration
+### 1.4.2 Registration
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `register_entity_into__entity_manager` | `(Entity_Manager*, Entity_Kind, Entity_Functions) -> void` | Registers a function table for the given `Entity_Kind`. All subsequently allocated entities of this kind will receive this function table. |
 | `sanitize_entity_functions` | `(Entity_Manager*, Entity*) -> void` | Copies the registered function table for the entity's kind into the entity instance. Called on allocation and deserialization to ensure the entity has correct handlers. |
 
-### Default Initializer
+### 1.4.3 Default Initializer
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `f_entity_initializer__default` | `(Game*, World*, Entity*) -> void` | Default entity initializer. Used when no game-specific initializer is set. |
 
-### Allocation
+### 1.4.4 Allocation
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `allocate_entity_in__entity_manager` | `(Game*, World*, Entity_Manager*, Entity_Kind) -> Entity*` | `Entity*` or null | Allocates an entity from the pool with an auto-generated UUID. Returns null on pool exhaustion. Calls `sanitize_entity_functions` and `f_entity_initializer`. |
 | `allocate_entity_with__this_uuid_in__entity_manager` | `(Game*, World*, Entity_Manager*, Entity_Kind, Identifier__u32) -> Entity*` | `Entity*` or null | Allocates an entity with a specific UUID. Used during deserialization to restore entities with their original identifiers. |
 
-### Deallocation
+### 1.4.5 Deallocation
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `release_entity_from__entity_manager` | `(Game*, World*, Entity_Manager*, Entity*) -> void` | Releases an entity back to the pool. Invokes `m_entity_dispose_handler` before deallocation. |
 
-### Lookup (static inline)
+### 1.4.6 Lookup (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `get_p_entity_by__uuid_from__entity_manager` | `(Entity_Manager*, Identifier__u32) -> Entity*` | `Entity*` or null | Looks up an entity by UUID using `dehash_identitier_u32_in__contigious_array` over the contiguous `entities[]` pool. |
 | `get_p_entity_by__index_from__entity_manager` | `(Entity_Manager*, Index__u32) -> Entity*` | `Entity*` or null | Returns the entity at the given index in the pointer array. Bounds-checked in debug builds. |
 
-### Configuration (static inline)
+### 1.4.7 Configuration (static inline)
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `set_entity_initializer_in__entity_manager` | `(Entity_Manager*, f_Entity_Initializer) -> void` | Sets the game-specific entity initializer callback. |
 | `set_entity_functions` | `(Entity_Manager*, Entity*) -> void` | Copies the registered function table for the entity's kind into the entity. Debug builds validate that the entity kind is less than `Entity_Kind__Unknown`. |
 
-## Agentic Workflow
+## 1.5 Agentic Workflow
 
-### Entity Registration Pattern
+### 1.5.1 Entity Registration Pattern
 
 At game startup, register function tables for every `Entity_Kind`:
 
@@ -138,7 +138,7 @@ At game startup, register function tables for every `Entity_Kind`:
             &p_world->entity_manager,
             my_game__entity_initializer);
 
-### Allocation Flow
+### 1.5.2 Allocation Flow
 
     allocate_entity_in__entity_manager(game, world, manager, kind)
         1. Find free slot in entities[] pool
@@ -151,14 +151,14 @@ At game startup, register function tables for every `Entity_Kind`:
         6. Insert into ptr_array_of__entities
         7. Return p_entity
 
-### Deallocation Flow
+### 1.5.3 Deallocation Flow
 
     release_entity_from__entity_manager(game, world, manager, entity)
         1. Invoke entity->entity_functions.m_entity_dispose_handler
         2. Deallocate serialization header (marks slot as free)
         3. Remove from ptr_array_of__entities (compact)
 
-### UUID Lookup Pattern
+### 1.5.4 UUID Lookup Pattern
 
 Entities are identified by UUID throughout the engine. To find an entity:
 
@@ -173,7 +173,7 @@ Entities are identified by UUID throughout the engine. To find an entity:
 This uses `dehash_identitier_u32_in__contigious_array` which performs
 a hash-based lookup over the contiguous `entities[]` array.
 
-### Index Iteration Pattern
+### 1.5.5 Index Iteration Pattern
 
 To iterate over all active entities:
 
@@ -188,7 +188,7 @@ To iterate over all active entities:
 **Warning**: The entity at a given index may change between frames.
 Do not cache index-based references. Use UUIDs for persistent references.
 
-### Deserialization Pattern
+### 1.5.6 Deserialization Pattern
 
 When loading entities from storage, use the UUID-specific allocator
 to preserve identity:
@@ -200,7 +200,7 @@ to preserve identity:
     // sanitize_entity_functions is called internally
     // then deserialize remaining entity state...
 
-### Debug Guard Pattern
+### 1.5.7 Debug Guard Pattern
 
 The `entity_manager.h` inline functions use `debug_error` (not
 `debug_abort`) for most error conditions, allowing graceful degradation
@@ -231,7 +231,7 @@ This differs from `process.h` which uses `debug_abort` for null pointer
 guards. The entity manager prefers `debug_error` to allow continued
 execution where possible.
 
-### Relationship to World
+### 1.5.8 Relationship to World
 
 The `Entity_Manager` is owned by `World`:
 
@@ -245,7 +245,7 @@ The higher-level `allocate_entity_into__world` function (declared in
 `world/world.h`) wraps `allocate_entity_in__entity_manager` with
 world-level bookkeeping.
 
-### Preconditions
+### 1.5.9 Preconditions
 
 - `initialize_entity_manager`: `p_entity_manager` must be non-null.
 - `register_entity_into__entity_manager`: `the_kind_of__entity` must
@@ -258,7 +258,7 @@ world-level bookkeeping.
 - `set_entity_functions`: entity kind must be less than
   `Entity_Kind__Unknown` (debug-checked).
 
-### Postconditions
+### 1.5.10 Postconditions
 
 - After `allocate_entity_in__entity_manager`: returned entity is
   initialized, has correct function table, and `is_entity__allocated`
@@ -268,7 +268,7 @@ world-level bookkeeping.
 - After `sanitize_entity_functions` / `set_entity_functions`: entity's
   `entity_functions` matches the registered table for its kind.
 
-### Error Handling
+### 1.5.11 Error Handling
 
 - Pool exhaustion: `allocate_entity_in__entity_manager` returns null.
 - Invalid kind: `set_entity_functions` calls `debug_error` and returns
@@ -278,7 +278,7 @@ world-level bookkeeping.
 - Out of bounds index: `get_p_entity_by__index_from__entity_manager`
   calls `debug_error` and returns null.
 
-### Thread Safety
+### 1.5.12 Thread Safety
 
 Entity operations are **not** thread-safe. The engine's cooperative
 scheduling model (see `process.h` specification) ensures all entity

@@ -1,6 +1,6 @@
-# Specification: core/include/config/implemented/engine_config.h
+# 1 Specification: core/include/config/implemented/engine_config.h
 
-## Overview
+## 1.1 Overview
 
 Template header that allows game projects to override engine compile-time
 configuration constants before `platform_defaults.h` applies its fallback
@@ -17,7 +17,7 @@ in `#ifndef`.
 This file is a **template** — it is copied to the game project directory
 by `tools/lav_new_project` and is meant to be modified by the engine user.
 
-## Template Behavior
+## 1.2 Template Behavior
 
 This file resides in `core/include/config/implemented/` and is copied to
 the game project's corresponding `config/implemented/` directory by the
@@ -29,12 +29,12 @@ The `implemented/` directory is NOT in the core include path — it is only
 in the game project's include path. The game project's copy takes
 precedence because the game's include path is searched before core's.
 
-## Dependencies
+## 1.3 Dependencies
 
 - `platform_defines.h` (included first, provides platform-specific overrides
   from the backend)
 
-## Include Chain
+## 1.4 Include Chain
 
     platform_defaults.h
         └── config/implemented/engine_config.h  (this file, game copy)
@@ -44,30 +44,30 @@ precedence because the game's include path is searched before core's.
 guarded defaults for every constant. If this file (or `platform_defines.h`)
 has already defined a constant, the default is skipped.
 
-## Configurable Constants
+## 1.5 Configurable Constants
 
 All constants below are commented out in the template. Uncomment to override.
 
-### Filesystem
+### 1.5.1 Filesystem
 
 | Macro | Default | Description |
 |-------|---------|-------------|
 | `MAX_LENGTH_OF__IO_PATH` | `128` | Maximum length of filesystem paths. |
 | `PATH_SEPERATOR` | `'/'` | Path separator character. |
 
-### Process System
+### 1.5.2 Process System
 
 | Macro | Default | Description |
 |-------|---------|-------------|
 | `PROCESS_MAX_QUANTITY_OF` | `512` | Maximum number of concurrent processes. |
 
-### Game Actions
+### 1.5.3 Game Actions
 
 | Macro | Default | Description |
 |-------|---------|-------------|
 | `MAX_QUANTITY_OF__GAME_ACTIONS` | `512` | Maximum number of game actions in the pool. |
 
-### Networking / TCP
+### 1.5.4 Networking / TCP
 
 | Macro | Default | Constraints | Description |
 |-------|---------|-------------|-------------|
@@ -77,20 +77,20 @@ All constants below are commented out in the template. Uncomment to override.
 | `TCP_ERROR__DESTINATION_OVERFLOW` | `-1` | — | Error code: destination buffer overflow. |
 | `TCP_ERROR__QUEUE_FULL` | `-2` | — | Error code: socket queue full. |
 
-### Camera
+### 1.5.5 Camera
 
 | Macro | Default | Description |
 |-------|---------|-------------|
 | `CAMERA_FULCRUM__WIDTH` | `256` | Default camera viewport width in pixels. |
 | `CAMERA_FULCRUM__HEIGHT` | `196` | Default camera viewport height in pixels. |
 
-### Textures
+### 1.5.6 Textures
 
 | Macro | Default | Description |
 |-------|---------|-------------|
 | `MAX_QUANTITY_OF__TEXTURES` | `128` | Maximum textures in the texture pool. |
 
-### Rendering Dimensions
+### 1.5.7 Rendering Dimensions
 
 | Macro | Default | Description |
 |-------|---------|-------------|
@@ -98,14 +98,14 @@ All constants below are commented out in the template. Uncomment to override.
 | `GFX_CONTEXT__RENDERING_HEIGHT__IN_CHUNKS` | `3` | Visible height in chunks. |
 | `GFX_CONTEXT__RENDERING_DEPTH__IN_CHUNKS` | `1` | Visible depth in chunk layers. |
 
-### Tile Dimensions
+### 1.5.8 Tile Dimensions
 
 | Macro | Default | Description |
 |-------|---------|-------------|
 | `TILE__WIDTH_AND__HEIGHT__BIT_SHIFT` | `3` | log2(tile size in pixels) = 8px. |
 | `TILE__WIDTH_AND__HEIGHT_IN__PIXELS` | `BIT(TILE__WIDTH_AND__HEIGHT__BIT_SHIFT)` | Tile size in pixels. Derived from bit shift. |
 
-### Chunk Dimensions
+### 1.5.9 Chunk Dimensions
 
 | Macro | Default | Description |
 |-------|---------|-------------|
@@ -116,14 +116,14 @@ All constants below are commented out in the template. Uncomment to override.
 | `CHUNK__DEPTH` | `BIT(CHUNK__DEPTH__BIT_SHIFT)` | Tile layers (Z). |
 | `CHUNK__QUANTITY_OF__TILES` | `CHUNK__WIDTH * CHUNK__HEIGHT * CHUNK__DEPTH` | Total tiles per chunk. |
 
-### Local Space
+### 1.5.10 Local Space
 
 | Macro | Default | Description |
 |-------|---------|-------------|
 | `LOCAL_SPACE__WIDTH_AND__HEIGHT_IN__TILES__BIT_SHIFT` | `3` | log2(tiles per local space edge). |
 | `LOCAL_SPACE__WIDTH_AND__HEIGHT_IN__PIXELS__BIT_SHIFT` | `TILE__WIDTH_AND__HEIGHT__BIT_SHIFT + LOCAL_SPACE__WIDTH_AND__HEIGHT_IN__TILES__BIT_SHIFT` | log2(pixels per local space edge). Derived. |
 
-### Local Space Manager
+### 1.5.11 Local Space Manager
 
 | Macro | Default | Constraints | Description |
 |-------|---------|-------------|-------------|
@@ -132,26 +132,26 @@ All constants below are commented out in the template. Uncomment to override.
 | `LOCAL_SPACE_MANAGER__DEPTH` | `1` | Must be >= `GFX_CONTEXT__RENDERING_DEPTH__IN_CHUNKS` | Grid depth in chunk layers. |
 | `VOLUME_OF__LOCAL_SPACE_MANAGER` | `WIDTH * HEIGHT * DEPTH` | Derived | Total local spaces. |
 
-### Multiplayer
+### 1.5.12 Multiplayer
 
 | Macro | Default | Description |
 |-------|---------|-------------|
 | `MAX_QUANTITY_OF__CLIENTS` | `4` | Maximum concurrent clients. |
 | `QUANTITY_OF__GLOBAL_SPACE` | `VOLUME_OF__LOCAL_SPACE_MANAGER * MAX_QUANTITY_OF__CLIENTS` | Total global spaces in pool. Derived. |
 
-### Entities
+### 1.5.13 Entities
 
 | Macro | Default | Description |
 |-------|---------|-------------|
 | `MAX_QUANTITY_OF__ENTITIES` | `128` | Maximum entities in the entity pool. |
 
-### Sprites
+### 1.5.14 Sprites
 
 | Macro | Default | Description |
 |-------|---------|-------------|
 | `MAX_QUANTITY_OF__SPRITES` | `256` | Maximum sprites in the sprite pool. |
 
-### Input
+### 1.5.15 Input
 
 | Macro | Default | Description |
 |-------|---------|-------------|
@@ -159,7 +159,7 @@ All constants below are commented out in the template. Uncomment to override.
 | `INPUT_CODE_*` | Sequential from 0 | Input code constants (FORWARD, LEFT, RIGHT, etc.). |
 | `INPUT_*` | Bit flags from `BIT(0)` | Input flag constants for bitfield operations. |
 
-### UI Tile Maps
+### 1.5.16 UI Tile Maps
 
 | Macro | Default | Description |
 |-------|---------|-------------|
@@ -175,15 +175,15 @@ All constants below are commented out in the template. Uncomment to override.
 | `UI_TILE_MAP__LARGE__WIDTH` | `32` | Large tile map width. |
 | `UI_TILE_MAP__LARGE__HEIGHT` | `32` | Large tile map height. |
 
-### Graphics Windows
+### 1.5.17 Graphics Windows
 
 | Macro | Default | Description |
 |-------|---------|-------------|
 | `PLATFORM__GFX_WINDOW__MAX_QUANTITY_OF` | `1` | Maximum platform-provided graphics windows. |
 
-## Agentic Workflow
+## 1.6 Agentic Workflow
 
-### Override Pattern
+### 1.6.1 Override Pattern
 
 To override a constant, uncomment the `#define` line and set the desired
 value:
@@ -194,7 +194,7 @@ value:
     // After (override):
     #define MAX_QUANTITY_OF__ENTITIES 256
 
-### Override Precedence
+### 1.6.2 Override Precedence
 
 The override chain is (highest priority first):
 
@@ -206,7 +206,7 @@ If `platform_defines.h` defines a constant, neither this file nor
 `platform_defaults.h` can override it (unless the platform uses `#ifndef`
 guards too).
 
-### Compile-Time Validation
+### 1.6.3 Compile-Time Validation
 
 `platform_defaults.h` enforces the following constraints at compile time:
 
@@ -216,7 +216,7 @@ guards too).
 
 Violating these produces `#error` at compile time.
 
-### Derived Constants
+### 1.6.4 Derived Constants
 
 Several constants are derived from others. If you override a base constant,
 the derived constants will automatically update unless you also override
@@ -228,14 +228,14 @@ them explicitly:
 - `VOLUME_OF__LOCAL_SPACE_MANAGER` ← `WIDTH * HEIGHT * DEPTH`
 - `QUANTITY_OF__GLOBAL_SPACE` ← `VOLUME_OF__LOCAL_SPACE_MANAGER * MAX_QUANTITY_OF__CLIENTS`
 
-### TCP Packet Size Constraint
+### 1.6.5 TCP Packet Size Constraint
 
 **CRITICAL:** `MAX_SIZE_OF__TCP_PACKET` **MUST** be expressed as `BIT(n)`.
 Non-power-of-2 values will cause `game_action__tcp_delivery` to fail
 silently due to broken `MASK(n)` logic. All TCP-dependent systems
 (global space delivery, inventory sync, entity sync) will be unreliable.
 
-### Memory Impact
+### 1.6.6 Memory Impact
 
 Many of these constants directly control pool sizes that are allocated
 statically or at initialization. Increasing pool sizes increases memory
@@ -247,12 +247,12 @@ with:
 - `MAX_QUANTITY_OF__GAME_ACTIONS` (each is a large union)
 - `UI_TILE_MAP__*__MAX_QUANTITY_OF` (tile map backing storage)
 
-### Preconditions
+### 1.6.7 Preconditions
 
 - This file must be included before `platform_defaults.h` applies its
   defaults (this is guaranteed by the include chain).
 - `platform_defines.h` must exist and define `PLATFORM_DEFINES_H`.
 
-## Header Guard
+## 1.7 Header Guard
 
 `ENGINE_CONFIG_H`
