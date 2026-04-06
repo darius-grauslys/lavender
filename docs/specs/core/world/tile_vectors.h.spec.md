@@ -1,6 +1,6 @@
-# Specification: core/include/world/tile_vectors.h
+# 1 Specification: core/include/world/tile_vectors.h
 
-## Overview
+## 1.1 Overview
 
 Provides `static inline` conversion functions between pixel-space vectors
 (`Vector__3i32`, `Vector__3i32F4`, `Vector__3i32F20`), tile-space vectors
@@ -8,7 +8,7 @@ Provides `static inline` conversion functions between pixel-space vectors
 Tile vectors represent positions in tile coordinates where each tile is
 `TILE__WIDTH_AND__HEIGHT_IN__PIXELS` (default 8) pixels wide/tall.
 
-## Dependencies
+## 1.2 Dependencies
 
 - `defines_weak.h` (forward declarations)
 - `defines.h` (for `Tile_Vector__3i32`, `Local_Tile_Vector__3u8`, `Ray__3i32F20`)
@@ -18,22 +18,22 @@ Tile vectors represent positions in tile coordinates where each tile is
 - `vectors.h` (vector constructors and accessors)
 - `world/chunk_vectors.h` (chunk vector conversions)
 
-## Types
+## 1.3 Types
 
-### Tile_Vector__3i32
+### 1.3.1 Tile_Vector__3i32
 
     typedef struct Vector__3i32_t Tile_Vector__3i32;
 
 A `Vector__3i32` where each component is a tile index (not pixels).
 
-### Local_Tile_Vector__3u8
+### 1.3.2 Local_Tile_Vector__3u8
 
     typedef Vector__3u8 Local_Tile_Vector__3u8;
 
 A tile position local to a single chunk. Each component is in range
 `[0, CHUNK__WIDTH)`.
 
-### Key Constants
+### 1.3.3 Key Constants
 
 | Macro | Default | Description |
 |-------|---------|-------------|
@@ -41,11 +41,11 @@ A tile position local to a single chunk. Each component is in range
 | `TILE__WIDTH_AND__HEIGHT_IN__PIXELS` | `8` | Tile size in pixels. |
 | `CHUNK__WIDTH_AND__HEIGHT__BIT_SHIFT` | `3` | log2(tiles per chunk edge) = 8 tiles. |
 
-## Functions
+## 1.4 Functions
 
 All functions are `static inline`.
 
-### Pixel-to-Tile Normalization
+### 1.4.1 Pixel-to-Tile Normalization
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -55,7 +55,7 @@ All functions are `static inline`.
 | `normalize_i32__to_tile_u8` | `(Signed_Index__i32) -> Index__u8` | `Index__u8` | Converts pixel coordinate to local tile index (0-7). Handles negatives. |
 | `normalize_i32F4__to_tile_u8` | `(i32F4) -> Index__u8` | `Index__u8` | Same as above for i32F4 input. |
 
-### Component Extraction
+### 1.4.2 Component Extraction
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -63,7 +63,7 @@ All functions are `static inline`.
 | `get_tile_y_u8_from__vector_3i32F4` | `(Vector__3i32F4) -> Index__u8` | `Index__u8` | Extracts local tile Y index from pixel vector. |
 | `get_tile_z_u8_from__vector_3i32F4` | `(Vector__3i32F4) -> Index__u8` | `Index__u8` | Extracts local tile Z index from pixel vector. |
 
-### Tile Vector Construction
+### 1.4.3 Tile Vector Construction
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -71,7 +71,7 @@ All functions are `static inline`.
 | `get_tile_vector_using__i32F4` | `(i32F4, i32F4, i32F4) -> Tile_Vector__3i32` | `Tile_Vector__3i32` | Constructs from i32F4 pixel coordinates. |
 | `get_tile_vector_using__3i32F4` | `(Vector__3i32F4) -> Tile_Vector__3i32` | `Tile_Vector__3i32` | Constructs from a pixel vector. |
 
-### Vector-to-Tile Conversions
+### 1.4.4 Vector-to-Tile Conversions
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -80,23 +80,23 @@ All functions are `static inline`.
 | `vector_3i32F20_to__tile_vector` | `(Vector__3i32F20) -> Tile_Vector__3i32` | `Tile_Vector__3i32` | Converts i32F20 pixel vector to tile vector. |
 | `get_ray_endpoint_as__tile_vector` | `(Ray__3i32F20*) -> Tile_Vector__3i32` | `Tile_Vector__3i32` | Returns ray's current position as tile vector. |
 
-### Tile-to-Pixel Conversions
+### 1.4.5 Tile-to-Pixel Conversions
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `tile_vector_3i32_to__vector_3i32` | `(Tile_Vector__3i32) -> Vector__3i32` | `Vector__3i32` | Converts tile vector to pixel vector. |
 | `tile_vector_3i32_to__vector_3i32F4` | `(Tile_Vector__3i32) -> Vector__3i32F4` | `Vector__3i32F4` | Converts tile vector to i32F4 pixel vector. |
 
-### Tile-to-Local Conversions
+### 1.4.6 Tile-to-Local Conversions
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `tile_vector_3i32_to__local_tile_vector_3u8` | `(Tile_Vector__3i32) -> Local_Tile_Vector__3u8` | `Local_Tile_Vector__3u8` | Extracts chunk-local tile position from global tile vector. |
 | `vector_3i32F4_to__local_tile_vector_3u8` | `(Vector__3i32F4) -> Local_Tile_Vector__3u8` | `Local_Tile_Vector__3u8` | Converts pixel vector directly to local tile vector. |
 
-## Agentic Workflow
+## 1.5 Agentic Workflow
 
-### Coordinate System
+### 1.5.1 Coordinate System
 
 The engine uses three coordinate spaces for world positions:
 
@@ -106,18 +106,18 @@ The engine uses three coordinate spaces for world positions:
 
 Conversion chain: `pixel → tile → chunk-local tile`.
 
-### Negative Coordinate Handling
+### 1.5.2 Negative Coordinate Handling
 
 All normalization functions handle negative coordinates correctly using
 `ARITHMETRIC_MASK` and `ARITHMETRIC_R_SHIFT` which are defined to produce
 consistent results for negative values (unlike C's implementation-defined
 behavior for right-shift on negatives).
 
-### Preconditions
+### 1.5.3 Preconditions
 
 - `get_ray_endpoint_as__tile_vector` requires a non-null `p_ray`.
 - All other functions are pure value transformations with no preconditions.
 
-## Header Guard
+## 1.6 Header Guard
 
 `TILE_VECTORS_H`

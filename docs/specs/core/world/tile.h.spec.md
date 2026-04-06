@@ -1,20 +1,20 @@
-# Specification: core/include/world/tile.h
+# 1 Specification: core/include/world/tile.h
 
-## Overview
+## 1.1 Overview
 
 Provides `static inline` helper functions for querying and mutating `Tile`
 and `Tile_Flags__u8` values. Tiles are the atomic world-building unit — each
 chunk contains a fixed grid of tiles. This header contains no non-inline
 functions.
 
-## Dependencies
+## 1.2 Dependencies
 
 - `defines_weak.h` (for `Tile_Flags__u8`, `Tile_Kind`, flag macros)
 - `defines.h` (for `Tile` struct)
 
-## Types
+## 1.3 Types
 
-### Tile (struct)
+### 1.3.1 Tile (struct)
 
     typedef struct Tile_t {
         Tile_Kind the_kind_of__tile;
@@ -27,7 +27,7 @@ functions.
 |-------|------|-------------|
 | `the_kind_of__tile` | `Tile_Kind` | Enum identifying the tile type. |
 
-### Tile_Kind (enum)
+### 1.3.2 Tile_Kind (enum)
 
     typedef enum Tile_Kind {
         Tile_Kind__None = 0,
@@ -36,7 +36,7 @@ functions.
 
 Games extend this enum in their `implemented/` copy.
 
-### Tile_Flags__u8 (u8)
+### 1.3.3 Tile_Flags__u8 (u8)
 
 | Flag | Bit | Description |
 |------|-----|-------------|
@@ -45,16 +45,16 @@ Games extend this enum in their `implemented/` copy.
 | `TILE_FLAGS__BIT_IS_CONTAINER` | 2 | Tile has an inventory. |
 | `TILE_FLAGS__BIT_GENERAL_PURPOSE_DATA_BIT` | 3 | General purpose flag. |
 
-## Functions
+## 1.4 Functions
 
-### Flag Queries (static inline)
+### 1.4.1 Flag Queries (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `is_tile__unpassable` | `(Tile_Flags__u8) -> bool` | `bool` | True if `TILE_FLAGS__BIT_IS_UNPASSABLE` is set. |
 | `is_tile__sight_blocking` | `(Tile_Flags__u8) -> bool` | `bool` | True if `TILE_FLAGS__BIT_IS_SIGHT_BLOCKING` is set. |
 
-### Flag Mutations (static inline)
+### 1.4.2 Flag Mutations (static inline)
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
@@ -62,7 +62,7 @@ Games extend this enum in their `implemented/` copy.
 | `set_tile__is_sight_blocking` | `(Tile_Flags__u8*, bool) -> void` | Sets or clears the sight blocking flag. |
 | `set_tile__sight_blocking` | `(Tile_Flags__u8*, bool) -> void` | Alias for `set_tile__is_sight_blocking`. |
 
-### Kind Accessors (static inline)
+### 1.4.3 Kind Accessors (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -71,9 +71,9 @@ Games extend this enum in their `implemented/` copy.
 | `is_tile_of__this_kind` | `(Tile*, Tile_Kind) -> bool` | `bool` | True if the tile matches the given kind. |
 | `is_tile_kind__illegal` | `(Tile_Kind) -> bool` | `bool` | True if kind is outside `[Tile_Kind__None, Tile_Kind__Unknown)`. |
 
-## Agentic Workflow
+## 1.5 Agentic Workflow
 
-### Usage Pattern
+### 1.5.1 Usage Pattern
 
 Tiles are accessed from chunks via `get_p_tile_from__chunk` (see `chunk.h`).
 Logic properties (passability, height) are looked up via `Tile_Logic_Table`
@@ -81,15 +81,15 @@ Logic properties (passability, height) are looked up via `Tile_Logic_Table`
 type is used in serialization contexts and legacy code; prefer
 `Tile_Logic_Record` queries for runtime logic.
 
-### Preconditions
+### 1.5.2 Preconditions
 
 - All functions taking `Tile*` require a non-null pointer.
 - `is_tile_kind__illegal` can be called with any value.
 
-### Postconditions
+### 1.5.3 Postconditions
 
 - Flag mutation functions modify only the targeted bit, preserving all others.
 
-## Header Guard
+## 1.6 Header Guard
 
 `TILE_H`

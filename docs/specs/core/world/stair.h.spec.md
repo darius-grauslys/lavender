@@ -1,22 +1,22 @@
-# Specification: core/include/world/stair.h
+# 1 Specification: core/include/world/stair.h
 
-## Overview
+## 1.1 Overview
 
 Placeholder header for stair-related functionality. Currently contains no
 declarations beyond the include of `defines.h`.
 
-## Dependencies
+## 1.2 Dependencies
 
 - `defines.h`
 
-## Types
+## 1.3 Types
 
 None.
 
-## Functions
+## 1.4 Functions
 
 None.
 
-## Header Guard
+## 1.5 Header Guard
 
 `STAIR_H`

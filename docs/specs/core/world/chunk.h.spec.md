@@ -1,13 +1,13 @@
-# Specification: core/include/world/chunk.h
+# 1 Specification: core/include/world/chunk.h
 
-## Overview
+## 1.1 Overview
 
 Defines operations on `Chunk` — a fixed-size 3D grid of tiles that forms
 the basic unit of world storage and serialization. Chunks are identified
 by 64-bit UUIDs derived from their position. Provides tile access by local
 coordinates, flag management, and serialization process handlers.
 
-## Dependencies
+## 1.2 Dependencies
 
 - `defines.h` (for `Chunk`, `Tile`, `Chunk_Flags`, `Local_Tile_Vector__3u8`, `Identifier__u64`)
 - `numerics.h` (for `mod__i8_into__u8`)
@@ -15,9 +15,9 @@ coordinates, flag management, and serialization process handlers.
 - `tile.h` (for `Tile` type)
 - `vectors.h` (for vector types)
 
-## Types
+## 1.3 Types
 
-### Chunk (struct)
+### 1.3.1 Chunk (struct)
 
     typedef struct Chunk_t {
         Serialization_Header__UUID_64 _serialization_header;
@@ -35,7 +35,7 @@ coordinates, flag management, and serialization process handlers.
 | `tiles` | `Tile[CHUNK__QUANTITY_OF__TILES]` | Flat array of tiles. |
 | `chunk_data` | `Chunk_Data` | Union alias for the tile array. |
 
-### Chunk_Flags (u16)
+### 1.3.2 Chunk_Flags (u16)
 
 | Flag | Bit | Description |
 |------|-----|-------------|
@@ -46,7 +46,7 @@ coordinates, flag management, and serialization process handlers.
 | `CHUNK_FLAG__IS_VISUALLY_UPDATED` | 4 | Visual change only, no save needed. |
 | `CHUNK_FLAG__MODDABLE_3` through `CHUNK_FLAG__MODDABLE_0` | 9-12 | Available for game use. |
 
-### Chunk Dimensions
+### 1.3.3 Chunk Dimensions
 
 | Macro | Default | Description |
 |-------|---------|-------------|
@@ -55,22 +55,22 @@ coordinates, flag management, and serialization process handlers.
 | `CHUNK__DEPTH` | `2` | Tile layers (Z). |
 | `CHUNK__QUANTITY_OF__TILES` | `128` | Total tiles per chunk. |
 
-## Functions
+## 1.4 Functions
 
-### Initialization
+### 1.4.1 Initialization
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `initialize_chunk` | `(Chunk*, Identifier__u64) -> void` | Initializes a chunk with the given UUID. |
 
-### Serialization Process Handlers
+### 1.4.2 Serialization Process Handlers
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `m_process__serialize_chunk` | `(Process*, Game*) -> void` | Process handler for chunk serialization. |
 | `m_process__deserialize_chunk` | `(Process*, Game*) -> void` | Process handler for chunk deserialization. |
 
-### Tile Access (static inline)
+### 1.4.3 Tile Access (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -81,13 +81,13 @@ coordinates, flag management, and serialization process handlers.
 | `get_p_tile_from__chunk_neighborhood` | `(Chunk*, Chunk*[8], i8, i8, u8) -> Tile*` | `Tile*` | Accesses tiles across chunk boundaries using an 8-neighbor array. |
 | `get_p_tile_from__chunk_using__u8` | `(Chunk*, u8, u8, u8) -> Tile*` | `Tile*` | Direct u8 index access without `Local_Tile_Vector__3u8`. |
 
-### Tile Index Layout
+### 1.4.4 Tile Index Layout
 
 Tiles are stored in row-major order with Y inverted:
 
     index = x + ((CHUNK__HEIGHT - 1 - y) * CHUNK__WIDTH) + (CHUNK__WIDTH * CHUNK__HEIGHT * z)
 
-### Flag Management (static inline)
+### 1.4.5 Flag Management (static inline)
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
@@ -100,7 +100,7 @@ Tiles are stored in row-major order with Y inverted:
 | `set_chunk_as__visually_updated` | `(Chunk*) -> void` | Sets visual update flag. |
 | `set_chunk_as__visually_committed` | `(Chunk*) -> void` | Clears visual update flag. |
 
-### Flag Queries (static inline)
+### 1.4.6 Flag Queries (static inline)
 
 | Function | Returns | Description |
 |----------|---------|-------------|
@@ -111,9 +111,9 @@ Tiles are stored in row-major order with Y inverted:
 | `is_chunk__updated` | `bool` | True if updated flag set. |
 | `is_chunk__visually_updated` | `bool` | True if visual update flag set. |
 
-## Agentic Workflow
+## 1.5 Agentic Workflow
 
-### Chunk Neighborhood Array Layout
+### 1.5.1 Chunk Neighborhood Array Layout
 
 The 8-neighbor array for `get_p_tile_from__chunk_neighborhood` is indexed:
 
@@ -121,7 +121,7 @@ The 8-neighbor array for `get_p_tile_from__chunk_neighborhood` is indexed:
     [3] = west           (self)         [4] = east
     [5] = north-west    [6] = north     [7] = north-east
 
-### Serialization State Machine
+### 1.5.2 Serialization State Machine
 
 Chunks transition through states:
 
@@ -130,11 +130,11 @@ Chunks transition through states:
     [active] → set_chunk_as__awaiting_serialization → [serializing]
     [serializing] → set_chunk_as__inactive → [inactive]
 
-### Preconditions
+### 1.5.3 Preconditions
 
 - `get_p_tile_from__chunk`: debug builds abort if local coordinates exceed `CHUNK__WIDTH`.
 - `set_tile_of__chunk`: no bounds checking in release builds.
 
-## Header Guard
+## 1.6 Header Guard
 
 `CHUNK_H`

@@ -1,20 +1,20 @@
-# Specification: core/include/world/structures/room.h
+# 1 Specification: core/include/world/structures/room.h
 
-## Overview
+## 1.1 Overview
 
 Defines operations on `Room` — a bounded region within a structure that has
 a bounding box, entrance points, a type, and allocation state. Rooms are
 the building blocks of structures.
 
-## Dependencies
+## 1.2 Dependencies
 
 - `defines_weak.h` (forward declarations)
 - `defines.h` (for `Room`, `Hitbox_AABB`, `Room_Type__u16`, `Room_Flags__u8`)
 - `vectors.h` (for `Vector__3i32F4`, `VECTOR__3i32F4__OUT_OF_BOUNDS`)
 
-## Types
+## 1.3 Types
 
-### Room (struct)
+### 1.3.1 Room (struct)
 
     typedef struct Room_t {
         Serialization_Header _serialization_header;
@@ -34,35 +34,35 @@ the building blocks of structures.
 | `quantity_of__room_entrances` | `Quantity__u8` | Number of active entrances. |
 | `room_flags` | `Room_Flags__u8` | Allocation flags. |
 
-### Room_Flags__u8 (u8)
+### 1.3.2 Room_Flags__u8 (u8)
 
 | Flag | Bit | Description |
 |------|-----|-------------|
 | `ROOM_FLAG__IS_ALLOCATED` | 0 | Room is allocated. |
 
-### Limits
+### 1.3.3 Limits
 
 | Macro | Default | Description |
 |-------|---------|-------------|
 | `ROOM_ENTRANCE_MAX_QUANTITY_OF` | `4` | Maximum entrances per room. |
 | `ROOM_MAX_QUANTITY_OF` | `128` | Maximum rooms in the structure manager. |
 
-## Functions
+## 1.4 Functions
 
-### Initialization
+### 1.4.1 Initialization
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `initialize_room` | `(Room*) -> void` | Initializes to empty deallocated state. |
 
-### Entrance Management
+### 1.4.2 Entrance Management
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `add_entrance_to__room` | `(Room*, Vector__3i32F4) -> void` | `void` | Adds an entrance position. |
 | `get_closest_entrance_to__room` | `(Room*, Vector__3i32F4) -> Vector__3i32F4` | `Vector__3i32F4` | Returns the closest entrance. Returns `VECTOR__3i32F4__OUT_OF_BOUNDS` on failure. |
 
-### Accessors (static inline)
+### 1.4.3 Accessors (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -72,7 +72,7 @@ the building blocks of structures.
 | `get_the_type_of__room` | `(Room*) -> Room_Type__u16` | `Room_Type__u16` | Returns room type. |
 | `set_the_type_of__room` | `(Room*, Room_Type__u16) -> Room_Type__u16` | `Room_Type__u16` | Sets room type. **Note:** returns the type (likely unintentional). |
 
-### Allocation State (static inline)
+### 1.4.4 Allocation State (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -80,17 +80,17 @@ the building blocks of structures.
 | `set_room_as__allocated` | `(Room*) -> void` | `void` | Sets allocated flag. |
 | `set_room_as__deallocated` | `(Room*) -> void` | `void` | Clears allocated flag. |
 
-## Agentic Workflow
+## 1.5 Agentic Workflow
 
-### Ownership
+### 1.5.1 Ownership
 
 Managed by `Structure_Manager` (see `structure_manager.h`).
 
-### Preconditions
+### 1.5.2 Preconditions
 
 - All functions require non-null `p_room`.
 - `add_entrance_to__room`: silently fails if `ROOM_ENTRANCE_MAX_QUANTITY_OF` reached.
 
-## Header Guard
+## 1.6 Header Guard
 
 `ROOM_H`

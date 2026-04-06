@@ -1,6 +1,6 @@
-# Specification: core/include/world/world.h
+# 1 Specification: core/include/world/world.h
 
-## Overview
+## 1.1 Overview
 
 Defines operations on `World` — the top-level container for all world state
 including entities, chunks, global spaces, collision nodes, tile logic,
@@ -8,14 +8,14 @@ chunk generation, inventory, items, camera, and rendering configuration.
 Provides initialization, entity management, scrolling, save/load, and
 accessor functions.
 
-## Dependencies
+## 1.2 Dependencies
 
 - `defines_weak.h` (forward declarations)
 - `defines.h` (for `World`, `Game`, `Entity`, all sub-component types)
 
-## Types
+## 1.3 Types
 
-### World (struct)
+### 1.3.1 World (struct)
 
     typedef struct World_t {
         Serialization_Header _serialization_header;
@@ -40,59 +40,59 @@ accessor functions.
         Quantity__u8 length_of__world_name;
     } World;
 
-### World_Name_String
+### 1.3.2 World_Name_String
 
     #define WORLD_NAME_MAX_SIZE_OF 32
     typedef char World_Name_String[WORLD_NAME_MAX_SIZE_OF];
 
-## Functions
+## 1.4 Functions
 
-### Initialization
+### 1.4.1 Initialization
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `initialize_world` | `(Game*, World*) -> void` | Initializes all world sub-components. |
 
-### World Management
+### 1.4.2 World Management
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `manage_world` | `(Game*) -> void` | Per-frame world update (scrolling, generation, etc.). |
 | `manage_world__entities` | `(Game*) -> void` | Per-frame entity update. |
 
-### Entity Management
+### 1.4.3 Entity Management
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `allocate_entity_into__world` | `(Game*, Entity_Kind, Vector__3i32F4) -> Entity*` | `Entity*` | Allocates and initializes an entity at the given position. |
 | `get_p_entity_from__world_using__3i32F4` | `(Game*, World*, Vector__3i32F4) -> Entity*` | `Entity*` | Finds an entity near the given position. |
 
-### Scrolling
+### 1.4.4 Scrolling
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `poll_world_for__scrolling` | `(Game*, World*, Graphics_Window*) -> bool` | `bool` | Checks and performs world scrolling based on camera position. |
 
-### Save/Load
+### 1.4.5 Save/Load
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `save_world` | `(PLATFORM_File_System_Context*, World*) -> void` | `void` | Saves the world. Only call when leaving world. |
 | `load_world` | `(Game*) -> Process*` | `Process*` | Loads the world. Only call from main menu. Returns the load process. |
 
-### Collision Node Update
+### 1.4.6 Collision Node Update
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `poll_for_collision_node_update` | `(Game*, Vector__3i32F4 old, Vector__3i32F4 new, Identifier__u32) -> bool` | `bool` | Updates collision node membership when an entity moves between chunks. |
 
-### Name Management
+### 1.4.7 Name Management
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `set_name_of__world` | `(World*, World_Name_String) -> void` | Sets the world name string. |
 
-### Sub-Component Accessors (static inline)
+### 1.4.8 Sub-Component Accessors (static inline)
 
 | Function | Returns | Description |
 |----------|---------|-------------|
@@ -108,7 +108,7 @@ accessor functions.
 | `get_p_repeatable_psuedo_random_from__world` | `Repeatable_Psuedo_Random*` | Returns `&world.repeatable_pseudo_random`. |
 | `get_p_graphics_window_from__world` | `Graphics_Window*` | Returns `world.p_graphics_window_for__world`. |
 
-### Handler Setters (static inline)
+### 1.4.9 Handler Setters (static inline)
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
@@ -117,31 +117,31 @@ accessor functions.
 | `set_spawn_point_of__world` | `(World*, Vector__3i32F4) -> void` | Sets the world spawn point. |
 | `set_f_tile_render_kernel_of__world` | `(World*, f_Tile_Render_Kernel) -> void` | Sets the tile render kernel. |
 
-### Spawn Point and Render Kernel (static inline)
+### 1.4.10 Spawn Point and Render Kernel (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `get_spawn_point_of__world` | `(World*) -> Vector__3i32F4` | `Vector__3i32F4` | Returns the spawn point. |
 | `get_f_tile_render_kernel_of__world` | `(World*) -> f_Tile_Render_Kernel` | `f_Tile_Render_Kernel` | Returns the tile render kernel. |
 
-## Agentic Workflow
+## 1.5 Agentic Workflow
 
-### World Ownership
+### 1.5.1 World Ownership
 
 `World` is heap-allocated and owned by `Game` (at `game.pM_world`). It is
 allocated during `load_world` and freed during scene transitions.
 
-### Save/Load Constraints
+### 1.5.2 Save/Load Constraints
 
 - `save_world`: Only call when leaving the world and returning to main menu.
 - `load_world`: Only call from the main menu. Returns a `Process*` that
   must complete before the world is usable.
 
-### Preconditions
+### 1.5.3 Preconditions
 
 - `get_p_entity_manager_from__world`: debug builds abort if `p_world` is null.
 - All other accessors require non-null `p_world`.
 
-## Header Guard
+## 1.6 Header Guard
 
 `WORLD_H`

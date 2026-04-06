@@ -1,17 +1,17 @@
-# Specification: core/include/world/structures/structure_manager.h
+# 1 Specification: core/include/world/structures/structure_manager.h
 
-## Overview
+## 1.1 Overview
 
 Manages pools of `Room` and `Structure` instances. Provides allocation,
 deallocation, and quantity queries for both types.
 
-## Dependencies
+## 1.2 Dependencies
 
 - `defines.h` (for `Structure_Manager`, `Room`, `Structure`)
 
-## Types
+## 1.3 Types
 
-### Structure_Manager (struct)
+### 1.3.1 Structure_Manager (struct)
 
     typedef struct Structure_Manager_t {
         Room rooms[ROOM_MAX_QUANTITY_OF];
@@ -31,7 +31,7 @@ deallocation, and quantity queries for both types.
 | `quantity_of__allocated_rooms` | `Quantity__u32` | Current allocated room count. |
 | `quantity_of__allocated_structures` | `Quantity__u32` | Current allocated structure count. |
 
-## Functions
+## 1.4 Functions
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -43,17 +43,17 @@ deallocation, and quantity queries for both types.
 | `get_quantity_of__rooms_allocated_in__structure_manager` | `(Structure_Manager*) -> Quantity__u32` | `Quantity__u32` | Returns allocated room count. (static inline) |
 | `get_quantity_of__structures_allocated_in__structure_manager` | `(Structure_Manager*) -> Quantity__u32` | `Quantity__u32` | Returns allocated structure count. (static inline) |
 
-## Agentic Workflow
+## 1.5 Agentic Workflow
 
-### Ownership
+### 1.5.1 Ownership
 
 Owned by `World` (at `world.structure_manager`).
 
-### Preconditions
+### 1.5.2 Preconditions
 
 - `release_room_in__structure_manager`: room must belong to this manager.
 - `release_structure_in__structure_manager`: structure must belong to this manager.
 
-## Header Guard
+## 1.6 Header Guard
 
 `STRUCTURE_MANAGER_H`

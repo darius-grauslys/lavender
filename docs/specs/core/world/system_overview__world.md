@@ -1,6 +1,6 @@
-# System Overview: World
+# 1 System Overview: World
 
-## Purpose
+## 1.1 Purpose
 
 The world system is the top-level container for all spatial, entity, and
 environmental state in the engine. It manages the lifecycle of chunks,
@@ -9,9 +9,9 @@ cameras, and tile logic. The `World` struct aggregates all of these
 sub-systems and provides the primary interface for world initialization,
 per-frame management, entity placement, scrolling, and save/load.
 
-## Architecture
+## 1.2 Architecture
 
-### Data Hierarchy
+### 1.2.1 Data Hierarchy
 
     Game
     +-- World (heap-allocated, owned via pM_world)
@@ -60,7 +60,7 @@ per-frame management, entity placement, scrolling, and save/load.
         +-- Repeatable_Psuedo_Random
         +-- Graphics_Window *p_graphics_window_for__world
 
-### Key Types
+### 1.2.2 Key Types
 
 | Type | Role |
 |------|------|
@@ -80,7 +80,7 @@ per-frame management, entity placement, scrolling, and save/load.
 | `Structure_Manager` | Manages pools of `Room` and `Structure` instances for procedural structures. |
 | `Camera` | Viewport controller with position, fulcrum dimensions, and optional entity follow target. |
 
-### Coordinate Spaces
+### 1.2.3 Coordinate Spaces
 
 The world system uses three primary coordinate spaces:
 
@@ -93,7 +93,7 @@ The world system uses three primary coordinate spaces:
 Conversion functions are provided by `tile_vectors.h` and `chunk_vectors.h`.
 All handle negative coordinates correctly via arithmetic shift/mask operations.
 
-### Dimensions
+### 1.2.4 Dimensions
 
 | Macro | Default | Description |
 |-------|---------|-------------|
@@ -107,9 +107,9 @@ All handle negative coordinates correctly via arithmetic shift/mask operations.
 | `CAMERA_FULCRUM__WIDTH` | `256` | Default viewport width in pixels. |
 | `CAMERA_FULCRUM__HEIGHT` | `196` | Default viewport height in pixels. |
 
-## Lifecycle
+## 1.3 Lifecycle
 
-### 1. World Initialization
+### 1.3.1 World Initialization
 
     initialize_world(p_game, p_world)
         -> Initializes all sub-components:
@@ -125,7 +125,7 @@ All handle negative coordinates correctly via arithmetic shift/mask operations.
            - Item_Manager
            - Camera (as inactive)
 
-### 2. World Loading
+### 1.3.2 World Loading
 
     load_world(p_game) -> Process*
         -> Only called from main menu.
@@ -135,7 +135,7 @@ All handle negative coordinates correctly via arithmetic shift/mask operations.
            3. Loads the local space manager at the spawn point.
         -> World is not usable until the process completes.
 
-### 3. Per-Frame Management
+### 1.3.3 Per-Frame Management
 
     manage_world(p_game)
         -> Polls local space manager for scrolling.
@@ -146,7 +146,7 @@ All handle negative coordinates correctly via arithmetic shift/mask operations.
         -> Updates all active entities.
         -> Drives collision resolution (via Collision_Node_Pool).
 
-### 4. Scrolling
+### 1.3.4 Scrolling
 
     poll_world_for__scrolling(p_game, p_world, p_graphics_window) -> bool
         -> Checks camera position against local space manager center.
@@ -157,14 +157,14 @@ All handle negative coordinates correctly via arithmetic shift/mask operations.
            4. Old global spaces are dropped (ref count decremented).
            5. Chunk generation/deserialization processes are dispatched.
 
-### 5. Entity Placement
+### 1.3.5 Entity Placement
 
     allocate_entity_into__world(p_game, entity_kind, position) -> Entity*
         -> Allocates an entity in the Entity_Manager.
         -> Initializes at the given position.
         -> Adds a collision node entry for the entity's chunk.
 
-### 6. Collision Node Migration
+### 1.3.6 Collision Node Migration
 
     poll_for_collision_node_update(p_game, old_pos, new_pos, uuid) -> bool
         -> Called when an entity moves.
@@ -172,14 +172,14 @@ All handle negative coordinates correctly via arithmetic shift/mask operations.
            1. Removes entry from old chunk's Collision_Node.
            2. Adds entry to new chunk's Collision_Node.
 
-### 7. World Saving
+### 1.3.7 World Saving
 
     save_world(p_file_system_context, p_world)
         -> Only called when leaving the world (returning to main menu).
         -> Serializes world header.
         -> Serializes all dirty chunks via cooperative processes.
 
-## Global Space Lifecycle
+## 1.4 Global Space Lifecycle
 
 Global spaces are the central coordination point between chunks, collision
 nodes, and the viewport grid. They follow a reference-counted lifecycle
@@ -200,7 +200,7 @@ with a multi-phase state machine:
         -> process completes
     [deallocated] (ref_count=0, chunk/collision_node released)
 
-### Reference Count Convention
+### 1.4.1 Reference Count Convention
 
 | Count | Meaning |
 |-------|---------|
@@ -208,7 +208,7 @@ with a multi-phase state machine:
 | `1` | Awaiting usage or pending deallocation. |
 | `2+` | Actively referenced by one or more local spaces. |
 
-## Viewport Scrolling Model
+## 1.5 Viewport Scrolling Model
 
 The `Local_Space_Manager` implements a toroidal (wrap-around) grid of
 `Local_Space` nodes. Each node wraps a `Global_Space` pointer and maintains
@@ -232,7 +232,7 @@ When the camera moves one chunk in a direction:
 
 This avoids copying the entire grid on each scroll step.
 
-## Tile Logic System
+## 1.6 Tile Logic System
 
 Tile logic properties are decoupled from the `Tile` struct itself. Instead,
 a `Tile_Logic_Table` maps each `Tile_Kind` to a `Tile_Logic_Record`:
@@ -245,12 +245,12 @@ This design allows the same tile data to have different logic properties
 depending on game configuration, and keeps the `Tile` struct minimal for
 serialization efficiency.
 
-### Registration
+### 1.6.1 Registration
 
 The `Tile_Logic_Table` is populated at initialization by the game-implemented
 `register_tile_logic_tables` function (see `implemented/` subfolder).
 
-## Chunk Generation System
+## 1.7 Chunk Generation System
 
 Chunk generation is driven by the `Chunk_Generator_Table`, which maps
 `Chunk_Generator_Kind` values to cooperative `m_Process` handlers:
@@ -263,13 +263,13 @@ Chunk generation is driven by the `Chunk_Generator_Table`, which maps
                                                       v
                                                   Chunk (tiles populated)
 
-### Registration
+### 1.7.1 Registration
 
 The `Chunk_Generator_Table` is populated at initialization by the
 game-implemented `register_chunk_generators` function (see `implemented/`
 subfolder).
 
-## Serialization Architecture
+## 1.8 Serialization Architecture
 
 World data is persisted through a hierarchical directory structure managed
 by the serialization subsystem:
@@ -279,7 +279,7 @@ by the serialization subsystem:
         <chunk_dir>/
             t                       <- chunk tile data
 
-### Serialization Units
+### 1.8.1 Serialization Units
 
 | Unit | Scope | Process Handler |
 |------|-------|-----------------|
@@ -292,7 +292,7 @@ by the serialization subsystem:
 All serialization processes follow the cooperative process model — they
 yield after each poll cycle and must not block.
 
-## Integration with Collision System
+## 1.9 Integration with Collision System
 
 The world system integrates with the collision system (see
 `system_overview__collision_node.md`) through:
@@ -306,7 +306,7 @@ The world system integrates with the collision system (see
 4. **Entity migration**: `poll_for_collision_node_update` handles moving
    collision node entries when entities cross chunk boundaries.
 
-## Integration with Graphics System
+## 1.10 Integration with Graphics System
 
 The world connects to the graphics system through:
 
@@ -318,7 +318,7 @@ The world connects to the graphics system through:
 3. **Tile Render Kernel**: `f_tile_render_kernel` is a function pointer
    set by the game to control how tiles are rendered.
 
-## Capacity Constraints
+## 1.11 Capacity Constraints
 
 | Resource | Pool Size | Determined By |
 |----------|-----------|---------------|
@@ -329,7 +329,7 @@ The world connects to the graphics system through:
 | Rooms | `ROOM_MAX_QUANTITY_OF` (128) | Structure system budget. |
 | Structures | `STRUCTURE_MAX_QUANTITY_OF` (16) | Derived from room budget. |
 
-## Relationship to Other Systems
+## 1.12 Relationship to Other Systems
 
 | Concern | Managed By |
 |---------|------------|

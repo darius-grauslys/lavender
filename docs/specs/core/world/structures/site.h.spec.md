@@ -1,18 +1,18 @@
-# Specification: core/include/world/structures/site.h
+# 1 Specification: core/include/world/structures/site.h
 
-## Overview
+## 1.1 Overview
 
 Defines initialization for `Site` — a spatial grouping of structures within
 a region. Sites have a bounding box and a pointer array of structures.
 
-## Dependencies
+## 1.2 Dependencies
 
 - `defines.h` (for `Site`, `Structure`, `Hitbox_AABB`)
 - `defines_weak.h` (forward declarations)
 
-## Types
+## 1.3 Types
 
-### Site (struct)
+### 1.3.1 Site (struct)
 
     typedef struct Site_t {
         Serialization_Header _serialization_header;
@@ -28,7 +28,7 @@ a region. Sites have a bounding box and a pointer array of structures.
 | `bounding_box_of__site` | `Hitbox_AABB` | Spatial bounds of the site. |
 | `quantity_of__structures_in__site` | `Quantity__u8` | Number of structures. |
 
-### Limits
+### 1.3.2 Limits
 
 | Macro | Default | Description |
 |-------|---------|-------------|
@@ -37,12 +37,12 @@ a region. Sites have a bounding box and a pointer array of structures.
 | `STRUCTURES_IN_SITE__MAX_QUANTITY_OF` | `STRUCTURE_MAX_QUANTITY_OF / 4` | Max structures per site. |
 | `SITE_MAX_QUANTITY_OF` | `STRUCTURE_MAX_QUANTITY_OF / STRUCTURES_IN_SITE__MAX_QUANTITY_OF` | Max sites. |
 
-## Functions
+## 1.4 Functions
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `initialize_site` | `(Site*) -> void` | Initializes to empty state. |
 
-## Header Guard
+## 1.5 Header Guard
 
 `SITE_H`

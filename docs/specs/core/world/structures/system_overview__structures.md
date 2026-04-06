@@ -1,6 +1,6 @@
-# System Overview: Structures
+# 1 System Overview: Structures
 
-## Purpose
+## 1.1 Purpose
 
 The structures subsystem provides pooled management of procedurally generated
 spatial groupings within the world. It defines three levels of spatial
@@ -9,9 +9,9 @@ allocation state, and type metadata. These types are used during world
 generation to place multi-room buildings, dungeons, and other composed
 spatial features.
 
-## Architecture
+## 1.2 Architecture
 
-### Data Hierarchy
+### 1.2.1 Data Hierarchy
 
     World
     +-- Structure_Manager
@@ -38,7 +38,7 @@ spatial features.
         +-- Hitbox_AABB bounding_box_of__site
         +-- Quantity__u8 quantity_of__structures_in__site
 
-### Key Types
+### 1.2.2 Key Types
 
 | Type | Role |
 |------|------|
@@ -48,7 +48,7 @@ spatial features.
 | `Site` | A large spatial grouping (512×512 tiles) containing multiple structures. Tracked by `Region` bitmaps. |
 | `Structure_Tile` | Helper struct used during generation to describe wall/stair/window features at a tile position. |
 
-### Limits
+### 1.2.3 Limits
 
 | Macro | Default | Description |
 |-------|---------|-------------|
@@ -61,9 +61,9 @@ spatial features.
 | `SITE__WIDTH_IN__TILES` | `512` | Site width in tiles. |
 | `SITE__HEIGHT_IN__TILES` | `512` | Site height in tiles. |
 
-## Lifecycle
+## 1.3 Lifecycle
 
-### 1. Initialization
+### 1.3.1 Initialization
 
     initialize_structure_manager(&world.structure_manager)
         -> All Room slots: deallocated, empty.
@@ -71,7 +71,7 @@ spatial features.
         -> Pointer arrays: empty.
         -> Counts: zero.
 
-### 2. Room Allocation
+### 1.3.2 Room Allocation
 
     Room *p_room = allocate_room_in__structure_manager(&structure_manager)
         -> Finds an unallocated Room in the pool.
@@ -80,7 +80,7 @@ spatial features.
         -> Increments quantity_of__allocated_rooms.
         -> Returns null if pool exhausted.
 
-### 3. Room Configuration
+### 1.3.3 Room Configuration
 
     // Set room type
     set_the_type_of__room(p_room, room_type);
@@ -93,7 +93,7 @@ spatial features.
     Vector__3i32F4 entrance = get_closest_entrance_to__room(p_room, query_pos);
         -> Returns VECTOR__3i32F4__OUT_OF_BOUNDS on failure.
 
-### 4. Structure Allocation and Assembly
+### 1.3.4 Structure Allocation and Assembly
 
     Structure *p_structure = allocate_structure_in__structure_manager(&structure_manager)
         -> Finds an unallocated Structure in the pool.
@@ -106,7 +106,7 @@ spatial features.
     // Set structure type
     set_the_kind_of__structure(p_structure, structure_type);
 
-### 5. Site Assembly
+### 1.3.5 Site Assembly
 
     initialize_site(&site)
         -> Empty state, no structures.
@@ -114,7 +114,7 @@ spatial features.
     // Sites reference structures via pointer array.
     // Sites are tracked by Region bitmaps for serialization.
 
-### 6. Deallocation
+### 1.3.6 Deallocation
 
     release_room_in__structure_manager(&structure_manager, p_room)
         -> Clears ROOM_FLAG__IS_ALLOCATED.
@@ -126,7 +126,7 @@ spatial features.
         -> Removes from ptr_array_of__allocated_structures.
         -> Decrements quantity_of__allocated_structures.
 
-## Spatial Hierarchy
+## 1.4 Spatial Hierarchy
 
 The structures subsystem defines three levels of spatial containment:
 
@@ -135,7 +135,7 @@ The structures subsystem defines three levels of spatial containment:
         +-- Room (variable size, bounded by Hitbox_AABB)
             +-- Entrance points (up to 4 per room)
 
-### Bounding Boxes
+### 1.4.1 Bounding Boxes
 
 Both `Room` and `Structure` use `Hitbox_AABB` for their bounding boxes.
 `Site` also uses `Hitbox_AABB`. These bounding boxes are used for:
@@ -143,20 +143,20 @@ Both `Room` and `Structure` use `Hitbox_AABB` for their bounding boxes.
 - Overlap detection during generation
 - Size queries (`get_width_of__room`, `get_height_of__room`)
 
-### Entrance System
+### 1.4.2 Entrance System
 
 Rooms have up to 4 entrance points stored as `Vector__3i32F4` positions.
 The `get_closest_entrance_to__room` function enables pathfinding and
 connectivity queries between rooms within a structure.
 
-## Integration with Region System
+## 1.5 Integration with Region System
 
 Sites are tracked by `Region` bitmaps (`bitmap_of__sites`). The
 `is_structure_within__region` function checks whether a structure's
 bounding box overlaps a given region, enabling region-scoped structure
 queries during serialization and generation.
 
-## Structure_Tile Helper
+## 1.6 Structure_Tile Helper
 
 The `Structure_Tile` struct is a lightweight helper used during procedural
 generation to describe what features a tile position should have:
@@ -170,7 +170,7 @@ generation to describe what features a tile position should have:
 This is not stored persistently — it is used transiently during the
 generation process to determine which `Tile_Kind` to place.
 
-## Capacity Constraints
+## 1.7 Capacity Constraints
 
 | Resource | Pool Size | Notes |
 |----------|-----------|-------|
