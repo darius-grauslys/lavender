@@ -1,6 +1,6 @@
-# System Overview: Cooperative Sort System
+# 1. System Overview: Cooperative Sort System
 
-## Purpose
+## 1.1 Purpose
 
 The cooperative sort system provides a pool-managed, incremental sorting
 framework designed for single-core, memory-constrained hardware. Instead of
@@ -12,9 +12,9 @@ frame drops during large sorts.
 A secondary, blocking opaque sort function is also provided for cases where
 sorting must complete within a single call.
 
-## Architecture
+## 1.2 Architecture
 
-### Data Hierarchy
+### 1.2.1 Data Hierarchy
 
     Game
     └── Sort_List_Manager
@@ -30,7 +30,7 @@ sorting must complete within a single call.
             ├── heuristic_value          (signed 16-bit ordering value)
             └── index_for__next_node     (15-bit index-based linked list link)
 
-### Key Types
+### 1.2.2 Key Types
 
 | Type | Role |
 |------|------|
@@ -41,7 +41,7 @@ sorting must complete within a single call.
 | `f_Sort_Heuristic` | Function pointer type for comparing two `Sort_Node` elements. Returns a signed integer indicating relative ordering. |
 | `m_Sort` | Function pointer type for the sort stepper. Each invocation performs one incremental step. Returns `true` when the sort is complete. |
 
-### Standalone Opaque Sort
+### 1.2.3 Standalone Opaque Sort
 
 | Type | Role |
 |------|------|
@@ -49,7 +49,7 @@ sorting must complete within a single call.
 | `f_Sort_Swap__Void` | Function pointer for swapping two opaque elements. Used by the blocking opaque sort. |
 | `heap_sort__opaque` | Blocking heap sort function that operates on arbitrary contiguous arrays. Does not use `Sort_List` or `Sort_Node`. |
 
-### Limits
+### 1.2.4 Limits
 
 | Macro | Default | Description |
 |-------|---------|-------------|
@@ -57,9 +57,9 @@ sorting must complete within a single call.
 | `SORT_NODE__MAXIMUM_QUANTITY_OF` | 512 | Maximum number of sort nodes in the pool. |
 | `INDEX__UNKNOWN__SORT_NODE` | `INDEX__UNKNOWN__u16 >> 1` | Sentinel value for "no next node" in the 15-bit index field. |
 
-## Cooperative Sorting Model
+## 1.3 Cooperative Sorting Model
 
-### Why Cooperative?
+### 1.3.1 Why Cooperative?
 
 On single-core hardware (e.g. Nintendo DS), a blocking O(N log N) sort on a
 large dataset can cause visible frame drops. The cooperative model avoids this
@@ -73,7 +73,7 @@ by splitting the sort into many small steps:
 - The total O(N log N) work is spread across many frames, keeping each
   frame's sort cost constant.
 
-### Pluggable Algorithms
+### 1.3.2 Pluggable Algorithms
 
 The sort stepper (`m_Sort`) is a function pointer, allowing different sort
 algorithms to be plugged in. The engine currently provides:
@@ -86,7 +86,7 @@ algorithms to be plugged in. The engine currently provides:
 Additional algorithms can be added by implementing the `m_Sort` signature and
 using the `Sort_Data` union for algorithm-specific state.
 
-### Blocking vs Cooperative
+### 1.3.3 Blocking vs Cooperative
 
 | Function | Behavior | Use Case |
 |----------|----------|----------|
@@ -96,16 +96,16 @@ using the `Sort_Data` union for algorithm-specific state.
 | `run_sort_with__this_heurisitic_and__this_many_steps` | Up to N steps with temporary heuristic override | Re-sorting with a different comparison. |
 | `heap_sort__opaque` | Blocking (runs to completion) | Sorting plain arrays outside the `Sort_List` system. |
 
-## Lifecycle
+## 1.4 Lifecycle
 
-### 1. Manager Initialization
+### 1.4.1 Manager Initialization
 
     initialize_sort_list_manager(&game.sort_list_manager);
         -> All Sort_List slots: cleared, is_allocated = false.
         -> All Sort_Node slots: cleared, is_allocated = false.
         -> Allocation counters: set to zero.
 
-### 2. Sort List Allocation
+### 1.4.2 Sort List Allocation
 
 When a subsystem needs a sorted collection:
 
@@ -126,7 +126,7 @@ If insufficient contiguous nodes are available, allocation fails even if the
 total number of free nodes is sufficient. Callers should release sort lists
 promptly and allocate large lists early.
 
-### 3. Algorithm Configuration
+### 1.4.3 Algorithm Configuration
 
 After allocation, configure the sort algorithm:
 
@@ -138,7 +138,7 @@ After allocation, configure the sort algorithm:
     initialize_sort_list_as__heap(p_sort_list);
     set_sort_list__sort_heuristic(p_sort_list, my_heuristic);
 
-### 4. Data Population
+### 1.4.4 Data Population
 
 Populate the sort nodes with data:
 
@@ -154,7 +154,7 @@ Populate the sort nodes with data:
     append_into__sort_list(p_sort_list, p_data);   // O(lg N)
     insert_into__sort_list(p_sort_list, p_data, index);  // O(1)
 
-### 5. Sorting (Cooperative)
+### 1.4.5 Sorting (Cooperative)
 
 Request sorting and drive it from a process handler:
 
@@ -170,7 +170,7 @@ Request sorting and drive it from a process handler:
         }
     }
 
-### 6. Sorted Data Access
+### 1.4.6 Sorted Data Access
 
 After sorting completes, traverse the sorted order:
 
@@ -183,7 +183,7 @@ After sorting completes, traverse the sorted order:
             p_sort_list, p_node);
     }
 
-### 7. Re-sorting After Mutation
+### 1.4.7 Re-sorting After Mutation
 
 If the underlying data changes (e.g. heuristic values updated):
 
@@ -195,7 +195,7 @@ If the underlying data changes (e.g. heuristic values updated):
 
     // Continue calling m_sort steps until complete.
 
-### 8. Sort List Release
+### 1.4.8 Sort List Release
 
 When the sorted collection is no longer needed:
 
@@ -207,7 +207,7 @@ When the sorted collection is no longer needed:
         -> Allocation counters are decremented.
         -> The slots are returned to the pool for reuse.
 
-## Full Lifecycle Diagram
+## 1.5 Full Lifecycle Diagram
 
     [Manager Initialized]
             |
@@ -237,7 +237,7 @@ When the sorted collection is no longer needed:
             |
     [Sort_List and Sort_Nodes Returned to Pool]
 
-## Index-Based Linking
+## 1.6 Index-Based Linking
 
 Sort nodes reference each other by **index** into the contiguous `sort_nodes`
 array in `Sort_List_Manager`, not by pointer. This design:
@@ -250,7 +250,7 @@ array in `Sort_List_Manager`, not by pointer. This design:
 The sentinel value `INDEX__UNKNOWN__SORT_NODE` indicates "no next node" and
 terminates the linked list.
 
-## Extension Chaining
+## 1.7 Extension Chaining
 
 Sort lists can be chained via `p_sort_list__next` to represent logical lists
 larger than a single contiguous allocation:
@@ -265,9 +265,9 @@ the chain. The `Sort_List_Manager` can detect chaining via
 `is_sort_node_a__sort_list`, which checks whether a `Sort_Node`'s
 `p_node_data` points to a `Sort_List` within the manager's pool.
 
-## Heap Sort Algorithm Details
+## 1.8 Heap Sort Algorithm Details
 
-### Heapify Phase
+### 1.8.1 Heapify Phase
 
 Transforms the node list into a valid max-heap. Each invocation of
 `m_sort__heapify__sort_list` sifts one element into its correct heap
@@ -277,7 +277,7 @@ is complete.
 
 - Total work: O(N), spread across O(N) cooperative steps.
 
-### Heap Sort Extraction Phase
+### 1.8.2 Heap Sort Extraction Phase
 
 After heapification, repeatedly extracts the maximum element:
 
@@ -290,7 +290,7 @@ When `index_of__heap_sort <= 1`, the list is fully sorted in ascending order.
 - Total work: O(N log N), spread across O(N log N) cooperative steps.
 - Space: O(1) auxiliary (in-place, using `Sort_Data` for state).
 
-### Priority Queue Usage
+### 1.8.3 Priority Queue Usage
 
 For priority queue behavior (repeated max extraction without full sorting):
 
@@ -301,7 +301,7 @@ For priority queue behavior (repeated max extraction without full sorting):
 5. Call `request_resorting_of__heap` to restore the heap property.
 6. Repeat from step 2.
 
-## Opaque Heap Sort
+## 1.9 Opaque Heap Sort
 
 The `heap_sort__opaque` function provides a separate, blocking heap sort for
 plain contiguous arrays that are not managed by the `Sort_List` system:
@@ -322,7 +322,7 @@ This function:
 - Is suitable for initialization-time sorts or small arrays where frame
   budget is not a concern.
 
-## Capacity Constraints
+## 1.10 Capacity Constraints
 
 - The `Sort_List_Manager` is the **sole owner** of all `Sort_List` and
   `Sort_Node` memory. No other system should allocate or free sort
@@ -333,7 +333,7 @@ This function:
 - The maximum number of sort lists (64) and sort nodes (512) are
   compile-time constants.
 
-## Relationship to Process_Manager
+## 1.11 Relationship to Process_Manager
 
 The cooperative sort system is designed to be driven by the engine's
 `Process_Manager`:
@@ -349,7 +349,7 @@ The cooperative sort system is designed to be driven by the engine's
 The `Process` handler is responsible for calling the sort stepper each frame
 and releasing the sort list when sorting is complete or no longer needed.
 
-## Known Issues
+## 1.12 Known Issues
 
 - `get_quantity_of__available_sort_lists_in__sort_list_manager` subtracts
   `quantity_of__allocated_sort_nodes` from `SORT_LIST__MAXIMUM_QUANTITY_OF`,
@@ -357,7 +357,7 @@ and releasing the sort list when sorting is complete or no longer needed.
   `quantity_of__allocated_sort_lists` from `SORT_NODE__MAXIMUM_QUANTITY_OF`.
   These appear to have swapped subtrahends and may return incorrect values.
 
-## Error Handling
+## 1.13 Error Handling
 
 - `allocate_sort_list_in__sort_list_manager` returns NULL on failure (no free
   list slot, or insufficient contiguous nodes).

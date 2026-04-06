@@ -1,6 +1,6 @@
-# Specification: core/include/sort/sort_list/sort_list_manager.h
+# 1. Specification: core/include/sort/sort_list/sort_list_manager.h
 
-## Overview
+## 1.1 Overview
 
 Provides pool-based allocation and management for `Sort_List` and
 `Sort_Node` resources. The `Sort_List_Manager` owns fixed-size pools of
@@ -11,16 +11,16 @@ This is the top-level resource manager for the cooperative sorting system.
 All sort lists and sort nodes used by the engine are allocated through
 this manager.
 
-## Dependencies
+## 1.2 Dependencies
 
 - `defines.h` (for `Sort_List_Manager`, `Sort_List`, `Sort_Node`,
   `Quantity__u32`, `Index__u8`, `Index__u16`,
   `SORT_LIST__MAXIMUM_QUANTITY_OF`, `SORT_NODE__MAXIMUM_QUANTITY_OF`)
 - `defines_weak.h` (forward declarations)
 
-## Types
+## 1.3 Types
 
-### Sort_List_Manager (struct)
+### 1.3.1 Sort_List_Manager (struct)
 
     typedef struct Sort_List_Manager_t {
         Quantity__u32 quantity_of__allocated_sort_lists;
@@ -36,34 +36,34 @@ this manager.
 | `sort_lists` | `Sort_List[64]` | Fixed pool of sort list slots. |
 | `sort_nodes` | `Sort_Node[512]` | Fixed pool of sort node slots. |
 
-### Pool Limits
+### 1.3.2 Pool Limits
 
 | Macro | Default | Description |
 |-------|---------|-------------|
 | `SORT_LIST__MAXIMUM_QUANTITY_OF` | 64 | Maximum number of sort lists in the pool. |
 | `SORT_NODE__MAXIMUM_QUANTITY_OF` | 512 | Maximum number of sort nodes in the pool. |
 
-## Functions
+## 1.4 Functions
 
-### Initialization
+### 1.4.1 Initialization
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `initialize_sort_list_manager` | `(Sort_List_Manager*) -> void` | Initializes all sort lists and sort nodes as empty/deallocated. Resets allocation counters to zero. |
 
-### Allocation
+### 1.4.2 Allocation
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `allocate_sort_list_in__sort_list_manager` | `(Sort_List_Manager*, Quantity__u32 quantity_of__nodes) -> Sort_List*` | `Sort_List*` | Allocates a sort list backed by a **contiguous** range of `quantity_of__nodes` sort nodes. Returns null if allocation fails (insufficient contiguous nodes or no free sort list slot). |
 
-### Deallocation
+### 1.4.3 Deallocation
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `release_sort_list_in__sort_list_manager` | `(Sort_List_Manager*, Sort_List*) -> void` | Releases the sort list and its associated sort nodes back to the pool. |
 
-### Queries (static inline)
+### 1.4.4 Queries (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -72,22 +72,22 @@ this manager.
 | `get_quantity_of__available_sort_lists_in__sort_list_manager` | `(Sort_List_Manager*) -> Quantity__u32` | `Quantity__u32` | Returns `SORT_LIST__MAXIMUM_QUANTITY_OF` minus allocated sort nodes. **Note**: current implementation subtracts node count from list max, which may be a bug — see Error Handling. |
 | `get_quantity_of__available_sort_nodes_in__sort_list_manager` | `(Sort_List_Manager*) -> Quantity__u32` | `Quantity__u32` | Returns `SORT_NODE__MAXIMUM_QUANTITY_OF` minus allocated sort lists. **Note**: current implementation subtracts list count from node max, which may be a bug — see Error Handling. |
 
-### Direct Access (static inline)
+### 1.4.5 Direct Access (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `get_p_sort_list_by__index_in__sort_list_manager` | `(Sort_List_Manager*, Index__u8) -> Sort_List*` | `Sort_List*` | Returns a pointer to the sort list at the given index. No bounds checking. |
 | `get_p_sort_node_by__index_in__sort_list_manager` | `(Sort_List_Manager*, Index__u16) -> Sort_Node*` | `Sort_Node*` | Returns a pointer to the sort node at the given index. No bounds checking. |
 
-### Type Queries (static inline)
+### 1.4.6 Type Queries (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `is_sort_node_a__sort_list` | `(Sort_List_Manager*, Sort_Node*) -> bool` | `bool` | Returns `true` if the sort node's `p_node_data` points to a `Sort_List` within the manager's `sort_lists` array. Used to detect sort list chaining. |
 
-## Agentic Workflow
+## 1.5 Agentic Workflow
 
-### Resource Ownership
+### 1.5.1 Resource Ownership
 
 The `Sort_List_Manager` is the **sole owner** of all `Sort_List` and
 `Sort_Node` memory in the engine. It is embedded in the `Game` struct:
@@ -100,7 +100,7 @@ The `Sort_List_Manager` is the **sole owner** of all `Sort_List` and
 No other system should allocate or free sort lists/nodes outside of
 this manager.
 
-### Allocation Lifecycle
+### 1.5.2 Allocation Lifecycle
 
     [Manager Initialized]
             |
@@ -118,7 +118,7 @@ this manager.
             |
     [Sort_List and Sort_Nodes returned to pool]
 
-### Contiguous Allocation Requirement
+### 1.5.3 Contiguous Allocation Requirement
 
 `allocate_sort_list_in__sort_list_manager` requires a **contiguous** block
 of sort nodes. This means:
@@ -128,7 +128,7 @@ of sort nodes. This means:
 - Callers should release sort lists promptly to minimize fragmentation.
 - For large sort lists, allocate early when the pool is less fragmented.
 
-### Integration with Process_Manager
+### 1.5.4 Integration with Process_Manager
 
 Typical usage pattern for cooperative sorting:
 
@@ -154,7 +154,7 @@ Typical usage pattern for cooperative sorting:
     release_sort_list_in__sort_list_manager(
         &p_game->sort_list_manager, p_sort_list);
 
-### Preconditions
+### 1.5.5 Preconditions
 
 - `initialize_sort_list_manager`: `p_sort_list_manager` must be non-null.
 - `allocate_sort_list_in__sort_list_manager`: `quantity_of__nodes` must be
@@ -164,7 +164,7 @@ Typical usage pattern for cooperative sorting:
 - Direct access functions perform no bounds checking; the caller is
   responsible for valid indices.
 
-### Postconditions
+### 1.5.6 Postconditions
 
 - After `initialize_sort_list_manager`: all lists and nodes are
   deallocated, counters are zero.
@@ -174,7 +174,7 @@ Typical usage pattern for cooperative sorting:
 - After `release_sort_list_in__sort_list_manager`: the sort list and
   its nodes are marked deallocated, counters are decremented.
 
-### Error Handling
+### 1.5.7 Error Handling
 
 - `allocate_sort_list_in__sort_list_manager` returns null on failure
   (no free list slot, or insufficient contiguous nodes).

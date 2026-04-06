@@ -1,6 +1,6 @@
-# Specification: core/include/sort/sort_list/heap_sort.h
+# 1. Specification: core/include/sort/sort_list/heap_sort.h
 
-## Overview
+## 1.1 Overview
 
 Provides heap-based cooperative sorting algorithms for `Sort_List`. This
 module implements two related algorithms:
@@ -14,18 +14,18 @@ Both algorithms are designed to be driven cooperatively by the
 `Process_Manager`, performing a single step per invocation to avoid
 blocking on single-core hardware.
 
-## Dependencies
+## 1.2 Dependencies
 
 - `defines.h` (for `Sort_List`, `Sort_Data`, `Sort_Node`,
   `Index__u16`, `INDEX__UNKNOWN__SORT_NODE`)
 - `sort/sort_list/sort_list.h` (for `Sort_List` accessors)
 
-## Types
+## 1.3 Types
 
 This module does not define new types. It operates on `Sort_List` and
 uses the `Sort_Data` union's heap-specific fields:
 
-### Sort_Data — Heap Fields
+### 1.3.1 Sort_Data — Heap Fields
 
     typedef union Sort_Data_t {
         struct {
@@ -39,16 +39,16 @@ uses the `Sort_Data` union's heap-specific fields:
 | `index_of__heapification` | `Index__u16` | Tracks the current position in the heapify pass. Set to `INDEX__UNKNOWN__SORT_NODE` when heapification is complete. |
 | `index_of__heap_sort` | `Index__u16` | Tracks the current unsorted boundary in the heap sort extraction pass. Decremented each extraction step. Sort is complete when `<= 1`. |
 
-## Functions
+## 1.4 Functions
 
-### Initialization
+### 1.4.1 Initialization
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `initialize_sort_list_as__heap` | `(Sort_List*) -> void` | Configures the sort list for heapify-only operation. Sets `m_sort` to `m_sort__heapify__sort_list`. |
 | `initialize_sort_list_as__heap_sort` | `(Sort_List*) -> void` | Configures the sort list for full heap sort operation. Sets `m_sort` to `m_sort__heap_sort__sort_list`. |
 
-### Heap Operations
+### 1.4.2 Heap Operations
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
@@ -56,14 +56,14 @@ uses the `Sort_Data` union's heap-specific fields:
 | `request_resorting_of__heap` | `(Sort_List*) -> void` | Resets `index_of__heapification` to trigger a full re-heapify on the next sort step. |
 | `request_resorting_of__heap_sort` | `(Sort_List*) -> void` | Resets both `index_of__heapification` and `index_of__heap_sort` to trigger a full heap sort from scratch on the next sort step. |
 
-### Sort Steppers (m_Sort implementations)
+### 1.4.3 Sort Steppers (m_Sort implementations)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `m_sort__heapify__sort_list` | `(Sort_List*) -> bool` | `bool` | Performs one step of the heapify algorithm. Returns `true` when the heap property is fully established. |
 | `m_sort__heap_sort__sort_list` | `(Sort_List*) -> bool` | `bool` | Performs one step of the heap sort algorithm (heapify + extraction). Returns `true` when the list is fully sorted. |
 
-### Queries (static inline)
+### 1.4.4 Queries (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -73,11 +73,11 @@ uses the `Sort_Data` union's heap-specific fields:
 | `get_index_of__heap_sort_from__sort_list` | `(Sort_List*) -> Index__u16` | `Index__u16` | Convenience wrapper: returns `get_index_of__heap_sort_from__sort_data(&p_sort_list->sort_data)`. |
 | `is_heap_sort__sorted` | `(Sort_List*) -> bool` | `bool` | Returns `true` if `index_of__heap_sort <= 1`, meaning the heap sort is complete. |
 
-## Agentic Workflow
+## 1.5 Agentic Workflow
 
-### Algorithm Overview
+### 1.5.1 Algorithm Overview
 
-#### Heapify Only (`m_sort__heapify__sort_list`)
+#### 1.5.1.1 Heapify Only (`m_sort__heapify__sort_list`)
 
 Transforms the node list into a max-heap. Each invocation sifts one
 element into its correct heap position. After completion, the root
@@ -95,7 +95,7 @@ contains the maximum element according to `f_sort_heuristic`.
          |
     [Valid Max-Heap]
 
-#### Full Heap Sort (`m_sort__heap_sort__sort_list`)
+#### 1.5.1.2 Full Heap Sort (`m_sort__heap_sort__sort_list`)
 
 Performs a complete heap sort: first heapifies, then repeatedly extracts
 the maximum element. Each invocation performs one step of either the
@@ -120,7 +120,7 @@ heapify or extraction phase.
          |
     [Fully Sorted]
 
-### Cooperative Scheduling Integration
+### 1.5.2 Cooperative Scheduling Integration
 
 Both sort steppers conform to the `m_Sort` signature and are designed
 to be called from a `Process` handler:
@@ -137,7 +137,7 @@ Each call to `run_sort_with__this_many_steps` invokes `m_sort` up to
 the specified number of times, allowing fine-grained control over how
 much sorting work is done per frame.
 
-### Heapify vs Heap Sort
+### 1.5.3 Heapify vs Heap Sort
 
 | Use Case | Algorithm | Function |
 |----------|-----------|----------|
@@ -145,7 +145,7 @@ much sorting work is done per frame.
 | Need the full list sorted | Heap sort | `initialize_sort_list_as__heap_sort` |
 | Priority queue (repeated max extraction) | Heapify + manual `rotate_heap` | `initialize_sort_list_as__heap` + `rotate_heap` + `request_resorting_of__heap` |
 
-### Re-sorting After Mutation
+### 1.5.4 Re-sorting After Mutation
 
 If the data changes after sorting (e.g. heuristic values updated):
 
@@ -153,7 +153,7 @@ If the data changes after sorting (e.g. heuristic values updated):
    `request_resorting_of__heap_sort` (full sort).
 2. Continue calling `m_sort` steps until complete.
 
-### Preconditions
+### 1.5.5 Preconditions
 
 - `initialize_sort_list_as__heap` / `initialize_sort_list_as__heap_sort`:
   `p_sort_list` must be allocated and have a valid `p_node_list`.
@@ -163,7 +163,7 @@ If the data changes after sorting (e.g. heuristic values updated):
   `p_sort_list` must be allocated.
 - All query functions require non-null arguments.
 
-### Postconditions
+### 1.5.6 Postconditions
 
 - After `m_sort__heapify__sort_list` returns `true`: the node list
   satisfies the max-heap property according to `f_sort_heuristic`.
@@ -172,14 +172,14 @@ If the data changes after sorting (e.g. heuristic values updated):
 - After `rotate_heap`: the former root is at the last leaf position;
   the heap property is **violated** until re-heapified.
 
-### Performance
+### 1.5.7 Performance
 
 - Heapify: O(N) total work, spread across O(N) cooperative steps.
 - Heap sort: O(N log N) total work, spread across O(N log N) cooperative
   steps.
 - Space: O(1) auxiliary (in-place, using `Sort_Data` for state).
 
-### Error Handling
+### 1.5.8 Error Handling
 
 - No explicit error handling in the current implementation. Null
   pointers or uninitialized sort lists result in undefined behavior.
