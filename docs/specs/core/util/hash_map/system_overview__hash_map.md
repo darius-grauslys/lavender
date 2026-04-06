@@ -1,6 +1,6 @@
-# System Overview: UUID Mapped Pool (Hash Map) Utilities
+# 1 System Overview: UUID Mapped Pool (Hash Map) Utilities
 
-## Purpose
+## 1.1 Purpose
 
 The hash map module provides a generic, macro-based UUID-mapped pool
 data structure. A `UUID_MAPPED__POOL` is a fixed-size pool of
@@ -10,9 +10,9 @@ for managing pools of UUID-identified resources — entities, inventories,
 game actions, graphics windows, UI elements, and other objects that must
 be locatable by their unique identifier.
 
-## Architecture
+## 1.2 Architecture
 
-### Data Structure
+### 1.2.1 Data Structure
 
     UUID_MAPPED__POOL(My_Pool, My_Element, 64)
 
@@ -41,7 +41,7 @@ be locatable by their unique identifier.
     | +----------------------------------------------+ |
     +--------------------------------------------------+
 
-### Element Requirement
+### 1.2.2 Element Requirement
 
 Every element type used with `UUID_MAPPED__POOL` **must** begin with a
 `Serialization_Header` as its first field:
@@ -61,7 +61,7 @@ The `Serialization_Header` contains:
 The `uuid` field is used for allocation tracking (allocated vs. free)
 and for dehashing (UUID-to-index lookup).
 
-### Relationship to Serialization_Pool
+### 1.2.3 Relationship to Serialization_Pool
 
 `UUID_MAPPED__POOL` is a typed wrapper around the engine's
 `Serialization_Pool`. The generated functions delegate to:
@@ -76,7 +76,7 @@ and for dehashing (UUID-to-index lookup).
 The generated functions cast between `Serialization_Header*` and
 `type_value*`, providing type safety at the API boundary.
 
-### UUID Dehashing
+### 1.2.4 UUID Dehashing
 
 The `DEHASH` macro uses the UUID and pool metadata to compute an index
 into the `_values` array:
@@ -90,9 +90,9 @@ into the `_values` array:
 This is the same dehashing mechanism used by `Collision_Node_Pool` for
 64-bit UUID lookups into contiguous arrays.
 
-## Lifecycle
+## 1.3 Lifecycle
 
-### 1. Instantiation
+### 1.3.1 Instantiation
 
 **Header file**:
 
@@ -104,7 +104,7 @@ This is the same dehashing mechanism used by `Collision_Node_Pool` for
 Unlike `ENUM_MAP`, all generated functions are `static inline`, so
 there is no separate `DEFINE_API` macro needed in a source file.
 
-### 2. Initialization
+### 1.3.2 Initialization
 
     My_Pool my_pool;
     initialize_My_Pool(&my_pool);
@@ -116,7 +116,7 @@ After initialization:
 - `_serialization_pool.p_headers` points to `&_values[0]`.
 - All elements are in the free state.
 
-### 3. Allocation
+### 1.3.3 Allocation
 
     My_Element *p_element =
         allocate_My_Element_from__My_Pool(&my_pool);
@@ -131,7 +131,7 @@ On successful allocation:
 - The element is marked as allocated in the pool's internal state.
 - A pointer to the element is returned.
 
-### 4. UUID Lookup (Dehashing)
+### 1.3.4 UUID Lookup (Dehashing)
 
     My_Element *p_found =
         dehash_p_My_Element_from__My_Pool(
@@ -142,7 +142,7 @@ On successful allocation:
         // UUID not found in pool
     }
 
-### 5. Deallocation
+### 1.3.5 Deallocation
 
     release_My_Element_from__My_Pool(&my_pool, p_element);
 
@@ -150,7 +150,7 @@ After release:
 - The element's slot is available for future allocation.
 - The element's UUID is no longer valid for dehashing.
 
-### Element Lifecycle Diagram
+### 1.3.6 Element Lifecycle Diagram
 
     [Pool Initialized]
             |
@@ -166,7 +166,7 @@ After release:
             v
     [Element Returned to Pool — slot reusable]
 
-## Usage in the Engine
+## 1.4 Usage in the Engine
 
 UUID-mapped pools are used for any system that manages a pool of
 UUID-identified objects:
@@ -180,7 +180,7 @@ UUID-identified objects:
 | UI Manager | `UI_Element` | Platform-defined | UI element allocation |
 | Game Action System | `Game_Action` | Platform-defined | Game action allocation and network sync |
 
-## Comparison with Enum Map
+## 1.5 Comparison with Enum Map
 
 | Aspect | Enum Map | UUID Mapped Pool |
 |--------|----------|-----------------|
@@ -195,7 +195,7 @@ Use `ENUM_MAP` when the key is an enum with a known, small set of
 variants. Use `UUID_MAPPED__POOL` when elements are dynamically
 allocated and identified by UUID.
 
-## Error Handling
+## 1.6 Error Handling
 
 | Condition | Behavior |
 |-----------|----------|
@@ -206,9 +206,9 @@ allocated and identified by UUID.
 Error handling for bounds checking and UUID validation is delegated to
 the underlying `Serialization_Pool` and `DEHASH` implementations.
 
-## Preconditions and Postconditions
+## 1.7 Preconditions and Postconditions
 
-### Preconditions
+### 1.7.1 Preconditions
 
 - `initialize_<name>`: pointer must be non-null.
 - `allocate_<type_value>_from__<name>`: pool must be initialized.
@@ -217,7 +217,7 @@ the underlying `Serialization_Pool` and `DEHASH` implementations.
 - `dehash_p_<type_value>_from__<name>`: the UUID should correspond to
   a currently allocated element.
 
-### Postconditions
+### 1.7.2 Postconditions
 
 - After `initialize_<name>`: pool is ready for allocation; all elements
   are free.
@@ -226,7 +226,7 @@ the underlying `Serialization_Pool` and `DEHASH` implementations.
 - After `release_<type_value>_from__<name>`: the element's slot is
   available for future allocation.
 
-## Memory Layout
+## 1.8 Memory Layout
 
     struct <name>_t {
         Serialization_Pool _serialization_pool;     // pool metadata

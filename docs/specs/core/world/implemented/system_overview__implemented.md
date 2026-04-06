@@ -1,6 +1,6 @@
-# System Overview: Implemented (Game Templates)
+# 1 System Overview: Implemented (Game Templates)
 
-## Purpose
+## 1.1 Purpose
 
 The `implemented/` subfolder contains **template** headers that declare
 game-specific registration functions. These files are copied to the game
@@ -9,16 +9,16 @@ script. The game developer modifies the copies; the originals in core serve
 as defaults. The `implemented/` directory is NOT in the core include path —
 it is only in the game project's include path.
 
-## Architecture
+## 1.2 Architecture
 
-### Template Files
+### 1.2.1 Template Files
 
 | File | Function Declared | Registers Into | Called During |
 |------|-------------------|---------------|--------------|
 | `chunk_generator_registrar.h` | `register_chunk_generators` | `Chunk_Generator_Table` | World initialization |
 | `tile_logic_table_registrar.h` | `register_tile_logic_tables` | `Tile_Logic_Table` | World initialization |
 
-### Registration Flow
+### 1.2.2 Registration Flow
 
     Game initialization / World initialization
         |
@@ -35,9 +35,9 @@ it is only in the game project's include path.
                     - Tile_Logic_Flags (unpassable, sight blocking, no ground)
                     - tile_height__i32F4
 
-## Template Behavior
+## 1.3 Template Behavior
 
-### How Templates Work
+### 1.3.1 How Templates Work
 
 1. The core engine ships default versions of these headers in
    `core/include/world/implemented/`.
@@ -48,7 +48,7 @@ it is only in the game project's include path.
 4. The game project's include path includes its own `implemented/`
    directory, which shadows the core defaults.
 
-### Associated Enum Extensions
+### 1.3.2 Associated Enum Extensions
 
 Each registrar depends on a corresponding enum that the game must also
 extend in its `types/implemented/` directory:
@@ -61,7 +61,7 @@ extend in its `types/implemented/` directory:
 The game adds new enum values between `__None` and `__Unknown` to define
 its custom tile kinds and chunk generator kinds.
 
-## Integration Points
+## 1.4 Integration Points
 
 | System | Integration |
 |--------|-------------|
@@ -69,7 +69,7 @@ its custom tile kinds and chunk generator kinds.
 | `Tile_Logic_Table` | Populated by `register_tile_logic_tables`. Used at runtime for tile passability, sight blocking, height, and custom flag queries. |
 | `World` | Owns both tables. Initialization calls both registration functions. |
 
-## Preconditions
+## 1.5 Preconditions
 
 - Both registration functions must be implemented by the game project.
 - The corresponding enums must be extended before registration is called.

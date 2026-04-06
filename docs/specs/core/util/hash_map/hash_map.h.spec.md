@@ -1,6 +1,6 @@
-# Specification: core/include/util/hash_map/hash_map.h
+# 1 Specification: core/include/util/hash_map/hash_map.h
 
-## Overview
+## 1.1 Overview
 
 Provides a generic, macro-based UUID-mapped pool data structure.
 A `UUID_MAPPED__POOL` is a fixed-size pool of serializable elements
@@ -14,7 +14,7 @@ where elements must be locatable by their UUID.
 The entire API is generated via preprocessor macros, producing
 type-safe structs and functions for each instantiation.
 
-## Dependencies
+## 1.2 Dependencies
 
 - `defines.h` (for `Serialization_Pool`, `Serialization_Header`,
   `Identifier__u32`)
@@ -22,9 +22,9 @@ type-safe structs and functions for each instantiation.
   `initialize_serialization_pool`, `allocate_from__serialization_pool`,
   `release_from__serialization_pool`)
 
-## Types
+## 1.3 Types
 
-### UUID_MAPPED__POOL (macro — struct definition)
+### 1.3.1 UUID_MAPPED__POOL (macro — struct definition)
 
     #define UUID_MAPPED__POOL(name, type_value, length_of__pool) \
         typedef struct name##_t { \
@@ -54,7 +54,7 @@ Produces:
         My_Element _values[64];
     } My_Pool;
 
-### Serialization_Pool (struct, from defines.h)
+### 1.3.2 Serialization_Pool (struct, from defines.h)
 
     typedef struct Serialization_Pool_t {
         Quantity__u32 quantity_of__pool_elements;
@@ -68,7 +68,7 @@ Produces:
 | `size_of__element` | `Quantity__u32` | Size in bytes of each element. |
 | `p_headers` | `Serialization_Header*` | Pointer to the first element's serialization header (i.e. `&_values[0]`). |
 
-### Element Requirement
+### 1.3.3 Element Requirement
 
 Every `type_value` used with `UUID_MAPPED__POOL` **must** begin with a
 `Serialization_Header`:
@@ -87,9 +87,9 @@ The `Serialization_Header` contains:
 
 The `uuid` field is used for allocation tracking and dehashing.
 
-### Generated Functions
+### 1.3.4 Generated Functions
 
-#### DECLARE_API__UUID_MAPPED__POOL (macro)
+#### 1.3.4.1 DECLARE_API__UUID_MAPPED__POOL (macro)
 
     #define DECLARE_API__UUID_MAPPED__POOL(name, type_value, length_of__pool)
 
@@ -102,9 +102,9 @@ Declares the following static inline functions:
 | `release_<type_value>_from__<name>` | `(<name>*, type_value*) -> void` | `void` | Releases an element back to the pool. |
 | `dehash_p_<type_value>_from__<name>` | `(<name>*, Identifier__u32 uuid) -> type_value*` | `type_value*` | Looks up an element by UUID using the `DEHASH` macro. O(1) if the UUID maps directly to the correct slot; O(N) worst case on collision. |
 
-## Agentic Workflow
+## 1.4 Agentic Workflow
 
-### When to Use
+### 1.4.1 When to Use
 
 Use `UUID_MAPPED__POOL` when:
 
@@ -120,7 +120,7 @@ Do **not** use `UUID_MAPPED__POOL` when:
   `Sort_List_Manager` instead.
 - The pool needs to be dynamically sized. This is a fixed-size pool.
 
-### Instantiation Pattern
+### 1.4.2 Instantiation Pattern
 
 **In a header file**:
 
@@ -132,7 +132,7 @@ Do **not** use `UUID_MAPPED__POOL` when:
 Note: Unlike `ENUM_MAP`, all generated functions are `static inline`,
 so there is no separate `DEFINE_API` macro needed in a source file.
 
-### Initialization
+### 1.4.3 Initialization
 
     My_Pool my_pool;
     initialize_My_Pool(&my_pool);
@@ -141,7 +141,7 @@ After initialization, the `Serialization_Pool` header is configured with
 the element count and size. The pool's `p_headers` pointer is set to the
 start of the `_values` array.
 
-### Allocation and Deallocation
+### 1.4.4 Allocation and Deallocation
 
     // Allocate
     My_Element *p_element =
@@ -153,7 +153,7 @@ start of the `_values` array.
     // Release
     release_My_Element_from__My_Pool(&my_pool, p_element);
 
-### UUID Lookup (Dehashing)
+### 1.4.5 UUID Lookup (Dehashing)
 
     My_Element *p_found =
         dehash_p_My_Element_from__My_Pool(
@@ -170,7 +170,7 @@ similar collision resolution is used.
 ensure the element type has a `Serialization_Header`. This access is
 a `(void)` expression and has no runtime effect.
 
-### Element Lifecycle
+### 1.4.6 Element Lifecycle
 
     [Pool Initialized]
             |
@@ -184,7 +184,7 @@ a `(void)` expression and has no runtime effect.
             |
     [Element Returned to Pool]
 
-### Relationship to Serialization_Pool
+### 1.4.7 Relationship to Serialization_Pool
 
 `UUID_MAPPED__POOL` is a typed wrapper around `Serialization_Pool`. The
 underlying allocation, deallocation, and dehashing are delegated to:
@@ -197,7 +197,7 @@ underlying allocation, deallocation, and dehashing are delegated to:
 The generated functions simply cast between `Serialization_Header*` and
 `type_value*`.
 
-### Preconditions
+### 1.4.8 Preconditions
 
 - `initialize_<name>`: pointer must be non-null.
 - `allocate_<type_value>_from__<name>`: pool must be initialized.
@@ -208,7 +208,7 @@ The generated functions simply cast between `Serialization_Header*` and
   currently allocated element. Behavior is undefined for UUIDs not
   present in the pool.
 
-### Postconditions
+### 1.4.9 Postconditions
 
 - After `initialize_<name>`: pool is ready for allocation. All elements
   are in the free state.
@@ -217,7 +217,7 @@ The generated functions simply cast between `Serialization_Header*` and
 - After `release_<type_value>_from__<name>`: the element's slot is
   available for future allocation.
 
-### Error Handling
+### 1.4.10 Error Handling
 
 - `allocate_<type_value>_from__<name>` returns null on pool exhaustion.
   Callers must check for null.
@@ -228,7 +228,7 @@ The generated functions simply cast between `Serialization_Header*` and
   error handling is delegated to the underlying `Serialization_Pool`
   functions.
 
-### Thread Safety
+### 1.4.11 Thread Safety
 
 None. UUID-mapped pools are not thread-safe. In the cooperative
 scheduling model, this is acceptable since only one process handler

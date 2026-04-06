@@ -1,6 +1,6 @@
-# System Overview: Bitmap Utilities
+# 1 System Overview: Bitmap Utilities
 
-## Purpose
+## 1.1 Purpose
 
 The bitmap module provides compact, fixed-size boolean arrays for
 bit-level storage and lookup. Two variants are offered: a flat bitmap
@@ -11,9 +11,9 @@ Bitmaps are used throughout the engine wherever per-element boolean
 state must be tracked compactly — allocation status, serialization
 state, collision presence, packet fragment tracking, and site presence.
 
-## Architecture
+## 1.2 Architecture
 
-### Data Structures
+### 1.2.1 Data Structures
 
     Flat Bitmap (BITMAP macro):
     +-------+-------+-------+-------+-----+
@@ -33,12 +33,12 @@ state, collision presence, packet fragment tracking, and site presence.
     | ...                               |  continues until level size = 0
     +===================================+
 
-### Bit Indexing
+### 1.2.2 Bit Indexing
 
 All bit indices are zero-based. Bit `i` is stored in byte `i >> 3` at
 bit position `i & 0x7` (i.e. `BIT(i & MASK(3))`).
 
-### Heap Structure
+### 1.2.3 Heap Structure
 
 The heap is a sequence of summary levels appended after the base bitmap
 in the same contiguous `u8` array. Each level summarizes the level below
@@ -56,9 +56,9 @@ is computed by the `BITMAP_AND_HEAP` macro as:
 
     N/8 + N/64 + N/512 + N/4096 + ... (up to N/2^30)
 
-## Lifecycle
+## 1.3 Lifecycle
 
-### 1. Declaration
+### 1.3.1 Declaration
 
     // Flat bitmap of 256 bits
     BITMAP(my_bitmap, 256);
@@ -68,7 +68,7 @@ is computed by the `BITMAP_AND_HEAP` macro as:
 
 Both macros declare a `u8` array. `N` must be a multiple of 8.
 
-### 2. Initialization
+### 1.3.2 Initialization
 
     initialize_bitmap(my_bitmap, false, 256);
 
@@ -80,7 +80,7 @@ base bitmap). For `BITMAP_AND_HEAP`, the heap levels must also be
 cleared. Callers should ensure the entire containing struct is zeroed,
 or manually clear the heap portion.
 
-### 3. Set / Get Operations
+### 1.3.3 Set / Get Operations
 
     // Query
     bool is_set = is_bit_set_in__bitmap(
@@ -102,7 +102,7 @@ or manually clear the heap portion.
     SET_BIT_IN__BITMAP_AND_HEAP(
             my_heap_bitmap, 512, index, true);
 
-### 4. First-Set-Bit Query (Heap Only)
+### 1.3.4 First-Set-Bit Query (Heap Only)
 
     Index__u32 first = get_index_of__first_set_bit_from__bitmap_and_heap(
             my_heap_bitmap, 512);
@@ -114,7 +114,7 @@ or manually clear the heap portion.
 The query traverses the heap top-down, checking each level to narrow
 down which group of 8 contains a set bit, achieving O(log₈ N) time.
 
-## Heap Propagation
+## 1.4 Heap Propagation
 
 When `set_bit_in__bitmap_and_heap` is called:
 
@@ -129,7 +129,7 @@ When `set_bit_in__bitmap_and_heap` is called:
 This ensures the heap is always consistent with the base bitmap after
 every modification.
 
-## Usage in the Engine
+## 1.5 Usage in the Engine
 
 | System | Bitmap Variant | Purpose |
 |--------|---------------|---------|
@@ -138,7 +138,7 @@ every modification.
 | Collision Node Pool | Flat | Allocation tracking for collision node entries |
 | TCP Delivery | Flat | `TCP_PAYLOAD_BITMAP` — tracks received packet fragments |
 
-## Choosing Between Variants
+## 1.6 Choosing Between Variants
 
 | Scenario | Recommended Variant | Rationale |
 |----------|-------------------|-----------|
@@ -146,7 +146,7 @@ every modification.
 | Large bitmaps, frequent first-set-bit queries | `BITMAP_AND_HEAP` | O(log₈ N) lookup via heap |
 | Large bitmaps, only set/get operations | `BITMAP` | No need for heap if first-set-bit is not queried |
 
-## Error Handling
+## 1.7 Error Handling
 
 | Condition | Debug Build | Release Build |
 |-----------|------------|---------------|
@@ -154,9 +154,9 @@ every modification.
 | Out-of-bounds `set_bit_in__bitmap` | `debug_error`, no-op | Undefined behavior |
 | No bits set in `get_index_of__first_set_bit_from__bitmap_and_heap` | Returns `INDEX__UNKNOWN__u32` | Returns `INDEX__UNKNOWN__u32` |
 
-## Preconditions and Postconditions
+## 1.8 Preconditions and Postconditions
 
-### Preconditions
+### 1.8.1 Preconditions
 
 - `initialize_bitmap`: `p_bitmap` must be non-null. `size_of__bitmap`
   must be a multiple of 8.
@@ -168,7 +168,7 @@ every modification.
 - `SET_BIT_IN__BITMAP_AND_HEAP`: `bitmap` must be a statically-sized
   array, not a pointer (relies on `sizeof(bitmap)`).
 
-### Postconditions
+### 1.8.2 Postconditions
 
 - After `initialize_bitmap(_, false, _)`: all bits are 0.
 - After `initialize_bitmap(_, true, _)`: all bits are 1.

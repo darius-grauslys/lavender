@@ -1,6 +1,6 @@
-# Specification: core/include/util/bitmap/bitmap.h
+# 1 Specification: core/include/util/bitmap/bitmap.h
 
-## Overview
+## 1.1 Overview
 
 Provides fixed-size bitmap utilities and an optional heap-accelerated
 bitmap structure for efficient bit-level storage and lookup. Bitmaps are
@@ -12,14 +12,14 @@ The "bitmap and heap" variant layers a hierarchical summary (heap) on top
 of the flat bitmap, enabling O(log N) lookup of the first set bit instead
 of O(N) linear scanning.
 
-## Dependencies
+## 1.2 Dependencies
 
 - `debug/debug.h` (for `debug_error` in debug builds)
 - `defines_weak.h` (for `u8`, `Quantity__u32`, `Index__u32`, `BIT`, `MASK`)
 
-## Types
+## 1.3 Types
 
-### Bitmap (macro-defined)
+### 1.3.1 Bitmap (macro-defined)
 
     #define BITMAP(name, N) \
         u8 name[ N >> 3 ]
@@ -31,7 +31,7 @@ Declares a flat bitmap of `N` bits as a `u8` array of `N / 8` bytes.
 | `name` | identifier | The variable name for the bitmap array. |
 | `N` | integer constant | Number of bits. Must be a multiple of 8. |
 
-### Bitmap and Heap (macro-defined)
+### 1.3.2 Bitmap and Heap (macro-defined)
 
     #define BITMAP_AND_HEAP(name, N) \
         u8 name[ (N >> 3) \
@@ -63,29 +63,29 @@ corresponding group of 8). This enables fast first-set-bit queries.
     [ ... ]
     (continues until level size reaches 0)
 
-## Functions
+## 1.4 Functions
 
-### Initialization
+### 1.4.1 Initialization
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `initialize_bitmap` | `(u8 *p_bitmap, bool state, Quantity__u32 size_of__bitmap) -> void` | Sets all bits in the bitmap to `state` (true = all 1s, false = all 0s). `size_of__bitmap` is the number of **bits**. |
 
-### Flat Bitmap Operations (static inline)
+### 1.4.2 Flat Bitmap Operations (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `is_bit_set_in__bitmap` | `(u8 *p_bitmap, Quantity__u32 size_of__bitmap, Index__u32 index_of__bit) -> bool` | `bool` | Returns `true` if the bit at `index_of__bit` is set. `size_of__bitmap` is in bits. Debug builds call `debug_error` on out-of-bounds access. |
 | `set_bit_in__bitmap` | `(u8 *p_bitmap, Quantity__u32 size_of__bitmap, Index__u32 index_of__bit, bool state_of__bit) -> void` | `void` | Sets or clears the bit at `index_of__bit`. `size_of__bitmap` is in bits. Debug builds call `debug_error` on out-of-bounds access. |
 
-### Heap-Accelerated Bitmap Operations
+### 1.4.3 Heap-Accelerated Bitmap Operations
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `get_index_of__first_set_bit_from__bitmap_and_heap` | `(u8 *p_bitmap_and_heap, Quantity__u32 size_of__bitmap_but_NOT__including_heap) -> Index__u32` | `Index__u32` | Returns the index of the first set bit in the bitmap, using the heap for acceleration. `size_of__bitmap_but_NOT__including_heap` is the number of **bits** in the base bitmap (not including heap bytes). Returns `INDEX__UNKNOWN__u32` if no bit is set. |
 | `set_bit_in__bitmap_and_heap` | `(u8 *p_bitmap, u8 *p_end_of__heap, Quantity__u32 size_of__bitmap_but_NOT__including_heap, Index__u32 index_of__bit, bool state_of__bit) -> void` | `void` | Sets or clears a bit in the base bitmap and propagates the change up through all heap levels. `p_end_of__heap` points to the last byte of the heap. |
 
-### Heap-Accelerated Bitmap Convenience Macro
+### 1.4.4 Heap-Accelerated Bitmap Convenience Macro
 
     #define SET_BIT_IN__BITMAP_AND_HEAP(
             bitmap,
@@ -104,9 +104,9 @@ from `sizeof(bitmap)`. Only valid when `bitmap` is a statically-sized array
 | `index` | `Index__u32` | Bit index to set or clear. |
 | `state` | `bool` | `true` to set, `false` to clear. |
 
-## Agentic Workflow
+## 1.5 Agentic Workflow
 
-### When to Use Flat Bitmap vs Bitmap-and-Heap
+### 1.5.1 When to Use Flat Bitmap vs Bitmap-and-Heap
 
 | Scenario | Structure | Rationale |
 |----------|-----------|-----------|
@@ -114,7 +114,7 @@ from `sizeof(bitmap)`. Only valid when `bitmap` is a statically-sized array
 | Large bitmaps with frequent first-set-bit queries | `BITMAP_AND_HEAP` | O(log N) first-set-bit lookup via heap. |
 | Large bitmaps with only set/get operations | `BITMAP` | No need for heap if first-set-bit is not queried. |
 
-### Usage in the Engine
+### 1.5.2 Usage in the Engine
 
 Bitmaps are used in several core systems:
 
@@ -125,7 +125,7 @@ Bitmaps are used in several core systems:
 - **TCP delivery**: `TCP_PAYLOAD_BITMAP` tracks received packet fragments.
 - **Sites**: `Region.bitmap_of__sites` tracks site presence.
 
-### Initialization Pattern
+### 1.5.3 Initialization Pattern
 
     // Flat bitmap
     BITMAP(my_bitmap, 256);
@@ -141,12 +141,12 @@ Bitmaps are used in several core systems:
 caller should ensure the heap portion is also cleared (e.g. by zeroing
 the entire containing struct).
 
-### Bit Indexing Convention
+### 1.5.4 Bit Indexing Convention
 
 All bit indices are zero-based. Bit `i` is stored in byte `i >> 3` at
 bit position `i & 0x7` (i.e. `BIT(i & MASK(3))`).
 
-### Heap Propagation
+### 1.5.5 Heap Propagation
 
 When using `set_bit_in__bitmap_and_heap`:
 
@@ -159,7 +159,7 @@ When using `set_bit_in__bitmap_and_heap`:
 This ensures `get_index_of__first_set_bit_from__bitmap_and_heap` can
 traverse the heap top-down to find the first set bit in O(log₈ N) steps.
 
-### Preconditions
+### 1.5.6 Preconditions
 
 - `initialize_bitmap`: `p_bitmap` must be non-null. `size_of__bitmap`
   must be a multiple of 8.
@@ -172,7 +172,7 @@ traverse the heap top-down to find the first set bit in O(log₈ N) steps.
 - `SET_BIT_IN__BITMAP_AND_HEAP`: `bitmap` must be a statically-sized
   array, not a pointer (relies on `sizeof(bitmap)`).
 
-### Postconditions
+### 1.5.7 Postconditions
 
 - After `initialize_bitmap` with `state = false`: all bits are 0.
 - After `initialize_bitmap` with `state = true`: all bits are 1.
@@ -181,7 +181,7 @@ traverse the heap top-down to find the first set bit in O(log₈ N) steps.
 - After `set_bit_in__bitmap_and_heap`: the specified bit is set or
   cleared, and all heap levels are consistent with the base bitmap.
 
-### Error Handling
+### 1.5.8 Error Handling
 
 - Out-of-bounds access in `is_bit_set_in__bitmap` returns `false` in
   debug builds and emits `debug_error`.

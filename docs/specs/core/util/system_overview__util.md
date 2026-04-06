@@ -1,6 +1,6 @@
-# System Overview: Utility Subsystem
+# 1 System Overview: Utility Subsystem
 
-## Purpose
+## 1.1 Purpose
 
 The utility subsystem provides foundational generic data structures used
 throughout the engine. These are macro-generated, type-safe containers
@@ -18,9 +18,9 @@ code generation. The three active utility modules are:
 A fourth module, **Getter**, exists as an empty placeholder reserved for
 future getter utility functions.
 
-## Architecture
+## 1.2 Architecture
 
-### Module Hierarchy
+### 1.2.1 Module Hierarchy
 
     core/include/util/
     ├── bitmap/
@@ -32,7 +32,7 @@ future getter utility functions.
     └── getter/
         └── getter.h          — Reserved placeholder (empty)
 
-### Relationship Between Modules
+### 1.2.2 Relationship Between Modules
 
 The three active modules are independent of each other. None depends on
 another util module. Their shared dependencies are limited to core engine
@@ -44,7 +44,7 @@ types:
 | Enum Map | `debug/debug.h`, `defines_weak.h`, `<string.h>` |
 | Hash Map | `defines.h` (`Serialization_Pool`, `Serialization_Header`, `Identifier__u32`), `serialization/hashing.h` (`DEHASH`) |
 
-### Design Principles
+### 1.2.3 Design Principles
 
 1. **Macro-generated type safety.** Each instantiation of `ENUM_MAP`,
    `UUID_MAPPED__POOL`, `BITMAP`, or `BITMAP_AND_HEAP` produces
@@ -62,9 +62,9 @@ types:
 4. **No thread safety.** All utility containers assume cooperative
    single-threaded access consistent with the engine's scheduling model.
 
-## Module Summaries
+## 1.3 Module Summaries
 
-### Bitmap (`util/bitmap/`)
+### 1.3.1 Bitmap (`util/bitmap/`)
 
 Provides two bitmap variants:
 
@@ -83,7 +83,7 @@ collision presence, and per-element boolean flags throughout the engine.
 
 See: `docs/specs/util/bitmap/bitmap.h.spec.md`
 
-### Enum Map (`util/enum_map/`)
+### 1.3.2 Enum Map (`util/enum_map/`)
 
 Provides O(1) enum-keyed lookup via a fixed-size array indexed by enum
 value. The key enum must follow the engine convention with `__None` (0)
@@ -102,7 +102,7 @@ and any association between an enum discriminator and a runtime value.
 
 See: `docs/specs/util/enum_map/enum_map.h.spec.md`
 
-### Hash Map / UUID Mapped Pool (`util/hash_map/`)
+### 1.3.3 Hash Map / UUID Mapped Pool (`util/hash_map/`)
 
 Provides fixed-size pools of UUID-identified elements with O(1)
 allocation, deallocation, and UUID-based dehashing. Elements must begin
@@ -121,7 +121,7 @@ entities, inventories, game actions, and other UUID-identified resources.
 
 See: `docs/specs/util/hash_map/hash_map.h.spec.md`
 
-### Getter (`util/getter/`)
+### 1.3.4 Getter (`util/getter/`)
 
 Empty placeholder. No types, functions, or macros are defined. Reserved
 for future getter utility functions following the same macro-generation
@@ -129,7 +129,7 @@ pattern.
 
 See: `docs/specs/util/getter/getter.h.spec.md`
 
-## Cross-System Usage
+## 1.4 Cross-System Usage
 
 The utility modules are consumed by many engine systems. Key consumers
 include:
@@ -144,7 +144,7 @@ include:
 | Graphics Window Manager | — | — | Window pool |
 | UI Manager | — | — | UI element pool |
 
-## Capacity and Performance
+## 1.5 Capacity and Performance
 
 | Module | Time Complexity | Space Overhead |
 |--------|----------------|----------------|
@@ -153,7 +153,7 @@ include:
 | Enum Map | O(1) all operations | `sizeof(type_value) × enum_count` |
 | UUID Mapped Pool | O(1) allocate/release/dehash (amortized) | `sizeof(Serialization_Pool) + sizeof(type_value) × pool_size` |
 
-## Error Handling Summary
+## 1.6 Error Handling Summary
 
 | Module | Debug Build Behavior | Release Build Behavior |
 |--------|---------------------|----------------------|
