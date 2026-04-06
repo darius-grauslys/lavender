@@ -1,6 +1,6 @@
-# System Overview: Serialization Infrastructure
+# 1. System Overview: Serialization Infrastructure
 
-## Purpose
+## 1.1 Purpose
 
 The serialization system provides the foundational identity, pooling, hashing,
 reference-linking, I/O request management, and file persistence mechanisms used
@@ -9,9 +9,9 @@ throughout the engine. Every pooled struct in the engine embeds a
 enabling uniform UUID-based identification, O(1) average-case lookup via
 hashing, and serializable cross-references between objects.
 
-## Architecture
+## 1.2 Architecture
 
-### Data Hierarchy
+### 1.2.1 Data Hierarchy
 
     Engine
     +-- Serialization_Header / Serialization_Header__UUID_64
@@ -49,7 +49,7 @@ hashing, and serializable cross-references between objects.
         +-- save_game
         +-- append_path
 
-### Module Relationships
+### 1.2.2 Module Relationships
 
     +-------------------+
     | Serialization     |
@@ -90,7 +90,7 @@ hashing, and serializable cross-references between objects.
     | (persistence)     |
     +-------------------+
 
-### Key Types
+### 1.2.3 Key Types
 
 | Type | Role |
 |------|------|
@@ -104,7 +104,7 @@ hashing, and serializable cross-references between objects.
 | `Serialization_Request_Flags` | 8-bit bitmask tracking request state (allocated, active, read/write, keep-alive, TCP/IO mode). |
 | `Game_Directory` (module) | File system utilities for checking, saving, and constructing paths for game data persistence. |
 
-### Limits and Sentinels
+### 1.2.4 Limits and Sentinels
 
 | Constant | Value | Description |
 |----------|-------|-------------|
@@ -112,23 +112,23 @@ hashing, and serializable cross-references between objects.
 | `IDENTIFIER__UNKNOWN__u64` | `(uint64_t)(-1)` | Sentinel for deallocated or invalid 64-bit UUID. |
 | `MAX_LENGTH_OF__IO_PATH` | 128 (default) | Maximum character length of file system paths. |
 
-## Subsystem: Serialization Header
+## 1.3 Subsystem: Serialization Header
 
-### Purpose
+### 1.3.1 Purpose
 
 `Serialization_Header` and `Serialization_Header__UUID_64` are the universal
 identity mechanism for pooled structs. By embedding the header as the first
 field, any struct pointer can be cast to a header pointer for generic
 operations.
 
-### Key Properties
+### 1.3.2 Key Properties
 
 - **`size_of__struct`**: Byte size of the owning struct. Enables pointer
   arithmetic across contiguous arrays (stride = `size_of__struct`).
 - **`uuid`**: The struct's unique identifier. `IDENTIFIER__UNKNOWN__u32`
   (or `__u64`) indicates a deallocated slot.
 
-### UUID Branding
+### 1.3.3 UUID Branding
 
 UUIDs can encode metadata via branding:
 
@@ -139,7 +139,7 @@ UUIDs can encode metadata via branding:
 This allows type information to be recovered from a UUID without accessing
 the struct itself.
 
-### Contiguous Array Model
+### 1.3.4 Contiguous Array Model
 
 All pools in the engine are contiguous arrays of identically-sized structs.
 The header's `size_of__struct` field enables index-based access:
@@ -150,7 +150,7 @@ The header's `size_of__struct` field enables index-based access:
 This model is used by the hashing module, serialization pool, and serialized
 field linking.
 
-### Representative Consumers (32-bit)
+### 1.3.5 Representative Consumers (32-bit)
 
 - `Entity._serialization_header`
 - `Hitbox_AABB._serialization_header`
@@ -159,20 +159,20 @@ field linking.
 - `Graphics_Window._serialization_header`
 - `Game_Action._serialiation_header`
 
-### Representative Consumers (64-bit)
+### 1.3.6 Representative Consumers (64-bit)
 
 - `Chunk._serialization_header`
 - `Global_Space._serialization_header`
 - `Collision_Node._serialization_header`
 
-## Subsystem: Identifiers
+## 1.4 Subsystem: Identifiers
 
-### Purpose
+### 1.4.1 Purpose
 
 Generates random UUIDs and provides validation. UUIDs are the primary identity
 mechanism for all pooled structs.
 
-### UUID Generation Strategy
+### 1.4.2 UUID Generation Strategy
 
 - **32-bit**: XOR a pseudo-random value with `IDENTIFIER__UNKNOWN__u32`. This
   guarantees the result is never equal to the sentinel. Uses intrusive
@@ -181,7 +181,7 @@ mechanism for all pooled structs.
   `IDENTIFIER__UNKNOWN__u64`. Uses non-intrusive randomization (does not
   advance the seed).
 
-### Intrusive vs Non-Intrusive Randomization
+### 1.4.3 Intrusive vs Non-Intrusive Randomization
 
 | Variant | Function | Seed Effect |
 |---------|----------|-------------|
@@ -191,21 +191,21 @@ mechanism for all pooled structs.
 This distinction matters when deterministic replay or reproducible allocation
 order is required.
 
-### Collision Handling
+### 1.4.4 Collision Handling
 
 UUID collisions are theoretically possible but unlikely. The XOR with the
 sentinel prevents the most common collision (generating the sentinel itself).
 For contiguous array placement, collisions are resolved by the hashing module's
 linear probing.
 
-## Subsystem: Hashing
+## 1.5 Subsystem: Hashing
 
-### Purpose
+### 1.5.1 Purpose
 
 Maps UUIDs to array indices for O(1) average-case access to pooled resources.
 This is the core lookup and allocation mechanism for contiguous arrays.
 
-### Algorithm
+### 1.5.2 Algorithm
 
 1. **Initial index**: `uuid % array_length`
 2. **Collision resolution**: Linear probing. If the slot at the initial index
@@ -213,7 +213,7 @@ This is the core lookup and allocation mechanism for contiguous arrays.
 3. **Termination**: Stop when a matching UUID or a deallocated slot is found,
    or when the entire array has been probed.
 
-### Performance
+### 1.5.3 Performance
 
 - **O(1) average case** for lookup and allocation when the array is not
   heavily loaded.
@@ -221,7 +221,7 @@ This is the core lookup and allocation mechanism for contiguous arrays.
 - Arrays should be sized to avoid high load factors. In practice, pool sizes
   are fixed at compile time and matched to expected usage.
 
-### Function Categories
+### 1.5.4 Function Categories
 
 | Category | Functions | Description |
 |----------|-----------|-------------|
@@ -234,7 +234,7 @@ This is the core lookup and allocation mechanism for contiguous arrays.
 | Existence Check | `has_uuid_in__contiguous_array`, `__uuid_64` | Boolean existence test. |
 | Index Computation | `bound_uuid_to__contiguous_array`, `__uuid_64` | Compute `uuid % length`. |
 
-### Relationship to Other Subsystems
+### 1.5.5 Relationship to Other Subsystems
 
 - **Identifiers**: Hashing uses identifier generation for random allocation
   functions.
@@ -243,16 +243,16 @@ This is the core lookup and allocation mechanism for contiguous arrays.
 - **Serialization Pool**: The pool wrapper delegates to hashing for
   `dehash_from__serialization_pool`.
 
-## Subsystem: Serialization Pool
+## 1.6 Subsystem: Serialization Pool
 
-### Purpose
+### 1.6.1 Purpose
 
 A thin wrapper around contiguous arrays, abstracting pool initialization,
 allocation, deallocation, and UUID-based lookup. Stores array metadata
 (element count, element size, base pointer) and delegates to the hashing
 module.
 
-### Lifecycle
+### 1.6.2 Lifecycle
 
 1. **Declare** the backing array and `Serialization_Pool` struct externally.
 2. **Initialize** with `initialize_serialization_pool(...)`. All headers are
@@ -262,22 +262,22 @@ module.
 4. **Lookup** elements with `dehash_from__serialization_pool`.
 5. **Release** elements with `release_from__serialization_pool`.
 
-### When to Use
+### 1.6.3 When to Use
 
 Use `Serialization_Pool` for generic pool management. Specialized managers
 (e.g. `Hitbox_AABB_Manager`, `Entity_Manager`) typically implement their own
 pool logic directly rather than using `Serialization_Pool`.
 
-## Subsystem: Serialized Field
+## 1.7 Subsystem: Serialized Field
 
-### Purpose
+### 1.7.1 Purpose
 
 Provides a "soft pointer" mechanism for serializable references between pooled
 objects. A `Serialized_Field` stores both a UUID and a data pointer, enabling
 deferred linking: the UUID is persisted during serialization, and the pointer
 is resolved against a contiguous array after deserialization.
 
-### Serialization Pattern
+### 1.7.2 Serialization Pattern
 
     Save:
         Serialized_Field holds UUID + live pointer.
@@ -290,7 +290,7 @@ is resolved against a contiguous array after deserialization.
         link_serialized_field_against__contiguous_array() resolves
         the UUID back to a live pointer by scanning the target pool.
 
-### Typed Aliases
+### 1.7.3 Typed Aliases
 
 | Alias | Semantic Meaning |
 |-------|------------------|
@@ -299,29 +299,29 @@ is resolved against a contiguous array after deserialization.
 | `Serialized_Entity_Ptr` | References an `Entity` |
 | `Serialized_Chunk_Ptr` | References a `Chunk` |
 
-### Validation
+### 1.7.4 Validation
 
 - `is_p_serialized_field__linked` checks that the data pointer is non-null,
   the pointed-to struct has a valid UUID, and the UUIDs match.
 - `is_serialized_field_matching__serialization_header` compares the field's
   UUID against a given header. Debug-aborts on null in debug builds.
 
-## Subsystem: Serialization Request
+## 1.8 Subsystem: Serialization Request
 
-### Purpose
+### 1.8.1 Purpose
 
 Represents an in-flight I/O or TCP transfer operation. A request tracks a data
 pointer, a file handler (for disk I/O) or TCP packet destination (for network),
 and a set of flags describing its current state.
 
-### Modes
+### 1.8.2 Modes
 
 | Mode | Selected By | Key Fields |
 |------|-------------|------------|
 | File I/O | `SERIALIZATION_REQUEST_FLAG__IS_TCP_OR_IO` clear | `p_file_handler`, `quantity_of__file_contents` |
 | TCP | `SERIALIZATION_REQUEST_FLAG__IS_TCP_OR_IO` set | `p_tcp_packet_destination`, `pM_packet_bitmap`, `quantity_of__bytes_in__destination`, `quantity_of__tcp_packets__anticipated` |
 
-### Lifecycle
+### 1.8.3 Lifecycle
 
     1. Allocate   -- PLATFORM_allocate_serialization_request
     2. Initialize -- initialize_serialization_request (zeroes all fields)
@@ -333,7 +333,7 @@ and a set of flags describing its current state.
                      (TCP: frees bitmap; I/O: closes file)
     7. Release    -- PLATFORM_release_serialization_request
 
-### Flags
+### 1.8.4 Flags
 
 | Flag | Bit | Description |
 |------|-----|-------------|
@@ -344,7 +344,7 @@ and a set of flags describing its current state.
 | `KEEP_ALIVE` | 4 | Set = persists after completion, clear = fire-and-forget. |
 | `IS_TCP_OR_IO` | 5 | Set = TCP mode, clear = file I/O mode. |
 
-### Platform Integration
+### 1.8.5 Platform Integration
 
 Serialization requests are pooled per-platform in
 `PLATFORM_File_System_Context`. Platform functions manage the pool:
@@ -353,21 +353,21 @@ Serialization requests are pooled per-platform in
 - `PLATFORM_release_serialization_request`
 - `PLATFORM_get_quantity_of__active_serialization_requests`
 
-### Error Handling
+### 1.8.6 Error Handling
 
 - `activate_serialization_request` returns false if TCP bitmap allocation
   fails.
 - Calling `activate_serialization_request` twice without an intervening
   `deactivate_serialization_request` causes a memory leak.
 
-## Subsystem: Game Directory
+## 1.9 Subsystem: Game Directory
 
-### Purpose
+### 1.9.1 Purpose
 
 File system utilities for game data persistence. Handles checking for save
 files, saving game state, and constructing file paths.
 
-### Functions
+### 1.9.2 Functions
 
 | Function | Description |
 |----------|-------------|
@@ -375,7 +375,7 @@ files, saving game state, and constructing file paths.
 | `save_game` | Saves current game state. **Must only be called from the main menu.** |
 | `append_path` | Concatenates two `IO_path` buffers in-place. |
 
-### Platform Integration
+### 1.9.3 Platform Integration
 
 Game directory operations rely on platform-provided file I/O functions:
 
@@ -391,9 +391,9 @@ Game directory operations rely on platform-provided file I/O functions:
 The path separator character is defined in `platform_defaults.h` as
 `PATH_SEPERATOR` (defaults to `'/'`).
 
-## Cross-Cutting Concerns
+## 1.10 Cross-Cutting Concerns
 
-### Preconditions (All Subsystems)
+### 1.10.1 Preconditions (All Subsystems)
 
 - `Serialization_Header` must be the **first field** of any struct that uses
   it. Pointer arithmetic and casting depend on this layout.
@@ -407,7 +407,7 @@ The path separator character is defined in `platform_defaults.h` as
 - `Repeatable_Psuedo_Random` must be initialized and seeded before UUID
   generation.
 
-### Error Handling Patterns
+### 1.10.2 Error Handling Patterns
 
 | Subsystem | Error Condition | Behavior |
 |-----------|-----------------|----------|
@@ -420,13 +420,13 @@ The path separator character is defined in `platform_defaults.h` as
 | Serialization Header | Null pointer | `is_serialized_struct__deallocated` safely returns true |
 | Serialization Header | Null pointer | `is_identifier_u32_matching__serialization_header` calls `debug_abort` |
 
-### Thread Safety
+### 1.10.3 Thread Safety
 
 The serialization system does not provide internal synchronization. All
 operations assume single-threaded access or external synchronization by the
 caller.
 
-## Integration with Other Engine Systems
+## 1.11 Integration with Other Engine Systems
 
 The serialization infrastructure is consumed by virtually every engine
 subsystem:

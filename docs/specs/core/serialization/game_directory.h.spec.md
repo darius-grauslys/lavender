@@ -1,25 +1,25 @@
-# Specification: core/include/serialization/game_directory.h
+# 1. Specification: core/include/serialization/game_directory.h
 
-## Overview
+## 1.1 Overview
 
 Provides file system utilities for game data persistence. Handles checking
 for game data files, saving game state, and path manipulation for the
 engine's directory structure.
 
-## Dependencies
+## 1.2 Dependencies
 
 - `defines.h` (for `Game`, `IO_path`, `Index__u32`)
 
-## Types
+## 1.3 Types
 
-### IO_path
+### 1.3.1 IO_path
 
     typedef char IO_path[MAX_LENGTH_OF__IO_PATH];
 
 A fixed-size character buffer for file system paths. `MAX_LENGTH_OF__IO_PATH`
 defaults to 128 and is defined in `platform_defaults.h`.
 
-## Functions
+## 1.4 Functions
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -27,9 +27,9 @@ defaults to 128 and is defined in `platform_defaults.h`.
 | `save_game` | `(Game*) -> void` | `void` | Saves the current game state. **Only call from the main menu.** |
 | `append_path` | `(IO_path path, IO_path appended) -> void` | `void` | Appends `appended` to `path` in-place. |
 
-## Agentic Workflow
+## 1.5 Agentic Workflow
 
-### When to use this module
+### 1.5.1 When to use this module
 
 - Use `stat_game_data_file` to check if a save file exists before attempting
   to load.
@@ -37,25 +37,25 @@ defaults to 128 and is defined in `platform_defaults.h`.
 - Use `append_path` when constructing file paths for world data, region
   files, or other serialized assets.
 
-### Preconditions
+### 1.5.2 Preconditions
 
 - `save_game` must only be called from the main menu context. Calling it
   during gameplay may result in incomplete or corrupted saves.
 - `p_game` must be fully initialized.
 - Path buffers must be of size `MAX_LENGTH_OF__IO_PATH`.
 
-### Postconditions
+### 1.5.3 Postconditions
 
 - After `save_game`: game state is written to disk via the platform file
   system.
 - After `append_path`: `path` contains the concatenated result.
 
-### Error Handling
+### 1.5.4 Error Handling
 
 - `stat_game_data_file` returns a status code; check the return value
   before proceeding with file operations.
 
-### Platform Integration
+### 1.5.5 Platform Integration
 
 This module relies on platform functions for actual file I/O:
 
@@ -68,7 +68,7 @@ This module relies on platform functions for actual file I/O:
 - `PLATFORM_access`
 - `PLATFORM_mkdir`
 
-### Path Separator
+### 1.5.6 Path Separator
 
 The path separator character is defined in `platform_defaults.h` as
 `PATH_SEPERATOR` (defaults to `'/'`).

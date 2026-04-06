@@ -1,21 +1,21 @@
-# Specification: core/include/serialization/serialization_request.h
+# 1. Specification: core/include/serialization/serialization_request.h
 
-## Overview
+## 1.1 Overview
 
 Manages the lifecycle and state flags of `Serialization_Request`, which is the
 engine's abstraction for an in-flight I/O or TCP transfer operation. A request
 tracks a data pointer, a file handler (for disk I/O) or TCP packet destination
 (for network), and a set of flags describing its current state.
 
-## Dependencies
+## 1.2 Dependencies
 
 - `defines.h` (for `Serialization_Request`, `Serialization_Request_Flags`,
   `PLATFORM_File_System_Context`)
 - `defines_weak.h` (forward declarations)
 
-## Types
+## 1.3 Types
 
-### Serialization_Request
+### 1.3.1 Serialization_Request
 
     typedef struct Serialization_Request_t {
         void *p_data;
@@ -47,7 +47,7 @@ tracks a data pointer, a file handler (for disk I/O) or TCP packet destination
 | `quantity_of__tcp_packets__anticipated` | `Quantity__u16` | Expected number of TCP packets. |
 | `serialization_request_flags` | `Serialization_Request_Flags` | Bitmask of state flags. |
 
-### Serialization_Request_Flags (u8)
+### 1.3.2 Serialization_Request_Flags (u8)
 
 | Flag | Bit | Description |
 |------|-----|-------------|
@@ -58,22 +58,22 @@ tracks a data pointer, a file handler (for disk I/O) or TCP packet destination
 | `SERIALIZATION_REQUEST_FLAG__KEEP_ALIVE` | 4 | If set: request persists after completion. If clear: fire-and-forget. |
 | `SERIALIZATION_REQUEST_FLAG__IS_TCP_OR_IO` | 5 | If set: TCP mode. If clear: file I/O mode. |
 
-## Functions
+## 1.4 Functions
 
-### Initialization
+### 1.4.1 Initialization
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `initialize_serialization_request` | `(Serialization_Request*) -> void` | Zeroes out all fields and flags. |
 
-### Activation / Deactivation
+### 1.4.2 Activation / Deactivation
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `activate_serialization_request` | `(Serialization_Request*, void* file_handler, Quantity__u16 tcp_payload_size, bool is_tcp_or_io) -> bool` | `bool` | Activates the request. For TCP mode, allocates the packet bitmap (`pM_packet_bitmap`). Returns false if bitmap allocation fails. **WARNING**: Deactivate before calling a second time to avoid memory leaks. |
 | `deactivate_serialization_request` | `(PLATFORM_File_System_Context*, Serialization_Request*) -> void` | `void` | Deactivates the request. Frees the packet bitmap if in TCP mode. Closes the file if in I/O mode. |
 
-### Flag Setters (static inline)
+### 1.4.3 Flag Setters (static inline)
 
 | Function | Description |
 |----------|-------------|
@@ -88,7 +88,7 @@ tracks a data pointer, a file handler (for disk I/O) or TCP packet destination
 | `set_serialization_request_as__tcp` | Sets `IS_TCP_OR_IO` flag. |
 | `set_serialization_request_as__io` | Clears `IS_TCP_OR_IO` flag. |
 
-### Flag Getters (static inline)
+### 1.4.4 Flag Getters (static inline)
 
 | Function | Returns | Description |
 |----------|---------|-------------|
@@ -100,9 +100,9 @@ tracks a data pointer, a file handler (for disk I/O) or TCP packet destination
 | `is_serialization_request__fire_and_forget` | `bool` | True if `KEEP_ALIVE` is NOT set. |
 | `is_serialization_request__tcp_or_io` | `bool` | True if `IS_TCP_OR_IO` is set (TCP mode). |
 
-## Agentic Workflow
+## 1.5 Agentic Workflow
 
-### Lifecycle
+### 1.5.1 Lifecycle
 
 1. **Allocate** a request from the platform pool via
    `PLATFORM_allocate_serialization_request`.
@@ -115,26 +115,26 @@ tracks a data pointer, a file handler (for disk I/O) or TCP packet destination
 7. **Release** back to the platform pool via
    `PLATFORM_release_serialization_request`.
 
-### Preconditions
+### 1.5.2 Preconditions
 
 - `activate_serialization_request` must not be called twice without an
   intervening `deactivate_serialization_request` (memory leak).
 - For TCP mode, `tcp_payload_size` must be non-zero.
 - For I/O mode, `file_handler` must be a valid platform file handle.
 
-### Postconditions
+### 1.5.3 Postconditions
 
 - After `activate_serialization_request`: `IS_ACTIVE` flag is set. For TCP
   mode, `pM_packet_bitmap` is allocated.
 - After `deactivate_serialization_request`: `IS_ACTIVE` flag is cleared.
   `pM_packet_bitmap` is freed (TCP) or file is closed (I/O).
 
-### Error Handling
+### 1.5.4 Error Handling
 
 - `activate_serialization_request` returns false if TCP bitmap allocation
   fails.
 
-### Platform Integration
+### 1.5.5 Platform Integration
 
 Serialization requests are pooled per-platform:
 

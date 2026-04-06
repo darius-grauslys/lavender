@@ -1,6 +1,6 @@
-# Specification: core/include/serialization/serialized_field.h
+# 1. Specification: core/include/serialization/serialized_field.h
 
-## Overview
+## 1.1 Overview
 
 Provides a generic "soft pointer" mechanism for referencing pooled structs by
 UUID. A `Serialized_Field` stores both a UUID and a data pointer, enabling
@@ -8,16 +8,16 @@ deferred linking: the UUID can be set at serialization time, and the pointer
 resolved later against a contiguous array. This is the engine's approach to
 serializable references between pooled objects.
 
-## Dependencies
+## 1.2 Dependencies
 
 - `defines.h` (for `Serialized_Field`, `Serialization_Header`,
   `Identifier__u32`, `IDENTIFIER__UNKNOWN__u32`)
 - `defines_weak.h` (forward declarations)
 - `serialization/serialization_header.h` (for `is_identifier_u32_matching__serialization_header`)
 
-## Types
+## 1.3 Types
 
-### Serialized_Field
+### 1.3.1 Serialized_Field
 
     typedef struct Serialized_Field_t {
         union {
@@ -49,7 +49,7 @@ serializable references between pooled objects.
 | `p_serialized_field__item_stack` | `Item_Stack*` | Typed access when referencing an Item_Stack. |
 | `p_serialized_field__chunk` | `Chunk*` | Typed access when referencing a Chunk. |
 
-### Type Aliases
+### 1.3.2 Type Aliases
 
     typedef struct Serialized_Field_t Serialized_Item_Stack_Ptr;
     typedef struct Serialized_Field_t Serialized_Inventory_Ptr;
@@ -59,9 +59,9 @@ serializable references between pooled objects.
 These aliases provide semantic clarity when a `Serialized_Field` is used to
 reference a specific type.
 
-## Functions
+## 1.4 Functions
 
-### Initialization
+### 1.4.1 Initialization
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
@@ -69,21 +69,21 @@ reference a specific type.
 | `initialize_serialized_field_as__unassigned` | `(Serialized_Field*) -> void` | Sets data to null and UUID to `IDENTIFIER__UNKNOWN__u32`. (static inline) |
 | `initialize_serialized_field_as__unlinked` | `(Serialized_Field*, Identifier__u32 uuid) -> void` | Sets UUID but leaves data pointer null. Used when the UUID is known but the target has not been resolved yet. (static inline) |
 
-### Linking
+### 1.4.2 Linking
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `link_serialized_field_against__contiguous_array` | `(Serialized_Field*, Serialization_Header*, Quantity__u32 quantity) -> bool` | `bool` | Iterates a contiguous array of structs, linking the field's data pointer to the first struct whose UUID matches the field's `identifier_for__serialized_field`. Returns true on success. |
 | `point_serialized_field_to__this_serialized_struct` | `(Serialized_Field*, void* struct) -> void` | `void` | Directly sets the data pointer to the given struct. The struct's `Serialization_Header.uuid` must match the field's UUID. |
 
-### Validation (static inline)
+### 1.4.3 Validation (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `is_serialized_field_matching__serialization_header` | `(Serialized_Field*, Serialization_Header*) -> bool` | `bool` | Returns true if the field's UUID matches the header's UUID. Debug-aborts on null. |
 | `is_p_serialized_field__linked` | `(Serialized_Field*) -> bool` | `bool` | Returns true if: (1) data pointer is non-null, (2) the pointed-to struct has a valid UUID, and (3) the UUIDs match. |
 
-### Typed Getters (static inline)
+### 1.4.4 Typed Getters (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -91,9 +91,9 @@ reference a specific type.
 | `get_p_entity_from__serialized_field` | `(Serialized_Field*) -> Entity*` | `Entity*` | Returns the data pointer cast to `Entity*`. |
 | `get_p_chunk_from__serialized_field` | `(Serialized_Field*) -> Chunk*` | `Chunk*` | Returns the data pointer cast to `Chunk*`. |
 
-## Agentic Workflow
+## 1.5 Agentic Workflow
 
-### Serialization Pattern
+### 1.5.1 Serialization Pattern
 
 1. **Before save**: The `Serialized_Field` holds both a UUID and a live
    pointer. Only the UUID needs to be serialized.
@@ -102,7 +102,7 @@ reference a specific type.
 3. **Resolution**: Call `link_serialized_field_against__contiguous_array`
    to resolve the UUID back to a live pointer.
 
-### Common Usage
+### 1.5.2 Common Usage
 
     // Create an unlinked reference
     initialize_serialized_field_as__unlinked(
@@ -119,20 +119,20 @@ reference a specific type.
         Entity *p_entity = get_p_entity_from__serialized_field(&my_field);
     }
 
-### Preconditions
+### 1.5.3 Preconditions
 
 - `link_serialized_field_against__contiguous_array` requires that the
   contiguous array elements have `Serialization_Header` as their first field.
 - The field's `identifier_for__serialized_field` must be set before linking.
 
-### Postconditions
+### 1.5.4 Postconditions
 
 - After successful `link_serialized_field_against__contiguous_array`:
   `is_p_serialized_field__linked` returns true.
 - After `initialize_serialized_field_as__unassigned`:
   `is_p_serialized_field__linked` returns false.
 
-### Error Handling
+### 1.5.5 Error Handling
 
 - `link_serialized_field_against__contiguous_array` returns false if no
   matching UUID is found.
