@@ -1,28 +1,28 @@
-# Specification: core/include/process/filesystem_process.h
+# 1. Specification: core/include/process/filesystem_process.h
 
-## Overview
+## 1.1 Overview
 
 Provides initialization utilities for processes that perform file system
 I/O operations. A filesystem process wraps a `Serialization_Request` as
 its `p_process_data`, enabling cooperative file reading and writing over
 multiple poll cycles.
 
-## Dependencies
+## 1.2 Dependencies
 
 - `defines.h` (for `Process`, `Serialization_Request`, `IO_path`, `Game`)
 
-## Functions
+## 1.3 Functions
 
-### Initialization
+### 1.3.1 Initialization
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `initialize_process_as__filesystem_process` | `(Process*, Serialization_Request*, void* data) -> void` | Sets the process's `p_process_data` to the serialization request and stores `data` in `Serialization_Request.p_data`. Marks the process kind as `Process_Kind__Serialized`. |
 | `initialize_process_as__filesystem_process__open_file` | `(Game*, Process*, IO_path path, const char* file_descriptors, void* data, bool accept_non_existing) -> bool` | Higher-level initializer that allocates a `Serialization_Request`, opens the file at `path` with the given descriptors (e.g. "rb", "wb"), and initializes the process. Returns true on success. If the file does not exist and `accept_non_existing` is false, the process is failed. |
 
-## Agentic Workflow
+## 1.4 Agentic Workflow
 
-### Filesystem Process Lifecycle
+### 1.4.1 Filesystem Process Lifecycle
 
 1. Call `initialize_process_as__filesystem_process__open_file` to set up
    the process with an open file handle.
@@ -33,7 +33,7 @@ multiple poll cycles.
    handler itself) should call `deactivate_serialization_request` to
    close the file and release the serialization request.
 
-### File I/O Pattern
+### 1.4.2 File I/O Pattern
 
     void my_file_handler(Process *p_proc, Game *p_game) {
         Serialization_Request *p_sr =
@@ -59,7 +59,7 @@ multiple poll cycles.
         }
     }
 
-### Data Pointer Chain (Filesystem mode)
+### 1.4.3 Data Pointer Chain (Filesystem mode)
 
     Process.p_process_data
         --> Serialization_Request
@@ -67,7 +67,7 @@ multiple poll cycles.
             .p_file_handler --> platform file handle
             .quantity_of__file_contents --> file size tracking
 
-### Preconditions
+### 1.4.4 Preconditions
 
 - `initialize_process_as__filesystem_process__open_file`:
   - `path` must be a valid file path within `MAX_LENGTH_OF__IO_PATH`.
@@ -75,7 +75,7 @@ multiple poll cycles.
   - If `accept_non_existing` is false, the file must exist.
 - The `Game` must have a valid `PLATFORM_File_System_Context`.
 
-### Postconditions
+### 1.4.5 Postconditions
 
 - After `initialize_process_as__filesystem_process__open_file` returns true:
   - The process's `p_process_data` points to an active `Serialization_Request`.
@@ -84,7 +84,7 @@ multiple poll cycles.
   - The process is marked as failed.
   - No file is open.
 
-### Error Handling
+### 1.4.6 Error Handling
 
 - Returns false if `PLATFORM_allocate_serialization_request` fails.
 - Returns false if `PLATFORM_open_file` returns an error.

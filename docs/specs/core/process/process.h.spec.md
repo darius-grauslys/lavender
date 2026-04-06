@@ -1,6 +1,6 @@
-# Specification: core/include/process/process.h
+# 1. Specification: core/include/process/process.h
 
-## Overview
+## 1.1 Overview
 
 Provides initialization, status management, and flag manipulation for the
 `Process` struct — the engine's cooperative, non-preemptive task unit. Each
@@ -11,7 +11,7 @@ This is the foundational building block of the engine's multithreading
 abstraction, designed to bring multi-threading-like capabilities to
 single-core retro console hardware (e.g. Nintendo DS).
 
-## Dependencies
+## 1.2 Dependencies
 
 - `defines.h` (for `Process`, `Process_Status_Kind`, `Process_Kind`,
   `Process_Flags__u8`, `Process_Priority__u8`, `m_Process`,
@@ -20,9 +20,9 @@ single-core retro console hardware (e.g. Nintendo DS).
 - `serialization/serialization_header.h` (for `IDENTIFIER__UNKNOWN__u32`)
 - `timer.h` (for timer utilities)
 
-## Types
+## 1.3 Types
 
-### Process (struct)
+### 1.3.1 Process (struct)
 
     typedef struct Process_t {
         Serialization_Header _serialization_header;
@@ -69,7 +69,7 @@ single-core retro console hardware (e.g. Nintendo DS).
 | `process_flags__u8` | `Process_Flags__u8` | Flags (critical, sub-process). |
 | `process_priority__u8` | `Process_Priority__u8` | Priority level (0 = maximum). |
 
-### Process_Status_Kind (enum)
+### 1.3.2 Process_Status_Kind (enum)
 
     typedef enum Process_Status_Kind {
         Process_Status_Kind__None = 0,   // Available for allocation
@@ -83,7 +83,7 @@ single-core retro console hardware (e.g. Nintendo DS).
         Process_Status_Kind__Unknown
     } Process_Status_Kind;
 
-### Process_Kind (enum)
+### 1.3.3 Process_Kind (enum)
 
     typedef enum Process_Kind {
         Process_Kind__None,
@@ -93,14 +93,14 @@ single-core retro console hardware (e.g. Nintendo DS).
         Process_Kind__Unknown
     } Process_Kind;
 
-### Process_Flags__u8 (u8)
+### 1.3.4 Process_Flags__u8 (u8)
 
 | Flag | Bit | Description |
 |------|-----|-------------|
 | `PROCESS_FLAG__IS_CRITICAL` | 0 | If set, the process cannot be preempted or skipped. |
 | `PROCESS_FLAG__IS_SUB_PROCESS` | 1 | If set, this process is a child of another process. |
 
-### Process_Priority__u8 (u8)
+### 1.3.5 Process_Priority__u8 (u8)
 
 | Constant | Value | Description |
 |----------|-------|-------------|
@@ -108,7 +108,7 @@ single-core retro console hardware (e.g. Nintendo DS).
 | `PROCESS_PRIORITY__1` | 1 | Second priority level. |
 | `PROCESS_PRIORITY__MINIMUM` | `PROCESS_MAX_PRIORITY_LEVEL - 1` | Lowest priority. |
 
-### m_Process (function pointer)
+### 1.3.6 m_Process (function pointer)
 
     typedef void (*m_Process)(
             Process *p_this_process,
@@ -116,16 +116,16 @@ single-core retro console hardware (e.g. Nintendo DS).
 
 The handler signature for all process run and dispose handlers.
 
-### Limits
+### 1.3.7 Limits
 
 | Macro | Default | Description |
 |-------|---------|-------------|
 | `PROCESS_MAX_QUANTITY_OF` | 512 | Maximum number of processes in the pool. |
 | `PROCESS_MAX_PRIORITY_LEVEL` | 4 | Number of priority levels (must be 1..255). |
 
-## Functions
+## 1.4 Functions
 
-### Initialization
+### 1.4.1 Initialization
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
@@ -133,7 +133,7 @@ The handler signature for all process run and dispose handlers.
 | `initialize_process_as__empty_process` | `(Process*) -> void` | Initializes as an empty, unallocated process with UUID `IDENTIFIER__UNKNOWN__u32`. (static inline) |
 | `initialize_process_as__serialized_process` | `(Process*, Identifier__u32 uuid, m_Process run_handler, Serialization_Request*, Process_Priority__u8, Process_Flags__u8) -> void` | Initializes for serialization I/O. Automatically sets `IS_CRITICAL`. (static inline) |
 
-### Status Management (static inline)
+### 1.4.2 Status Management (static inline)
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
@@ -143,7 +143,7 @@ The handler signature for all process run and dispose handlers.
 | `set_process_as__stopped` | `(Process*) -> void` | `void` | Sets status to `Stopped`. |
 | `get_process_status` | `(Process*) -> Process_Status_Kind` | `Process_Status_Kind` | Returns current status. |
 
-### Status Queries (static inline)
+### 1.4.3 Status Queries (static inline)
 
 | Function | Returns | Description |
 |----------|---------|-------------|
@@ -154,7 +154,7 @@ The handler signature for all process run and dispose handlers.
 | `is_process__enqueued` | `bool` | True if `Enqueued`. |
 | `is_process__available` | `bool` | True if `None` (available for allocation). |
 
-### Enqueueing (static inline)
+### 1.4.4 Enqueueing (static inline)
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
@@ -162,7 +162,7 @@ The handler signature for all process run and dispose handlers.
 | `set_process_as__enqueued` | `(Process*) -> void` | Sets status to `Enqueued`. |
 | `set_process_as__dequeued` | `(Process*) -> void` | Sets status to `Idle`. |
 
-### Handler Queries (static inline)
+### 1.4.5 Handler Queries (static inline)
 
 | Function | Returns | Description |
 |----------|---------|-------------|
@@ -170,7 +170,7 @@ The handler signature for all process run and dispose handlers.
 | `does_process_have__dispose_handler` | `bool` | True if `m_process_dispose__handler` is non-null. |
 | `set_process__dispose_handler` | `void` | Sets the dispose handler. |
 
-### Flag Management (static inline)
+### 1.4.6 Flag Management (static inline)
 
 | Function | Description |
 |----------|-------------|
@@ -181,7 +181,7 @@ The handler signature for all process run and dispose handlers.
 | `set_process_as__sub_process` | Sets `IS_SUB_PROCESS` flag. |
 | `set_process_as__NOT_sub_process` | Clears `IS_SUB_PROCESS` flag. |
 
-### Kind Management (static inline)
+### 1.4.7 Kind Management (static inline)
 
 | Function | Description |
 |----------|-------------|
@@ -189,15 +189,15 @@ The handler signature for all process run and dispose handlers.
 | `set_the_kind_of__process` | Sets `Process_Kind`. |
 | `get_process_priorty_of__process` | Returns `Process_Priority__u8`. |
 
-### Sub-State (static inline)
+### 1.4.8 Sub-State (static inline)
 
 | Function | Description |
 |----------|-------------|
 | `set_process__sub_state` | Sets `process_sub_state__u8`. Used for state machines within a process handler. |
 
-## Agentic Workflow
+## 1.5 Agentic Workflow
 
-### Cooperative Scheduling Model
+### 1.5.1 Cooperative Scheduling Model
 
 Processes are **cooperative** and **non-preemptive**:
 
@@ -210,7 +210,7 @@ Processes are **cooperative** and **non-preemptive**:
 This design is critical for single-core retro consoles (e.g. Nintendo DS)
 where preemptive multithreading is not available.
 
-### Process Lifecycle
+### 1.5.2 Process Lifecycle
 
     [None] --> initialize_process --> [Idle/Busy]
                                           |
@@ -230,7 +230,7 @@ where preemptive multithreading is not available.
                                                           |
                                                       [None]
 
-### Scratch Value Convention
+### 1.5.3 Scratch Value Convention
 
 The `process_valueA__i32`, `process_valueB__i32` (and their i16/u8 variants)
 are free for use by the process handler. Common patterns:
@@ -239,7 +239,7 @@ are free for use by the process handler. Common patterns:
 - **State machines**: Use `process_sub_state__u8` for multi-step operations.
 - **Indices**: Track position in arrays being processed incrementally.
 
-### Enqueueing Pattern
+### 1.5.4 Enqueueing Pattern
 
 Processes can be chained so that one runs after another completes:
 
@@ -248,7 +248,7 @@ Processes can be chained so that one runs after another completes:
     enqueue_process(p_second, p_first);
     // p_second will not run until p_first completes.
 
-### Preconditions
+### 1.5.5 Preconditions
 
 - All `static inline` functions require a non-null `p_process`. Debug builds
   call `debug_abort` on null.
@@ -256,14 +256,14 @@ Processes can be chained so that one runs after another completes:
   before calling, as it will be lost when the process is disposed.
 - `enqueue_process`: a process cannot be enqueued behind itself.
 
-### Postconditions
+### 1.5.6 Postconditions
 
 - After `complete_process`: `is_process__finished` returns true,
   `is_process__complete` returns true.
 - After `fail_process`: `is_process__finished` returns true,
   `is_process__failed` returns true.
 
-### Error Handling
+### 1.5.7 Error Handling
 
 - All status/flag functions call `debug_abort` on null in debug builds.
 - `enqueue_process` calls `debug_error` if attempting self-enqueue.

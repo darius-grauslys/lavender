@@ -1,6 +1,6 @@
-# System Overview: Process Unit
+# 1. System Overview: Process Unit
 
-## Purpose
+## 1.1 Purpose
 
 The `Process` struct is the engine's fundamental cooperative task unit. It
 represents a single schedulable task that runs one step per poll cycle,
@@ -14,9 +14,9 @@ does not own its scheduling — that is managed by the `Process_Table` and
 `Process_Manager`. The process only owns its own state and lifecycle
 transitions.
 
-## Architecture
+## 1.2 Architecture
 
-### Data Layout
+### 1.2.1 Data Layout
 
     Process
     +-- Serialization_Header _serialization_header
@@ -45,7 +45,7 @@ transitions.
     +-- Process_Flags__u8 process_flags__u8
     +-- Process_Priority__u8 process_priority__u8
 
-### Key Types
+### 1.2.2 Key Types
 
 | Type | Role |
 |------|------|
@@ -57,7 +57,7 @@ transitions.
 | `Process_Priority__u8` | Priority level (0 = maximum, `PROCESS_MAX_PRIORITY_LEVEL - 1` = minimum). |
 | `Serialization_Header` | UUID and struct size for pool management and hashed lookup. |
 
-### Status States
+### 1.2.3 Status States
 
 | Status | Meaning | Schedulable | Terminal |
 |--------|---------|-------------|----------|
@@ -70,14 +70,14 @@ transitions.
 | `Complete` | Finished successfully. | No | Yes |
 | `Fail` | Finished with error. | No | Yes |
 
-### Flags
+### 1.2.4 Flags
 
 | Flag | Bit | Description |
 |------|-----|-------------|
 | `PROCESS_FLAG__IS_CRITICAL` | 0 | Process cannot be preempted or skipped during scheduling. |
 | `PROCESS_FLAG__IS_SUB_PROCESS` | 1 | Process is a child of another process. |
 
-## Cooperative Execution Model
+## 1.3 Cooperative Execution Model
 
 Processes are **cooperative** and **non-preemptive**:
 
@@ -87,7 +87,7 @@ Processes are **cooperative** and **non-preemptive**:
   multiple invocations.
 - The scheduler does not interrupt a running handler.
 
-### State Machine Pattern
+### 1.3.1 State Machine Pattern
 
 Handlers that perform multi-step work use `process_sub_state__u8` as a
 state machine discriminator:
@@ -111,7 +111,7 @@ state machine discriminator:
         }
     }
 
-### Scratch Value Convention
+### 1.3.2 Scratch Value Convention
 
 The scratch value union provides flexible storage for handler-local state
 that persists across poll cycles:
@@ -126,9 +126,9 @@ that persists across poll cycles:
 All scratch values occupy the same memory (union). Only one access pattern
 should be used per process instance.
 
-## Lifecycle
+## 1.4 Lifecycle
 
-### 1. Initialization
+### 1.4.1 Initialization
 
 A process is initialized in one of three ways:
 
@@ -169,7 +169,7 @@ A process is initialized in one of three ways:
         -> IS_CRITICAL flag automatically set
         -> p_process_data = p_serialization_request
 
-### 2. Execution (Per Poll Cycle)
+### 1.4.2 Execution (Per Poll Cycle)
 
 Each poll cycle, the scheduler invokes:
 
@@ -178,7 +178,7 @@ Each poll cycle, the scheduler invokes:
 The handler performs one unit of work and returns. The process remains
 in `Idle` or `Busy` status until it transitions to a terminal state.
 
-### 3. Completion
+### 1.4.3 Completion
 
 Within the handler:
 
@@ -193,7 +193,7 @@ Within the handler:
 After the handler returns, the scheduler detects the terminal status and
 releases the process via `Process_Manager`.
 
-### 4. External Stop
+### 1.4.4 External Stop
 
 An external caller can request a stop:
 
@@ -209,7 +209,7 @@ The handler should check for `Stopping` status and wind down gracefully:
         return;
     }
 
-### 5. Disposal
+### 1.4.5 Disposal
 
 When the scheduler releases a finished process:
 
@@ -217,7 +217,7 @@ When the scheduler releases a finished process:
     p_process->m_process_dispose__handler(p_process, p_game);
     // Then: slot reset to empty (UUID = IDENTIFIER__UNKNOWN__u32, Status = None)
 
-### Status Lifecycle Diagram
+### 1.4.6 Status Lifecycle Diagram
 
     [None] --> initialize_process --> [Idle/Busy]
                                           |
@@ -237,7 +237,7 @@ When the scheduler releases a finished process:
                                                           |
                                                       [None]
 
-## Process Enqueueing
+## 1.5 Process Enqueueing
 
 Processes can be chained so that one runs only after another completes:
 
@@ -251,14 +251,14 @@ completes or fails, the scheduler dequeues `p_second`:
     set_process_as__dequeued(p_second);
         -> p_second status -> Idle (now schedulable)
 
-### Constraints
+### 1.5.1 Constraints
 
 - A process cannot be enqueued behind itself. `enqueue_process` calls
   `debug_error` if this is attempted.
 - The `p_enqueued_process` and `p_sub_process` fields share a union.
   A process can have either an enqueued process or a sub-process, not both.
 
-## Opaque Data Pointer
+## 1.6 Opaque Data Pointer
 
 The `p_process_data` field is a `void*` that carries the process's working
 data. Its interpretation depends on the process kind:
@@ -274,7 +274,7 @@ The caller is responsible for releasing `p_process_data` before calling
 `complete_process` or `fail_process`, unless a dispose handler is set that
 handles cleanup automatically.
 
-## Capacity Constraints
+## 1.7 Capacity Constraints
 
 - Processes are allocated from a fixed pool of `PROCESS_MAX_QUANTITY_OF`
   (512) slots in the `Process_Manager`.
@@ -282,7 +282,7 @@ handles cleanup automatically.
   `Serialization_Header.uuid`.
 - Priority must be in the range 0 to `PROCESS_MAX_PRIORITY_LEVEL - 1` (0..3).
 
-## Relationship to Scheduling
+## 1.8 Relationship to Scheduling
 
 The `Process` struct does not schedule itself. Scheduling is managed by:
 

@@ -1,6 +1,6 @@
-# System Overview: Process Priority Table Entry
+# 1. System Overview: Process Priority Table Entry
 
-## Purpose
+## 1.1 Purpose
 
 The `Process_Priority_Table_Entry` manages a single priority level's
 contiguous region within the `Process_Table`'s pointer array. It provides
@@ -11,9 +11,9 @@ These functions are internal to the process scheduling system. They are
 called by `Process_Table` operations and should not be called directly
 by game code.
 
-## Architecture
+## 1.2 Architecture
 
-### Data Layout
+### 1.2.1 Data Layout
 
     Process_Priority_Table_Entry
     +-- Process **p_ptr_process__youngest_of__priority
@@ -25,7 +25,7 @@ by game code.
     +-- Process **p_ptr_process__current_priority_to__swap
         (round-robin cursor: advances through the region each poll cycle)
 
-### Relationship to Pointer Array
+### 1.2.2 Relationship to Pointer Array
 
 Each `Process_Priority_Table_Entry` delimits a contiguous slice of the
 `Process_Table`'s `ptr_array_of__processes`:
@@ -40,7 +40,7 @@ The region contains `(oldest - youngest)` process pointers. When the
 region is empty, both delimiter pointers are null (or equal, depending
 on initialization).
 
-### Key Types
+### 1.2.3 Key Types
 
 | Type | Role |
 |------|------|
@@ -48,9 +48,9 @@ on initialization).
 | `Process_Table` | Parent structure. Owns the pointer array and all priority entries. |
 | `Process` | The cooperative task unit referenced by pointers in the region. |
 
-## Region Management
+## 1.3 Region Management
 
-### Empty State
+### 1.3.1 Empty State
 
 A priority level is empty when:
 
@@ -62,19 +62,19 @@ An empty entry has zero processes:
     get_quantity_of__processes_in__process_priority_table_entry(p_entry)
         -> Returns 0 when empty.
 
-### Region Size
+### 1.3.2 Region Size
 
     Quantity__u32 count =
         get_quantity_of__processes_in__process_priority_table_entry(p_entry);
         -> Returns (p_ptr_process__oldest - p_ptr_process__youngest).
 
-## Compaction Operations
+## 1.4 Compaction Operations
 
 Because the pointer array is shared across all priority levels, inserting
 or removing a process at one priority level requires shifting adjacent
 priority levels to maintain contiguous regions.
 
-### Moving a Region Up (Towards Higher Indices)
+### 1.4.1 Moving a Region Up (Towards Higher Indices)
 
     move_process_priorty_table_entry_up__one_in__ptr_array_of__processes(
         p_process_table, p_entry);
@@ -89,7 +89,7 @@ regions must be moved up first to make room.
 **Ordering constraint:** When inserting into priority N, move priority 0
 up first, then priority 1, ..., then priority N-1.
 
-### Moving a Region Down (Towards Lower Indices)
+### 1.4.2 Moving a Region Down (Towards Lower Indices)
 
     move_process_priorty_table_entry_down__one_in__ptr_array_of__processes(
         p_process_table, p_entry);
@@ -104,7 +104,7 @@ regions must be moved down afterwards to fill the gap.
 **Ordering constraint:** When removing from priority N, move priority N-1
 down first, then N-2, ..., then priority 0.
 
-### Visual Example
+### 1.4.3 Visual Example
 
 Starting state (priority 0 and priority 1):
 
@@ -132,7 +132,7 @@ Starting state (priority 0 and priority 1):
         ptr_array: [A B G | C E _]  (shifted A,B left by one)
         P0: youngest=&[0], oldest=&[1]
 
-## Insertion
+## 1.5 Insertion
 
     add_process_to__process_priorty_table_entry_in__ptr_array_of__processes(
         p_process_table, p_entry, p_process);
@@ -147,7 +147,7 @@ up before calling this function.
 
 **Returns:** false if the operation fails (e.g. the pointer array is full).
 
-## Removal
+## 1.6 Removal
 
     remove_process_from__process_priority_table_entry_from__ptr_array_of__processes(
         p_entry, p_process);
@@ -162,7 +162,7 @@ down by one to fill the gap left at the boundary.
 
 **Returns:** false if the process is not found in this entry's region.
 
-## Round-Robin Polling
+## 1.7 Round-Robin Polling
 
     poll_next_p_process_from__process_priority_table_entry(
         p_entry, &p_ptr_OUT_process);
@@ -180,7 +180,7 @@ to `p_ptr_OUT_process`.
 
 If the entry is empty, returns `true` immediately (skip to next level).
 
-### Round-Robin Fairness
+### 1.7.1 Round-Robin Fairness
 
 The cursor persists across poll cycles. Each cycle, polling starts from
 where the previous cycle left off, ensuring that no process is
@@ -190,9 +190,9 @@ systematically starved within its priority level.
     Cycle 2: poll B, poll C, poll A (wrap) -> advance to next priority
     Cycle 3: poll C, poll A, poll B (wrap) -> advance to next priority
 
-## Lifecycle
+## 1.8 Lifecycle
 
-### 1. Initialization
+### 1.8.1 Initialization
 
     initialize_process_priority_table_entry(p_entry, p_ptr_process__first);
         -> p_ptr_process__youngest_of__priority = p_ptr_process__first
@@ -200,18 +200,18 @@ systematically starved within its priority level.
            (or NULL for empty)
         -> p_ptr_process__current_priority_to__swap = p_ptr_process__first
 
-### 2. Steady State
+### 1.8.2 Steady State
 
 During normal operation, the entry's region grows and shrinks as processes
 are added and removed. The round-robin cursor advances each poll cycle.
 
-### 3. Empty State
+### 1.8.3 Empty State
 
 When the last process is removed, the entry becomes empty. Polling an
 empty entry immediately returns `true` (wrap), causing the scheduler to
 skip to the next priority level.
 
-## Capacity Constraints
+## 1.9 Capacity Constraints
 
 - The maximum number of processes across all priority levels is
   `PROCESS_MAX_QUANTITY_OF` (512). There is no per-priority-level limit
@@ -219,7 +219,7 @@ skip to the next priority level.
 - The entry does not own any memory — it holds three pointers into the
   `Process_Table`'s pointer array.
 
-## Relationship to Process_Table
+## 1.10 Relationship to Process_Table
 
 The `Process_Priority_Table_Entry` is a sub-component of `Process_Table`:
 

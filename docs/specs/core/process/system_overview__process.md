@@ -1,6 +1,6 @@
-# System Overview: Process Scheduling System
+# 1. System Overview: Process Scheduling System
 
-## Purpose
+## 1.1 Purpose
 
 The process scheduling system provides cooperative, non-preemptive
 multitasking for the engine. It is designed to bring multi-threading-like
@@ -13,9 +13,9 @@ The system supports priority-based scheduling, round-robin fairness within
 priority levels, process enqueueing (chaining), and specialized process
 types for game actions, TCP communication, and file system I/O.
 
-## Architecture
+## 1.2 Architecture
 
-### Data Hierarchy
+### 1.2.1 Data Hierarchy
 
     Game
     +-- Process_Manager
@@ -46,7 +46,7 @@ types for game actions, TCP communication, and file system I/O.
     |   +-- Process *p_process__latest  (one-shot latest allocation)
     |   +-- Identifier__u32 next__uuid__u32
 
-### Key Types
+### 1.2.2 Key Types
 
 | Type | Role |
 |------|------|
@@ -57,14 +57,14 @@ types for game actions, TCP communication, and file system I/O.
 | `Game_Action` | A game action struct that can be wrapped as a process's `p_process_data` for cooperative game action execution. |
 | `Serialization_Request` | A serialization context that can be wrapped as a process's `p_process_data` for file I/O or TCP payload reassembly. |
 
-### Limits
+### 1.2.3 Limits
 
 | Macro | Default | Description |
 |-------|---------|-------------|
 | `PROCESS_MAX_QUANTITY_OF` | 512 | Maximum number of processes in the pool. |
 | `PROCESS_MAX_PRIORITY_LEVEL` | 4 | Number of priority levels (must be 1..255). |
 
-## Cooperative Scheduling Model
+## 1.3 Cooperative Scheduling Model
 
 Processes are **cooperative** and **non-preemptive**:
 
@@ -78,7 +78,7 @@ Processes are **cooperative** and **non-preemptive**:
 This design is critical for single-core retro consoles where preemptive
 multithreading is not available.
 
-## Priority-Partitioned Round-Robin Scheduling
+## 1.4 Priority-Partitioned Round-Robin Scheduling
 
 The `Process_Table` implements a priority-partitioned round-robin scheduler.
 The pointer array is divided into contiguous regions, one per priority level:
@@ -86,7 +86,7 @@ The pointer array is divided into contiguous regions, one per priority level:
     ptr_array_of__processes layout:
     [Priority 0 youngest ... oldest | Priority 1 youngest ... oldest | ... | Priority N youngest ... oldest]
 
-### Polling Algorithm
+### 1.4.1 Polling Algorithm
 
 1. `begin_polling_of__process_table()` resets the cursor to priority 0.
 2. `poll_next_p_process_from__process_table()` returns one process from
@@ -95,7 +95,7 @@ The pointer array is divided into contiguous regions, one per priority level:
    advances to the next priority level.
 4. Returns `NULL` when all levels have been polled for this cycle.
 
-### Priority Level Semantics
+### 1.4.2 Priority Level Semantics
 
 - **Priority 0** (`PROCESS_PRIORITY__0_MAXIMUM`): Polled first every cycle.
   Used for critical tasks (e.g. hitbox updates, TCP delivery).
@@ -104,7 +104,7 @@ The pointer array is divided into contiguous regions, one per priority level:
 - Within a priority level, processes are polled in round-robin order,
   ensuring fairness.
 
-### Pointer Array Compaction
+### 1.4.3 Pointer Array Compaction
 
 When a process is added or removed, the pointer array must be compacted to
 maintain contiguous regions per priority level. The
@@ -127,9 +127,9 @@ constraints:
 Higher priority entries MUST be moved first during insertion and afterwards
 during removal.
 
-## Lifecycle
+## 1.5 Lifecycle
 
-### 1. Initialization
+### 1.5.1 Initialization
 
     initialize_process_manager(&game.process_manager);
         -> All PROCESS_MAX_QUANTITY_OF process slots: initialized as empty
@@ -137,7 +137,7 @@ during removal.
         -> Process_Table: all priority entries initialized, pointer array cleared.
         -> UUID randomizer seeded.
 
-### 2. Process Allocation and Start
+### 1.5.2 Process Allocation and Start
 
     Process *p_proc = run_process(
             &game.process_manager,
@@ -160,7 +160,7 @@ during removal.
             PROCESS_PRIORITY__1,
             PROCESS_FLAG__IS_CRITICAL);
 
-### 3. Per-Frame Scheduling
+### 1.5.3 Per-Frame Scheduling
 
     // Called once per game tick in the main loop:
     poll_process_manager(&game.process_manager, &game);
@@ -178,7 +178,7 @@ The scheduler performs the following each cycle:
        enqueued process to Idle).
 4. Continues until `poll_next_p_process_from__process_table` returns `NULL`.
 
-### 4. Process Completion
+### 1.5.4 Process Completion
 
 Within a process handler:
 
@@ -194,14 +194,14 @@ Within a process handler:
     stop_process(p_this_process);
     // Status -> Stopping. Handler should check and transition to Stopped.
 
-### 5. Process Release
+### 1.5.5 Process Release
 
     release_process_from__process_manager(p_game, &process_manager, p_process);
         -> Invokes m_process_dispose__handler (if set).
         -> Removes from Process_Table (compacts pointer array).
         -> Marks slot as available (status = None, UUID = IDENTIFIER__UNKNOWN__u32).
 
-### Process Status Lifecycle
+### 1.5.6 Process Status Lifecycle
 
     [None] --> initialize_process --> [Idle/Busy]
                                           |
@@ -221,7 +221,7 @@ Within a process handler:
                                                           |
                                                       [None]
 
-## Process Enqueueing
+## 1.6 Process Enqueueing
 
 Processes can be chained so that one runs only after another completes:
 
@@ -233,9 +233,9 @@ Processes can be chained so that one runs only after another completes:
 
 A process cannot be enqueued behind itself.
 
-## Specialized Process Types
+## 1.7 Specialized Process Types
 
-### Game Action Process
+### 1.7.1 Game Action Process
 
 A game action process wraps a `Game_Action` as its `p_process_data`,
 enabling the game action to be processed cooperatively over multiple poll
@@ -260,7 +260,7 @@ cycles.
    action from the client's game action manager and releases the
    serialization request if one was allocated.
 
-### TCP Game Action Process
+### 1.7.2 TCP Game Action Process
 
 Extends the game action process for TCP multi-packet communication. A
 process can act as a TCP payload receiver (reassembling multi-packet
@@ -312,7 +312,7 @@ fragments).
 `complete_process` or `fail_process`, because the default dispose handler
 assumes `p_data` is a `Game_Action*`.
 
-### Filesystem Process
+### 1.7.3 Filesystem Process
 
 A filesystem process wraps a `Serialization_Request` as its
 `p_process_data`, enabling cooperative file reading and writing over
@@ -344,9 +344,9 @@ multiple poll cycles.
    `deactivate_serialization_request` to close the file and release the
    serialization request.
 
-## Integration Points
+## 1.8 Integration Points
 
-### Game Loop Integration
+### 1.8.1 Game Loop Integration
 
 The `Process_Manager` is polled once per game tick:
 
@@ -357,7 +357,7 @@ The `Process_Manager` is polled once per game tick:
         // ... rendering ...
     }
 
-### Game Action System Integration
+### 1.8.2 Game Action System Integration
 
 Game actions that require multi-step processing are wrapped in processes:
 
@@ -369,7 +369,7 @@ The `Game_Action_Logic_Table` maps `Game_Action_Kind` values to process
 handlers, enabling the game action system to dispatch actions as
 cooperative processes.
 
-### TCP Communication Integration
+### 1.8.3 TCP Communication Integration
 
 TCP multi-packet protocols use the TCP game action process pattern:
 
@@ -386,7 +386,7 @@ TCP multi-packet protocols use the TCP game action process pattern:
     //    then poll_game_action_process__tcp_receive each cycle.
     // 3. When all fragments arrive, process the reassembled buffer.
 
-### File System Integration
+### 1.8.4 File System Integration
 
 File I/O operations are wrapped in filesystem processes to avoid blocking:
 
@@ -398,7 +398,7 @@ The platform layer provides `PLATFORM_allocate_serialization_request`,
 `PLATFORM_open_file`, `PLATFORM_read_file`, and `PLATFORM_write_file`
 for file system operations.
 
-## Scratch Value Conventions
+## 1.9 Scratch Value Conventions
 
 The `process_valueA__i32`, `process_valueB__i32` (and their i16/u8
 variants) are free for use by the process handler. Common patterns:
@@ -408,7 +408,7 @@ variants) are free for use by the process handler. Common patterns:
   operations within a single handler.
 - **Indices**: Track position in arrays being processed incrementally.
 
-## Capacity Constraints
+## 1.10 Capacity Constraints
 
 - The process pool has a fixed size of `PROCESS_MAX_QUANTITY_OF` (512)
   slots. Allocation fails if all slots are occupied.
@@ -419,7 +419,7 @@ variants) are free for use by the process handler. Common patterns:
 - UUID collisions are handled by the hashing/dehashing functions used for
   pool lookup (`dehash_identitier_u32_in__contigious_array`).
 
-## Relationship to Platform Layer
+## 1.11 Relationship to Platform Layer
 
 The process system itself is platform-independent. Platform-specific
 behavior is accessed through opaque `PLATFORM_*` function calls:

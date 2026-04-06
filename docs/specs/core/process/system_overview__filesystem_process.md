@@ -1,6 +1,6 @@
-# System Overview: Filesystem Process
+# 1. System Overview: Filesystem Process
 
-## Purpose
+## 1.1 Purpose
 
 The filesystem process pattern wraps a `Serialization_Request` as a
 process's `p_process_data`, enabling cooperative file reading and writing
@@ -12,9 +12,9 @@ Filesystem processes are used throughout the engine for chunk saving,
 collision node persistence, local space node saving, and any other
 operation that requires reading from or writing to persistent storage.
 
-## Architecture
+## 1.2 Architecture
 
-### Data Layout
+### 1.2.1 Data Layout
 
     Process
     +-- m_process_run__handler    -> file I/O handler
@@ -29,7 +29,7 @@ operation that requires reading from or writing to persistent storage.
     +-- process_sub_state__u8 (handler state machine)
     +-- scratch values (handler working data)
 
-### Key Types
+### 1.2.2 Key Types
 
 | Type | Role |
 |------|------|
@@ -39,9 +39,9 @@ operation that requires reading from or writing to persistent storage.
 | `PLATFORM_Read_File_Error` | Return type from `PLATFORM_read_file`. |
 | `PLATFORM_Write_File_Error` | Return type from `PLATFORM_write_file`. |
 
-## Initialization
+## 1.3 Initialization
 
-### Low-Level Initialization
+### 1.3.1 Low-Level Initialization
 
     initialize_process_as__filesystem_process(
             p_process,
@@ -56,7 +56,7 @@ Sets:
 This is the low-level initializer. The caller must have already allocated
 the `Serialization_Request` and opened the file.
 
-### High-Level Initialization
+### 1.3.2 High-Level Initialization
 
     bool success = initialize_process_as__filesystem_process__open_file(
             p_game,
@@ -86,9 +86,9 @@ This function performs the full setup sequence:
 
 On failure, the process is marked as failed (`fail_process`).
 
-## Lifecycle
+## 1.4 Lifecycle
 
-### 1. Process Creation and File Open
+### 1.4.1 Process Creation and File Open
 
     Process *p_proc = run_process(
             &game.process_manager,
@@ -107,7 +107,7 @@ On failure, the process is marked as failed (`fail_process`).
         // Process already failed. It will be released next poll cycle.
     }
 
-### 2. Cooperative File I/O (Per Poll Cycle)
+### 1.4.2 Cooperative File I/O (Per Poll Cycle)
 
 Each poll cycle, the handler reads or writes one chunk of data:
 
@@ -142,7 +142,7 @@ Each poll cycle, the handler reads or writes one chunk of data:
         }
     }
 
-### 3. File Close and Cleanup
+### 1.4.3 File Close and Cleanup
 
 The file must be closed and the serialization request released before or
 during process disposal:
@@ -159,7 +159,7 @@ This can be called either:
 - By the handler itself (before `complete_process`), or
 - By a custom dispose handler.
 
-### Lifecycle Diagram
+### 1.4.4 Lifecycle Diagram
 
     [run_process] --> initialize_process_as__filesystem_process__open_file
                           |
@@ -187,7 +187,7 @@ This can be called either:
                   |                                                        |
                   +--------------------------------------------------------+
 
-## Multi-Step File I/O Pattern
+## 1.5 Multi-Step File I/O Pattern
 
 For large files that cannot be read in a single call, the handler uses
 scratch values to track progress:
@@ -227,7 +227,7 @@ scratch values to track progress:
         }
     }
 
-## Engine Usage
+## 1.6 Engine Usage
 
 The following engine processes use the filesystem process pattern:
 
@@ -240,22 +240,22 @@ The following engine processes use the filesystem process pattern:
 These handlers are run via `run_process` with appropriate priorities and
 use `initialize_process_as__filesystem_process__open_file` for setup.
 
-## Important Constraints
+## 1.7 Important Constraints
 
-### Critical Flag
+### 1.7.1 Critical Flag
 
 Filesystem processes automatically have `PROCESS_FLAG__IS_CRITICAL` set.
 This ensures the scheduler does not skip them, preventing data corruption
 from partially written files.
 
-### Serialization Request Pool
+### 1.7.2 Serialization Request Pool
 
 The number of available `Serialization_Request` instances is limited by
 the platform's pool size. If the pool is exhausted,
 `initialize_process_as__filesystem_process__open_file` fails and the
 process is marked as failed.
 
-### File Handle Lifetime
+### 1.7.3 File Handle Lifetime
 
 The file handle in `Serialization_Request.p_file_handler` remains open
 for the entire lifetime of the process. The handler MUST call
@@ -265,7 +265,7 @@ the file and return the serialization request to the pool.
 Failing to close the file handle leaks both the file descriptor and the
 serialization request slot.
 
-### Preconditions
+### 1.7.4 Preconditions
 
 - `initialize_process_as__filesystem_process__open_file`:
   - `path` must be a valid file path within `MAX_LENGTH_OF__IO_PATH`.
@@ -273,7 +273,7 @@ serialization request slot.
   - If `accept_non_existing` is false, the file must exist.
   - The `Game` must have a valid `PLATFORM_File_System_Context`.
 
-### Postconditions
+### 1.7.5 Postconditions
 
 - After successful initialization: `p_process->p_process_data` points to
   an active `Serialization_Request` with an open file handle.
@@ -282,7 +282,7 @@ serialization request slot.
 - After `deactivate_serialization_request`: the file is closed and the
   serialization request is returned to the pool.
 
-## Relationship to Platform Layer
+## 1.8 Relationship to Platform Layer
 
 All file I/O is performed through platform-opaque function calls:
 
@@ -297,7 +297,7 @@ All file I/O is performed through platform-opaque function calls:
 The `PLATFORM_File_System_Context` type is defined per-platform but
 accessed uniformly through these interfaces.
 
-## Relationship to Other Process Types
+## 1.9 Relationship to Other Process Types
 
 | Concern | Managed By |
 |---------|------------|

@@ -1,6 +1,6 @@
-# Specification: core/include/process/tcp_game_action_process.h
+# 1. Specification: core/include/process/tcp_game_action_process.h
 
-## Overview
+## 1.1 Overview
 
 Provides TCP-specific extensions for game action processes. Enables a
 process to act as a TCP payload receiver (reassembling multi-packet
@@ -10,35 +10,35 @@ fragments).
 These functions are the bridge between the `Process` scheduling system
 and the `TCP_Delivery` game action fragmentation protocol.
 
-## Dependencies
+## 1.2 Dependencies
 
 - `defines.h` (for `Process`, `Game_Action`, `Serialization_Request`,
   `PLATFORM_Read_File_Error`, `PLATFORM_Write_File_Error`,
   `Identifier__u32`, `Quantity__u16`, `Quantity__u32`)
 
-## Functions
+## 1.3 Functions
 
-### Receiver Setup
+### 1.3.1 Receiver Setup
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `initialize_process_as__tcp_game_action_payload_receiver` | `(Game*, Process*, u8* destination, Quantity__u16 destination_size) -> bool` | `bool` | Converts a game action process into a TCP payload receiver. Allocates a `Serialization_Request` and activates it in TCP mode. The original `p_process_data` (game action) is moved to `Serialization_Request.p_data`. Returns false on failure. |
 
-### Receiver Polling
+### 1.3.2 Receiver Polling
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `poll_game_action_process__tcp_receive` | `(Game*, Process*) -> PLATFORM_Read_File_Error` | `PLATFORM_Read_File_Error` | Call this every poll cycle for a TCP receiver process. Returns `PLATFORM_Read_File_Error__System_Busy` while waiting for fragments. Returns `PLATFORM_Read_File_Error__End_Of_File` when all expected fragments have arrived. Returns any other value as an error. |
 
-### Sender Polling
+### 1.3.3 Sender Polling
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `poll_game_action_process__tcp_delivery` | `(Game*, Identifier__u32 client_uuid, Identifier__u32 response_uuid, u8* source, Quantity__u32 source_size, u8* bitmap, Quantity__u16 bitmap_bits) -> PLATFORM_Write_File_Error` | `PLATFORM_Write_File_Error` | Sends one fragment per call. Returns `PLATFORM_Write_File_Error__System_Busy` while fragments remain. Returns `PLATFORM_Write_File_Error__Max_Size_Reached` when all fragments have been sent. Returns any other value as an error. The process does NOT need to be set as a TCP process to use this function. |
 
-## Agentic Workflow
+## 1.4 Agentic Workflow
 
-### TCP Receive Pattern
+### 1.4.1 TCP Receive Pattern
 
 Used when a game action process needs to receive a large payload
 (e.g. chunk data, entity data) split across multiple `TCP_Delivery`
@@ -74,7 +74,7 @@ game actions:
         }
     }
 
-### TCP Send Pattern
+### 1.4.2 TCP Send Pattern
 
 Used when a game action process needs to send a large payload to a client:
 
@@ -100,7 +100,7 @@ Used when a game action process needs to send a large payload to a client:
         }
     }
 
-### Relationship to Serialization_Request
+### 1.4.3 Relationship to Serialization_Request
 
 When a process is set as a TCP payload receiver, the data pointer chain is:
 
@@ -115,7 +115,7 @@ When a process is set as a TCP payload receiver, the data pointer chain is:
 The `pM_packet_bitmap` is heap-allocated by `activate_serialization_request`
 and freed by `deactivate_serialization_request` during process disposal.
 
-### Important Constraint
+### 1.4.4 Important Constraint
 
 If `Serialization_Request.p_data` is NOT a `Game_Action`, you MUST:
 
@@ -128,7 +128,7 @@ This is because the default dispose handler
 is a `Game_Action*` and will attempt to release it from the client's
 `Game_Action_Manager`.
 
-### Preconditions
+### 1.4.5 Preconditions
 
 - `initialize_process_as__tcp_game_action_payload_receiver`: the process
   must already be a game action process. The destination buffer must be
@@ -138,7 +138,7 @@ is a `Game_Action*` and will attempt to release it from the client's
 - `poll_game_action_process__tcp_delivery`: `p_game_action` must be the
   process's assigned game action. The bitmap must be pre-allocated.
 
-### Postconditions
+### 1.4.6 Postconditions
 
 - After `initialize_process_as__tcp_game_action_payload_receiver`:
   `p_process->p_process_data` points to a `Serialization_Request`.
@@ -147,7 +147,7 @@ is a `Game_Action*` and will attempt to release it from the client's
 - After `poll_game_action_process__tcp_delivery` returns `Max_Size_Reached`:
   all fragments have been dispatched.
 
-### Error Handling
+### 1.4.7 Error Handling
 
 - `initialize_process_as__tcp_game_action_payload_receiver` returns false
   if serialization request allocation fails.

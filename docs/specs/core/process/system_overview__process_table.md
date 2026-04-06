@@ -1,6 +1,6 @@
-# System Overview: Process Table
+# 1. System Overview: Process Table
 
-## Purpose
+## 1.1 Purpose
 
 The `Process_Table` is the priority-based scheduling data structure at the
 heart of the engine's cooperative multitasking system. It maintains a
@@ -11,9 +11,9 @@ The `Process_Table` lives inside the `Process_Manager` and is not accessed
 directly by game code. It is the mechanism by which the scheduler
 determines which process to run next.
 
-## Architecture
+## 1.2 Architecture
 
-### Data Layout
+### 1.2.1 Data Layout
 
     Process_Table
     +-- Process_Priority_Table_Entry process_priority_table[PROCESS_MAX_PRIORITY_LEVEL + 1]
@@ -33,7 +33,7 @@ determines which process to run next.
     +-- Process_Priority_Table_Entry *p_process_priority_table_entry__current
         (polling cursor: points to the priority level currently being polled)
 
-### Key Types
+### 1.2.2 Key Types
 
 | Type | Role |
 |------|------|
@@ -41,14 +41,14 @@ determines which process to run next.
 | `Process_Priority_Table_Entry` | Manages one priority level's contiguous region within the pointer array. See `system_overview__process_priority_table_entry.md`. |
 | `Process` | The cooperative task unit referenced by pointers in the array. See `system_overview__process_unit.md`. |
 
-### Limits
+### 1.2.3 Limits
 
 | Macro | Default | Description |
 |-------|---------|-------------|
 | `PROCESS_MAX_QUANTITY_OF` | 512 | Maximum number of process pointers in the array. |
 | `PROCESS_MAX_PRIORITY_LEVEL` | 4 | Number of priority levels. The priority table has `PROCESS_MAX_PRIORITY_LEVEL + 1` entries (one sentinel). |
 
-## Pointer Array Partitioning
+## 1.3 Pointer Array Partitioning
 
 The pointer array is a single contiguous array of `Process*` pointers,
 partitioned into regions by priority level. Higher priority levels occupy
@@ -67,7 +67,7 @@ Each `Process_Priority_Table_Entry` delimits its region using two pointers
 into this array (`p_ptr_process__youngest_of__priority` and
 `p_ptr_process__oldest_of__priority`).
 
-### Why Contiguous?
+### 1.3.1 Why Contiguous?
 
 A contiguous partitioned array (rather than separate arrays per priority)
 ensures:
@@ -79,9 +79,9 @@ ensures:
 The trade-off is that insertion and removal require shifting pointers to
 maintain contiguous regions (compaction).
 
-## Scheduling Algorithm
+## 1.4 Scheduling Algorithm
 
-### Priority-Partitioned Round-Robin
+### 1.4.1 Priority-Partitioned Round-Robin
 
 The `Process_Table` implements a two-level scheduling policy:
 
@@ -90,7 +90,7 @@ The `Process_Table` implements a two-level scheduling policy:
 2. **Within a priority level**: round-robin. Each process in the level gets
    one poll per cycle, and the starting position rotates each cycle.
 
-### Polling Sequence
+### 1.4.2 Polling Sequence
 
     // Called once per game tick:
     begin_polling_of__process_table(p_process_table);
@@ -104,7 +104,7 @@ The `Process_Table` implements a two-level scheduling policy:
            advances p_process_priority_table_entry__current to the next level.
         -> Returns NULL when all levels have been polled.
 
-### Priority Level Semantics
+### 1.4.3 Priority Level Semantics
 
 | Priority | Constant | Typical Use |
 |----------|----------|-------------|
@@ -115,9 +115,9 @@ The `Process_Table` implements a two-level scheduling policy:
 
 All processes within a priority level are treated equally (round-robin).
 
-## Lifecycle
+## 1.5 Lifecycle
 
-### 1. Initialization
+### 1.5.1 Initialization
 
     initialize_process_table(p_process_table);
         -> Clears all pointers in ptr_array_of__processes to NULL.
@@ -125,7 +125,7 @@ All processes within a priority level are treated equally (round-robin).
            starting position in the pointer array.
         -> Sets p_process_priority_table_entry__current to the first entry.
 
-### 2. Process Addition
+### 1.5.2 Process Addition
 
     add_process_to__process_table(p_process_table, p_process);
         -> Determines the process's priority level from
@@ -142,7 +142,7 @@ All processes within a priority level are treated equally (round-robin).
     3. ... (continue through priority N-1)
     4. Insert into priority N as youngest.
 
-### 3. Process Removal
+### 1.5.3 Process Removal
 
     remove_process_from__process_table(p_process_table, p_process);
         -> Determines the process's priority level.
@@ -157,7 +157,7 @@ All processes within a priority level are treated equally (round-robin).
     2. Move priority N-1 region down by one slot.
     3. ... (continue through priority 0)
 
-### 4. Per-Frame Polling
+### 1.5.4 Per-Frame Polling
 
     begin_polling_of__process_table(p_process_table);
     Process *p_process;
@@ -169,14 +169,14 @@ All processes within a priority level are treated equally (round-robin).
 The caller (`Process_Manager.poll_process_manager`) handles process
 completion, failure, enqueueing, and disposal after each handler returns.
 
-### 5. Query
+### 1.5.5 Query
 
     Quantity__u32 count =
         get_quantity_of__processes_in__process_table(p_process_table);
         -> Sums get_quantity_of__processes_in__process_priority_table_entry
            across all priority levels.
 
-## Insertion and Removal Example
+## 1.6 Insertion and Removal Example
 
 Starting state (3 priority levels shown):
 
@@ -208,7 +208,7 @@ Starting state (3 priority levels shown):
 within the region. The key invariant is that each region remains contiguous
 after every operation.)
 
-## Capacity Constraints
+## 1.7 Capacity Constraints
 
 - The pointer array has a fixed size of `PROCESS_MAX_QUANTITY_OF` (512).
   If all slots are occupied, `add_process_to__process_table` returns false.
@@ -217,7 +217,7 @@ after every operation.)
 - The table does not own the `Process` instances — it holds pointers into
   the `Process_Manager`'s process pool.
 
-## Relationship to Process_Manager
+## 1.8 Relationship to Process_Manager
 
 The `Process_Table` is an internal data structure of the `Process_Manager`.
 It is not accessed directly by game code:

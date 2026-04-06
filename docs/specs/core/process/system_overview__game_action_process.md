@@ -1,6 +1,6 @@
-# System Overview: Game Action Process
+# 1. System Overview: Game Action Process
 
-## Purpose
+## 1.1 Purpose
 
 The game action process pattern wraps a `Game_Action` as a process's
 `p_process_data`, enabling the game action to be processed cooperatively
@@ -9,9 +9,9 @@ with the cooperative scheduling system, allowing complex game actions
 (e.g. multi-step server responses, world modifications) to execute
 without blocking the main loop.
 
-## Architecture
+## 1.2 Architecture
 
-### Data Layout (Standard Mode)
+### 1.2.1 Data Layout (Standard Mode)
 
     Process
     +-- m_process_run__handler    -> game action handler (from Game_Action_Logic_Table)
@@ -25,7 +25,7 @@ without blocking the main loop.
     +-- process_sub_state__u8     (handler state machine)
     +-- scratch values            (handler working data)
 
-### Data Layout (TCP Receiver Mode)
+### 1.2.2 Data Layout (TCP Receiver Mode)
 
 When converted to a TCP payload receiver, the data pointer chain changes:
 
@@ -38,7 +38,7 @@ When converted to a TCP payload receiver, the data pointer chain changes:
     |                                +-- Quantity__u16 quantity_of__tcp_packets__anticipated
     +-- Process_Kind = Process_Kind__Game_Action
 
-### Key Types
+### 1.2.3 Key Types
 
 | Type | Role |
 |------|------|
@@ -47,9 +47,9 @@ When converted to a TCP payload receiver, the data pointer chain changes:
 | `Serialization_Request` | Allocated when the process is converted to TCP receiver mode. Wraps the original game action and tracks fragment reassembly. |
 | `Game_Action_Kind` | Enum discriminating the type of game action. Used by the `Game_Action_Logic_Table` to select the appropriate handler. |
 
-## Initialization
+## 1.3 Initialization
 
-### Standard Game Action Process
+### 1.3.1 Standard Game Action Process
 
     initialize_process_as__game_action_process(p_process, p_game_action);
         -> p_process->p_process_data = p_game_action
@@ -61,7 +61,7 @@ for:
 - Setting `m_process_dispose__handler` (typically
   `m_process__dispose_handler__game_action__default`).
 
-### TCP Payload Receiver Conversion
+### 1.3.2 TCP Payload Receiver Conversion
 
     bool success = set_game_action_process_as__tcp_payload_receiver(
             p_game,
@@ -82,9 +82,9 @@ for:
 
 Returns false if `PLATFORM_allocate_serialization_request` fails.
 
-## Lifecycle
+## 1.4 Lifecycle
 
-### 1. Game Action Allocation
+### 1.4.1 Game Action Allocation
 
 A `Game_Action` is allocated from a `Game_Action_Manager` (typically the
 client's game action manager):
@@ -92,7 +92,7 @@ client's game action manager):
     Game_Action *p_ga = allocate_game_action(p_game_action_manager);
     // Configure the game action fields...
 
-### 2. Process Creation
+### 1.4.2 Process Creation
 
     Process *p_proc = run_process(
             &game.process_manager,
@@ -104,7 +104,7 @@ client's game action manager):
             p_proc,
             m_process__dispose_handler__game_action__default);
 
-### 3. Cooperative Execution
+### 1.4.3 Cooperative Execution
 
 Each poll cycle, the scheduler invokes the handler:
 
@@ -120,7 +120,7 @@ Each poll cycle, the scheduler invokes the handler:
         }
     }
 
-### 4. Disposal
+### 1.4.4 Disposal
 
 When the process completes or fails, the default dispose handler runs:
 
@@ -133,7 +133,7 @@ This handler:
 3. If a `Serialization_Request` was allocated (TCP mode), releases it
    via `deactivate_serialization_request`.
 
-### Lifecycle Diagram
+### 1.4.5 Lifecycle Diagram
 
     [Game_Action allocated] --> initialize_process_as__game_action_process
                                     |
@@ -157,7 +157,7 @@ This handler:
                                     v
                             [Process slot freed]
 
-## TCP Receiver Pattern
+## 1.5 TCP Receiver Pattern
 
 For game actions that receive multi-packet payloads (e.g. chunk data from
 a server):
@@ -187,9 +187,9 @@ request:
         (Serialization_Request*)p_proc->p_process_data;
     Game_Action *p_ga = (Game_Action*)p_sr->p_data;
 
-## Important Constraints
+## 1.6 Important Constraints
 
-### Dispose Handler Assumption
+### 1.6.1 Dispose Handler Assumption
 
 The default dispose handler (`m_process__dispose_handler__game_action__default`)
 assumes:
@@ -206,7 +206,7 @@ repurposed), you MUST:
 Otherwise the dispose handler will attempt to release a non-game-action
 pointer from the `Game_Action_Manager`, causing undefined behavior.
 
-### Preconditions
+### 1.6.2 Preconditions
 
 - `initialize_process_as__game_action_process`: `p_game_action` must be
   a valid, allocated game action.
@@ -214,7 +214,7 @@ pointer from the `Game_Action_Manager`, causing undefined behavior.
   already be initialized as a game action process. The destination buffer
   must be pre-allocated and large enough for the expected payload.
 
-### Postconditions
+### 1.6.3 Postconditions
 
 - After `initialize_process_as__game_action_process`:
   `p_process->p_process_data` points to the game action.
@@ -224,7 +224,7 @@ pointer from the `Game_Action_Manager`, causing undefined behavior.
   `p_process->p_process_data` points to a `Serialization_Request`.
   The original game action is at `Serialization_Request.p_data`.
 
-## Relationship to Other Process Types
+## 1.7 Relationship to Other Process Types
 
 | Concern | Managed By |
 |---------|------------|

@@ -1,6 +1,6 @@
-# Specification: core/include/process/game_action_process.h
+# 1. Specification: core/include/process/game_action_process.h
 
-## Overview
+## 1.1 Overview
 
 Provides initialization and configuration utilities for processes that
 execute game actions. A game action process wraps a `Game_Action` as its
@@ -11,7 +11,7 @@ Also provides the ability to convert a game action process into a TCP
 payload receiver, which tracks incoming `TCP_Delivery` fragments via a
 `Serialization_Request`.
 
-## Dependencies
+## 1.2 Dependencies
 
 - `defines.h` (for `Process`, `Game_Action`, `Serialization_Request`)
 - `defines_weak.h` (forward declarations)
@@ -20,29 +20,29 @@ payload receiver, which tracks incoming `TCP_Delivery` fragments via a
 - `process/process.h` (for process status functions)
 - `game_action/game_action.h` (for game action accessors)
 
-## Functions
+## 1.3 Functions
 
-### Initialization
+### 1.3.1 Initialization
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `initialize_process_as__game_action_process` | `(Process*, Game_Action*) -> void` | Sets `p_process_data` to the game action and marks the process kind as `Process_Kind__Game_Action`. |
 
-### TCP Payload Receiver
+### 1.3.2 TCP Payload Receiver
 
 | Function | Signature | Returns | Description |
 |----------|-----------|---------|-------------|
 | `set_game_action_process_as__tcp_payload_receiver` | `(Game*, Process*, u8* destination, Quantity__u16 destination_size) -> bool` | `bool` | Converts the process into a TCP payload receiver. Allocates a `Serialization_Request`, sets it as the process's data (the original `Game_Action*` is moved to `Serialization_Request.p_data`). Returns false on allocation failure. |
 
-### Dispose Handler
+### 1.3.3 Dispose Handler
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `m_process__dispose_handler__game_action__default` | `(Process*, Game*) -> void` | Default dispose handler for game action processes. Releases the game action from the client's game action manager and releases the serialization request if one was allocated. |
 
-## Agentic Workflow
+## 1.4 Agentic Workflow
 
-### Game Action Process Lifecycle
+### 1.4.1 Game Action Process Lifecycle
 
 1. A `Game_Action` is allocated in a `Game_Action_Manager`.
 2. `initialize_process_as__game_action_process(p_process, p_game_action)`.
@@ -52,7 +52,7 @@ payload receiver, which tracks incoming `TCP_Delivery` fragments via a
    `(Game_Action*)p_this_process->p_process_data`.
 5. On completion/failure, the dispose handler releases the game action.
 
-### TCP Payload Receiver Pattern
+### 1.4.2 TCP Payload Receiver Pattern
 
 For game actions that need to receive multi-packet data (e.g. chunk data):
 
@@ -65,7 +65,7 @@ For game actions that need to receive multi-packet data (e.g. chunk data):
 6. The dispose handler releases both the serialization request and the
    game action.
 
-### Data Pointer Chain (TCP mode)
+### 1.4.3 Data Pointer Chain (TCP mode)
 
     Process.p_process_data
         --> Serialization_Request
@@ -73,7 +73,7 @@ For game actions that need to receive multi-packet data (e.g. chunk data):
             .p_tcp_packet_destination --> destination buffer
             .pM_packet_bitmap --> fragment tracking bitmap
 
-### Preconditions
+### 1.4.4 Preconditions
 
 - `initialize_process_as__game_action_process`: `p_game_action` must be
   a valid, allocated game action.
@@ -81,14 +81,14 @@ For game actions that need to receive multi-packet data (e.g. chunk data):
   already be initialized as a game action process. The destination buffer
   must be pre-allocated.
 
-### Postconditions
+### 1.4.5 Postconditions
 
 - After `initialize_process_as__game_action_process`:
   `p_process->p_process_data` points to the game action.
 - After `set_game_action_process_as__tcp_payload_receiver`:
   `p_process->p_process_data` points to a `Serialization_Request`.
 
-### Error Handling
+### 1.4.6 Error Handling
 
 - `set_game_action_process_as__tcp_payload_receiver` returns false if
   `PLATFORM_allocate_serialization_request` fails.
