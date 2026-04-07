@@ -2,6 +2,10 @@
 
 #include <game_action/core/tcp/game_action__tcp_delivery.c>
 
+///
+/// @spec    docs/specs/core/game_action/tcp/game_action__tcp_delivery.h.spec.md
+/// @section 1.5.1. Registration
+///
 TEST_FUNCTION(game_action__tcp_delivery__register__populates_table) {
     Game_Action_Logic_Table table;
     initialize_game_action_logic_table(&table);
@@ -18,6 +22,10 @@ TEST_FUNCTION(game_action__tcp_delivery__register__populates_table) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/game_action/tcp/game_action__tcp_delivery.h.spec.md
+/// @section 1.3. Game_Action_Kind
+///
 TEST_FUNCTION(game_action__tcp_delivery__initialize__sets_kind) {
     Game_Action ga;
     initialize_game_action(&ga);
@@ -40,6 +48,10 @@ TEST_FUNCTION(game_action__tcp_delivery__initialize__sets_kind) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/game_action/tcp/game_action__tcp_delivery.h.spec.md
+/// @section 1.5.2. Initialization
+///
 TEST_FUNCTION(game_action__tcp_delivery__initialize__sets_client_uuid) {
     Game_Action ga;
     initialize_game_action(&ga);
@@ -62,6 +74,10 @@ TEST_FUNCTION(game_action__tcp_delivery__initialize__sets_client_uuid) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/game_action/tcp/game_action__tcp_delivery.h.spec.md
+/// @section 1.5.2. Initialization
+///
 TEST_FUNCTION(game_action__tcp_delivery__initialize__sets_response_uuid) {
     Game_Action ga;
     initialize_game_action(&ga);
@@ -84,6 +100,10 @@ TEST_FUNCTION(game_action__tcp_delivery__initialize__sets_response_uuid) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/game_action/tcp/game_action__tcp_delivery.h.spec.md
+/// @section 1.4. Payload Fields
+///
 TEST_FUNCTION(game_action__tcp_delivery__initialize__sets_packet_index) {
     Game_Action ga;
     initialize_game_action(&ga);
@@ -106,6 +126,10 @@ TEST_FUNCTION(game_action__tcp_delivery__initialize__sets_packet_index) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/game_action/tcp/game_action__tcp_delivery.h.spec.md
+/// @section 1.4. Payload Fields
+///
 TEST_FUNCTION(game_action__tcp_delivery__initialize__copies_payload) {
     Game_Action ga;
     initialize_game_action(&ga);
