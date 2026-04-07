@@ -2,6 +2,10 @@
 
 #include <ui/ui_slider.c>
 
+///
+/// Spec:    docs/specs/core/ui/ui_slider.h.spec.md
+/// Section: 9.4.1 Initialization
+///
 TEST_FUNCTION(initialize_ui_element_as__slider__sets_kind) {
     UI_Element ui_element;
     memset(&ui_element, 0, sizeof(ui_element));
@@ -21,6 +25,10 @@ TEST_FUNCTION(initialize_ui_element_as__slider__sets_kind) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:    docs/specs/core/ui/ui_slider.h.spec.md
+/// Section: 9.3.2 Axis Convention
+///
 TEST_FUNCTION(initialize_ui_element_as__slider__x_axis_sets_snapped_flag) {
     UI_Element ui_element;
     memset(&ui_element, 0, sizeof(ui_element));
@@ -37,6 +45,10 @@ TEST_FUNCTION(initialize_ui_element_as__slider__x_axis_sets_snapped_flag) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:    docs/specs/core/ui/ui_slider.h.spec.md
+/// Section: 9.3.2 Axis Convention
+///
 TEST_FUNCTION(initialize_ui_element_as__slider__y_axis_clears_snapped_flag) {
     UI_Element ui_element;
     memset(&ui_element, 0, sizeof(ui_element));
@@ -53,6 +65,10 @@ TEST_FUNCTION(initialize_ui_element_as__slider__y_axis_clears_snapped_flag) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:    docs/specs/core/ui/ui_slider.h.spec.md
+/// Section: 9.4.1 Initialization
+///
 TEST_FUNCTION(initialize_ui_element_as__slider__sets_spanning_length) {
     UI_Element ui_element;
     memset(&ui_element, 0, sizeof(ui_element));
@@ -71,6 +87,10 @@ TEST_FUNCTION(initialize_ui_element_as__slider__sets_spanning_length) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:    docs/specs/core/ui/ui_slider.h.spec.md
+/// Section: 9.4.4 State Management
+///
 TEST_FUNCTION(set_ui_slider_at__this_distance_u32__sets_distance) {
     UI_Element ui_element;
     memset(&ui_element, 0, sizeof(ui_element));
@@ -88,6 +108,10 @@ TEST_FUNCTION(set_ui_slider_at__this_distance_u32__sets_distance) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:    docs/specs/core/ui/ui_slider.h.spec.md
+/// Section: 9.4.1 Initialization
+///
 TEST_FUNCTION(initialize_ui_element_as__slider__sets_dragged_handler) {
     UI_Element ui_element;
     memset(&ui_element, 0, sizeof(ui_element));
@@ -104,6 +128,10 @@ TEST_FUNCTION(initialize_ui_element_as__slider__sets_dragged_handler) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:    docs/specs/core/ui/ui_slider.h.spec.md
+/// Section: 9.4.1 Initialization
+///
 TEST_FUNCTION(initialize_ui_element_as__slider__sets_transformed_handler) {
     UI_Element ui_element;
     memset(&ui_element, 0, sizeof(ui_element));
@@ -121,6 +149,10 @@ TEST_FUNCTION(initialize_ui_element_as__slider__sets_transformed_handler) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:    docs/specs/core/ui/ui_slider.h.spec.md
+/// Section: 9.4.1 Initialization
+///
 TEST_FUNCTION(initialize_ui_element_as__slider__sets_dispose_handler) {
     UI_Element ui_element;
     memset(&ui_element, 0, sizeof(ui_element));
