@@ -2,6 +2,13 @@
 
 #include <game_action/core/global_space/game_action__global_space__store.c>
 
+/**
+ * Spec: docs/specs/core/game_action/global_space/game_action__global_space__store.h.spec.md
+ * Section: 1.5.2. Initialization
+ *
+ * Verifies that initialize_game_action_for__global_space__store sets the
+ * game action kind to Game_Action_Kind__Global_Space__Store.
+ */
 TEST_FUNCTION(game_action__global_space__store__initialize__sets_kind) {
     Game_Action ga;
     initialize_game_action(&ga);
@@ -20,6 +27,14 @@ TEST_FUNCTION(game_action__global_space__store__initialize__sets_kind) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/game_action/global_space/game_action__global_space__store.h.spec.md
+ * Section: 1.4. Payload Fields
+ *
+ * Verifies that initialize_game_action_for__global_space__store correctly
+ * stores the provided Global_Space_Vector__3i32 coordinates into the
+ * ga_kind__global_space__store__gsv__3i32 payload field.
+ */
 TEST_FUNCTION(game_action__global_space__store__initialize__sets_coordinates) {
     Game_Action ga;
     initialize_game_action(&ga);
@@ -46,6 +61,14 @@ TEST_FUNCTION(game_action__global_space__store__initialize__sets_coordinates) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/game_action/global_space/game_action__global_space__store.h.spec.md
+ * Section: 1.5.1. Registration
+ *
+ * Verifies that register_game_action__global_space__store populates the
+ * Game_Action_Logic_Table with a valid entry for
+ * Game_Action_Kind__Global_Space__Store.
+ */
 TEST_FUNCTION(game_action__global_space__store__register__populates_table) {
     Game_Action_Logic_Table table;
     initialize_game_action_logic_table(&table);
