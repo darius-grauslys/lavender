@@ -2,6 +2,10 @@
 
 #include <rendering/graphics_window_manager.c>
 
+///
+/// Spec: docs/specs/core/rendering/graphics_window_manager.h.spec.md
+/// Section: 1.4.1 Initialization
+///
 TEST_FUNCTION(graphics_window_manager__initialize__all_windows_deallocated) {
     Graphics_Window_Manager manager;
     initialize_graphics_window_manager(&manager);
@@ -12,6 +16,10 @@ TEST_FUNCTION(graphics_window_manager__initialize__all_windows_deallocated) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/rendering/graphics_window_manager.h.spec.md
+/// Section: 1.4.1 Initialization
+///
 TEST_FUNCTION(graphics_window_manager__initialize__sorted_array_cleared) {
     Graphics_Window_Manager manager;
     initialize_graphics_window_manager(&manager);
@@ -22,6 +30,10 @@ TEST_FUNCTION(graphics_window_manager__initialize__sorted_array_cleared) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/rendering/graphics_window_manager.h.spec.md
+/// Section: 1.4.5 Lookup
+///
 TEST_FUNCTION(graphics_window_manager__get_by_uuid__returns_null_when_empty) {
     Graphics_Window_Manager manager;
     initialize_graphics_window_manager(&manager);
@@ -32,6 +44,10 @@ TEST_FUNCTION(graphics_window_manager__get_by_uuid__returns_null_when_empty) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/rendering/graphics_window_manager.h.spec.md
+/// Section: 1.4.3 Parent-Child
+///
 TEST_FUNCTION(graphics_window_manager__is_graphics_window_with__parent__false_after_init) {
     Graphics_Window_Manager manager;
     initialize_graphics_window_manager(&manager);
