@@ -30,6 +30,10 @@ static void reset_test_flags(void) {
     test__unload_called = false;
 }
 
+/**
+ * Spec:    docs/specs/core/scene/scene_manager.h.spec.md
+ * Section: 1.4.1. Initialization
+ */
 TEST_FUNCTION(initialize_scene_manager__sets_active_scene_to_null) {
     Scene_Manager scene_manager;
     initialize_scene_manager(&scene_manager);
@@ -42,6 +46,10 @@ TEST_FUNCTION(initialize_scene_manager__sets_active_scene_to_null) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec:    docs/specs/core/scene/scene_manager.h.spec.md
+ * Section: 1.4.1. Initialization
+ */
 TEST_FUNCTION(initialize_scene_manager__all_scenes_invalid) {
     Scene_Manager scene_manager;
     initialize_scene_manager(&scene_manager);
@@ -55,6 +63,10 @@ TEST_FUNCTION(initialize_scene_manager__all_scenes_invalid) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec:    docs/specs/core/scene/scene_manager.h.spec.md
+ * Section: 1.4.2. Registration
+ */
 TEST_FUNCTION(register_scene__makes_scene_valid) {
     Scene_Manager scene_manager;
     initialize_scene_manager(&scene_manager);
@@ -74,6 +86,10 @@ TEST_FUNCTION(register_scene__makes_scene_valid) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec:    docs/specs/core/scene/scene_manager.h.spec.md
+ * Section: 1.4.2. Registration
+ */
 TEST_FUNCTION(register_scene__stores_all_handlers) {
     Scene_Manager scene_manager;
     initialize_scene_manager(&scene_manager);
@@ -95,6 +111,10 @@ TEST_FUNCTION(register_scene__stores_all_handlers) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec:    docs/specs/core/scene/scene_manager.h.spec.md
+ * Section: 1.4.2. Registration
+ */
 TEST_FUNCTION(register_scene__overwrites_previous_registration) {
     Scene_Manager scene_manager;
     initialize_scene_manager(&scene_manager);
@@ -123,6 +143,10 @@ TEST_FUNCTION(register_scene__overwrites_previous_registration) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec:    docs/specs/core/scene/scene_manager.h.spec.md
+ * Section: 1.4.4. Active Scene Management
+ */
 TEST_FUNCTION(set_active_scene__calls_load_handler) {
     Scene_Manager scene_manager;
     initialize_scene_manager(&scene_manager);
@@ -144,6 +168,10 @@ TEST_FUNCTION(set_active_scene__calls_load_handler) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec:    docs/specs/core/scene/scene_manager.h.spec.md
+ * Section: 1.4.4. Active Scene Management
+ */
 TEST_FUNCTION(set_active_scene__sets_active_scene_pointer) {
     Scene_Manager scene_manager;
     initialize_scene_manager(&scene_manager);
@@ -170,6 +198,10 @@ TEST_FUNCTION(set_active_scene__sets_active_scene_pointer) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec:    docs/specs/core/scene/scene_manager.h.spec.md
+ * Section: 1.4.5. Queries (static inline)
+ */
 TEST_FUNCTION(set_active_scene__is_detected_as_active) {
     Scene_Manager scene_manager;
     initialize_scene_manager(&scene_manager);
@@ -196,6 +228,10 @@ TEST_FUNCTION(set_active_scene__is_detected_as_active) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec:    docs/specs/core/scene/scene_manager.h.spec.md
+ * Section: 1.4.4. Active Scene Management
+ */
 TEST_FUNCTION(quit_scene_state_machine__sets_active_to_null) {
     Scene_Manager scene_manager;
     initialize_scene_manager(&scene_manager);
@@ -224,6 +260,10 @@ TEST_FUNCTION(quit_scene_state_machine__sets_active_to_null) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec:    docs/specs/core/scene/scene_manager.h.spec.md
+ * Section: 1.4.4. Active Scene Management
+ */
 TEST_FUNCTION(quit_scene_state_machine__calls_unload_handler) {
     Scene_Manager scene_manager;
     initialize_scene_manager(&scene_manager);
@@ -249,6 +289,10 @@ TEST_FUNCTION(quit_scene_state_machine__calls_unload_handler) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec:    docs/specs/core/scene/scene_manager.h.spec.md
+ * Section: 1.4.4. Active Scene Management
+ */
 TEST_FUNCTION(quit_scene_state_machine__no_crash_when_no_active_scene) {
     Scene_Manager scene_manager;
     initialize_scene_manager(&scene_manager);
@@ -263,6 +307,10 @@ TEST_FUNCTION(quit_scene_state_machine__no_crash_when_no_active_scene) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec:    docs/specs/core/scene/scene_manager.h.spec.md
+ * Section: 1.4.3. Lookup
+ */
 TEST_FUNCTION(get_p_scene_from__scene_manager__returns_correct_slot) {
     Scene_Manager scene_manager;
     initialize_scene_manager(&scene_manager);
@@ -276,6 +324,10 @@ TEST_FUNCTION(get_p_scene_from__scene_manager__returns_correct_slot) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec:    docs/specs/core/scene/scene_manager.h.spec.md
+ * Section: 1.4.2. Registration
+ */
 TEST_FUNCTION(register_scene__with_null_load_and_unload__still_valid) {
     Scene_Manager scene_manager;
     initialize_scene_manager(&scene_manager);
