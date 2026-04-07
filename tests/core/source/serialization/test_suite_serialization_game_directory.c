@@ -2,6 +2,13 @@
 
 #include <serialization/game_directory.c>
 
+/**
+ * Spec:    docs/specs/core/serialization/game_directory.h.spec.md
+ * Section: 1.4 Functions — append_path
+ *
+ * Verifies that append_path concatenates a non-empty suffix
+ * onto a non-empty base path in-place.
+ */
 TEST_FUNCTION(game_directory__append_path_concatenates) {
     IO_path base;
     IO_path suffix;
@@ -14,6 +21,13 @@ TEST_FUNCTION(game_directory__append_path_concatenates) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec:    docs/specs/core/serialization/game_directory.h.spec.md
+ * Section: 1.4 Functions — append_path
+ *
+ * Verifies that append_path leaves the base path unchanged
+ * when the suffix is empty.
+ */
 TEST_FUNCTION(game_directory__append_path_empty_suffix) {
     IO_path base;
     IO_path suffix;
@@ -25,6 +39,13 @@ TEST_FUNCTION(game_directory__append_path_empty_suffix) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec:    docs/specs/core/serialization/game_directory.h.spec.md
+ * Section: 1.4 Functions — append_path
+ *
+ * Verifies that append_path correctly populates an empty base
+ * path with the suffix.
+ */
 TEST_FUNCTION(game_directory__append_path_empty_base) {
     IO_path base;
     IO_path suffix;
