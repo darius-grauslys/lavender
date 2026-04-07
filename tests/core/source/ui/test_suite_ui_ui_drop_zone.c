@@ -13,6 +13,13 @@ static void mock_receive_drop_handler(
     (void)p_gfx_window;
 }
 
+/**
+ * @spec    docs/specs/core/ui/ui_drop_zone.h.spec.md
+ * @section 2.3 Functions
+ *
+ * Verifies that initialize_ui_element_as__drop_zone sets the element
+ * kind to UI_Element_Kind__Drop_Zone.
+ */
 TEST_FUNCTION(initialize_ui_element_as__drop_zone__sets_kind) {
     UI_Element ui_element;
     memset(&ui_element, 0, sizeof(ui_element));
@@ -26,6 +33,13 @@ TEST_FUNCTION(initialize_ui_element_as__drop_zone__sets_kind) {
     return MUNIT_OK;
 }
 
+/**
+ * @spec    docs/specs/core/ui/ui_drop_zone.h.spec.md
+ * @section 2.3 Functions
+ *
+ * Verifies that initialize_ui_element_as__drop_zone sets the receive
+ * drop handler when a non-null handler is provided.
+ */
 TEST_FUNCTION(initialize_ui_element_as__drop_zone__sets_receive_drop_handler) {
     UI_Element ui_element;
     memset(&ui_element, 0, sizeof(ui_element));
@@ -37,6 +51,14 @@ TEST_FUNCTION(initialize_ui_element_as__drop_zone__sets_receive_drop_handler) {
     return MUNIT_OK;
 }
 
+/**
+ * @spec    docs/specs/core/ui/ui_drop_zone.h.spec.md
+ * @section 2.3 Functions
+ *
+ * Verifies that initialize_ui_element_as__drop_zone falls back to
+ * m_ui_drop_zone__receive_drop_handler__default when a null handler
+ * is provided.
+ */
 TEST_FUNCTION(initialize_ui_element_as__drop_zone__null_handler_uses_default) {
     UI_Element ui_element;
     memset(&ui_element, 0, sizeof(ui_element));
