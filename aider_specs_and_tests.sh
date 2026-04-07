@@ -59,7 +59,7 @@ for spec_file in "$spec_dir"/*.h.spec.md; do
     if [ -n "$match" ]; then
         found_any=true
         echo "Match found: $spec_file <-> $match"
-        aider --message "$prompt" "$spec_file" "$match"
+        aider --no-auto-lint --read "$spec_file" --message "$prompt" "$match"
     else
         echo "No matching test file for: $spec_file"
     fi
