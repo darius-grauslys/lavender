@@ -44,8 +44,8 @@ while IFS= read -r line; do
         # Compute subpattern: remove "test_suite_[a-zA-Z]*_" from the beginning of base_no_ext
         subpattern=$(echo "$base_no_ext" | sed -E 's/^test_suite_[a-zA-Z]*_//')
 
-        # Output file in test_report_digest/
-        output_file="test_report_digest/${base_name}"
+        # Output file in test_report_digest/ with .report appended
+        output_file="test_report_digest/${base_name}.report"
 
         # If the output file doesn't exist yet, write the header comment
         if [ ! -f "$output_file" ]; then
