@@ -1,0 +1,105 @@
+# Test Analysis: inventory.h.spec.md
+# Source: core/source/inventory/inventory.c
+# Test Report: test_suite_inventory_inventory.c.report
+
+## Failing Tests
+
+### Failure 1
+- File: tests/core/source/inventory/test_suite_inventory_inventory.c:15
+- Assertion: does_inventory_have__available_item_stacks(&inventory) is not true
+- Root Cause: `does_inventory_have__available_item_stacks` is INVERTED.
+  The implementation returns true when the inventory is FULL
+  (`quantity_of__item_stacks >= INVENTORY_ITEM_MAXIMUM_QUANTITY_OF`),
+  but the spec states it should return true when there IS at least one
+  empty slot. The condition should be:
+  `p_inventory->quantity_of__item_stacks < INVENTORY_ITEM_MAXIMUM_QUANTITY_OF`
+- Spec Reference: Section 1.4.4 Queries:
+  `does_inventory_have__available_item_stacks`: True if there is at least
+  one empty slot.
+
+### Failure 2
+- File: tests/core/source/inventory/test_suite_inventory_inventory.c:69
+- Assertion: p_found == NULL (0x7fff75e05398 == nil)
+- Root Cause: `get_first_p_item_stack_of__this_item_kind_from__inventory`
+  returns a non-null pointer when it should return null. When searching
+  for an item kind that does not exist in the inventory, the function
+  checks index 0 first and returns it if its kind matches. However, the
+  function may be returning a result from an uninitialized or incorrectly
+  matched slot. This is likely a secondary effect of
+  `does_inventory_have__available_item_stacks` being inverted, causing
+  upstream logic to place items incorrectly, OR the
+  `get_first_p_item_stack_of__this_item_kind_from__inventory` function
+  is matching `Item_Kind__None` (empty slots) when it should not.
+  Specifically, when searching for `Item_Kind__None`, the function will
+  find empty slots — callers searching for a non-None kind should not
+  receive empty slots. This is an internal usage issue in `add_item_to__inventory`
+  which uses `Item_Kind__None` to find empty slots, which is correct, but
+  the test at line 69 expects null for a kind not present, suggesting the
+  inventory state is corrupted by the inverted availability check.
+- Spec Reference: Section 1.4.4 Queries: search functions return null if
+  no matching item stack is found.
+
+### Failure 3
+- File: tests/core/source/inventory/test_suite_inventory_inventory.c:199
+- Assertion: does_inventory_have__available_item_stacks(&inventory) is not true
+- Root Cause: Same as Failure 1. The inverted logic in
+  `does_inventory_have__available_item_stacks` causes this assertion to
+  fail in a second test case as well.
+- Spec Reference: Section 1.4.4 Queries:
+  `does_inventory_have__available_item_stacks`: True if there is at least
+  one empty slot.
+
+### Failure 4
+- File: tests/core/source/inventory/test_suite_inventory_inventory.c:216
+- Assertion: p_stack == NULL (0x7fff75e053b8 == nil)
+- Root Cause: A non-null item stack is returned when null is expected.
+  This is consistent with the inverted `does_inventory_have__available_item_stacks`
+  causing incorrect inventory state, leading to item stacks being found
+  where none should exist. Additionally, the spec references
+  `remove_all_item_stacks_from__inventory` (Section 1.4.3) and
+  `remove_item_stack_from__inventory_using__identifier_for__item_stack`
+  as functions that must exist, but neither is implemented in the current
+  source. If the test at line 216 relies on one of these missing functions,
+  the inventory will not be properly cleared, leaving stale item stacks
+  that produce a non-null result.
+- Spec Reference: Section 1.4.3 Item Management:
+  `remove_all_item_stacks_from__inventory` and
+  `remove_item_stack_from__inventory_using__identifier_for__item_stack`
+  are specified but not implemented.
+
+### Failure 5
+- File: tests/core/source/inventory/test_suite_inventory_inventory.c:237
+- Assertion: count == 2 (1 == 2)
+- Root Cause: An iteration over item stacks of a given kind returns only
+  1 result instead of 2. This points to a bug in
+  `get_next_p_item_stack_of__this_item_kind_from__inventory`: the function
+  searches for `p_item_stack__start_from` by pointer comparison starting
+  from index 0, then iterates from `starting_index_of__items + 1`. If
+  two stacks of the same kind exist and the second is not found, it may
+  be due to the iterator not correctly advancing past the first match, or
+  the second stack was never added due to the inverted availability check
+  preventing a second slot from being recognized as available.
+- Spec Reference: Section 1.5.4 Item Search Iteration describes the
+  iterator pattern using `get_first_p_item_stack_of__this_item_kind_from__inventory`
+  and `get_next_p_item_stack_of__this_item_kind_from__inventory`.
+
+## Missing Implementations
+
+The following functions are specified in inventory.h.spec.md but are
+absent from inventory.c:
+
+| Function | Spec Section |
+|----------|-------------|
+| `remove_all_item_stacks_from__inventory` | 1.4.3 |
+| `remove_item_stack_from__inventory_using__identifier_for__item_stack` | 1.4.3 |
+| `does_inventory_have_this__item_kind` (static inline, may be in header) | 1.4.4 |
+
+## Summary of Required Fixes
+
+| # | Location | Fix |
+|---|----------|-----|
+| 1 | `does_inventory_have__available_item_stacks` | Invert the condition: return true when `quantity_of__item_stacks < INVENTORY_ITEM_MAXIMUM_QUANTITY_OF` |
+| 2 | `inventory.c` | Implement `remove_all_item_stacks_from__inventory` |
+| 3 | `inventory.c` | Implement `remove_item_stack_from__inventory_using__identifier_for__item_stack` |
+| 4 | Likely header | Verify `does_inventory_have_this__item_kind` static inline exists |
+| 5 | Re-evaluate after fix #1 | Failures 2, 4, 5 may be resolved or clarified once the availability check is corrected |
