@@ -2,6 +2,13 @@
 
 #include <ui/ui_draggable.c>
 
+///
+/// Spec:   docs/specs/core/ui/ui_draggable.h.spec.md
+/// Section: 13.3 Functions — initialize_ui_element_as__draggable
+///
+/// Verifies that initialize_ui_element_as__draggable sets the element
+/// kind to UI_Element_Kind__Draggable.
+///
 TEST_FUNCTION(initialize_ui_element_as__draggable__sets_kind) {
     UI_Element ui_element;
     memset(&ui_element, 0, sizeof(ui_element));
@@ -13,6 +20,13 @@ TEST_FUNCTION(initialize_ui_element_as__draggable__sets_kind) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/ui/ui_draggable.h.spec.md
+/// Section: 13.3 Functions — initialize_ui_element_as__draggable
+///
+/// Verifies that initialize_ui_element_as__draggable sets the dragged
+/// handler (using the default when null is passed).
+///
 TEST_FUNCTION(initialize_ui_element_as__draggable__sets_dragged_handler) {
     UI_Element ui_element;
     memset(&ui_element, 0, sizeof(ui_element));
@@ -21,6 +35,13 @@ TEST_FUNCTION(initialize_ui_element_as__draggable__sets_dragged_handler) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/ui/ui_draggable.h.spec.md
+/// Section: 13.3 Functions — initialize_ui_element_as__draggable
+///
+/// Verifies that initialize_ui_element_as__draggable sets the dropped
+/// handler to the default dropped handler.
+///
 TEST_FUNCTION(initialize_ui_element_as__draggable__sets_dropped_handler) {
     UI_Element ui_element;
     memset(&ui_element, 0, sizeof(ui_element));
@@ -29,6 +50,13 @@ TEST_FUNCTION(initialize_ui_element_as__draggable__sets_dropped_handler) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/ui/ui_draggable.h.spec.md
+/// Section: 13.3 Functions — initialize_ui_element_as__draggable
+///
+/// Verifies that initialize_ui_element_as__draggable accepts a custom
+/// (non-null) drag handler and sets it on the element.
+///
 TEST_FUNCTION(initialize_ui_element_as__draggable__custom_drag_handler) {
     UI_Element ui_element;
     memset(&ui_element, 0, sizeof(ui_element));
