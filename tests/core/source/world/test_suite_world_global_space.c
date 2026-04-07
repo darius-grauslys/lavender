@@ -2,6 +2,10 @@
 
 #include <world/global_space.c>
 
+///
+/// Spec:   docs/specs/core/world/global_space.h.spec.md
+/// Section: 1.4.1 Initialization
+///
 TEST_FUNCTION(global_space__initialize_global_space__sets_deallocated) {
     Global_Space global_space;
     initialize_global_space(&global_space);
@@ -9,6 +13,10 @@ TEST_FUNCTION(global_space__initialize_global_space__sets_deallocated) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/world/global_space.h.spec.md
+/// Section: 1.4.1 Initialization
+///
 TEST_FUNCTION(global_space__initialize_global_space__clears_all_flags) {
     Global_Space global_space;
     initialize_global_space(&global_space);
@@ -20,6 +28,10 @@ TEST_FUNCTION(global_space__initialize_global_space__clears_all_flags) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/world/global_space.h.spec.md
+/// Section: 1.4.1 Initialization
+///
 TEST_FUNCTION(global_space__initialize_global_space_as__allocated__is_allocated) {
     Global_Space global_space;
     initialize_global_space_as__allocated(&global_space, 12345);
@@ -27,11 +39,19 @@ TEST_FUNCTION(global_space__initialize_global_space_as__allocated__is_allocated)
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/world/global_space.h.spec.md
+/// Section: 1.4.4 Allocation Query
+///
 TEST_FUNCTION(global_space__is_global_space__allocated__null_returns_false) {
     munit_assert_false(is_global_space__allocated(0));
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/world/global_space.h.spec.md
+/// Section: 1.4.3 Reference Counting
+///
 TEST_FUNCTION(global_space__hold_and_drop__increments_and_decrements) {
     Global_Space global_space;
     initialize_global_space_as__allocated(&global_space, 1);
@@ -43,6 +63,10 @@ TEST_FUNCTION(global_space__hold_and_drop__increments_and_decrements) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/world/global_space.h.spec.md
+/// Section: 1.4.3 Reference Counting
+///
 TEST_FUNCTION(global_space__drop__returns_true_when_all_dropped) {
     Global_Space global_space;
     initialize_global_space_as__allocated(&global_space, 1);
@@ -54,6 +78,10 @@ TEST_FUNCTION(global_space__drop__returns_true_when_all_dropped) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/world/global_space.h.spec.md
+/// Section: 1.4.6 Lifecycle State Mutations
+///
 TEST_FUNCTION(global_space__set_constructing__sets_flag_and_clears_awaiting) {
     Global_Space global_space;
     initialize_global_space_as__allocated(&global_space, 1);
@@ -65,6 +93,10 @@ TEST_FUNCTION(global_space__set_constructing__sets_flag_and_clears_awaiting) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/world/global_space.h.spec.md
+/// Section: 1.4.6 Lifecycle State Mutations
+///
 TEST_FUNCTION(global_space__set_deconstructing__sets_flag_and_clears_awaiting) {
     Global_Space global_space;
     initialize_global_space_as__allocated(&global_space, 1);
@@ -76,6 +108,10 @@ TEST_FUNCTION(global_space__set_deconstructing__sets_flag_and_clears_awaiting) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/world/global_space.h.spec.md
+/// Section: 1.4.6 Lifecycle State Mutations
+///
 TEST_FUNCTION(global_space__set_not_constructing__clears_both_flags) {
     Global_Space global_space;
     initialize_global_space_as__allocated(&global_space, 1);
@@ -87,6 +123,10 @@ TEST_FUNCTION(global_space__set_not_constructing__clears_both_flags) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/world/global_space.h.spec.md
+/// Section: 1.4.6 Lifecycle State Mutations
+///
 TEST_FUNCTION(global_space__set_not_deconstructing__clears_both_flags) {
     Global_Space global_space;
     initialize_global_space_as__allocated(&global_space, 1);
@@ -98,6 +138,10 @@ TEST_FUNCTION(global_space__set_not_deconstructing__clears_both_flags) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/world/global_space.h.spec.md
+/// Section: 1.4.6 Lifecycle State Mutations
+///
 TEST_FUNCTION(global_space__dirty_flag__set_and_clear) {
     Global_Space global_space;
     initialize_global_space_as__allocated(&global_space, 1);
@@ -109,11 +153,19 @@ TEST_FUNCTION(global_space__dirty_flag__set_and_clear) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/world/global_space.h.spec.md
+/// Section: 1.4.5 Lifecycle State Queries
+///
 TEST_FUNCTION(global_space__is_dirty__null_safe) {
     munit_assert_false(is_global_space__dirty(0));
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/world/global_space.h.spec.md
+/// Section: 1.4.5 Lifecycle State Queries
+///
 TEST_FUNCTION(global_space__is_active__requires_allocated_and_no_construction_flags) {
     Global_Space global_space;
     initialize_global_space_as__allocated(&global_space, 1);
@@ -124,6 +176,10 @@ TEST_FUNCTION(global_space__is_active__requires_allocated_and_no_construction_fl
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/world/global_space.h.spec.md
+/// Section: 1.4.7 Sub-Component Access
+///
 TEST_FUNCTION(global_space__set_and_get_chunk) {
     Global_Space global_space;
     initialize_global_space(&global_space);
@@ -133,12 +189,20 @@ TEST_FUNCTION(global_space__set_and_get_chunk) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/world/global_space.h.spec.md
+/// Section: 1.4.7 Sub-Component Access
+///
 TEST_FUNCTION(global_space__get_chunk__null_safe) {
     Chunk *p_chunk = get_p_chunk_from__global_space(0);
     munit_assert_ptr_null(p_chunk);
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/world/global_space.h.spec.md
+/// Section: 1.4.7 Sub-Component Access
+///
 TEST_FUNCTION(global_space__set_and_get_collision_node) {
     Global_Space global_space;
     initialize_global_space(&global_space);
