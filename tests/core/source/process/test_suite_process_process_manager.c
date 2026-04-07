@@ -33,6 +33,10 @@ void m_test_pm_handler__dispose_counter(
     test_dispose_call_count++;
 }
 
+///
+/// Spec: docs/specs/core/process/process_manager.h.spec.md
+/// Section: 1.4.1 Initialization
+///
 TEST_FUNCTION(initialize_process_manager__all_slots_available) {
     Process_Manager pm;
     initialize_process_manager(&pm);
@@ -45,6 +49,10 @@ TEST_FUNCTION(initialize_process_manager__all_slots_available) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/process/process_manager.h.spec.md
+/// Section: 1.4.1 Initialization
+///
 TEST_FUNCTION(initialize_process_manager__latest_is_null) {
     Process_Manager pm;
     initialize_process_manager(&pm);
@@ -54,6 +62,10 @@ TEST_FUNCTION(initialize_process_manager__latest_is_null) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/process/process_manager.h.spec.md
+/// Section: 1.4.1 Initialization
+///
 TEST_FUNCTION(initialize_process_manager__process_count_is_zero) {
     Process_Manager pm;
     initialize_process_manager(&pm);
@@ -66,6 +78,10 @@ TEST_FUNCTION(initialize_process_manager__process_count_is_zero) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/process/process_manager.h.spec.md
+/// Section: 1.4.3 Running Processes
+///
 TEST_FUNCTION(run_process__returns_non_null) {
     Process_Manager pm;
     initialize_process_manager(&pm);
@@ -81,6 +97,10 @@ TEST_FUNCTION(run_process__returns_non_null) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/process/process_manager.h.spec.md
+/// Section: 1.4.3 Running Processes
+///
 TEST_FUNCTION(run_process__increments_count) {
     Process_Manager pm;
     initialize_process_manager(&pm);
@@ -99,6 +119,10 @@ TEST_FUNCTION(run_process__increments_count) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/process/process_manager.h.spec.md
+/// Section: 1.4.3 Running Processes
+///
 TEST_FUNCTION(run_process__sets_latest) {
     Process_Manager pm;
     initialize_process_manager(&pm);
@@ -117,6 +141,10 @@ TEST_FUNCTION(run_process__sets_latest) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/process/process_manager.h.spec.md
+/// Section: 1.4.5 Lookup (static inline)
+///
 TEST_FUNCTION(get_p_latest__returns_null_after_consumption) {
     Process_Manager pm;
     initialize_process_manager(&pm);
@@ -136,6 +164,10 @@ TEST_FUNCTION(get_p_latest__returns_null_after_consumption) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/process/process_manager.h.spec.md
+/// Section: 1.4.3 Running Processes
+///
 TEST_FUNCTION(run_process_with__uuid__assigns_correct_uuid) {
     Process_Manager pm;
     initialize_process_manager(&pm);
@@ -157,6 +189,10 @@ TEST_FUNCTION(run_process_with__uuid__assigns_correct_uuid) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/process/process_manager.h.spec.md
+/// Section: 1.4.5 Lookup (static inline)
+///
 TEST_FUNCTION(get_p_process_by__uuid__finds_process) {
     Process_Manager pm;
     initialize_process_manager(&pm);
@@ -180,6 +216,10 @@ TEST_FUNCTION(get_p_process_by__uuid__finds_process) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/process/process_manager.h.spec.md
+/// Section: 1.4.5 Lookup (static inline)
+///
 TEST_FUNCTION(get_p_process_by__uuid__returns_null_for_unknown) {
     Process_Manager pm;
     initialize_process_manager(&pm);
@@ -191,6 +231,10 @@ TEST_FUNCTION(get_p_process_by__uuid__returns_null_for_unknown) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/process/process_manager.h.spec.md
+/// Section: 1.4.6 Query
+///
 TEST_FUNCTION(run_multiple_processes__count_is_correct) {
     Process_Manager pm;
     initialize_process_manager(&pm);
@@ -211,6 +255,10 @@ TEST_FUNCTION(run_multiple_processes__count_is_correct) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/process/process_manager.h.spec.md
+/// Section: 1.4.3 Running Processes
+///
 TEST_FUNCTION(run_process__sets_run_handler) {
     Process_Manager pm;
     initialize_process_manager(&pm);
@@ -228,6 +276,10 @@ TEST_FUNCTION(run_process__sets_run_handler) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/process/process_manager.h.spec.md
+/// Section: 1.4.3 Running Processes
+///
 TEST_FUNCTION(run_process__sets_priority) {
     Process_Manager pm;
     initialize_process_manager(&pm);
@@ -246,6 +298,10 @@ TEST_FUNCTION(run_process__sets_priority) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/process/process_manager.h.spec.md
+/// Section: 1.4.3 Running Processes
+///
 TEST_FUNCTION(run_process__sets_flags) {
     Process_Manager pm;
     initialize_process_manager(&pm);
@@ -261,6 +317,10 @@ TEST_FUNCTION(run_process__sets_flags) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/process/process_manager.h.spec.md
+/// Section: 1.4.2 Allocation / Deallocation
+///
 TEST_FUNCTION(release_process__decrements_count) {
     Process_Manager pm;
     initialize_process_manager(&pm);
@@ -284,6 +344,10 @@ TEST_FUNCTION(release_process__decrements_count) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/process/process_manager.h.spec.md
+/// Section: 1.4.2 Allocation / Deallocation
+///
 TEST_FUNCTION(release_process__invokes_dispose_handler) {
     Process_Manager pm;
     initialize_process_manager(&pm);
@@ -308,6 +372,10 @@ TEST_FUNCTION(release_process__invokes_dispose_handler) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/process/process_manager.h.spec.md
+/// Section: 1.4.2 Allocation / Deallocation
+///
 TEST_FUNCTION(release_process__slot_becomes_available) {
     Process_Manager pm;
     initialize_process_manager(&pm);
