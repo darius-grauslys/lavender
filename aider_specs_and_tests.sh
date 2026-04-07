@@ -48,12 +48,22 @@ for spec_file in "$spec_dir"/*.h.spec.md; do
     # Strip .h.spec.md to get the core name, e.g. "global_space"
     core_name="${base_name%.h.spec.md}"
 
+    # The suffix we expect every matching test file's basename to end with
+    expected_suffix="_${core_name}.c"
+
     # Search for a matching test file: test_suite_*_<core_name>.c
     match=""
     for test_file in "$test_dir"/test_suite_*_"${core_name}".c; do
         [ -e "$test_file" ] || continue
-        match="$test_file"
-        break
+        test_base="$(basename "$test_file")"
+        # Verify the basename truly ends with _<core_name>.c so that
+        # e.g. "process" does not falsely match "filesystem_process"
+        case "$test_base" in
+            *"$expected_suffix")
+                match="$test_file"
+                break
+                ;;
+        esac
     done
 
     if [ -n "$match" ]; then
