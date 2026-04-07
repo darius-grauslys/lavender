@@ -2,6 +2,10 @@
 
 #include <input/input.c>
 
+///
+/// Spec: docs/specs/core/input/input.h.spec.md
+/// Section: 1.4.1 Initialization, 1.5.10 Postconditions
+///
 TEST_FUNCTION(initialize_input__sets_all_flags_to_zero) {
     Input input;
     input.input_flags__pressed = 0xFFFFFFFF;
@@ -28,6 +32,10 @@ TEST_FUNCTION(initialize_input__sets_all_flags_to_zero) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/input/input.h.spec.md
+/// Section: 1.4.6 Button State Queries — Pressed
+///
 TEST_FUNCTION(is_input__forward_pressed__returns_true_when_set) {
     Input input;
     initialize_input(&input);
@@ -38,6 +46,10 @@ TEST_FUNCTION(is_input__forward_pressed__returns_true_when_set) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/input/input.h.spec.md
+/// Section: 1.4.6 Button State Queries — Pressed
+///
 TEST_FUNCTION(is_input__forward_pressed__returns_false_when_not_set) {
     Input input;
     initialize_input(&input);
@@ -47,6 +59,10 @@ TEST_FUNCTION(is_input__forward_pressed__returns_false_when_not_set) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/input/input.h.spec.md
+/// Section: 1.4.6 Button State Queries — Pressed
+///
 TEST_FUNCTION(is_input__left_pressed__returns_true_when_set) {
     Input input;
     initialize_input(&input);
@@ -57,6 +73,10 @@ TEST_FUNCTION(is_input__left_pressed__returns_true_when_set) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/input/input.h.spec.md
+/// Section: 1.4.6 Button State Queries — Pressed
+///
 TEST_FUNCTION(is_input__right_pressed__returns_true_when_set) {
     Input input;
     initialize_input(&input);
@@ -67,6 +87,10 @@ TEST_FUNCTION(is_input__right_pressed__returns_true_when_set) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/input/input.h.spec.md
+/// Section: 1.4.6 Button State Queries — Pressed
+///
 TEST_FUNCTION(is_input__backward_pressed__returns_true_when_set) {
     Input input;
     initialize_input(&input);
@@ -77,6 +101,10 @@ TEST_FUNCTION(is_input__backward_pressed__returns_true_when_set) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/input/input.h.spec.md
+/// Section: 1.4.6 Button State Queries — Pressed
+///
 TEST_FUNCTION(is_input__use_pressed__returns_true_when_set) {
     Input input;
     initialize_input(&input);
@@ -87,6 +115,10 @@ TEST_FUNCTION(is_input__use_pressed__returns_true_when_set) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/input/input.h.spec.md
+/// Section: 1.4.6 Button State Queries — Pressed
+///
 TEST_FUNCTION(is_input__use_secondary_pressed__returns_true_when_set) {
     Input input;
     initialize_input(&input);
@@ -97,6 +129,10 @@ TEST_FUNCTION(is_input__use_secondary_pressed__returns_true_when_set) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/input/input.h.spec.md
+/// Section: 1.4.6 Button State Queries — Pressed
+///
 TEST_FUNCTION(is_input__click_pressed__returns_true_when_set) {
     Input input;
     initialize_input(&input);
@@ -107,6 +143,10 @@ TEST_FUNCTION(is_input__click_pressed__returns_true_when_set) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/input/input.h.spec.md
+/// Section: 1.4.6 Button State Queries — Pressed
+///
 TEST_FUNCTION(is_input__lockon_pressed__returns_true_when_set) {
     Input input;
     initialize_input(&input);
@@ -117,6 +157,10 @@ TEST_FUNCTION(is_input__lockon_pressed__returns_true_when_set) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/input/input.h.spec.md
+/// Section: 1.4.6 Button State Queries — Pressed
+///
 TEST_FUNCTION(is_input__game_settings_pressed__returns_true_when_set) {
     Input input;
     initialize_input(&input);
@@ -127,6 +171,10 @@ TEST_FUNCTION(is_input__game_settings_pressed__returns_true_when_set) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/input/input.h.spec.md
+/// Section: 1.4.6 Button State Queries — Pressed
+///
 TEST_FUNCTION(is_input__examine_pressed__returns_true_when_set) {
     Input input;
     initialize_input(&input);
@@ -137,6 +185,10 @@ TEST_FUNCTION(is_input__examine_pressed__returns_true_when_set) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/input/input.h.spec.md
+/// Section: 1.4.6 Button State Queries — Pressed
+///
 TEST_FUNCTION(is_input__consume_pressed__returns_true_when_set) {
     Input input;
     initialize_input(&input);
@@ -147,6 +199,10 @@ TEST_FUNCTION(is_input__consume_pressed__returns_true_when_set) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/input/input.h.spec.md
+/// Section: 1.4.6 Button State Queries — Pressed
+///
 TEST_FUNCTION(is_input__turn_left_pressed__returns_true_when_set) {
     Input input;
     initialize_input(&input);
@@ -157,6 +213,10 @@ TEST_FUNCTION(is_input__turn_left_pressed__returns_true_when_set) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/input/input.h.spec.md
+/// Section: 1.4.6 Button State Queries — Pressed
+///
 TEST_FUNCTION(is_input__turn_right_pressed__returns_true_when_set) {
     Input input;
     initialize_input(&input);
@@ -167,6 +227,10 @@ TEST_FUNCTION(is_input__turn_right_pressed__returns_true_when_set) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/input/input.h.spec.md
+/// Section: 1.4.6 Button State Queries — Pressed
+///
 TEST_FUNCTION(pressed_query__returns_false_for_different_flag) {
     Input input;
     initialize_input(&input);
@@ -181,6 +245,10 @@ TEST_FUNCTION(pressed_query__returns_false_for_different_flag) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/input/input.h.spec.md
+/// Section: 1.4.6 Button State Queries — Pressed
+///
 TEST_FUNCTION(multiple_pressed_flags__all_query_true) {
     Input input;
     initialize_input(&input);
@@ -194,6 +262,10 @@ TEST_FUNCTION(multiple_pressed_flags__all_query_true) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/input/input.h.spec.md
+/// Section: 1.4.7 Button State Queries — Held
+///
 TEST_FUNCTION(is_input__forward_held__returns_true_when_set) {
     Input input;
     initialize_input(&input);
@@ -204,6 +276,10 @@ TEST_FUNCTION(is_input__forward_held__returns_true_when_set) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/input/input.h.spec.md
+/// Section: 1.4.7 Button State Queries — Held
+///
 TEST_FUNCTION(is_input__forward_held__returns_false_when_not_set) {
     Input input;
     initialize_input(&input);
@@ -213,6 +289,10 @@ TEST_FUNCTION(is_input__forward_held__returns_false_when_not_set) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/input/input.h.spec.md
+/// Section: 1.4.7 Button State Queries — Held
+///
 TEST_FUNCTION(is_input__left_held__returns_true_when_set) {
     Input input;
     initialize_input(&input);
@@ -223,6 +303,10 @@ TEST_FUNCTION(is_input__left_held__returns_true_when_set) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/input/input.h.spec.md
+/// Section: 1.4.7 Button State Queries — Held
+///
 TEST_FUNCTION(is_input__right_held__returns_true_when_set) {
     Input input;
     initialize_input(&input);
@@ -233,6 +317,10 @@ TEST_FUNCTION(is_input__right_held__returns_true_when_set) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/input/input.h.spec.md
+/// Section: 1.4.7 Button State Queries — Held
+///
 TEST_FUNCTION(is_input__backward_held__returns_true_when_set) {
     Input input;
     initialize_input(&input);
@@ -243,6 +331,10 @@ TEST_FUNCTION(is_input__backward_held__returns_true_when_set) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/input/input.h.spec.md
+/// Section: 1.4.7 Button State Queries — Held
+///
 TEST_FUNCTION(is_input__use_held__returns_true_when_set) {
     Input input;
     initialize_input(&input);
@@ -253,6 +345,10 @@ TEST_FUNCTION(is_input__use_held__returns_true_when_set) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/input/input.h.spec.md
+/// Section: 1.4.7 Button State Queries — Held
+///
 TEST_FUNCTION(is_input__use_secondary_held__returns_true_when_set) {
     Input input;
     initialize_input(&input);
@@ -263,6 +359,10 @@ TEST_FUNCTION(is_input__use_secondary_held__returns_true_when_set) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/input/input.h.spec.md
+/// Section: 1.4.7 Button State Queries — Held
+///
 TEST_FUNCTION(is_input__lockon_held__returns_true_when_set) {
     Input input;
     initialize_input(&input);
@@ -273,6 +373,10 @@ TEST_FUNCTION(is_input__lockon_held__returns_true_when_set) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/input/input.h.spec.md
+/// Section: 1.4.7 Button State Queries — Held
+///
 TEST_FUNCTION(is_input__game_settings_held__returns_true_when_set) {
     Input input;
     initialize_input(&input);
@@ -283,6 +387,10 @@ TEST_FUNCTION(is_input__game_settings_held__returns_true_when_set) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/input/input.h.spec.md
+/// Section: 1.4.7 Button State Queries — Held
+///
 TEST_FUNCTION(is_input__examine_held__returns_true_when_set) {
     Input input;
     initialize_input(&input);
@@ -293,6 +401,10 @@ TEST_FUNCTION(is_input__examine_held__returns_true_when_set) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/input/input.h.spec.md
+/// Section: 1.4.7 Button State Queries — Held
+///
 TEST_FUNCTION(is_input__consume_held__returns_true_when_set) {
     Input input;
     initialize_input(&input);
@@ -303,6 +415,10 @@ TEST_FUNCTION(is_input__consume_held__returns_true_when_set) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/input/input.h.spec.md
+/// Section: 1.4.7 Button State Queries — Held
+///
 TEST_FUNCTION(is_input__turn_left_held__returns_true_when_set) {
     Input input;
     initialize_input(&input);
@@ -313,6 +429,10 @@ TEST_FUNCTION(is_input__turn_left_held__returns_true_when_set) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/input/input.h.spec.md
+/// Section: 1.4.7 Button State Queries — Held
+///
 TEST_FUNCTION(is_input__turn_right_held__returns_true_when_set) {
     Input input;
     initialize_input(&input);
@@ -323,6 +443,10 @@ TEST_FUNCTION(is_input__turn_right_held__returns_true_when_set) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/input/input.h.spec.md
+/// Section: 1.4.5 Button State Queries — Released
+///
 TEST_FUNCTION(is_input__forward_released__returns_true_when_set) {
     Input input;
     initialize_input(&input);
@@ -333,6 +457,10 @@ TEST_FUNCTION(is_input__forward_released__returns_true_when_set) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/input/input.h.spec.md
+/// Section: 1.4.5 Button State Queries — Released
+///
 TEST_FUNCTION(is_input__forward_released__returns_false_when_not_set) {
     Input input;
     initialize_input(&input);
@@ -342,6 +470,10 @@ TEST_FUNCTION(is_input__forward_released__returns_false_when_not_set) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/input/input.h.spec.md
+/// Section: 1.4.5 Button State Queries — Released
+///
 TEST_FUNCTION(is_input__left_released__returns_true_when_set) {
     Input input;
     initialize_input(&input);
@@ -352,6 +484,10 @@ TEST_FUNCTION(is_input__left_released__returns_true_when_set) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/input/input.h.spec.md
+/// Section: 1.4.5 Button State Queries — Released
+///
 TEST_FUNCTION(is_input__right_released__returns_true_when_set) {
     Input input;
     initialize_input(&input);
@@ -362,6 +498,10 @@ TEST_FUNCTION(is_input__right_released__returns_true_when_set) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/input/input.h.spec.md
+/// Section: 1.4.5 Button State Queries — Released
+///
 TEST_FUNCTION(is_input__backward_released__returns_true_when_set) {
     Input input;
     initialize_input(&input);
@@ -372,6 +512,10 @@ TEST_FUNCTION(is_input__backward_released__returns_true_when_set) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/input/input.h.spec.md
+/// Section: 1.4.5 Button State Queries — Released
+///
 TEST_FUNCTION(is_input__use_released__returns_true_when_set) {
     Input input;
     initialize_input(&input);
@@ -382,6 +526,10 @@ TEST_FUNCTION(is_input__use_released__returns_true_when_set) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/input/input.h.spec.md
+/// Section: 1.4.5 Button State Queries — Released
+///
 TEST_FUNCTION(is_input__use_secondary_released__returns_true_when_set) {
     Input input;
     initialize_input(&input);
@@ -392,6 +540,10 @@ TEST_FUNCTION(is_input__use_secondary_released__returns_true_when_set) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/input/input.h.spec.md
+/// Section: 1.4.5 Button State Queries — Released
+///
 TEST_FUNCTION(is_input__click_released__returns_true_when_set) {
     Input input;
     initialize_input(&input);
@@ -402,6 +554,10 @@ TEST_FUNCTION(is_input__click_released__returns_true_when_set) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/input/input.h.spec.md
+/// Section: 1.4.5 Button State Queries — Released
+///
 TEST_FUNCTION(is_input__lockon_released__returns_true_when_set) {
     Input input;
     initialize_input(&input);
@@ -412,6 +568,10 @@ TEST_FUNCTION(is_input__lockon_released__returns_true_when_set) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/input/input.h.spec.md
+/// Section: 1.4.5 Button State Queries — Released
+///
 TEST_FUNCTION(is_input__game_settings_released__returns_true_when_set) {
     Input input;
     initialize_input(&input);
@@ -422,6 +582,10 @@ TEST_FUNCTION(is_input__game_settings_released__returns_true_when_set) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/input/input.h.spec.md
+/// Section: 1.4.5 Button State Queries — Released
+///
 TEST_FUNCTION(is_input__examine_released__returns_true_when_set) {
     Input input;
     initialize_input(&input);
@@ -432,6 +596,10 @@ TEST_FUNCTION(is_input__examine_released__returns_true_when_set) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/input/input.h.spec.md
+/// Section: 1.4.5 Button State Queries — Released
+///
 TEST_FUNCTION(is_input__consume_released__returns_true_when_set) {
     Input input;
     initialize_input(&input);
@@ -442,6 +610,10 @@ TEST_FUNCTION(is_input__consume_released__returns_true_when_set) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/input/input.h.spec.md
+/// Section: 1.4.5 Button State Queries — Released
+///
 TEST_FUNCTION(is_input__turn_left_released__returns_true_when_set) {
     Input input;
     initialize_input(&input);
@@ -452,6 +624,10 @@ TEST_FUNCTION(is_input__turn_left_released__returns_true_when_set) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/input/input.h.spec.md
+/// Section: 1.4.5 Button State Queries — Released
+///
 TEST_FUNCTION(is_input__turn_right_released__returns_true_when_set) {
     Input input;
     initialize_input(&input);
@@ -462,6 +638,10 @@ TEST_FUNCTION(is_input__turn_right_released__returns_true_when_set) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/input/input.h.spec.md
+/// Section: 1.4.9 Input Consumption
+///
 TEST_FUNCTION(consume_input__clears_specified_flag_from_all_states) {
     Input input;
     initialize_input(&input);
@@ -481,6 +661,10 @@ TEST_FUNCTION(consume_input__clears_specified_flag_from_all_states) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/input/input.h.spec.md
+/// Section: 1.4.9 Input Consumption
+///
 TEST_FUNCTION(consume_input__clears_multiple_flags) {
     Input input;
     initialize_input(&input);
@@ -497,6 +681,10 @@ TEST_FUNCTION(consume_input__clears_multiple_flags) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/input/input.h.spec.md
+/// Section: 1.4.4 Clear, 1.5.10 Postconditions
+///
 TEST_FUNCTION(clear_input__zeroes_all_flags_and_saves_cursor) {
     Input input;
     initialize_input(&input);
@@ -520,6 +708,10 @@ TEST_FUNCTION(clear_input__zeroes_all_flags_and_saves_cursor) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/input/input.h.spec.md
+/// Section: 1.4.8 Composite Input Queries
+///
 TEST_FUNCTION(is_input__click_held__true_when_cursor_not_moved) {
     Input input;
     initialize_input(&input);
@@ -536,6 +728,10 @@ TEST_FUNCTION(is_input__click_held__true_when_cursor_not_moved) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/input/input.h.spec.md
+/// Section: 1.4.8 Composite Input Queries
+///
 TEST_FUNCTION(is_input__click_held__false_when_cursor_moved) {
     Input input;
     initialize_input(&input);
@@ -552,6 +748,10 @@ TEST_FUNCTION(is_input__click_held__false_when_cursor_moved) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/input/input.h.spec.md
+/// Section: 1.4.8 Composite Input Queries
+///
 TEST_FUNCTION(is_input__click_held__false_when_click_not_held) {
     Input input;
     initialize_input(&input);
@@ -567,6 +767,10 @@ TEST_FUNCTION(is_input__click_held__false_when_click_not_held) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/input/input.h.spec.md
+/// Section: 1.4.8 Composite Input Queries
+///
 TEST_FUNCTION(is_input__click_dragged__true_when_cursor_moved) {
     Input input;
     initialize_input(&input);
@@ -583,6 +787,10 @@ TEST_FUNCTION(is_input__click_dragged__true_when_cursor_moved) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/input/input.h.spec.md
+/// Section: 1.4.8 Composite Input Queries
+///
 TEST_FUNCTION(is_input__click_dragged__false_when_cursor_not_moved) {
     Input input;
     initialize_input(&input);
@@ -599,6 +807,10 @@ TEST_FUNCTION(is_input__click_dragged__false_when_cursor_not_moved) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/input/input.h.spec.md
+/// Section: 1.4.8 Composite Input Queries
+///
 TEST_FUNCTION(is_input__click_dragged__false_when_click_not_held) {
     Input input;
     initialize_input(&input);
@@ -614,6 +826,10 @@ TEST_FUNCTION(is_input__click_dragged__false_when_click_not_held) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/input/input.h.spec.md
+/// Section: 1.4.3 Writing Buffer
+///
 TEST_FUNCTION(writing_buffer__buffer_and_poll_single_char) {
     Input input;
     initialize_input(&input);
@@ -626,6 +842,10 @@ TEST_FUNCTION(writing_buffer__buffer_and_poll_single_char) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/input/input.h.spec.md
+/// Section: 1.4.3 Writing Buffer
+///
 TEST_FUNCTION(writing_buffer__buffer_and_poll_multiple_chars) {
     Input input;
     initialize_input(&input);
@@ -642,6 +862,10 @@ TEST_FUNCTION(writing_buffer__buffer_and_poll_multiple_chars) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/input/input.h.spec.md
+/// Section: 1.4.3 Writing Buffer
+///
 TEST_FUNCTION(writing_buffer__last_symbol_returns_most_recent) {
     Input input;
     initialize_input(&input);
@@ -655,6 +879,10 @@ TEST_FUNCTION(writing_buffer__last_symbol_returns_most_recent) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/input/input.h.spec.md
+/// Section: 1.4.10 Mode Management
+///
 TEST_FUNCTION(get_input_mode__returns_current_mode) {
     Input input;
     initialize_input(&input);
@@ -664,6 +892,10 @@ TEST_FUNCTION(get_input_mode__returns_current_mode) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/input/input.h.spec.md
+/// Section: 1.4.10 Mode Management
+///
 TEST_FUNCTION(set_input_mode__changes_mode) {
     Input input;
     initialize_input(&input);
@@ -674,6 +906,10 @@ TEST_FUNCTION(set_input_mode__changes_mode) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/input/input.h.spec.md
+/// Section: 1.5.2 Three-State Input Model
+///
 TEST_FUNCTION(held_and_pressed_independent) {
     Input input;
     initialize_input(&input);
@@ -688,6 +924,10 @@ TEST_FUNCTION(held_and_pressed_independent) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/input/input.h.spec.md
+/// Section: 1.5.2 Three-State Input Model
+///
 TEST_FUNCTION(released_independent_of_pressed_and_held) {
     Input input;
     initialize_input(&input);
