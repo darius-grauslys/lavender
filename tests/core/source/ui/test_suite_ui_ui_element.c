@@ -2,6 +2,10 @@
 
 #include <ui/ui_element.c>
 
+///
+/// Spec: core/ui/ui_element.h.spec.md
+/// Section: 4.4.1 Initialization
+///
 TEST_FUNCTION(initialize_ui_element__sets_kind) {
     UI_Element ui_element;
     initialize_ui_element(
@@ -18,6 +22,10 @@ TEST_FUNCTION(initialize_ui_element__sets_kind) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: core/ui/ui_element.h.spec.md
+/// Section: 4.4.1 Initialization
+///
 TEST_FUNCTION(initialize_ui_element__sets_flags) {
     UI_Element ui_element;
     initialize_ui_element(
@@ -31,6 +39,10 @@ TEST_FUNCTION(initialize_ui_element__sets_flags) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: core/ui/ui_element.h.spec.md
+/// Section: 4.4.1 Initialization
+///
 TEST_FUNCTION(initialize_ui_element__sets_tree_pointers) {
     UI_Element parent;
     UI_Element child;
@@ -49,6 +61,10 @@ TEST_FUNCTION(initialize_ui_element__sets_tree_pointers) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: core/ui/ui_element.h.spec.md
+/// Section: 4.4.1 Initialization
+///
 TEST_FUNCTION(initialize_ui_element__null_tree_pointers) {
     UI_Element ui_element;
     initialize_ui_element(
@@ -64,6 +80,10 @@ TEST_FUNCTION(initialize_ui_element__null_tree_pointers) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: core/ui/ui_element.h.spec.md
+/// Section: 4.4.9 Kind Query
+///
 TEST_FUNCTION(is_ui_element_of__this_kind__returns_true_for_matching_kind) {
     UI_Element ui_element;
     initialize_ui_element(
@@ -80,6 +100,10 @@ TEST_FUNCTION(is_ui_element_of__this_kind__returns_true_for_matching_kind) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: core/ui/ui_element.h.spec.md
+/// Section: 4.4.9 Kind Query
+///
 TEST_FUNCTION(is_ui_element_of__this_kind__returns_false_for_different_kind) {
     UI_Element ui_element;
     initialize_ui_element(
@@ -96,6 +120,10 @@ TEST_FUNCTION(is_ui_element_of__this_kind__returns_false_for_different_kind) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: core/ui/ui_element.h.spec.md
+/// Section: 4.4.11 Flag Mutations
+///
 TEST_FUNCTION(set_ui_element_as__enabled__sets_flag) {
     UI_Element ui_element;
     initialize_ui_element(
@@ -109,6 +137,10 @@ TEST_FUNCTION(set_ui_element_as__enabled__sets_flag) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: core/ui/ui_element.h.spec.md
+/// Section: 4.4.11 Flag Mutations
+///
 TEST_FUNCTION(set_ui_element_as__disabled__clears_flag) {
     UI_Element ui_element;
     initialize_ui_element(
@@ -122,6 +154,10 @@ TEST_FUNCTION(set_ui_element_as__disabled__clears_flag) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: core/ui/ui_element.h.spec.md
+/// Section: 4.4.11 Flag Mutations
+///
 TEST_FUNCTION(set_ui_element_as__focused__sets_flag) {
     UI_Element ui_element;
     initialize_ui_element(
@@ -135,6 +171,10 @@ TEST_FUNCTION(set_ui_element_as__focused__sets_flag) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: core/ui/ui_element.h.spec.md
+/// Section: 4.4.11 Flag Mutations
+///
 TEST_FUNCTION(set_ui_element_as__NOT_focused__clears_flag) {
     UI_Element ui_element;
     initialize_ui_element(
@@ -147,6 +187,10 @@ TEST_FUNCTION(set_ui_element_as__NOT_focused__clears_flag) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: core/ui/ui_element.h.spec.md
+/// Section: 4.4.11 Flag Mutations
+///
 TEST_FUNCTION(set_ui_element_as__being_held__sets_flag) {
     UI_Element ui_element;
     initialize_ui_element(
@@ -159,6 +203,10 @@ TEST_FUNCTION(set_ui_element_as__being_held__sets_flag) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: core/ui/ui_element.h.spec.md
+/// Section: 4.4.11 Flag Mutations
+///
 TEST_FUNCTION(set_ui_element_as__being_dragged__sets_flag) {
     UI_Element ui_element;
     initialize_ui_element(
@@ -171,6 +219,10 @@ TEST_FUNCTION(set_ui_element_as__being_dragged__sets_flag) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: core/ui/ui_element.h.spec.md
+/// Section: 4.4.11 Flag Mutations
+///
 TEST_FUNCTION(set_ui_element_as__dropped__clears_held_and_dragged) {
     UI_Element ui_element;
     initialize_ui_element(
@@ -188,6 +240,10 @@ TEST_FUNCTION(set_ui_element_as__dropped__clears_held_and_dragged) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: core/ui/ui_element.h.spec.md
+/// Section: 4.4.11 Flag Mutations
+///
 TEST_FUNCTION(set_ui_element_as__using_sprite__sets_flag) {
     UI_Element ui_element;
     initialize_ui_element(
@@ -201,6 +257,10 @@ TEST_FUNCTION(set_ui_element_as__using_sprite__sets_flag) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: core/ui/ui_element.h.spec.md
+/// Section: 4.4.11 Flag Mutations
+///
 TEST_FUNCTION(set_ui_element_as__using_ui_tile_span__clears_flag) {
     UI_Element ui_element;
     initialize_ui_element(
@@ -214,6 +274,10 @@ TEST_FUNCTION(set_ui_element_as__using_ui_tile_span__clears_flag) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: core/ui/ui_element.h.spec.md
+/// Section: 4.4.11 Flag Mutations
+///
 TEST_FUNCTION(set_ui_element_as__non_interactive__sets_flag) {
     UI_Element ui_element;
     initialize_ui_element(
@@ -226,6 +290,10 @@ TEST_FUNCTION(set_ui_element_as__non_interactive__sets_flag) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: core/ui/ui_element.h.spec.md
+/// Section: 4.4.11 Flag Mutations
+///
 TEST_FUNCTION(set_ui_element_as__interactive__clears_flag) {
     UI_Element ui_element;
     initialize_ui_element(
@@ -238,6 +306,10 @@ TEST_FUNCTION(set_ui_element_as__interactive__clears_flag) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: core/ui/ui_element.h.spec.md
+/// Section: 4.4.8 Linked List
+///
 TEST_FUNCTION(link_ui_element__sets_next_pointer) {
     UI_Element a;
     UI_Element b;
@@ -248,6 +320,10 @@ TEST_FUNCTION(link_ui_element__sets_next_pointer) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: core/ui/ui_element.h.spec.md
+/// Section: 4.4.8 Linked List
+///
 TEST_FUNCTION(link_ui_element__self_link_sets_null) {
     UI_Element a;
     initialize_ui_element(&a, 0, 0, 0, UI_Element_Kind__Button, 0);
@@ -256,6 +332,10 @@ TEST_FUNCTION(link_ui_element__self_link_sets_null) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: core/ui/ui_element.h.spec.md
+/// Section: 4.4.11 Flag Mutations
+///
 TEST_FUNCTION(set_ui_element_as__snapped_x_axis__sets_flag) {
     UI_Element ui_element;
     initialize_ui_element(
@@ -268,6 +348,10 @@ TEST_FUNCTION(set_ui_element_as__snapped_x_axis__sets_flag) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: core/ui/ui_element.h.spec.md
+/// Section: 4.4.11 Flag Mutations
+///
 TEST_FUNCTION(set_ui_element_as__snapped_y_axis__clears_flag) {
     UI_Element ui_element;
     initialize_ui_element(
@@ -280,6 +364,10 @@ TEST_FUNCTION(set_ui_element_as__snapped_y_axis__clears_flag) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: core/ui/ui_element.h.spec.md
+/// Section: 4.4.12 Handler Setters
+///
 TEST_FUNCTION(set_ui_element__compose_handler__also_sets_tile_span_mode) {
     UI_Element ui_element;
     initialize_ui_element(
@@ -295,6 +383,10 @@ TEST_FUNCTION(set_ui_element__compose_handler__also_sets_tile_span_mode) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: core/ui/ui_element.h.spec.md
+/// Section: 4.4.13 Handler Queries
+///
 TEST_FUNCTION(does_ui_element_have__compose_handler__requires_tile_span_mode) {
     UI_Element ui_element;
     initialize_ui_element(
@@ -311,6 +403,10 @@ TEST_FUNCTION(does_ui_element_have__compose_handler__requires_tile_span_mode) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: core/ui/ui_element.h.spec.md
+/// Section: 4.4.6 Tree Management
+///
 TEST_FUNCTION(set_child_of__ui_element__sets_child_pointer) {
     UI_Element parent;
     UI_Element child;
@@ -321,6 +417,10 @@ TEST_FUNCTION(set_child_of__ui_element__sets_child_pointer) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: core/ui/ui_element.h.spec.md
+/// Section: 4.4.6 Tree Management
+///
 TEST_FUNCTION(set_parent_of__ui_element__sets_parent_pointer) {
     UI_Element parent;
     UI_Element child;
@@ -331,6 +431,10 @@ TEST_FUNCTION(set_parent_of__ui_element__sets_parent_pointer) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: core/ui/ui_element.h.spec.md
+/// Section: 4.4.8 Linked List
+///
 TEST_FUNCTION(iterate_to_next__ui_element__advances_and_returns_current) {
     UI_Element a;
     UI_Element b;
@@ -344,6 +448,10 @@ TEST_FUNCTION(iterate_to_next__ui_element__advances_and_returns_current) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: core/ui/ui_element.h.spec.md
+/// Section: 4.4.8 Linked List
+///
 TEST_FUNCTION(iterate_to_next__ui_element__null_safe) {
     UI_Element *p_current = 0;
     UI_Element *p_result = iterate_to_next__ui_element(&p_current);
@@ -352,6 +460,10 @@ TEST_FUNCTION(iterate_to_next__ui_element__null_safe) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: core/ui/ui_element.h.spec.md
+/// Section: 4.4.12 Handler Setters, 4.4.13 Handler Queries
+///
 TEST_FUNCTION(handler_setters_and_queries__clicked) {
     UI_Element ui_element;
     initialize_ui_element(
@@ -364,6 +476,10 @@ TEST_FUNCTION(handler_setters_and_queries__clicked) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: core/ui/ui_element.h.spec.md
+/// Section: 4.4.12 Handler Setters, 4.4.13 Handler Queries
+///
 TEST_FUNCTION(handler_setters_and_queries__dragged) {
     UI_Element ui_element;
     initialize_ui_element(
@@ -376,6 +492,10 @@ TEST_FUNCTION(handler_setters_and_queries__dragged) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: core/ui/ui_element.h.spec.md
+/// Section: 4.4.12 Handler Setters, 4.4.13 Handler Queries
+///
 TEST_FUNCTION(handler_setters_and_queries__dropped) {
     UI_Element ui_element;
     initialize_ui_element(
@@ -388,6 +508,10 @@ TEST_FUNCTION(handler_setters_and_queries__dropped) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: core/ui/ui_element.h.spec.md
+/// Section: 4.4.12 Handler Setters, 4.4.13 Handler Queries
+///
 TEST_FUNCTION(handler_setters_and_queries__held) {
     UI_Element ui_element;
     initialize_ui_element(
@@ -400,6 +524,10 @@ TEST_FUNCTION(handler_setters_and_queries__held) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: core/ui/ui_element.h.spec.md
+/// Section: 4.4.12 Handler Setters, 4.4.13 Handler Queries
+///
 TEST_FUNCTION(handler_setters_and_queries__typed) {
     UI_Element ui_element;
     initialize_ui_element(
@@ -412,6 +540,10 @@ TEST_FUNCTION(handler_setters_and_queries__typed) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: core/ui/ui_element.h.spec.md
+/// Section: 4.4.12 Handler Setters, 4.4.13 Handler Queries
+///
 TEST_FUNCTION(handler_setters_and_queries__transformed) {
     UI_Element ui_element;
     initialize_ui_element(
@@ -426,6 +558,10 @@ TEST_FUNCTION(handler_setters_and_queries__transformed) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: core/ui/ui_element.h.spec.md
+/// Section: 4.4.12 Handler Setters, 4.4.13 Handler Queries
+///
 TEST_FUNCTION(handler_setters_and_queries__dispose) {
     UI_Element ui_element;
     initialize_ui_element(
@@ -438,6 +574,10 @@ TEST_FUNCTION(handler_setters_and_queries__dispose) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: core/ui/ui_element.h.spec.md
+/// Section: 4.4.12 Handler Setters, 4.4.13 Handler Queries
+///
 TEST_FUNCTION(handler_setters_and_queries__receive_drop) {
     UI_Element ui_element;
     initialize_ui_element(
@@ -452,6 +592,10 @@ TEST_FUNCTION(handler_setters_and_queries__receive_drop) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: core/ui/ui_element.h.spec.md
+/// Section: 4.4.10 Flag Queries
+///
 TEST_FUNCTION(get_ui_element__flags__returns_current_flags) {
     UI_Element ui_element;
     initialize_ui_element(
