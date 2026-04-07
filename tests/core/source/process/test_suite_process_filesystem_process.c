@@ -9,6 +9,13 @@ void m_test_fsp_handler__noop(
     (void)p_game;
 }
 
+/**
+ * @spec    docs/specs/core/process/filesystem_process.h.spec.md
+ * @section 1.3.1 Initialization — initialize_process_as__filesystem_process
+ *
+ * Verifies that the process's p_process_data is set to the
+ * provided Serialization_Request pointer.
+ */
 TEST_FUNCTION(initialize_process_as__filesystem_process__sets_data_to_serialization_request) {
     Process process;
     Serialization_Request sr;
@@ -37,6 +44,13 @@ TEST_FUNCTION(initialize_process_as__filesystem_process__sets_data_to_serializat
     return MUNIT_OK;
 }
 
+/**
+ * @spec    docs/specs/core/process/filesystem_process.h.spec.md
+ * @section 1.3.1 Initialization — initialize_process_as__filesystem_process
+ *
+ * Verifies that the user data pointer is stored in
+ * Serialization_Request.p_data.
+ */
 TEST_FUNCTION(initialize_process_as__filesystem_process__sets_sr_data_to_user_data) {
     Process process;
     Serialization_Request sr;
@@ -65,6 +79,13 @@ TEST_FUNCTION(initialize_process_as__filesystem_process__sets_sr_data_to_user_da
     return MUNIT_OK;
 }
 
+/**
+ * @spec    docs/specs/core/process/filesystem_process.h.spec.md
+ * @section 1.3.1 Initialization — initialize_process_as__filesystem_process
+ *
+ * Verifies that the process kind is marked as
+ * Process_Kind__Serialized after initialization.
+ */
 TEST_FUNCTION(initialize_process_as__filesystem_process__sets_kind_to_serialized) {
     Process process;
     Serialization_Request sr;
@@ -93,6 +114,13 @@ TEST_FUNCTION(initialize_process_as__filesystem_process__sets_kind_to_serialized
     return MUNIT_OK;
 }
 
+/**
+ * @spec    docs/specs/core/process/filesystem_process.h.spec.md
+ * @section 1.3.1 Initialization — initialize_process_as__filesystem_process
+ *
+ * Verifies that the process run handler previously set via
+ * initialize_process is preserved and not overwritten.
+ */
 TEST_FUNCTION(initialize_process_as__filesystem_process__preserves_handler) {
     Process process;
     Serialization_Request sr;
@@ -120,6 +148,13 @@ TEST_FUNCTION(initialize_process_as__filesystem_process__preserves_handler) {
     return MUNIT_OK;
 }
 
+/**
+ * @spec    docs/specs/core/process/filesystem_process.h.spec.md
+ * @section 1.3.1 Initialization — initialize_process_as__filesystem_process
+ *
+ * Verifies that passing NULL as user data results in
+ * Serialization_Request.p_data being set to NULL.
+ */
 TEST_FUNCTION(initialize_process_as__filesystem_process__null_user_data) {
     Process process;
     Serialization_Request sr;
