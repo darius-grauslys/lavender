@@ -67,6 +67,8 @@ void initialize_collision_node_pool(
 Collision_Node *allocate_collision_node_from__collision_node_pool(
         Collision_Node_Pool *p_collision_node_pool,
         Identifier__u64 uuid__u64) {
+    // Bug 1 fix: use the __u64 variant and cast to Serialization_Header__UUID_64*
+    // so that the full 64-bit UUID is used for hashing and slot selection.
     Collision_Node *p_collision_node =
         (Collision_Node*)get_next_available__allocation_in__contiguous_array__u64(
                 (Serialization_Header__UUID_64*)
@@ -120,13 +122,21 @@ Collision_Node_Entry *allocate_collision_node_entry_from__collision_node_pool(
 
         if (!is_identifier_u32__invalid(
                     p_collision_node_entry->uuid_of__hitbox__u32)) {
+            // Slot is either fully allocated (real UUID) or provisionally
+            // reserved (IDENTIFIER__RESERVED__u32). Either way, skip it.
             continue;
         }
+
+        // Bug 3 fix: stamp the slot with the reserved sentinel immediately
+        // so that a subsequent call before the caller sets the real UUID
+        // cannot return the same slot again.
+        p_collision_node_entry->uuid_of__hitbox__u32 =
+            IDENTIFIER__RESERVED__u32;
 
         return p_collision_node_entry;
     }
     
-    debug_error("get_next_available__collision_node_entry, failed to find available entry.");
+    debug_error("allocate_collision_node_entry_from__collision_node_pool, failed to find available entry.");
     return 0;
 }
 

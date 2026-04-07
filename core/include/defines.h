@@ -154,6 +154,23 @@ typedef int32_t Signed_Quantity__i32;
 #define IDENTIFIER__UNKNOWN__u32 (uint32_t)(-1)
 #define IDENTIFIER__UNKNOWN__u16 (uint16_t)(-1)
 #define IDENTIFIER__UNKNOWN__u8 (uint8_t)(-1)
+///
+/// Provisional in-use sentinel for pool entry slots.
+///
+/// A slot stamped with this value has been claimed by an allocator
+/// (e.g. allocate_collision_node_entry_from__collision_node_pool) but
+/// has not yet been assigned a real UUID by the caller.
+///
+/// Guarantees:
+///   - Never produced by get_random__uuid_u32, which XORs its PRNG
+///     output against IDENTIFIER__UNKNOWN__u32 ((uint32_t)-1), making
+///     0 an impossible result.
+///   - Distinct from IDENTIFIER__UNKNOWN__u32, so the slot is not
+///     mistaken for a free/available slot by a subsequent allocator call.
+///   - The caller MUST replace this value with a real UUID before the
+///     entry is linked into any data structure.
+///
+#define IDENTIFIER__RESERVED__u32 (uint32_t)(0)
 typedef uint32_t Identifier__u32;
 typedef uint16_t Identifier__u16;
 typedef uint8_t Identifier__u8;

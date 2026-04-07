@@ -208,7 +208,10 @@ Serialization_Header__UUID_64
                 p_serialization_headers__u64, 
                 length_of__p_serialization_headers, 
                 uuid__u64);
-    ALLOCATE_P(p_serialization_header__u64, uuid__u64);
+    // Bug 2 fix: use ALLOCATE_P__u64 instead of ALLOCATE_P so that the
+    // full 64-bit UUID is written into the u64 header field correctly.
+    if (p_serialization_header__u64)
+        ALLOCATE_P__u64(p_serialization_header__u64, uuid__u64);
     return p_serialization_header__u64;
 }
 
