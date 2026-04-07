@@ -2,6 +2,11 @@
 
 #include <world/local_space_manager.c>
 
+/**
+ * Spec:    docs/specs/core/world/local_space_manager.h.spec.md
+ * Section: 1.4.1 Initialization
+ *          1.4.5 Convenience (static inline)
+ */
 TEST_FUNCTION(local_space_manager__initialize__sets_center) {
     Local_Space_Manager manager;
     Global_Space_Vector__3i32 center;
@@ -16,6 +21,10 @@ TEST_FUNCTION(local_space_manager__initialize__sets_center) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec:    docs/specs/core/world/local_space_manager.h.spec.md
+ * Section: 1.4.3 Lookup
+ */
 TEST_FUNCTION(local_space_manager__get_by_index__valid_index) {
     Local_Space_Manager manager;
     Global_Space_Vector__3i32 center;
@@ -29,6 +38,10 @@ TEST_FUNCTION(local_space_manager__get_by_index__valid_index) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec:    docs/specs/core/world/local_space_manager.h.spec.md
+ * Section: 1.4.3 Lookup
+ */
 TEST_FUNCTION(local_space_manager__get_by_index__last_valid_index) {
     Local_Space_Manager manager;
     Global_Space_Vector__3i32 center;
