@@ -2,6 +2,10 @@
 
 #include <world/global_space_manager.c>
 
+///
+/// Spec: docs/specs/core/world/global_space_manager.h.spec.md
+/// Section: 1.4.1 Initialization
+///
 TEST_FUNCTION(global_space_manager__initialize__all_deallocated) {
     Global_Space_Manager manager;
     initialize_global_space_manager(&manager);
@@ -11,6 +15,10 @@ TEST_FUNCTION(global_space_manager__initialize__all_deallocated) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/world/global_space_manager.h.spec.md
+/// Section: 1.4.2 Allocation and Release
+///
 TEST_FUNCTION(global_space_manager__allocate__returns_non_null) {
     Global_Space_Manager manager;
     initialize_global_space_manager(&manager);
@@ -24,6 +32,10 @@ TEST_FUNCTION(global_space_manager__allocate__returns_non_null) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/world/global_space_manager.h.spec.md
+/// Section: 1.4.3 Lookup
+///
 TEST_FUNCTION(global_space_manager__allocate__lookup_returns_same) {
     Global_Space_Manager manager;
     initialize_global_space_manager(&manager);
@@ -37,6 +49,10 @@ TEST_FUNCTION(global_space_manager__allocate__lookup_returns_same) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/world/global_space_manager.h.spec.md
+/// Section: 1.4.3 Lookup
+///
 TEST_FUNCTION(global_space_manager__lookup__not_found_returns_null) {
     Global_Space_Manager manager;
     initialize_global_space_manager(&manager);
@@ -49,6 +65,10 @@ TEST_FUNCTION(global_space_manager__lookup__not_found_returns_null) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/world/global_space_manager.h.spec.md
+/// Section: 1.4.2 Allocation and Release
+///
 TEST_FUNCTION(global_space_manager__release__makes_deallocated) {
     Global_Space_Manager manager;
     initialize_global_space_manager(&manager);
@@ -63,6 +83,10 @@ TEST_FUNCTION(global_space_manager__release__makes_deallocated) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/world/global_space_manager.h.spec.md
+/// Section: 1.4.5 UUID Generation (static inline)
+///
 TEST_FUNCTION(global_space_manager__get_uuid__deterministic) {
     Chunk_Vector__3i32 cv;
     cv.x__i32 = 3;
@@ -74,6 +98,10 @@ TEST_FUNCTION(global_space_manager__get_uuid__deterministic) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/world/global_space_manager.h.spec.md
+/// Section: 1.4.5 UUID Generation (static inline)
+///
 TEST_FUNCTION(global_space_manager__get_uuid__different_positions_differ) {
     Chunk_Vector__3i32 cv1;
     cv1.x__i32 = 0;
