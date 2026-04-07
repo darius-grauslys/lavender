@@ -33,6 +33,13 @@ static void test_tile_touch_handler(
     tile_touch_handler_call_count++;
 }
 
+/*
+ * Spec: docs/specs/core/collisions/collision_resolver_aabb.h.spec.md
+ * Section: 1.4.1 Default Handlers
+ *
+ * Verifies that f_hitbox_aabb_collision_handler__default does not crash
+ * when called with two non-overlapping hitboxes.
+ */
 TEST_FUNCTION(collision_resolver_aabb__default_collision_handler__does_not_crash_on_non_overlapping) {
     Hitbox_AABB hitbox_a;
     Hitbox_AABB hitbox_b;
@@ -51,6 +58,14 @@ TEST_FUNCTION(collision_resolver_aabb__default_collision_handler__does_not_crash
     return MUNIT_OK;
 }
 
+/*
+ * Spec: docs/specs/core/collisions/collision_resolver_aabb.h.spec.md
+ * Section: 1.4.1 Default Handlers
+ *
+ * Verifies that f_hitbox_aabb_collision_handler__default does not crash
+ * when called with two overlapping hitboxes, exercising the displacement
+ * resolution path.
+ */
 TEST_FUNCTION(collision_resolver_aabb__default_collision_handler__does_not_crash_on_overlapping) {
     Hitbox_AABB hitbox_a;
     Hitbox_AABB hitbox_b;
@@ -69,6 +84,14 @@ TEST_FUNCTION(collision_resolver_aabb__default_collision_handler__does_not_crash
     return MUNIT_OK;
 }
 
+/*
+ * Spec: docs/specs/core/collisions/collision_resolver_aabb.h.spec.md
+ * Section: 1.5.5 Custom Handlers
+ *
+ * Verifies that a custom f_Hitbox_AABB_Collision_Handler is invoked when
+ * called directly, confirming the callback signature and call convention
+ * are correct.
+ */
 TEST_FUNCTION(collision_resolver_aabb__custom_handler__is_invoked) {
     collision_handler_call_count = 0;
 
@@ -90,6 +113,14 @@ TEST_FUNCTION(collision_resolver_aabb__custom_handler__is_invoked) {
     return MUNIT_OK;
 }
 
+/*
+ * Spec: docs/specs/core/collisions/collision_resolver_aabb.h.spec.md
+ * Section: 1.5.5 Custom Handlers
+ *
+ * Verifies that a custom f_Hitbox_AABB_Tile_Touch_Handler is invoked when
+ * called directly, confirming the callback signature and call convention
+ * are correct.
+ */
 TEST_FUNCTION(collision_resolver_aabb__custom_tile_handler__is_invoked) {
     tile_touch_handler_call_count = 0;
 
@@ -108,6 +139,13 @@ TEST_FUNCTION(collision_resolver_aabb__custom_tile_handler__is_invoked) {
     return MUNIT_OK;
 }
 
+/*
+ * Spec: docs/specs/core/collisions/collision_resolver_aabb.h.spec.md
+ * Section: 1.5.2 Resolution Algorithm
+ *
+ * Verifies that is_hitbox_aabb__colliding returns DIRECTION__NONE when
+ * two hitboxes are far apart and do not overlap.
+ */
 TEST_FUNCTION(collision_resolver_aabb__is_hitbox_aabb_colliding__no_overlap) {
     Hitbox_AABB hitbox_a;
     Hitbox_AABB hitbox_b;
@@ -128,6 +166,13 @@ TEST_FUNCTION(collision_resolver_aabb__is_hitbox_aabb_colliding__no_overlap) {
     return MUNIT_OK;
 }
 
+/*
+ * Spec: docs/specs/core/collisions/collision_resolver_aabb.h.spec.md
+ * Section: 1.5.2 Resolution Algorithm
+ *
+ * Verifies that is_hitbox_aabb__colliding returns a non-DIRECTION__NONE
+ * value when two hitboxes partially overlap.
+ */
 TEST_FUNCTION(collision_resolver_aabb__is_hitbox_aabb_colliding__overlap) {
     Hitbox_AABB hitbox_a;
     Hitbox_AABB hitbox_b;
@@ -148,6 +193,14 @@ TEST_FUNCTION(collision_resolver_aabb__is_hitbox_aabb_colliding__overlap) {
     return MUNIT_OK;
 }
 
+/*
+ * Spec: docs/specs/core/collisions/collision_resolver_aabb.h.spec.md
+ * Section: 1.5.2 Resolution Algorithm
+ *
+ * Verifies that is_hitbox_aabb__colliding returns a non-DIRECTION__NONE
+ * value when two hitboxes share the exact same position, representing
+ * a full overlap.
+ */
 TEST_FUNCTION(collision_resolver_aabb__is_hitbox_aabb_colliding__same_position) {
     Hitbox_AABB hitbox_a;
     Hitbox_AABB hitbox_b;
