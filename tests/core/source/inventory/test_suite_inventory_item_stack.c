@@ -2,6 +2,12 @@
 
 #include <inventory/item_stack.c>
 
+/**
+ * Spec: docs/specs/core/inventory/item_stack.h.spec.md
+ * Section: 1.4.1 Initialization, 1.5.6 Postconditions
+ *
+ * After initialize_item_stack_as__empty: is_p_item_stack__empty returns true.
+ */
 TEST_FUNCTION(item_stack__initialize_as_empty__is_empty) {
     Item_Stack item_stack;
     initialize_item_stack_as__empty(&item_stack, 0);
@@ -9,6 +15,12 @@ TEST_FUNCTION(item_stack__initialize_as_empty__is_empty) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/inventory/item_stack.h.spec.md
+ * Section: 1.4.1 Initialization
+ *
+ * An empty-initialized item stack has a quantity of zero.
+ */
 TEST_FUNCTION(item_stack__initialize_as_empty__quantity_is_zero) {
     Item_Stack item_stack;
     initialize_item_stack_as__empty(&item_stack, 0);
@@ -16,6 +28,12 @@ TEST_FUNCTION(item_stack__initialize_as_empty__quantity_is_zero) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/inventory/item_stack.h.spec.md
+ * Section: 1.4.1 Initialization
+ *
+ * An empty-initialized item stack has Item_Kind__None.
+ */
 TEST_FUNCTION(item_stack__initialize_as_empty__item_kind_is_none) {
     Item_Stack item_stack;
     initialize_item_stack_as__empty(&item_stack, 0);
@@ -23,6 +41,12 @@ TEST_FUNCTION(item_stack__initialize_as_empty__item_kind_is_none) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/inventory/item_stack.h.spec.md
+ * Section: 1.4.1 Initialization
+ *
+ * initialize_item_stack sets the quantity to the provided value.
+ */
 TEST_FUNCTION(item_stack__initialize__sets_quantity) {
     Item item;
     initialize_item(&item, Item_Kind__Unknown);
@@ -32,6 +56,12 @@ TEST_FUNCTION(item_stack__initialize__sets_quantity) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/inventory/item_stack.h.spec.md
+ * Section: 1.4.1 Initialization
+ *
+ * initialize_item_stack sets the item kind to the provided item's kind.
+ */
 TEST_FUNCTION(item_stack__initialize__sets_item_kind) {
     Item item;
     initialize_item(&item, Item_Kind__Unknown);
@@ -41,6 +71,12 @@ TEST_FUNCTION(item_stack__initialize__sets_item_kind) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/inventory/item_stack.h.spec.md
+ * Section: 1.4.1 Initialization
+ *
+ * A non-empty initialized item stack is not empty.
+ */
 TEST_FUNCTION(item_stack__initialize__not_empty) {
     Item item;
     initialize_item(&item, Item_Kind__Unknown);
@@ -50,6 +86,12 @@ TEST_FUNCTION(item_stack__initialize__not_empty) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/inventory/item_stack.h.spec.md
+ * Section: 1.4.4 Queries
+ *
+ * is_p_item_stack__full returns true when quantity equals max quantity.
+ */
 TEST_FUNCTION(item_stack__is_full__when_quantity_equals_max) {
     Item item;
     initialize_item(&item, Item_Kind__Unknown);
@@ -59,6 +101,12 @@ TEST_FUNCTION(item_stack__is_full__when_quantity_equals_max) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/inventory/item_stack.h.spec.md
+ * Section: 1.4.4 Queries
+ *
+ * is_p_item_stack__full returns false when quantity is less than max.
+ */
 TEST_FUNCTION(item_stack__is_not_full__when_quantity_less_than_max) {
     Item item;
     initialize_item(&item, Item_Kind__Unknown);
@@ -68,6 +116,12 @@ TEST_FUNCTION(item_stack__is_not_full__when_quantity_less_than_max) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/inventory/item_stack.h.spec.md
+ * Section: 1.4.3 Manipulation
+ *
+ * set_item_stack overwrites the stack's item, quantity, and max quantity.
+ */
 TEST_FUNCTION(item_stack__set_item_stack__overwrites_contents) {
     Item item;
     initialize_item(&item, Item_Kind__Unknown);
@@ -80,6 +134,12 @@ TEST_FUNCTION(item_stack__set_item_stack__overwrites_contents) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/inventory/item_stack.h.spec.md
+ * Section: 1.4.3 Manipulation
+ *
+ * copy_item_stack copies source stack contents into destination.
+ */
 TEST_FUNCTION(item_stack__copy_item_stack__copies_contents) {
     Item item;
     initialize_item(&item, Item_Kind__Unknown);
@@ -93,6 +153,13 @@ TEST_FUNCTION(item_stack__copy_item_stack__copies_contents) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/inventory/item_stack.h.spec.md
+ * Section: 1.4.3 Manipulation
+ *
+ * remove_quantity_of_items_from__item_stack removes items and returns 0
+ * remainder when sufficient items exist.
+ */
 TEST_FUNCTION(item_stack__remove_quantity__removes_items) {
     Item item;
     initialize_item(&item, Item_Kind__Unknown);
@@ -104,6 +171,13 @@ TEST_FUNCTION(item_stack__remove_quantity__removes_items) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/inventory/item_stack.h.spec.md
+ * Section: 1.4.3 Manipulation, 1.5.7 Error Handling
+ *
+ * remove_quantity_of_items_from__item_stack returns the underflow remainder
+ * when attempting to remove more items than available.
+ */
 TEST_FUNCTION(item_stack__remove_quantity__returns_underflow) {
     Item item;
     initialize_item(&item, Item_Kind__Unknown);
@@ -115,6 +189,12 @@ TEST_FUNCTION(item_stack__remove_quantity__returns_underflow) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/inventory/item_stack.h.spec.md
+ * Section: 1.4.3 Manipulation, 1.5.6 Postconditions
+ *
+ * After removing all items, the quantity is zero.
+ */
 TEST_FUNCTION(item_stack__remove_all__becomes_empty) {
     Item item;
     initialize_item(&item, Item_Kind__Unknown);
@@ -125,6 +205,12 @@ TEST_FUNCTION(item_stack__remove_all__becomes_empty) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/inventory/item_stack.h.spec.md
+ * Section: 1.4.4 Queries
+ *
+ * is_p_item_stack_of__this_item_kind returns true when the kind matches.
+ */
 TEST_FUNCTION(item_stack__is_p_item_stack_of__this_item_kind__matches) {
     Item item;
     initialize_item(&item, Item_Kind__Unknown);
@@ -134,6 +220,12 @@ TEST_FUNCTION(item_stack__is_p_item_stack_of__this_item_kind__matches) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/inventory/item_stack.h.spec.md
+ * Section: 1.4.4 Queries
+ *
+ * is_p_item_stack_of__this_item_kind returns false when the kind differs.
+ */
 TEST_FUNCTION(item_stack__is_p_item_stack_of__this_item_kind__no_match) {
     Item item;
     initialize_item(&item, Item_Kind__Unknown);
@@ -143,6 +235,12 @@ TEST_FUNCTION(item_stack__is_p_item_stack_of__this_item_kind__no_match) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/inventory/item_stack.h.spec.md
+ * Section: 1.4.4 Queries
+ *
+ * is_p_item_stacks_the_same__item_kind returns true for matching kinds.
+ */
 TEST_FUNCTION(item_stack__is_p_item_stacks_the_same__item_kind__same) {
     Item item;
     initialize_item(&item, Item_Kind__Unknown);
@@ -154,6 +252,12 @@ TEST_FUNCTION(item_stack__is_p_item_stacks_the_same__item_kind__same) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/inventory/item_stack.h.spec.md
+ * Section: 1.4.4 Queries
+ *
+ * is_p_item_stacks_the_same__item_kind returns false for differing kinds.
+ */
 TEST_FUNCTION(item_stack__is_p_item_stacks_the_same__item_kind__different) {
     Item item_a;
     initialize_item(&item_a, Item_Kind__Unknown);
@@ -167,6 +271,13 @@ TEST_FUNCTION(item_stack__is_p_item_stacks_the_same__item_kind__different) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/inventory/item_stack.h.spec.md
+ * Section: 1.4.3 Manipulation, 1.5.2 Merge vs. Swap Resolution
+ *
+ * Same item kind: quantities are merged up to the destination's max.
+ * Returns false (no swap).
+ */
 TEST_FUNCTION(item_stack__merge__same_kind_merges_quantities) {
     Item item;
     initialize_item(&item, Item_Kind__Unknown);
@@ -181,6 +292,12 @@ TEST_FUNCTION(item_stack__merge__same_kind_merges_quantities) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/inventory/item_stack.h.spec.md
+ * Section: 1.4.3 Manipulation, 1.5.2 Merge vs. Swap Resolution
+ *
+ * Same item kind: overflow remains in the source when destination reaches max.
+ */
 TEST_FUNCTION(item_stack__merge__overflow_remains_in_source) {
     Item item;
     initialize_item(&item, Item_Kind__Unknown);
@@ -195,6 +312,13 @@ TEST_FUNCTION(item_stack__merge__overflow_remains_in_source) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/inventory/item_stack.h.spec.md
+ * Section: 1.4.3 Manipulation, 1.5.2 Merge vs. Swap Resolution
+ *
+ * Different item kinds: the two stacks are swapped entirely.
+ * Returns true (swap occurred).
+ */
 TEST_FUNCTION(item_stack__swap__different_kinds_swap) {
     Item item_a;
     initialize_item(&item_a, Item_Kind__Unknown);
