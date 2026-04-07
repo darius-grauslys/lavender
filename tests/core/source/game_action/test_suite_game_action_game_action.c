@@ -2,6 +2,10 @@
 
 #include <game_action/game_action.c>
 
+///
+/// Spec:    docs/specs/core/game_action/game_action.h.spec.md
+/// Section: 1.4.1. Initialization
+///
 TEST_FUNCTION(game_action__initialize_game_action__zeroes_struct) {
     Game_Action ga;
     memset(&ga, 0xFF, sizeof(ga));
@@ -16,6 +20,10 @@ TEST_FUNCTION(game_action__initialize_game_action__zeroes_struct) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:    docs/specs/core/game_action/game_action.h.spec.md
+/// Section: 1.4.2. Kind Accessors
+///
 TEST_FUNCTION(game_action__set_the_kind_of__game_action__sets_kind) {
     Game_Action ga;
     initialize_game_action(&ga);
@@ -31,6 +39,10 @@ TEST_FUNCTION(game_action__set_the_kind_of__game_action__sets_kind) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:    docs/specs/core/game_action/game_action.h.spec.md
+/// Section: 1.4.2. Kind Accessors
+///
 TEST_FUNCTION(game_action__get_kind_of__game_action__returns_correct_kind) {
     Game_Action ga;
     initialize_game_action(&ga);
@@ -54,6 +66,10 @@ TEST_FUNCTION(game_action__get_kind_of__game_action__returns_correct_kind) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:    docs/specs/core/game_action/game_action.h.spec.md
+/// Section: 1.4.4. Flag Accessors
+///
 TEST_FUNCTION(game_action__is_game_action__allocated__false_after_init) {
     Game_Action ga;
     initialize_game_action(&ga);
@@ -63,12 +79,20 @@ TEST_FUNCTION(game_action__is_game_action__allocated__false_after_init) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:    docs/specs/core/game_action/game_action.h.spec.md
+/// Section: 1.4.4. Flag Accessors
+///
 TEST_FUNCTION(game_action__is_game_action__allocated__null_safe) {
     munit_assert_false(is_game_action__allocated(0));
 
     return MUNIT_OK;
 }
 
+///
+/// Spec:    docs/specs/core/game_action/game_action.h.spec.md
+/// Section: 1.4.4. Flag Accessors
+///
 TEST_FUNCTION(game_action__set_game_action_as__allocated__sets_flag) {
     Game_Action ga;
     initialize_game_action(&ga);
@@ -80,6 +104,10 @@ TEST_FUNCTION(game_action__set_game_action_as__allocated__sets_flag) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:    docs/specs/core/game_action/game_action.h.spec.md
+/// Section: 1.4.4. Flag Accessors
+///
 TEST_FUNCTION(game_action__set_game_action_as__deallocated__clears_flag) {
     Game_Action ga;
     initialize_game_action(&ga);
@@ -93,6 +121,10 @@ TEST_FUNCTION(game_action__set_game_action_as__deallocated__clears_flag) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:    docs/specs/core/game_action/game_action.h.spec.md
+/// Section: 1.4.4. Flag Accessors
+///
 TEST_FUNCTION(game_action__set_game_action_as__inbound__sets_flag) {
     Game_Action ga;
     initialize_game_action(&ga);
@@ -104,6 +136,10 @@ TEST_FUNCTION(game_action__set_game_action_as__inbound__sets_flag) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:    docs/specs/core/game_action/game_action.h.spec.md
+/// Section: 1.4.4. Flag Accessors
+///
 TEST_FUNCTION(game_action__set_game_action_as__outbound__clears_flag) {
     Game_Action ga;
     initialize_game_action(&ga);
@@ -117,6 +153,10 @@ TEST_FUNCTION(game_action__set_game_action_as__outbound__clears_flag) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:    docs/specs/core/game_action/game_action.h.spec.md
+/// Section: 1.4.4. Flag Accessors
+///
 TEST_FUNCTION(game_action__set_game_action_as__local__sets_flag) {
     Game_Action ga;
     initialize_game_action(&ga);
@@ -128,6 +168,10 @@ TEST_FUNCTION(game_action__set_game_action_as__local__sets_flag) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:    docs/specs/core/game_action/game_action.h.spec.md
+/// Section: 1.4.4. Flag Accessors
+///
 TEST_FUNCTION(game_action__set_game_action_as__NOT_local__clears_flag) {
     Game_Action ga;
     initialize_game_action(&ga);
@@ -141,6 +185,10 @@ TEST_FUNCTION(game_action__set_game_action_as__NOT_local__clears_flag) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:    docs/specs/core/game_action/game_action.h.spec.md
+/// Section: 1.4.4. Flag Accessors
+///
 TEST_FUNCTION(game_action__set_game_action_as__broadcasted__sets_flag) {
     Game_Action ga;
     initialize_game_action(&ga);
@@ -152,6 +200,10 @@ TEST_FUNCTION(game_action__set_game_action_as__broadcasted__sets_flag) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:    docs/specs/core/game_action/game_action.h.spec.md
+/// Section: 1.4.4. Flag Accessors
+///
 TEST_FUNCTION(game_action__set_game_action_as__NOT_broadcasted__clears_flag) {
     Game_Action ga;
     initialize_game_action(&ga);
@@ -165,6 +217,10 @@ TEST_FUNCTION(game_action__set_game_action_as__NOT_broadcasted__clears_flag) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:    docs/specs/core/game_action/game_action.h.spec.md
+/// Section: 1.4.4. Flag Accessors
+///
 TEST_FUNCTION(game_action__set_game_action_as__bad_request__sets_flag) {
     Game_Action ga;
     initialize_game_action(&ga);
@@ -176,6 +232,10 @@ TEST_FUNCTION(game_action__set_game_action_as__bad_request__sets_flag) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:    docs/specs/core/game_action/game_action.h.spec.md
+/// Section: 1.4.4. Flag Accessors
+///
 TEST_FUNCTION(game_action__set_game_action_as__NOT_bad_request__clears_flag) {
     Game_Action ga;
     initialize_game_action(&ga);
@@ -189,6 +249,10 @@ TEST_FUNCTION(game_action__set_game_action_as__NOT_bad_request__clears_flag) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:    docs/specs/core/game_action/game_action.h.spec.md
+/// Section: 1.4.4. Flag Accessors
+///
 TEST_FUNCTION(game_action__flags_are_independent) {
     Game_Action ga;
     initialize_game_action(&ga);
@@ -212,6 +276,10 @@ TEST_FUNCTION(game_action__flags_are_independent) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:    docs/specs/core/game_action/game_action.h.spec.md
+/// Section: 1.4.3. UUID Accessors
+///
 TEST_FUNCTION(game_action__get_client_uuid__returns_correct_uuid) {
     Game_Action ga;
     initialize_game_action(&ga);
@@ -226,6 +294,10 @@ TEST_FUNCTION(game_action__get_client_uuid__returns_correct_uuid) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:    docs/specs/core/game_action/game_action.h.spec.md
+/// Section: 1.4.3. UUID Accessors
+///
 TEST_FUNCTION(game_action__get_response_uuid__returns_correct_uuid) {
     Game_Action ga;
     initialize_game_action(&ga);
