@@ -2,6 +2,10 @@
 
 #include <ui/ui_text.c>
 
+///
+/// @spec    docs/specs/core/ui/ui_text.h.spec.md
+/// @section 10.4.1 Initialization
+///
 TEST_FUNCTION(initialize_ui_element_as__text_with__const_c_str__sets_kind) {
     UI_Element ui_element;
     memset(&ui_element, 0, sizeof(ui_element));
@@ -17,6 +21,11 @@ TEST_FUNCTION(initialize_ui_element_as__text_with__const_c_str__sets_kind) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/ui/ui_text.h.spec.md
+/// @section 10.4.1 Initialization
+/// @section 10.3.1 Text-Specific Data
+///
 TEST_FUNCTION(initialize_ui_element_as__text_with__const_c_str__sets_buffer) {
     UI_Element ui_element;
     memset(&ui_element, 0, sizeof(ui_element));
@@ -31,6 +40,11 @@ TEST_FUNCTION(initialize_ui_element_as__text_with__const_c_str__sets_buffer) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/ui/ui_text.h.spec.md
+/// @section 10.4.1 Initialization
+/// @section 10.4.3 Handlers
+///
 TEST_FUNCTION(initialize_ui_element_as__text__sets_compose_handler) {
     UI_Element ui_element;
     memset(&ui_element, 0, sizeof(ui_element));
@@ -43,6 +57,11 @@ TEST_FUNCTION(initialize_ui_element_as__text__sets_compose_handler) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/ui/ui_text.h.spec.md
+/// @section 10.4.1 Initialization
+/// @section 10.4.3 Handlers
+///
 TEST_FUNCTION(initialize_ui_element_as__text__sets_transformed_handler) {
     UI_Element ui_element;
     memset(&ui_element, 0, sizeof(ui_element));
@@ -56,6 +75,11 @@ TEST_FUNCTION(initialize_ui_element_as__text__sets_transformed_handler) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/ui/ui_text.h.spec.md
+/// @section 10.4.1 Initialization
+/// @section 10.4.3 Handlers
+///
 TEST_FUNCTION(initialize_ui_element_as__text__sets_dispose_handler) {
     UI_Element ui_element;
     memset(&ui_element, 0, sizeof(ui_element));
@@ -68,6 +92,10 @@ TEST_FUNCTION(initialize_ui_element_as__text__sets_dispose_handler) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/ui/ui_text.h.spec.md
+/// @section 10.4.4 Accessors
+///
 TEST_FUNCTION(get_p_const_c_str_text_of__ui_text__returns_text_and_size) {
     UI_Element ui_element;
     memset(&ui_element, 0, sizeof(ui_element));
@@ -85,6 +113,10 @@ TEST_FUNCTION(get_p_const_c_str_text_of__ui_text__returns_text_and_size) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/ui/ui_text.h.spec.md
+/// @section 10.4.4 Accessors
+///
 TEST_FUNCTION(get_p_typer_of__ui_text__returns_non_null) {
     UI_Element ui_element;
     memset(&ui_element, 0, sizeof(ui_element));
@@ -98,6 +130,10 @@ TEST_FUNCTION(get_p_typer_of__ui_text__returns_non_null) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/ui/ui_text.h.spec.md
+/// @section 10.4.2 Text Manipulation
+///
 TEST_FUNCTION(set_cursor_of__ui_text__sets_cursor_index) {
     UI_Element ui_element;
     memset(&ui_element, 0, sizeof(ui_element));
