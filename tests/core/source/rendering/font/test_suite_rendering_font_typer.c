@@ -3,6 +3,10 @@
 #include <rendering/font/typer.c>
 #include <rendering/font/font.h>
 
+///
+/// Spec: docs/specs/core/rendering/font/typer.h.spec.md
+/// Section: 1.4.1 Initialization — initialize_typer
+///
 TEST_FUNCTION(typer__initialize__sets_cursor_position) {
     Typer typer;
     memset(&typer, 0xFF, sizeof(typer));
@@ -12,6 +16,10 @@ TEST_FUNCTION(typer__initialize__sets_cursor_position) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/rendering/font/typer.h.spec.md
+/// Section: 1.4.1 Initialization — initialize_typer
+///
 TEST_FUNCTION(typer__initialize__sets_line_spacing) {
     Typer typer;
     initialize_typer(&typer, 0, 0, 100, 50, 12, 0, 0);
@@ -20,6 +28,10 @@ TEST_FUNCTION(typer__initialize__sets_line_spacing) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/rendering/font/typer.h.spec.md
+/// Section: 1.4.1 Initialization — initialize_typer_with__font
+///
 TEST_FUNCTION(typer__initialize_with_font__sets_font) {
     Typer typer;
     Font font;
@@ -29,6 +41,10 @@ TEST_FUNCTION(typer__initialize_with_font__sets_font) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/rendering/font/typer.h.spec.md
+/// Section: 1.5.2 Preconditions — initialize_typer does NOT set the font
+///
 TEST_FUNCTION(typer__initialize__without_font_does_not_set_font) {
     Typer typer;
     memset(&typer, 0, sizeof(typer));
@@ -39,6 +55,10 @@ TEST_FUNCTION(typer__initialize__without_font_does_not_set_font) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/rendering/font/typer.h.spec.md
+/// Section: 1.4.3 Position and Size — set_typer__cursor
+///
 TEST_FUNCTION(typer__set_cursor__sets_position) {
     Typer typer;
     initialize_typer(&typer, 0, 0, 100, 50, 8, 0, 0);
@@ -49,6 +69,10 @@ TEST_FUNCTION(typer__set_cursor__sets_position) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/rendering/font/typer.h.spec.md
+/// Section: 1.4.3 Position and Size — reset_typer_cursor
+///
 TEST_FUNCTION(typer__reset_cursor__resets_to_zero) {
     Typer typer;
     initialize_typer(&typer, 0, 0, 100, 50, 8, 5, 10);
@@ -61,6 +85,10 @@ TEST_FUNCTION(typer__reset_cursor__resets_to_zero) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/rendering/font/typer.h.spec.md
+/// Section: 1.4.6 Render Target — set_PLATFORM_texture_target_for__typer
+///
 TEST_FUNCTION(typer__set_texture_target__sets_texture_mode) {
     Typer typer;
     initialize_typer(&typer, 0, 0, 100, 50, 8, 0, 0);
@@ -73,6 +101,10 @@ TEST_FUNCTION(typer__set_texture_target__sets_texture_mode) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/rendering/font/typer.h.spec.md
+/// Section: 1.4.6 Render Target — set_PLATFORM_graphics_window_target_for__typer
+///
 TEST_FUNCTION(typer__set_graphics_window_target__sets_window_mode) {
     // TODO: this test needs to be made at a later date, as the signature
     // for typer needs to target a CORE graphics_window.
@@ -88,6 +120,10 @@ TEST_FUNCTION(typer__set_graphics_window_target__sets_window_mode) {
     return MUNIT_SKIP;
 }
 
+///
+/// Spec: docs/specs/core/rendering/font/typer.h.spec.md
+/// Section: 1.4.4 Cursor Advancement — offset_typer_by__font_letter
+///
 TEST_FUNCTION(typer__offset_by_font_letter__advances_cursor_x) {
     Typer typer;
     initialize_typer(&typer, 0, 0, 100, 50, 8, 0, 0);
@@ -99,6 +135,10 @@ TEST_FUNCTION(typer__offset_by_font_letter__advances_cursor_x) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/rendering/font/typer.h.spec.md
+/// Section: 1.4.4 Cursor Advancement — offset_typer_by__font_letter
+///
 TEST_FUNCTION(typer__offset_by_font_letter__accumulates) {
     Typer typer;
     initialize_typer(&typer, 0, 0, 100, 50, 8, 0, 0);
@@ -112,6 +152,10 @@ TEST_FUNCTION(typer__offset_by_font_letter__accumulates) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/rendering/font/typer.h.spec.md
+/// Section: 1.4.5 Font Access — get_p_font_letter_from__typer
+///
 TEST_FUNCTION(typer__get_p_font_letter__returns_correct_entry) {
     Typer typer;
     Font font;
