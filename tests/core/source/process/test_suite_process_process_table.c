@@ -2,6 +2,10 @@
 
 #include <process/process_table.c>
 
+///
+/// Spec: docs/specs/core/process/process_table.h.spec.md
+/// Section: 1.4.1 Initialization
+///
 TEST_FUNCTION(initialize_process_table__zeroes_pointer_array) {
     Process_Table table;
     initialize_process_table(&table);
@@ -13,6 +17,10 @@ TEST_FUNCTION(initialize_process_table__zeroes_pointer_array) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/process/process_table.h.spec.md
+/// Section: 1.4.4 Query
+///
 TEST_FUNCTION(get_quantity_of__processes__returns_zero_after_init) {
     Process_Table table;
     initialize_process_table(&table);
@@ -25,6 +33,10 @@ TEST_FUNCTION(get_quantity_of__processes__returns_zero_after_init) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/process/process_table.h.spec.md
+/// Section: 1.4.2 Process Management
+///
 TEST_FUNCTION(add_process__returns_true_on_success) {
     Process_Table table;
     initialize_process_table(&table);
@@ -42,6 +54,10 @@ TEST_FUNCTION(add_process__returns_true_on_success) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/process/process_table.h.spec.md
+/// Section: 1.4.2 Process Management
+///
 TEST_FUNCTION(add_process__increments_count) {
     Process_Table table;
     initialize_process_table(&table);
@@ -62,6 +78,10 @@ TEST_FUNCTION(add_process__increments_count) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/process/process_table.h.spec.md
+/// Section: 1.4.2 Process Management
+///
 TEST_FUNCTION(add_multiple_processes__at_same_priority) {
     Process_Table table;
     initialize_process_table(&table);
@@ -83,6 +103,10 @@ TEST_FUNCTION(add_multiple_processes__at_same_priority) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/process/process_table.h.spec.md
+/// Section: 1.4.2 Process Management
+///
 TEST_FUNCTION(add_processes__at_different_priorities) {
     Process_Table table;
     initialize_process_table(&table);
@@ -110,6 +134,10 @@ TEST_FUNCTION(add_processes__at_different_priorities) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/process/process_table.h.spec.md
+/// Section: 1.4.2 Process Management
+///
 TEST_FUNCTION(remove_process__decrements_count) {
     Process_Table table;
     initialize_process_table(&table);
@@ -131,6 +159,10 @@ TEST_FUNCTION(remove_process__decrements_count) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/process/process_table.h.spec.md
+/// Section: 1.4.2 Process Management
+///
 TEST_FUNCTION(remove_process__from_middle_of_priority) {
     Process_Table table;
     initialize_process_table(&table);
@@ -154,6 +186,10 @@ TEST_FUNCTION(remove_process__from_middle_of_priority) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/process/process_table.h.spec.md
+/// Section: 1.4.3 Polling
+///
 TEST_FUNCTION(poll__returns_null_when_empty) {
     Process_Table table;
     initialize_process_table(&table);
@@ -166,6 +202,10 @@ TEST_FUNCTION(poll__returns_null_when_empty) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/process/process_table.h.spec.md
+/// Section: 1.4.3 Polling
+///
 TEST_FUNCTION(poll__returns_single_process) {
     Process_Table table;
     initialize_process_table(&table);
@@ -186,6 +226,10 @@ TEST_FUNCTION(poll__returns_single_process) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/process/process_table.h.spec.md
+/// Section: 1.4.3 Polling
+///
 TEST_FUNCTION(poll__returns_null_after_all_polled) {
     Process_Table table;
     initialize_process_table(&table);
@@ -207,6 +251,10 @@ TEST_FUNCTION(poll__returns_null_after_all_polled) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/process/process_table.h.spec.md
+/// Section: 1.4.3 Polling, 1.5.1 Scheduling Algorithm
+///
 TEST_FUNCTION(poll__higher_priority_polled_first) {
     Process_Table table;
     initialize_process_table(&table);
@@ -234,6 +282,10 @@ TEST_FUNCTION(poll__higher_priority_polled_first) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/process/process_table.h.spec.md
+/// Section: 1.4.3 Polling, 1.5.1 Scheduling Algorithm
+///
 TEST_FUNCTION(poll__all_processes_across_priorities) {
     Process_Table table;
     initialize_process_table(&table);
@@ -266,6 +318,10 @@ TEST_FUNCTION(poll__all_processes_across_priorities) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/process/process_table.h.spec.md
+/// Section: 1.4.3 Polling, 1.5.1 Scheduling Algorithm
+///
 TEST_FUNCTION(poll__round_robin_within_priority) {
     Process_Table table;
     initialize_process_table(&table);
@@ -297,6 +353,10 @@ TEST_FUNCTION(poll__round_robin_within_priority) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/process/process_table.h.spec.md
+/// Section: 1.4.2 Process Management
+///
 TEST_FUNCTION(add_remove_add__count_is_correct) {
     Process_Table table;
     initialize_process_table(&table);
@@ -325,6 +385,10 @@ TEST_FUNCTION(add_remove_add__count_is_correct) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/process/process_table.h.spec.md
+/// Section: 1.4.2 Process Management, 1.5.3 Pointer Array Compaction
+///
 TEST_FUNCTION(remove_from_different_priority__maintains_other_priorities) {
     Process_Table table;
     initialize_process_table(&table);
