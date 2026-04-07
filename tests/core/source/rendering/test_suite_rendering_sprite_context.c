@@ -2,6 +2,10 @@
 
 #include <rendering/sprite_context.c>
 
+///
+/// Spec:    docs/specs/core/rendering/sprite_context.h.spec.md
+/// Section: 1.4.1 Initialization and Memory
+///
 TEST_FUNCTION(sprite_context__initialize__clears_state) {
     Sprite_Context context;
     memset(&context, 0xFF, sizeof(context));
@@ -12,6 +16,10 @@ TEST_FUNCTION(sprite_context__initialize__clears_state) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:    docs/specs/core/rendering/sprite_context.h.spec.md
+/// Section: 1.4.3 Queries (static inline)
+///
 TEST_FUNCTION(sprite_context__is_sprite_managers_allocated__returns_false_after_init) {
     Sprite_Context context;
     initialize_sprite_context(&context);
@@ -19,6 +27,10 @@ TEST_FUNCTION(sprite_context__is_sprite_managers_allocated__returns_false_after_
     return MUNIT_OK;
 }
 
+///
+/// Spec:    docs/specs/core/rendering/sprite_context.h.spec.md
+/// Section: 1.4.1 Initialization and Memory
+///
 TEST_FUNCTION(sprite_context__allocate_sprite_managers__succeeds) {
     Sprite_Context context;
     initialize_sprite_context(&context);
@@ -31,6 +43,10 @@ TEST_FUNCTION(sprite_context__allocate_sprite_managers__succeeds) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:    docs/specs/core/rendering/sprite_context.h.spec.md
+/// Section: 1.4.1 Initialization and Memory
+///
 TEST_FUNCTION(sprite_context__release_sprite_managers__clears_allocation) {
     Sprite_Context context;
     initialize_sprite_context(&context);
@@ -42,6 +58,10 @@ TEST_FUNCTION(sprite_context__release_sprite_managers__clears_allocation) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:    docs/specs/core/rendering/sprite_context.h.spec.md
+/// Section: 1.4.3 Queries (static inline)
+///
 TEST_FUNCTION(sprite_context__get_p_sprite_manager_by__uuid__returns_null_when_not_found) {
     Sprite_Context context;
     initialize_sprite_context(&context);
