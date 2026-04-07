@@ -1,0 +1,15 @@
+# Test Analysis: chunk_generator_table.h
+
+## Source Spec
+docs/specs/core/world/chunk_generator_table.h.spec.md
+
+## Test Report
+scripts/test_report_digest/test_suite_world_chunk_generator_table.c.report
+
+---
+
+## Failing Tests
+
+### chunk_generator_table__initialize__all_null
+
+**Report Error:**

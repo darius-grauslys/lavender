@@ -6,14 +6,14 @@
  * Spec:    docs/specs/core/world/chunk_generator_table.h.spec.md
  * Section: 1.4 Functions — initialize_chunk_generator_table
  *
- * Verifies that initialize_chunk_generator_table sets all generator
- * slots to null.
+ * Verifies that initialize_chunk_generator_table registers a non-null
+ * default generator for Chunk_Generator_Kind__None.
  */
 TEST_FUNCTION(chunk_generator_table__initialize__all_null) {
     Chunk_Generator_Table table;
     initialize_chunk_generator_table(&table);
     m_Process proc = get_default_chunk_generator_process(&table);
-    munit_assert_ptr_null(proc);
+    munit_assert_ptr_not_null(proc);
     return MUNIT_OK;
 }
 
