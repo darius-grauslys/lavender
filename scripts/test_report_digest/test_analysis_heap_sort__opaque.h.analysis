@@ -1,0 +1,25 @@
+# Test Analysis: heap_sort__opaque
+
+## Source File
+`core/source/sort/heap_sort__opaque.c`
+
+## Spec File
+`docs/specs/core/sort/heap_sort__opaque.h.spec.md`
+
+## Test Report File
+`scripts/test_report_digest/test_suite_sort_heap_sort__opaque.c.report`
+
+## Summary
+
+All 8 reported test failures are caused by a single root defect: the
+`size_of__type` and `length_of__array` (element count) parameters are
+swapped in the function signature relative to the specification.
+
+## Defect
+
+### DEF-001: Parameter order mismatch — `size_of__type` and `size_of__array` are swapped
+
+**Severity:** Critical  
+**Affects:** All tests
+
+**Spec (section 1.4.1) defines:**
