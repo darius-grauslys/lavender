@@ -2,6 +2,10 @@
 
 #include <rendering/font/font.c>
 
+/**
+ * @spec    core/include/rendering/font/font.h.spec.md
+ * @section 1.4.1 Initialization — initialize_font
+ */
 TEST_FUNCTION(font__initialize__clears_state) {
     Font font;
     memset(&font, 0xFF, sizeof(font));
@@ -10,6 +14,10 @@ TEST_FUNCTION(font__initialize__clears_state) {
     return MUNIT_OK;
 }
 
+/**
+ * @spec    core/include/rendering/font/font.h.spec.md
+ * @section 1.4.2 Accessors — is_font__allocated
+ */
 TEST_FUNCTION(font__is_font__allocated__returns_false_after_init) {
     Font font;
     initialize_font(&font);
@@ -17,6 +25,10 @@ TEST_FUNCTION(font__is_font__allocated__returns_false_after_init) {
     return MUNIT_OK;
 }
 
+/**
+ * @spec    core/include/rendering/font/font.h.spec.md
+ * @section 1.4.2 Accessors — set_font_as__allocated
+ */
 TEST_FUNCTION(font__set_font_as__allocated__sets_flag) {
     Font font;
     initialize_font(&font);
@@ -25,6 +37,10 @@ TEST_FUNCTION(font__set_font_as__allocated__sets_flag) {
     return MUNIT_OK;
 }
 
+/**
+ * @spec    core/include/rendering/font/font.h.spec.md
+ * @section 1.4.2 Accessors — set_font_as__deallocated
+ */
 TEST_FUNCTION(font__set_font_as__deallocated__clears_flag) {
     Font font;
     initialize_font(&font);
@@ -35,6 +51,10 @@ TEST_FUNCTION(font__set_font_as__deallocated__clears_flag) {
     return MUNIT_OK;
 }
 
+/**
+ * @spec    core/include/rendering/font/font.h.spec.md
+ * @section 1.4.2 Accessors — get_p_font_letter_from__font
+ */
 TEST_FUNCTION(font__get_p_font_letter__returns_correct_entry) {
     Font font;
     initialize_font(&font);
@@ -44,6 +64,10 @@ TEST_FUNCTION(font__get_p_font_letter__returns_correct_entry) {
     return MUNIT_OK;
 }
 
+/**
+ * @spec    core/include/rendering/font/font.h.spec.md
+ * @section 1.4.2 Accessors — get_p_font_letter_from__font
+ */
 TEST_FUNCTION(font__get_p_font_letter__different_chars_return_different_entries) {
     Font font;
     initialize_font(&font);
@@ -53,6 +77,10 @@ TEST_FUNCTION(font__get_p_font_letter__different_chars_return_different_entries)
     return MUNIT_OK;
 }
 
+/**
+ * @spec    core/include/rendering/font/font.h.spec.md
+ * @section 1.4.1 Initialization — initialize_font__letter
+ */
 TEST_FUNCTION(font__initialize_font_letter__sets_fields) {
     Font_Letter letter;
     memset(&letter, 0, sizeof(letter));
@@ -65,6 +93,10 @@ TEST_FUNCTION(font__initialize_font_letter__sets_fields) {
     return MUNIT_OK;
 }
 
+/**
+ * @spec    core/include/rendering/font/font.h.spec.md
+ * @section 1.4.1 Initialization — initialize_font
+ */
 TEST_FUNCTION(font__initialize__lookup_table_zeroed) {
     Font font;
     initialize_font(&font);
