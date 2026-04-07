@@ -2,6 +2,10 @@
 
 #include <world/region.c>
 
+///
+/// Spec: core/world/region.h.spec.md
+/// Section: 1.4.3 Chunk Vector Truncation (static inline)
+///
 TEST_FUNCTION(region__truncate_chunk_vector__masks_correctly) {
     Chunk_Vector__3i32 cv;
     cv.x__i32 = 0;
@@ -13,6 +17,10 @@ TEST_FUNCTION(region__truncate_chunk_vector__masks_correctly) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: core/world/region.h.spec.md
+/// Section: 1.4.3 Chunk Vector Truncation (static inline)
+///
 TEST_FUNCTION(region__truncate_chunk_vector__large_values_masked) {
     Chunk_Vector__3i32 cv;
     cv.x__i32 = 1000;
