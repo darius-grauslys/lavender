@@ -2,6 +2,11 @@
 
 #include <rendering/font/font_manager.c>
 
+/**
+ * @spec    docs/specs/core/rendering/font/font_manager.h.spec.md
+ * @section 1.4 Functions — initialize_font_manager
+ *          "Initializes all font slots as deallocated."
+ */
 TEST_FUNCTION(font_manager__initialize__all_fonts_deallocated) {
     Font_Manager manager;
     initialize_font_manager(&manager);
@@ -11,6 +16,11 @@ TEST_FUNCTION(font_manager__initialize__all_fonts_deallocated) {
     return MUNIT_OK;
 }
 
+/**
+ * @spec    docs/specs/core/rendering/font/font_manager.h.spec.md
+ * @section 1.4 Functions — allocate_font_from__font_manager
+ *          "Allocates a font from the pool."
+ */
 TEST_FUNCTION(font_manager__allocate__returns_non_null) {
     Font_Manager manager;
     initialize_font_manager(&manager);
@@ -20,6 +30,11 @@ TEST_FUNCTION(font_manager__allocate__returns_non_null) {
     return MUNIT_OK;
 }
 
+/**
+ * @spec    docs/specs/core/rendering/font/font_manager.h.spec.md
+ * @section 1.4 Functions — allocate_font_from__font_manager
+ *          "Allocates a font from the pool."
+ */
 TEST_FUNCTION(font_manager__allocate__returns_different_fonts) {
     Font_Manager manager;
     initialize_font_manager(&manager);
@@ -31,6 +46,11 @@ TEST_FUNCTION(font_manager__allocate__returns_different_fonts) {
     return MUNIT_OK;
 }
 
+/**
+ * @spec    docs/specs/core/rendering/font/font_manager.h.spec.md
+ * @section 1.4 Functions — allocate_font_from__font_manager
+ *          "Returns null if pool exhausted."
+ */
 TEST_FUNCTION(font_manager__allocate__returns_null_when_exhausted) {
     Font_Manager manager;
     initialize_font_manager(&manager);
@@ -43,6 +63,11 @@ TEST_FUNCTION(font_manager__allocate__returns_null_when_exhausted) {
     return MUNIT_OK;
 }
 
+/**
+ * @spec    docs/specs/core/rendering/font/font_manager.h.spec.md
+ * @section 1.4 Functions — release_font_from__font_manager
+ *          "Returns a font to the pool."
+ */
 TEST_FUNCTION(font_manager__release__allows_reallocation) {
     Font_Manager manager;
     initialize_font_manager(&manager);
@@ -67,6 +92,11 @@ TEST_FUNCTION(font_manager__release__allows_reallocation) {
     return MUNIT_OK;
 }
 
+/**
+ * @spec    docs/specs/core/rendering/font/font_manager.h.spec.md
+ * @section 1.4 Functions — release_font_from__font_manager
+ *          "Returns a font to the pool."
+ */
 TEST_FUNCTION(font_manager__release__marks_font_as_deallocated) {
     Font_Manager manager;
     initialize_font_manager(&manager);
