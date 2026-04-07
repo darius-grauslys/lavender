@@ -2,6 +2,10 @@
 
 #include <ui/ui_tile.c>
 
+///
+/// @spec    docs/specs/core/ui/ui_tile.h.spec.md
+/// @section 5.4.1 Initialization
+///
 TEST_FUNCTION(initialize_ui_tile_as__empty__sets_none_kind) {
     UI_Tile ui_tile;
     initialize_ui_tile_as__empty(&ui_tile);
@@ -10,6 +14,10 @@ TEST_FUNCTION(initialize_ui_tile_as__empty__sets_none_kind) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/ui/ui_tile.h.spec.md
+/// @section 5.4.1 Initialization
+///
 TEST_FUNCTION(initialize_ui_tile__sets_kind_and_flags) {
     UI_Tile ui_tile;
     initialize_ui_tile(
@@ -23,6 +31,10 @@ TEST_FUNCTION(initialize_ui_tile__sets_kind_and_flags) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/ui/ui_tile.h.spec.md
+/// @section 5.4.3 Flip Mutations
+///
 TEST_FUNCTION(set_ui_tile_as__flipped_horizontally__sets_flag) {
     UI_Tile ui_tile;
     initialize_ui_tile_as__empty(&ui_tile);
@@ -33,6 +45,10 @@ TEST_FUNCTION(set_ui_tile_as__flipped_horizontally__sets_flag) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/ui/ui_tile.h.spec.md
+/// @section 5.4.3 Flip Mutations
+///
 TEST_FUNCTION(set_ui_tile_as__unflipped_horizontally__clears_flag) {
     UI_Tile ui_tile;
     initialize_ui_tile(
@@ -46,6 +62,10 @@ TEST_FUNCTION(set_ui_tile_as__unflipped_horizontally__clears_flag) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/ui/ui_tile.h.spec.md
+/// @section 5.4.3 Flip Mutations
+///
 TEST_FUNCTION(set_ui_tile_as__flipped_vertically__sets_flag) {
     UI_Tile ui_tile;
     initialize_ui_tile_as__empty(&ui_tile);
@@ -56,6 +76,10 @@ TEST_FUNCTION(set_ui_tile_as__flipped_vertically__sets_flag) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/ui/ui_tile.h.spec.md
+/// @section 5.4.3 Flip Mutations
+///
 TEST_FUNCTION(set_ui_tile_as__unflipped_vertically__clears_flag) {
     UI_Tile ui_tile;
     initialize_ui_tile(
@@ -69,6 +93,10 @@ TEST_FUNCTION(set_ui_tile_as__unflipped_vertically__clears_flag) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/ui/ui_tile.h.spec.md
+/// @section 5.4.4 Scale Mutations
+///
 TEST_FUNCTION(set_ui_tile_as__scaling_horizontally__sets_flag) {
     UI_Tile ui_tile;
     initialize_ui_tile_as__empty(&ui_tile);
@@ -79,6 +107,10 @@ TEST_FUNCTION(set_ui_tile_as__scaling_horizontally__sets_flag) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/ui/ui_tile.h.spec.md
+/// @section 5.4.4 Scale Mutations
+///
 TEST_FUNCTION(set_ui_tile_as__not_scaling_horizontally__clears_flag) {
     UI_Tile ui_tile;
     initialize_ui_tile(
@@ -92,6 +124,10 @@ TEST_FUNCTION(set_ui_tile_as__not_scaling_horizontally__clears_flag) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/ui/ui_tile.h.spec.md
+/// @section 5.4.4 Scale Mutations
+///
 TEST_FUNCTION(set_ui_tile_as__scaling_vertically__sets_flag) {
     UI_Tile ui_tile;
     initialize_ui_tile_as__empty(&ui_tile);
@@ -102,6 +138,10 @@ TEST_FUNCTION(set_ui_tile_as__scaling_vertically__sets_flag) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/ui/ui_tile.h.spec.md
+/// @section 5.4.4 Scale Mutations
+///
 TEST_FUNCTION(set_ui_tile_as__not_scaling_vertically__clears_flag) {
     UI_Tile ui_tile;
     initialize_ui_tile(
@@ -115,6 +155,10 @@ TEST_FUNCTION(set_ui_tile_as__not_scaling_vertically__clears_flag) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/ui/ui_tile.h.spec.md
+/// @section 5.4.2 Conversion
+///
 TEST_FUNCTION(get_ui_tile_raw_from__ui_tile__packs_kind_in_lower_bits) {
     UI_Tile ui_tile;
     initialize_ui_tile(
@@ -126,6 +170,10 @@ TEST_FUNCTION(get_ui_tile_raw_from__ui_tile__packs_kind_in_lower_bits) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/ui/ui_tile.h.spec.md
+/// @section 5.5.3 Postconditions
+///
 TEST_FUNCTION(flag_mutations__preserve_other_flags) {
     UI_Tile ui_tile;
     initialize_ui_tile(
