@@ -2,6 +2,10 @@
 
 #include <game_action/core/tcp/game_action__tcp_begin_connect.c>
 
+///
+/// Spec:    game_action__tcp_begin_connect.h.spec.md
+/// Section: 1.5.1. Registration
+///
 TEST_FUNCTION(game_action__tcp_begin_connect__register__populates_table) {
     Game_Action_Logic_Table table;
     initialize_game_action_logic_table(&table);
