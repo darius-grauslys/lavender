@@ -55,7 +55,7 @@ Collision_Node_Entry *iterate_collision_node__entry(
 static inline
 bool is_collision_node__allocated(
         Collision_Node *p_collision_node) {
-    return is_serialized_struct__deallocated__uuid_64(
+    return !is_serialized_struct__deallocated__uuid_64(
             &p_collision_node->_serialization_header);
 }
 #endif
