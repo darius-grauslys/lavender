@@ -2,6 +2,10 @@
 
 #include <audio/audio_effect.c>
 
+/**
+ * Spec: docs/specs/core/audio/audio_effect.h.spec.md
+ * Section: 1.4.1 Initialization
+ */
 TEST_FUNCTION(initialize_audio_effect__sets_all_fields) {
     Audio_Effect audio_effect;
     Timer__u32 timer;
@@ -24,6 +28,10 @@ TEST_FUNCTION(initialize_audio_effect__sets_all_fields) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/audio/audio_effect.h.spec.md
+ * Section: 1.4.1 Initialization
+ */
 TEST_FUNCTION(initialize_audio_effect__with_active_flag) {
     Audio_Effect audio_effect;
     Timer__u32 timer;
@@ -44,6 +52,10 @@ TEST_FUNCTION(initialize_audio_effect__with_active_flag) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/audio/audio_effect.h.spec.md
+ * Section: 1.4.1 Initialization
+ */
 TEST_FUNCTION(initialize_audio_effect__with_looping_flag) {
     Audio_Effect audio_effect;
     Timer__u32 timer;
@@ -64,6 +76,10 @@ TEST_FUNCTION(initialize_audio_effect__with_looping_flag) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/audio/audio_effect.h.spec.md
+ * Section: 1.4.1 Initialization
+ */
 TEST_FUNCTION(initialize_audio_effect__with_release_on_complete_flag) {
     Audio_Effect audio_effect;
     Timer__u32 timer;
@@ -84,6 +100,10 @@ TEST_FUNCTION(initialize_audio_effect__with_release_on_complete_flag) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/audio/audio_effect.h.spec.md
+ * Section: 1.4.1 Initialization
+ */
 TEST_FUNCTION(initialize_audio_effect__with_all_flags) {
     Audio_Effect audio_effect;
     Timer__u32 timer;
@@ -109,6 +129,10 @@ TEST_FUNCTION(initialize_audio_effect__with_all_flags) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/audio/audio_effect.h.spec.md
+ * Section: 1.4.5 Flag Mutations (static inline)
+ */
 TEST_FUNCTION(set_audio_as__active__sets_flag) {
     Audio_Effect audio_effect;
     audio_effect.audio_flags__u8 = AUDIO_FLAGS__NONE;
@@ -120,6 +144,10 @@ TEST_FUNCTION(set_audio_as__active__sets_flag) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/audio/audio_effect.h.spec.md
+ * Section: 1.4.5 Flag Mutations (static inline)
+ */
 TEST_FUNCTION(set_audio_as__inactive__clears_flag) {
     Audio_Effect audio_effect;
     audio_effect.audio_flags__u8 = AUDIO_FLAG__IS_ACTIVE;
@@ -133,6 +161,10 @@ TEST_FUNCTION(set_audio_as__inactive__clears_flag) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/audio/audio_effect.h.spec.md
+ * Section: 1.4.5 Flag Mutations (static inline)
+ */
 TEST_FUNCTION(set_audio_as__inactive__preserves_other_flags) {
     Audio_Effect audio_effect;
     audio_effect.audio_flags__u8 =
@@ -149,6 +181,10 @@ TEST_FUNCTION(set_audio_as__inactive__preserves_other_flags) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/audio/audio_effect.h.spec.md
+ * Section: 1.4.5 Flag Mutations (static inline)
+ */
 TEST_FUNCTION(set_audio_as__looping__sets_flag) {
     Audio_Effect audio_effect;
     audio_effect.audio_flags__u8 = AUDIO_FLAGS__NONE;
@@ -160,6 +196,10 @@ TEST_FUNCTION(set_audio_as__looping__sets_flag) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/audio/audio_effect.h.spec.md
+ * Section: 1.4.5 Flag Mutations (static inline)
+ */
 TEST_FUNCTION(set_audio_as__not_looping__clears_flag) {
     Audio_Effect audio_effect;
     audio_effect.audio_flags__u8 = AUDIO_FLAG__IS_LOOPING;
@@ -171,6 +211,10 @@ TEST_FUNCTION(set_audio_as__not_looping__clears_flag) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/audio/audio_effect.h.spec.md
+ * Section: 1.4.5 Flag Mutations (static inline)
+ */
 TEST_FUNCTION(set_audio_as__releasing_on_completion__sets_flag) {
     Audio_Effect audio_effect;
     audio_effect.audio_flags__u8 = AUDIO_FLAGS__NONE;
@@ -182,6 +226,10 @@ TEST_FUNCTION(set_audio_as__releasing_on_completion__sets_flag) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/audio/audio_effect.h.spec.md
+ * Section: 1.4.5 Flag Mutations (static inline)
+ */
 TEST_FUNCTION(set_audio_as__not_releasing_on_completion__clears_flag) {
     Audio_Effect audio_effect;
     audio_effect.audio_flags__u8 = AUDIO_FLAG__RELEASE_ON_COMPLETE;
@@ -193,6 +241,10 @@ TEST_FUNCTION(set_audio_as__not_releasing_on_completion__clears_flag) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/audio/audio_effect.h.spec.md
+ * Section: 1.4.2 Convenience Initialization (static inline)
+ */
 TEST_FUNCTION(set_audio_effect__preserves_handle_and_active_state) {
     Audio_Effect audio_effect;
     Timer__u32 timer;
@@ -224,6 +276,10 @@ TEST_FUNCTION(set_audio_effect__preserves_handle_and_active_state) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/audio/audio_effect.h.spec.md
+ * Section: 1.4.2 Convenience Initialization (static inline)
+ */
 TEST_FUNCTION(set_audio_effect__preserves_inactive_state) {
     Audio_Effect audio_effect;
     Timer__u32 timer;
@@ -255,6 +311,10 @@ TEST_FUNCTION(set_audio_effect__preserves_inactive_state) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/audio/audio_effect.h.spec.md
+ * Section: 1.4.4 Flag Queries (static inline)
+ */
 TEST_FUNCTION(is_audio__active__returns_false_when_no_flags) {
     Audio_Effect audio_effect;
     audio_effect.audio_flags__u8 = AUDIO_FLAGS__NONE;
@@ -264,6 +324,10 @@ TEST_FUNCTION(is_audio__active__returns_false_when_no_flags) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/audio/audio_effect.h.spec.md
+ * Section: 1.4.4 Flag Queries (static inline)
+ */
 TEST_FUNCTION(is_audio__looping__returns_false_when_no_flags) {
     Audio_Effect audio_effect;
     audio_effect.audio_flags__u8 = AUDIO_FLAGS__NONE;
@@ -273,6 +337,10 @@ TEST_FUNCTION(is_audio__looping__returns_false_when_no_flags) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/audio/audio_effect.h.spec.md
+ * Section: 1.4.4 Flag Queries (static inline)
+ */
 TEST_FUNCTION(is_audio__released_on_completion__returns_false_when_no_flags) {
     Audio_Effect audio_effect;
     audio_effect.audio_flags__u8 = AUDIO_FLAGS__NONE;
