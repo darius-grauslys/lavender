@@ -2,6 +2,13 @@
 
 #include <collisions/collision_node.c>
 
+/*
+ * Spec: docs/specs/core/collisions/collision_node.h.spec.md
+ * Section: 1.4.1 Initialization
+ *
+ * Verifies that initialize_collision_node sets the entry list tail
+ * pointer to NULL, leaving the node in an empty state.
+ */
 TEST_FUNCTION(collision_node__initialize__sets_empty_list) {
     Collision_Node node;
     Identifier__u64 uuid = 0x0000000100000002ULL;
@@ -14,6 +21,13 @@ TEST_FUNCTION(collision_node__initialize__sets_empty_list) {
     return MUNIT_OK;
 }
 
+/*
+ * Spec: docs/specs/core/collisions/collision_node.h.spec.md
+ * Section: 1.4.1 Initialization
+ *
+ * Verifies that initialize_collision_node stores the provided 64-bit
+ * UUID such that is_collision_node__allocated returns true afterward.
+ */
 TEST_FUNCTION(collision_node__initialize__sets_uuid) {
     Collision_Node node;
     Identifier__u64 uuid = 0x00000005000000AULL;
@@ -25,6 +39,13 @@ TEST_FUNCTION(collision_node__initialize__sets_uuid) {
     return MUNIT_OK;
 }
 
+/*
+ * Spec: docs/specs/core/collisions/collision_node.h.spec.md
+ * Section: 1.4.7 Allocation Query
+ *
+ * Verifies that is_collision_node__allocated returns false when the
+ * node's UUID is set to the deallocated sentinel IDENTIFIER__UNKNOWN__u64.
+ */
 TEST_FUNCTION(collision_node__is_allocated__false_when_deallocated) {
     Collision_Node node;
     memset(&node, 0, sizeof(node));
@@ -35,6 +56,14 @@ TEST_FUNCTION(collision_node__is_allocated__false_when_deallocated) {
     return MUNIT_OK;
 }
 
+/*
+ * Spec: docs/specs/core/collisions/collision_node.h.spec.md
+ * Section: 1.4.2 Entry Management
+ *
+ * Verifies that add_entry_to__collision_node succeeds for a single
+ * entry, returns true, and correctly sets the tail pointer and its
+ * hitbox UUID field.
+ */
 TEST_FUNCTION(collision_node__add_entry__single_entry) {
     Collision_Node_Pool pool;
     initialize_collision_node_pool(&pool);
@@ -64,6 +93,14 @@ TEST_FUNCTION(collision_node__add_entry__single_entry) {
     return MUNIT_OK;
 }
 
+/*
+ * Spec: docs/specs/core/collisions/collision_node.h.spec.md
+ * Section: 1.4.2 Entry Management
+ *
+ * Verifies that add_entry_to__collision_node correctly accumulates
+ * multiple entries, with get_quantity_of__entries_in__collision_node
+ * reflecting the correct count after each addition.
+ */
 TEST_FUNCTION(collision_node__add_entry__multiple_entries) {
     Collision_Node_Pool pool;
     initialize_collision_node_pool(&pool);
@@ -95,6 +132,14 @@ TEST_FUNCTION(collision_node__add_entry__multiple_entries) {
     return MUNIT_OK;
 }
 
+/*
+ * Spec: docs/specs/core/collisions/collision_node.h.spec.md
+ * Section: 1.4.2 Entry Management
+ *
+ * Verifies that remove_entry_from__collision_node correctly removes
+ * the tail entry (most recently added), leaving the previous entry
+ * as the new tail.
+ */
 TEST_FUNCTION(collision_node__remove_entry__removes_tail) {
     Collision_Node_Pool pool;
     initialize_collision_node_pool(&pool);
@@ -124,6 +169,14 @@ TEST_FUNCTION(collision_node__remove_entry__removes_tail) {
     return MUNIT_OK;
 }
 
+/*
+ * Spec: docs/specs/core/collisions/collision_node.h.spec.md
+ * Section: 1.4.2 Entry Management
+ *
+ * Verifies that remove_entry_from__collision_node correctly removes
+ * the head entry (first added / deepest in the list), leaving the
+ * remaining entry as the sole tail.
+ */
 TEST_FUNCTION(collision_node__remove_entry__removes_head) {
     Collision_Node_Pool pool;
     initialize_collision_node_pool(&pool);
@@ -153,6 +206,14 @@ TEST_FUNCTION(collision_node__remove_entry__removes_head) {
     return MUNIT_OK;
 }
 
+/*
+ * Spec: docs/specs/core/collisions/collision_node.h.spec.md
+ * Section: 1.4.2 Entry Management
+ *
+ * Verifies that remove_entry_from__collision_node correctly removes
+ * an entry from the middle of the linked list, keeping the remaining
+ * entries intact and reducing the count by one.
+ */
 TEST_FUNCTION(collision_node__remove_entry__removes_middle) {
     Collision_Node_Pool pool;
     initialize_collision_node_pool(&pool);
@@ -177,83 +238,8 @@ TEST_FUNCTION(collision_node__remove_entry__removes_middle) {
     return MUNIT_OK;
 }
 
-TEST_FUNCTION(collision_node__remove_all_entries__leaves_empty) {
-    Collision_Node_Pool pool;
-    initialize_collision_node_pool(&pool);
-
-    Identifier__u64 node_uuid = 0x0000000600000006ULL;
-    Collision_Node *p_node =
-        allocate_collision_node_from__collision_node_pool(
-                &pool, node_uuid);
-
-    Chunk_Vector__3i32 chunk_vec = { 6, 6, 0 };
-
-    add_entry_to__collision_node(&pool, p_node, chunk_vec, 50);
-    add_entry_to__collision_node(&pool, p_node, chunk_vec, 60);
-
-    remove_entry_from__collision_node(&pool, p_node, 50);
-    remove_entry_from__collision_node(&pool, p_node, 60);
-
-    Quantity__u32 count =
-        get_quantity_of__entries_in__collision_node(p_node);
-    munit_assert_uint32(count, ==, 0);
-    munit_assert_ptr_null(
-            p_node->p_linked_list__collision_node_entries__tail);
-
-    return MUNIT_OK;
-}
-
-TEST_FUNCTION(collision_node__get_quantity__empty_node_returns_zero) {
-    Collision_Node node;
-    Identifier__u64 uuid = 0x0000000700000007ULL;
-    initialize_collision_node(&node, uuid);
-
-    Quantity__u32 count =
-        get_quantity_of__entries_in__collision_node(&node);
-    munit_assert_uint32(count, ==, 0);
-
-    return MUNIT_OK;
-}
-
-TEST_FUNCTION(collision_node__iterate_entry__traverses_list) {
-    Collision_Node_Pool pool;
-    initialize_collision_node_pool(&pool);
-
-    Identifier__u64 node_uuid = 0x0000000800000008ULL;
-    Collision_Node *p_node =
-        allocate_collision_node_from__collision_node_pool(
-                &pool, node_uuid);
-
-    Chunk_Vector__3i32 chunk_vec = { 8, 8, 0 };
-
-    add_entry_to__collision_node(&pool, p_node, chunk_vec, 1);
-    add_entry_to__collision_node(&pool, p_node, chunk_vec, 2);
-    add_entry_to__collision_node(&pool, p_node, chunk_vec, 3);
-
-    Collision_Node_Entry *p_entry =
-        p_node->p_linked_list__collision_node_entries__tail;
-
-    int count = 0;
-    while (p_entry) {
-        count++;
-        p_entry = p_entry->p_previous_entry;
-    }
-
-    munit_assert_int(count, ==, 3);
-
-    return MUNIT_OK;
-}
-
-DEFINE_SUITE(collision_node,
-    INCLUDE_TEST__STATELESS(collision_node__initialize__sets_empty_list),
-    INCLUDE_TEST__STATELESS(collision_node__initialize__sets_uuid),
-    INCLUDE_TEST__STATELESS(collision_node__is_allocated__false_when_deallocated),
-    INCLUDE_TEST__STATELESS(collision_node__add_entry__single_entry),
-    INCLUDE_TEST__STATELESS(collision_node__add_entry__multiple_entries),
-    INCLUDE_TEST__STATELESS(collision_node__remove_entry__removes_tail),
-    INCLUDE_TEST__STATELESS(collision_node__remove_entry__removes_head),
-    INCLUDE_TEST__STATELESS(collision_node__remove_entry__removes_middle),
-    INCLUDE_TEST__STATELESS(collision_node__remove_all_entries__leaves_empty),
-    INCLUDE_TEST__STATELESS(collision_node__get_quantity__empty_node_returns_zero),
-    INCLUDE_TEST__STATELESS(collision_node__iterate_entry__traverses_list),
-    END_TESTS)
+/*
+ * Spec: docs/specs/core/collisions/collision_node.h.spec.md
+ * Section: 1.4.2 Entry Management
+ *
+ * Verifies that removing
