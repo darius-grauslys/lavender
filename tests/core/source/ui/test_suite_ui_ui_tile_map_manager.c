@@ -2,6 +2,10 @@
 
 #include <ui/ui_tile_map_manager.c>
 
+///
+/// Spec:   docs/specs/core/ui/ui_tile_map_manager.h.spec.md
+/// Tests:  §12.4 Functions — initialize_ui_tile_map_manager
+///
 TEST_FUNCTION(initialize_ui_tile_map_manager__all_deallocated) {
     UI_Tile_Map_Manager manager;
     initialize_ui_tile_map_manager(&manager);
@@ -26,6 +30,10 @@ TEST_FUNCTION(initialize_ui_tile_map_manager__all_deallocated) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/ui/ui_tile_map_manager.h.spec.md
+/// Tests:  §12.4 Functions — allocate_ui_tile_map_with__ui_tile_map_manager
+///
 TEST_FUNCTION(allocate_ui_tile_map__small__returns_valid_wrapper) {
     UI_Tile_Map_Manager manager;
     initialize_ui_tile_map_manager(&manager);
@@ -41,6 +49,10 @@ TEST_FUNCTION(allocate_ui_tile_map__small__returns_valid_wrapper) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/ui/ui_tile_map_manager.h.spec.md
+/// Tests:  §12.4 Functions — allocate_ui_tile_map_with__ui_tile_map_manager
+///
 TEST_FUNCTION(allocate_ui_tile_map__medium__returns_valid_wrapper) {
     UI_Tile_Map_Manager manager;
     initialize_ui_tile_map_manager(&manager);
@@ -56,6 +68,10 @@ TEST_FUNCTION(allocate_ui_tile_map__medium__returns_valid_wrapper) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/ui/ui_tile_map_manager.h.spec.md
+/// Tests:  §12.4 Functions — allocate_ui_tile_map_with__ui_tile_map_manager
+///
 TEST_FUNCTION(allocate_ui_tile_map__large__returns_valid_wrapper) {
     UI_Tile_Map_Manager manager;
     initialize_ui_tile_map_manager(&manager);
@@ -71,6 +87,10 @@ TEST_FUNCTION(allocate_ui_tile_map__large__returns_valid_wrapper) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/ui/ui_tile_map_manager.h.spec.md
+/// Tests:  §12.4 Functions — release_ui_tile_map_with__ui_tile_map_manager
+///
 TEST_FUNCTION(release_ui_tile_map__nullifies_wrapper_data) {
     UI_Tile_Map_Manager manager;
     initialize_ui_tile_map_manager(&manager);
@@ -85,6 +105,10 @@ TEST_FUNCTION(release_ui_tile_map__nullifies_wrapper_data) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/ui/ui_tile_map_manager.h.spec.md
+/// Tests:  §12.4 Functions — allocate_ui_tile_map_with__ui_tile_map_manager
+///
 TEST_FUNCTION(allocate_ui_tile_map__exhaust_small_pool) {
     UI_Tile_Map_Manager manager;
     initialize_ui_tile_map_manager(&manager);
@@ -106,6 +130,11 @@ TEST_FUNCTION(allocate_ui_tile_map__exhaust_small_pool) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/ui/ui_tile_map_manager.h.spec.md
+/// Tests:  §12.4 Functions — release_ui_tile_map_with__ui_tile_map_manager,
+///                            allocate_ui_tile_map_with__ui_tile_map_manager
+///
 TEST_FUNCTION(release_and_reallocate__small_tile_map) {
     UI_Tile_Map_Manager manager;
     initialize_ui_tile_map_manager(&manager);
