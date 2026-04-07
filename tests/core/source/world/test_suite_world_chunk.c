@@ -2,6 +2,10 @@
 
 #include <world/chunk.c>
 
+///
+/// Spec: docs/specs/core/world/chunk.h.spec.md
+/// Section: 1.4.1 Initialization, 1.4.3 Tile Access (get_uuid__chunk)
+///
 TEST_FUNCTION(chunk__initialize_chunk__sets_uuid) {
     Chunk chunk;
     Identifier__u64 uuid = 12345;
@@ -10,6 +14,10 @@ TEST_FUNCTION(chunk__initialize_chunk__sets_uuid) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/world/chunk.h.spec.md
+/// Section: 1.4.1 Initialization, 1.4.6 Flag Queries
+///
 TEST_FUNCTION(chunk__initialize_chunk__clears_flags) {
     Chunk chunk;
     initialize_chunk(&chunk, 1);
@@ -21,6 +29,10 @@ TEST_FUNCTION(chunk__initialize_chunk__clears_flags) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/world/chunk.h.spec.md
+/// Section: 1.4.5 Flag Management (set_chunk_as__active), 1.4.6 Flag Queries
+///
 TEST_FUNCTION(chunk__set_chunk_as__active) {
     Chunk chunk;
     initialize_chunk(&chunk, 1);
@@ -30,6 +42,10 @@ TEST_FUNCTION(chunk__set_chunk_as__active) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/world/chunk.h.spec.md
+/// Section: 1.4.5 Flag Management (set_chunk_as__inactive), 1.4.6 Flag Queries
+///
 TEST_FUNCTION(chunk__set_chunk_as__inactive) {
     Chunk chunk;
     initialize_chunk(&chunk, 1);
@@ -40,6 +56,11 @@ TEST_FUNCTION(chunk__set_chunk_as__inactive) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/world/chunk.h.spec.md
+/// Section: 1.4.5 Flag Management (set_chunk_as__awaiting_serialization),
+///          1.5.2 Serialization State Machine
+///
 TEST_FUNCTION(chunk__set_chunk_as__awaiting_serialization__clears_active_and_deserialization) {
     Chunk chunk;
     initialize_chunk(&chunk, 1);
@@ -51,6 +72,11 @@ TEST_FUNCTION(chunk__set_chunk_as__awaiting_serialization__clears_active_and_des
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/world/chunk.h.spec.md
+/// Section: 1.4.5 Flag Management (set_chunk_as__awaiting_deserialization),
+///          1.5.2 Serialization State Machine
+///
 TEST_FUNCTION(chunk__set_chunk_as__awaiting_deserialization__clears_active_and_serialization) {
     Chunk chunk;
     initialize_chunk(&chunk, 1);
@@ -62,6 +88,10 @@ TEST_FUNCTION(chunk__set_chunk_as__awaiting_deserialization__clears_active_and_s
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/world/chunk.h.spec.md
+/// Section: 1.4.5 Flag Management (set_chunk_as__updated), 1.4.6 Flag Queries
+///
 TEST_FUNCTION(chunk__set_chunk_as__updated) {
     Chunk chunk;
     initialize_chunk(&chunk, 1);
@@ -71,6 +101,11 @@ TEST_FUNCTION(chunk__set_chunk_as__updated) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/world/chunk.h.spec.md
+/// Section: 1.4.5 Flag Management (set_chunk_as__visually_updated,
+///          set_chunk_as__visually_committed), 1.4.6 Flag Queries
+///
 TEST_FUNCTION(chunk__set_chunk_as__visually_updated_and_committed) {
     Chunk chunk;
     initialize_chunk(&chunk, 1);
@@ -82,6 +117,10 @@ TEST_FUNCTION(chunk__set_chunk_as__visually_updated_and_committed) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/world/chunk.h.spec.md
+/// Section: 1.4.3 Tile Access (get_p_tile_from__chunk)
+///
 TEST_FUNCTION(chunk__get_p_tile_from__chunk__null_chunk_returns_null) {
     Local_Tile_Vector__3u8 local_tile;
     local_tile.x__u8 = 0;
@@ -92,6 +131,10 @@ TEST_FUNCTION(chunk__get_p_tile_from__chunk__null_chunk_returns_null) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/world/chunk.h.spec.md
+/// Section: 1.4.3 Tile Access (get_p_tile_from__chunk)
+///
 TEST_FUNCTION(chunk__get_p_tile_from__chunk__valid_access) {
     Chunk chunk;
     initialize_chunk(&chunk, 1);
@@ -104,6 +147,10 @@ TEST_FUNCTION(chunk__get_p_tile_from__chunk__valid_access) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/world/chunk.h.spec.md
+/// Section: 1.4.3 Tile Access (set_tile_of__chunk, get_p_tile_from__chunk)
+///
 TEST_FUNCTION(chunk__set_tile_of__chunk__and_read_back) {
     Chunk chunk;
     initialize_chunk(&chunk, 1);
@@ -120,6 +167,10 @@ TEST_FUNCTION(chunk__set_tile_of__chunk__and_read_back) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/world/chunk.h.spec.md
+/// Section: 1.4.5 Flag Management (clear_chunk_flags)
+///
 TEST_FUNCTION(chunk__clear_chunk_flags__clears_all) {
     Chunk chunk;
     initialize_chunk(&chunk, 1);
