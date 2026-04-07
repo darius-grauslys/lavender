@@ -3,6 +3,12 @@
 #include <multiplayer/tcp_socket.c>
 #include <multiplayer/ipv4_address.h>
 
+///
+/// @spec    docs/specs/core/multiplayer/tcp_socket.h.spec.md
+/// @section 1.4.1 Initialization
+/// @section 1.5.5 Postconditions
+/// @brief   After initialize_tcp_socket, state is None.
+///
 TEST_FUNCTION(initialize_tcp_socket__sets_state_to_none) {
     TCP_Socket socket;
     IPv4_Address addr;
@@ -12,6 +18,12 @@ TEST_FUNCTION(initialize_tcp_socket__sets_state_to_none) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/multiplayer/tcp_socket.h.spec.md
+/// @section 1.4.1 Initialization
+/// @section 1.5.5 Postconditions
+/// @brief   After initialize_tcp_socket, UUID matches the provided value.
+///
 TEST_FUNCTION(initialize_tcp_socket__sets_uuid) {
     TCP_Socket socket;
     IPv4_Address addr;
@@ -21,6 +33,12 @@ TEST_FUNCTION(initialize_tcp_socket__sets_uuid) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/multiplayer/tcp_socket.h.spec.md
+/// @section 1.4.1 Initialization
+/// @section 1.5.5 Postconditions
+/// @brief   After initialize_tcp_socket, packet queue is empty.
+///
 TEST_FUNCTION(initialize_tcp_socket__packet_queue_is_empty) {
     TCP_Socket socket;
     IPv4_Address addr;
@@ -30,6 +48,12 @@ TEST_FUNCTION(initialize_tcp_socket__packet_queue_is_empty) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/multiplayer/tcp_socket.h.spec.md
+/// @section 1.4.1 Initialization
+/// @section 1.5.5 Postconditions
+/// @brief   After initialize_tcp_socket, platform socket pointer is null.
+///
 TEST_FUNCTION(initialize_tcp_socket__platform_socket_is_null) {
     TCP_Socket socket;
     IPv4_Address addr;
@@ -39,6 +63,12 @@ TEST_FUNCTION(initialize_tcp_socket__platform_socket_is_null) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/multiplayer/tcp_socket.h.spec.md
+/// @section 1.4.1 Initialization
+/// @section 1.5.5 Postconditions
+/// @brief   After initialize_tcp_socket, flags are zero.
+///
 TEST_FUNCTION(initialize_tcp_socket__flags_are_zero) {
     TCP_Socket socket;
     IPv4_Address addr;
@@ -48,6 +78,13 @@ TEST_FUNCTION(initialize_tcp_socket__flags_are_zero) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/multiplayer/tcp_socket.h.spec.md
+/// @section 1.4.1 Initialization
+/// @section 1.5.5 Postconditions
+/// @brief   After initialize_tcp_socket_as__deallocated, socket is marked
+///          as available for reuse in the pool.
+///
 TEST_FUNCTION(initialize_tcp_socket_as__deallocated__clears_socket) {
     TCP_Socket socket;
     IPv4_Address addr;
@@ -60,6 +97,13 @@ TEST_FUNCTION(initialize_tcp_socket_as__deallocated__clears_socket) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/multiplayer/tcp_socket.h.spec.md
+/// @section 1.4.5 Queries (static inline)
+/// @section 1.3.2 TCP_Socket_State
+/// @brief   set_state_of__tcp_socket sets state to Connected,
+///          get_state_of__tcp_socket returns Connected.
+///
 TEST_FUNCTION(set_state_of__tcp_socket__updates_state) {
     TCP_Socket socket;
     IPv4_Address addr;
@@ -70,6 +114,13 @@ TEST_FUNCTION(set_state_of__tcp_socket__updates_state) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/multiplayer/tcp_socket.h.spec.md
+/// @section 1.4.5 Queries (static inline)
+/// @section 1.3.2 TCP_Socket_State
+/// @brief   set_state_of__tcp_socket sets state to Connecting,
+///          get_state_of__tcp_socket returns Connecting.
+///
 TEST_FUNCTION(set_state_of__tcp_socket__connecting) {
     TCP_Socket socket;
     IPv4_Address addr;
@@ -80,6 +131,13 @@ TEST_FUNCTION(set_state_of__tcp_socket__connecting) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/multiplayer/tcp_socket.h.spec.md
+/// @section 1.4.5 Queries (static inline)
+/// @section 1.3.2 TCP_Socket_State
+/// @brief   set_state_of__tcp_socket sets state to Authenticated,
+///          get_state_of__tcp_socket returns Authenticated.
+///
 TEST_FUNCTION(set_state_of__tcp_socket__authenticated) {
     TCP_Socket socket;
     IPv4_Address addr;
@@ -90,6 +148,13 @@ TEST_FUNCTION(set_state_of__tcp_socket__authenticated) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/multiplayer/tcp_socket.h.spec.md
+/// @section 1.4.5 Queries (static inline)
+/// @section 1.3.2 TCP_Socket_State
+/// @brief   set_state_of__tcp_socket sets state to Disconnected,
+///          get_state_of__tcp_socket returns Disconnected.
+///
 TEST_FUNCTION(set_state_of__tcp_socket__disconnected) {
     TCP_Socket socket;
     IPv4_Address addr;
@@ -100,6 +165,13 @@ TEST_FUNCTION(set_state_of__tcp_socket__disconnected) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/multiplayer/tcp_socket.h.spec.md
+/// @section 1.4.5 Queries (static inline)
+/// @section 1.3.4 TCP_Socket_Flags__u8
+/// @brief   After initialization, is_tcp_socket__manually_driven
+///          returns false by default.
+///
 TEST_FUNCTION(is_tcp_socket__manually_driven__default_is_false) {
     TCP_Socket socket;
     IPv4_Address addr;
@@ -109,6 +181,13 @@ TEST_FUNCTION(is_tcp_socket__manually_driven__default_is_false) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/multiplayer/tcp_socket.h.spec.md
+/// @section 1.4.5 Queries (static inline)
+/// @section 1.5.3 Manually Driven Sockets
+/// @brief   set_tcp_socket_as__manually_driven sets the
+///          TCP_SOCKET_FLAG__IS_MANUALLY_DRIVEN flag.
+///
 TEST_FUNCTION(set_tcp_socket_as__manually_driven__sets_flag) {
     TCP_Socket socket;
     IPv4_Address addr;
@@ -119,6 +198,13 @@ TEST_FUNCTION(set_tcp_socket_as__manually_driven__sets_flag) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/multiplayer/tcp_socket.h.spec.md
+/// @section 1.4.5 Queries (static inline)
+/// @section 1.5.3 Manually Driven Sockets
+/// @brief   set_tcp_socket_as__automatically_driven clears the
+///          TCP_SOCKET_FLAG__IS_MANUALLY_DRIVEN flag.
+///
 TEST_FUNCTION(set_tcp_socket_as__automatically_driven__clears_flag) {
     TCP_Socket socket;
     IPv4_Address addr;
@@ -130,6 +216,13 @@ TEST_FUNCTION(set_tcp_socket_as__automatically_driven__clears_flag) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/multiplayer/tcp_socket.h.spec.md
+/// @section 1.4.3 Data Transfer
+/// @section 1.5.6 Error Handling
+/// @brief   get_latest__delivery_from__tcp_socket returns false
+///          when the queue is empty.
+///
 TEST_FUNCTION(get_latest__delivery_from__tcp_socket__empty_queue__returns_false) {
     TCP_Socket socket;
     IPv4_Address addr;
@@ -141,6 +234,13 @@ TEST_FUNCTION(get_latest__delivery_from__tcp_socket__empty_queue__returns_false)
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/multiplayer/tcp_socket.h.spec.md
+/// @section 1.4.4 Binding
+/// @section 1.5.5 Postconditions
+/// @brief   After bind_tcp_socket, p_PLATFORM_tcp_socket is non-null.
+///          Skipped: requires platform-specific PLATFORM_TCP_Socket.
+///
 TEST_FUNCTION(bind_tcp_socket__sets_platform_socket) {
     // This test needs to be done per backend - not on core, since we lack PLATFORM defs.
     // 
@@ -156,6 +256,12 @@ TEST_FUNCTION(bind_tcp_socket__sets_platform_socket) {
     return MUNIT_SKIP;
 }
 
+///
+/// @spec    docs/specs/core/multiplayer/tcp_socket.h.spec.md
+/// @section 1.4.1 Initialization
+/// @section 1.5.5 Postconditions
+/// @brief   After initialize_tcp_socket, enqueue index is zero.
+///
 TEST_FUNCTION(initialize_tcp_socket__enqueue_index_is_zero) {
     TCP_Socket socket;
     IPv4_Address addr;
