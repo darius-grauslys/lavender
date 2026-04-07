@@ -2,18 +2,30 @@
 
 #include <serialization/hashing.c>
 
+///
+/// Spec: core/serialization/hashing.h.spec.md
+/// Section: 1.3.9 Index Computation
+///
 TEST_FUNCTION(hashing__bound_uuid_computes_modulo) {
     Identifier__u32 result = bound_uuid_to__contiguous_array(100, 8);
     munit_assert_uint32(result, ==, 100 % 8);
     return MUNIT_OK;
 }
 
+///
+/// Spec: core/serialization/hashing.h.spec.md
+/// Section: 1.3.9 Index Computation
+///
 TEST_FUNCTION(hashing__bound_uuid_zero_returns_zero) {
     Identifier__u32 result = bound_uuid_to__contiguous_array(0, 8);
     munit_assert_uint32(result, ==, 0);
     return MUNIT_OK;
 }
 
+///
+/// Spec: core/serialization/hashing.h.spec.md
+/// Section: 1.3.3 Dehashing (Lookup)
+///
 TEST_FUNCTION(hashing__dehash_finds_allocated_element) {
     Serialization_Header headers[8];
     initialize_serialization_header__contiguous_array(
@@ -29,6 +41,10 @@ TEST_FUNCTION(hashing__dehash_finds_allocated_element) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: core/serialization/hashing.h.spec.md
+/// Section: 1.3.3 Dehashing (Lookup)
+///
 TEST_FUNCTION(hashing__dehash_returns_null_for_missing_uuid) {
     Serialization_Header headers[8];
     initialize_serialization_header__contiguous_array(
@@ -39,6 +55,10 @@ TEST_FUNCTION(hashing__dehash_returns_null_for_missing_uuid) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: core/serialization/hashing.h.spec.md
+/// Section: 1.3.6 Combined Allocation + Initialization
+///
 TEST_FUNCTION(hashing__allocate_with_uuid_sets_uuid) {
     Serialization_Header headers[8];
     initialize_serialization_header__contiguous_array(
@@ -52,6 +72,11 @@ TEST_FUNCTION(hashing__allocate_with_uuid_sets_uuid) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: core/serialization/hashing.h.spec.md
+/// Section: 1.3.6 Combined Allocation + Initialization
+/// Section: 1.3.3 Dehashing (Lookup)
+///
 TEST_FUNCTION(hashing__allocate_with_uuid_can_be_dehashed) {
     Serialization_Header headers[8];
     initialize_serialization_header__contiguous_array(
@@ -67,6 +92,10 @@ TEST_FUNCTION(hashing__allocate_with_uuid_can_be_dehashed) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: core/serialization/hashing.h.spec.md
+/// Section: 1.3.8 Existence Check
+///
 TEST_FUNCTION(hashing__has_uuid_returns_true_when_present) {
     Serialization_Header headers[8];
     initialize_serialization_header__contiguous_array(
@@ -77,6 +106,10 @@ TEST_FUNCTION(hashing__has_uuid_returns_true_when_present) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: core/serialization/hashing.h.spec.md
+/// Section: 1.3.8 Existence Check
+///
 TEST_FUNCTION(hashing__has_uuid_returns_false_when_absent) {
     Serialization_Header headers[8];
     initialize_serialization_header__contiguous_array(
@@ -85,6 +118,10 @@ TEST_FUNCTION(hashing__has_uuid_returns_false_when_absent) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: core/serialization/hashing.h.spec.md
+/// Section: 1.3.1 Collision Resolution
+///
 TEST_FUNCTION(hashing__collision_resolution_handles_occupied_slot) {
     Serialization_Header headers[8];
     initialize_serialization_header__contiguous_array(
@@ -107,6 +144,11 @@ TEST_FUNCTION(hashing__collision_resolution_handles_occupied_slot) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: core/serialization/hashing.h.spec.md
+/// Section: 1.3.6 Combined Allocation + Initialization
+/// Section: 1.5.4 Error Handling
+///
 TEST_FUNCTION(hashing__allocation_returns_null_when_full) {
     Serialization_Header headers[4];
     initialize_serialization_header__contiguous_array(
@@ -122,6 +164,10 @@ TEST_FUNCTION(hashing__allocation_returns_null_when_full) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: core/serialization/hashing.h.spec.md
+/// Section: 1.3.4 Allocation
+///
 TEST_FUNCTION(hashing__get_next_available_allocation_finds_free_slot) {
     Serialization_Header headers[8];
     initialize_serialization_header__contiguous_array(
@@ -134,6 +180,11 @@ TEST_FUNCTION(hashing__get_next_available_allocation_finds_free_slot) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: core/serialization/hashing.h.spec.md
+/// Section: 1.3.6 Combined Allocation + Initialization
+/// Section: 1.3.3 Dehashing (Lookup)
+///
 TEST_FUNCTION(hashing__multiple_allocations_all_dehashable) {
     Serialization_Header headers[16];
     initialize_serialization_header__contiguous_array(
