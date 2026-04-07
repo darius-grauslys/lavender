@@ -2,6 +2,11 @@
 
 #include <inventory/inventory.c>
 
+/**
+ * @spec    docs/specs/core/inventory/inventory.h.spec.md
+ * @section 1.4.1 Initialization — initialize_inventory_as__empty
+ * @section 1.4.4 Queries — is_inventory__empty
+ */
 TEST_FUNCTION(inventory__initialize_as_empty__is_empty) {
     Inventory inventory;
     initialize_inventory_as__empty(&inventory);
@@ -9,6 +14,11 @@ TEST_FUNCTION(inventory__initialize_as_empty__is_empty) {
     return MUNIT_OK;
 }
 
+/**
+ * @spec    docs/specs/core/inventory/inventory.h.spec.md
+ * @section 1.4.1 Initialization — initialize_inventory
+ * @section 1.4.4 Queries — does_inventory_have__available_item_stacks
+ */
 TEST_FUNCTION(inventory__initialize__has_available_stacks) {
     Inventory inventory;
     initialize_inventory(&inventory, 42);
@@ -16,6 +26,11 @@ TEST_FUNCTION(inventory__initialize__has_available_stacks) {
     return MUNIT_OK;
 }
 
+/**
+ * @spec    docs/specs/core/inventory/inventory.h.spec.md
+ * @section 1.4.1 Initialization — initialize_inventory
+ * @section 1.4.4 Queries — is_inventory__empty
+ */
 TEST_FUNCTION(inventory__initialize__is_empty) {
     Inventory inventory;
     initialize_inventory(&inventory, 42);
@@ -23,6 +38,10 @@ TEST_FUNCTION(inventory__initialize__is_empty) {
     return MUNIT_OK;
 }
 
+/**
+ * @spec    docs/specs/core/inventory/inventory.h.spec.md
+ * @section 1.4.3 Item Management — add_item_to__inventory
+ */
 TEST_FUNCTION(inventory__add_item__returns_non_null) {
     Inventory inventory;
     initialize_inventory(&inventory, 1);
@@ -33,6 +52,11 @@ TEST_FUNCTION(inventory__add_item__returns_non_null) {
     return MUNIT_OK;
 }
 
+/**
+ * @spec    docs/specs/core/inventory/inventory.h.spec.md
+ * @section 1.4.3 Item Management — add_item_to__inventory
+ * @section 1.4.4 Queries — is_inventory__empty
+ */
 TEST_FUNCTION(inventory__add_item__no_longer_empty) {
     Inventory inventory;
     initialize_inventory(&inventory, 1);
@@ -43,6 +67,11 @@ TEST_FUNCTION(inventory__add_item__no_longer_empty) {
     return MUNIT_OK;
 }
 
+/**
+ * @spec    docs/specs/core/inventory/inventory.h.spec.md
+ * @section 1.4.3 Item Management — add_item_to__inventory
+ * @section 1.4.4 Queries — get_first_p_item_stack_of__this_item_kind_from__inventory
+ */
 TEST_FUNCTION(inventory__add_item__can_find_by_kind) {
     Inventory inventory;
     initialize_inventory(&inventory, 1);
@@ -57,6 +86,10 @@ TEST_FUNCTION(inventory__add_item__can_find_by_kind) {
     return MUNIT_OK;
 }
 
+/**
+ * @spec    docs/specs/core/inventory/inventory.h.spec.md
+ * @section 1.4.4 Queries — get_first_p_item_stack_of__this_item_kind_from__inventory
+ */
 TEST_FUNCTION(inventory__add_item__find_nonexistent_returns_null) {
     Inventory inventory;
     initialize_inventory(&inventory, 1);
@@ -70,6 +103,10 @@ TEST_FUNCTION(inventory__add_item__find_nonexistent_returns_null) {
     return MUNIT_OK;
 }
 
+/**
+ * @spec    docs/specs/core/inventory/inventory.h.spec.md
+ * @section 1.4.4 Queries — does_inventory_have_this__item_kind
+ */
 TEST_FUNCTION(inventory__does_have_item_kind__true_when_present) {
     Inventory inventory;
     initialize_inventory(&inventory, 1);
@@ -81,6 +118,10 @@ TEST_FUNCTION(inventory__does_have_item_kind__true_when_present) {
     return MUNIT_OK;
 }
 
+/**
+ * @spec    docs/specs/core/inventory/inventory.h.spec.md
+ * @section 1.4.4 Queries — does_inventory_have_this__item_kind
+ */
 TEST_FUNCTION(inventory__does_have_item_kind__false_when_absent) {
     Inventory inventory;
     initialize_inventory(&inventory, 1);
@@ -89,6 +130,10 @@ TEST_FUNCTION(inventory__does_have_item_kind__false_when_absent) {
     return MUNIT_OK;
 }
 
+/**
+ * @spec    docs/specs/core/inventory/inventory.h.spec.md
+ * @section 1.4.4 Queries — does_inventory_have_this_many_of__item_kind
+ */
 TEST_FUNCTION(inventory__does_have_this_many__true_when_enough) {
     Inventory inventory;
     initialize_inventory(&inventory, 1);
@@ -101,6 +146,10 @@ TEST_FUNCTION(inventory__does_have_this_many__true_when_enough) {
     return MUNIT_OK;
 }
 
+/**
+ * @spec    docs/specs/core/inventory/inventory.h.spec.md
+ * @section 1.4.4 Queries — does_inventory_have_this_many_of__item_kind
+ */
 TEST_FUNCTION(inventory__does_have_this_many__true_when_more_than_enough) {
     Inventory inventory;
     initialize_inventory(&inventory, 1);
@@ -113,6 +162,10 @@ TEST_FUNCTION(inventory__does_have_this_many__true_when_more_than_enough) {
     return MUNIT_OK;
 }
 
+/**
+ * @spec    docs/specs/core/inventory/inventory.h.spec.md
+ * @section 1.4.4 Queries — does_inventory_have_this_many_of__item_kind
+ */
 TEST_FUNCTION(inventory__does_have_this_many__false_when_not_enough) {
     Inventory inventory;
     initialize_inventory(&inventory, 1);
@@ -125,6 +178,11 @@ TEST_FUNCTION(inventory__does_have_this_many__false_when_not_enough) {
     return MUNIT_OK;
 }
 
+/**
+ * @spec    docs/specs/core/inventory/inventory.h.spec.md
+ * @section 1.4.3 Item Management — remove_p_item_stack_from__inventory
+ * @section 1.4.4 Queries — is_inventory__empty
+ */
 TEST_FUNCTION(inventory__remove_item_stack__becomes_empty) {
     Inventory inventory;
     initialize_inventory(&inventory, 1);
@@ -136,6 +194,10 @@ TEST_FUNCTION(inventory__remove_item_stack__becomes_empty) {
     return MUNIT_OK;
 }
 
+/**
+ * @spec    docs/specs/core/inventory/inventory.h.spec.md
+ * @section 1.4.3 Item Management — remove_all_item_stacks_from__inventory
+ */
 TEST_FUNCTION(inventory__remove_all__becomes_empty) {
     // TODO: remove_all_item_stacks_from__inventory lacks an implementation.
     //
@@ -151,6 +213,11 @@ TEST_FUNCTION(inventory__remove_all__becomes_empty) {
     return MUNIT_FAIL;
 }
 
+/**
+ * @spec    docs/specs/core/inventory/inventory.h.spec.md
+ * @section 1.4.3 Item Management — remove_this_many_item_kinds_from__inventory
+ * @section 1.4.4 Queries — does_inventory_have_this_many_of__item_kind
+ */
 TEST_FUNCTION(inventory__remove_this_many__removes_correct_quantity) {
     Inventory inventory;
     initialize_inventory(&inventory, 1);
@@ -168,6 +235,11 @@ TEST_FUNCTION(inventory__remove_this_many__removes_correct_quantity) {
     return MUNIT_OK;
 }
 
+/**
+ * @spec    docs/specs/core/inventory/inventory.h.spec.md
+ * @section 1.4.3 Item Management — remove_this_many_item_kinds_from__inventory
+ * @section 1.4.4 Queries — does_inventory_have_this__item_kind
+ */
 TEST_FUNCTION(inventory__remove_this_many__removes_all_empties_inventory) {
     Inventory inventory;
     initialize_inventory(&inventory, 1);
@@ -181,6 +253,10 @@ TEST_FUNCTION(inventory__remove_this_many__removes_all_empties_inventory) {
     return MUNIT_OK;
 }
 
+/**
+ * @spec    docs/specs/core/inventory/inventory.h.spec.md
+ * @section 1.4.4 Queries — get_p_item_stack_from__inventory_by__index
+ */
 TEST_FUNCTION(inventory__get_by_index__returns_valid_stack) {
     Inventory inventory;
     initialize_inventory(&inventory, 1);
@@ -190,6 +266,11 @@ TEST_FUNCTION(inventory__get_by_index__returns_valid_stack) {
     return MUNIT_OK;
 }
 
+/**
+ * @spec    docs/specs/core/inventory/inventory.h.spec.md
+ * @section 1.4.3 Item Management — add_item_to__inventory
+ * @section 1.4.4 Queries — does_inventory_have__available_item_stacks
+ */
 TEST_FUNCTION(inventory__add_multiple__has_available_until_full) {
     Inventory inventory;
     initialize_inventory(&inventory, 1);
@@ -204,6 +285,10 @@ TEST_FUNCTION(inventory__add_multiple__has_available_until_full) {
     return MUNIT_OK;
 }
 
+/**
+ * @spec    docs/specs/core/inventory/inventory.h.spec.md
+ * @section 1.4.3 Item Management — add_item_to__inventory
+ */
 TEST_FUNCTION(inventory__add_when_full__returns_null) {
     Inventory inventory;
     initialize_inventory(&inventory, 1);
@@ -217,6 +302,11 @@ TEST_FUNCTION(inventory__add_when_full__returns_null) {
     return MUNIT_OK;
 }
 
+/**
+ * @spec    docs/specs/core/inventory/inventory.h.spec.md
+ * @section 1.4.4 Queries — get_first_p_item_stack_of__this_item_kind_from__inventory
+ * @section 1.4.4 Queries — get_next_p_item_stack_of__this_item_kind_from__inventory
+ */
 TEST_FUNCTION(inventory__iterator__finds_all_matching_stacks) {
     Inventory inventory;
     initialize_inventory(&inventory, 1);
