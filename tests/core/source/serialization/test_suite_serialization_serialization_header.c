@@ -2,6 +2,10 @@
 
 #include <serialization/serialization_header.c>
 
+///
+/// Spec: docs/specs/core/serialization/serialization_header.h.spec.md
+/// Section: 1.4.1 Initialization — initialize_serialization_header
+///
 TEST_FUNCTION(serialization_header__initialize_sets_uuid_and_size) {
     Serialization_Header header;
     initialize_serialization_header(
@@ -13,6 +17,10 @@ TEST_FUNCTION(serialization_header__initialize_sets_uuid_and_size) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/serialization/serialization_header.h.spec.md
+/// Section: 1.4.1 Initialization — initialize_serialization_header_for__deallocated_struct
+///
 TEST_FUNCTION(serialization_header__initialize_deallocated_sets_unknown_uuid) {
     Serialization_Header header;
     header.uuid = 123;
@@ -24,6 +32,10 @@ TEST_FUNCTION(serialization_header__initialize_deallocated_sets_unknown_uuid) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/serialization/serialization_header.h.spec.md
+/// Section: 1.4.4 Identity Checks — is_serialized_struct__deallocated
+///
 TEST_FUNCTION(serialization_header__is_deallocated_returns_true_for_unknown_uuid) {
     Serialization_Header header;
     initialize_serialization_header_for__deallocated_struct(
@@ -33,6 +45,10 @@ TEST_FUNCTION(serialization_header__is_deallocated_returns_true_for_unknown_uuid
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/serialization/serialization_header.h.spec.md
+/// Section: 1.4.4 Identity Checks — is_serialized_struct__deallocated
+///
 TEST_FUNCTION(serialization_header__is_deallocated_returns_false_for_valid_uuid) {
     Serialization_Header header;
     initialize_serialization_header(
@@ -43,11 +59,19 @@ TEST_FUNCTION(serialization_header__is_deallocated_returns_false_for_valid_uuid)
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/serialization/serialization_header.h.spec.md
+/// Section: 1.4.4 Identity Checks — is_serialized_struct__deallocated
+///
 TEST_FUNCTION(serialization_header__is_deallocated_returns_true_for_null) {
     munit_assert_true(is_serialized_struct__deallocated(0));
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/serialization/serialization_header.h.spec.md
+/// Section: 1.4.4 Identity Checks — is_identifier_u32_matching__serialization_header
+///
 TEST_FUNCTION(serialization_header__identifier_matching_returns_true_on_match) {
     Serialization_Header header;
     initialize_serialization_header(
@@ -59,6 +83,10 @@ TEST_FUNCTION(serialization_header__identifier_matching_returns_true_on_match) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/serialization/serialization_header.h.spec.md
+/// Section: 1.4.4 Identity Checks — is_identifier_u32_matching__serialization_header
+///
 TEST_FUNCTION(serialization_header__identifier_matching_returns_false_on_mismatch) {
     Serialization_Header header;
     initialize_serialization_header(
@@ -70,6 +98,10 @@ TEST_FUNCTION(serialization_header__identifier_matching_returns_false_on_mismatc
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/serialization/serialization_header.h.spec.md
+/// Section: 1.4.2 Contiguous Array Initialization — initialize_serialization_header__contiguous_array
+///
 TEST_FUNCTION(serialization_header__contiguous_array_init_marks_all_deallocated) {
     Serialization_Header headers[8];
     initialize_serialization_header__contiguous_array(
@@ -88,6 +120,10 @@ TEST_FUNCTION(serialization_header__contiguous_array_init_marks_all_deallocated)
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/serialization/serialization_header.h.spec.md
+/// Section: 1.4.3 Contiguous Array Access — get_p_serialization_header_from__contigious_array
+///
 TEST_FUNCTION(serialization_header__contiguous_array_access_returns_correct_element) {
     Serialization_Header headers[4];
     initialize_serialization_header__contiguous_array(
@@ -103,6 +139,10 @@ TEST_FUNCTION(serialization_header__contiguous_array_access_returns_correct_elem
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/serialization/serialization_header.h.spec.md
+/// Section: 1.4.3 Contiguous Array Access — get_next_available_p_serialization_header
+///
 TEST_FUNCTION(serialization_header__get_next_available_finds_first_free) {
     Serialization_Header headers[4];
     initialize_serialization_header__contiguous_array(
@@ -118,6 +158,10 @@ TEST_FUNCTION(serialization_header__get_next_available_finds_first_free) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/serialization/serialization_header.h.spec.md
+/// Section: 1.4.3 Contiguous Array Access — get_next_available_p_serialization_header
+///
 TEST_FUNCTION(serialization_header__get_next_available_returns_null_when_full) {
     Serialization_Header headers[2];
     initialize_serialization_header__contiguous_array(
@@ -132,6 +176,10 @@ TEST_FUNCTION(serialization_header__get_next_available_returns_null_when_full) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/serialization/serialization_header.h.spec.md
+/// Section: 1.3.4 Convenience Macros — ALLOCATE_P
+///
 TEST_FUNCTION(serialization_header__allocate_p_sets_uuid) {
     Serialization_Header header;
     initialize_serialization_header_for__deallocated_struct(
@@ -144,6 +192,10 @@ TEST_FUNCTION(serialization_header__allocate_p_sets_uuid) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/serialization/serialization_header.h.spec.md
+/// Section: 1.3.4 Convenience Macros — DEALLOCATE_P
+///
 TEST_FUNCTION(serialization_header__deallocate_p_sets_unknown) {
     Serialization_Header header;
     initialize_serialization_header(
