@@ -141,6 +141,9 @@ void initialize_local_space_manager(
     }
 #endif
 
+    p_local_space_manager->center_of__local_space_manager__3i32 =
+        center_of__local_space_manager__3i32;
+
     p_local_space_manager->p_local_space__south_west =
         get_p_local_space_by__local_xyz_from__local_space_manager(
                 p_local_space_manager, 
@@ -696,7 +699,7 @@ void move_local_space_manager(
                 &p_local_space_manager->p_local_space__south_east);
         move_p_ptr_local_space__west(
                 &p_local_space_manager->p_local_space__south_west);
-        
+
 #if LOCAL_SPACE_MANAGER__DEPTH > 1
         move_p_ptr_local_space__west(
                 &p_local_space_manager->p_local_space__north_east__top);
