@@ -2,6 +2,10 @@
 
 #include <game_action/core/tcp/game_action__tcp_connect.c>
 
+///
+/// Spec: game_action__tcp_connect.h.spec.md
+/// Section: 1.5.2. Initialization
+///
 TEST_FUNCTION(game_action__tcp_connect__initialize__sets_kind) {
     Game_Action ga;
     initialize_game_action(&ga);
@@ -18,6 +22,10 @@ TEST_FUNCTION(game_action__tcp_connect__initialize__sets_kind) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: game_action__tcp_connect.h.spec.md
+/// Section: 1.5.2. Initialization
+///
 TEST_FUNCTION(game_action__tcp_connect__initialize__sets_session_token) {
     Game_Action ga;
     initialize_game_action(&ga);
@@ -34,6 +42,10 @@ TEST_FUNCTION(game_action__tcp_connect__initialize__sets_session_token) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: game_action__tcp_connect.h.spec.md
+/// Section: 1.5.1. Registration
+///
 TEST_FUNCTION(game_action__tcp_connect__register__populates_table) {
     Game_Action_Logic_Table table;
     initialize_game_action_logic_table(&table);
