@@ -2,6 +2,10 @@
 
 #include <world/tile.c>
 
+///
+/// @spec    docs/specs/core/world/tile.h.spec.md
+/// @section 1.4.3 Kind Accessors
+///
 TEST_FUNCTION(tile__set_and_get_tile_kind) {
     Tile tile;
     set_tile_kind_of__tile(&tile, Tile_Kind__None);
@@ -9,6 +13,10 @@ TEST_FUNCTION(tile__set_and_get_tile_kind) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/world/tile.h.spec.md
+/// @section 1.4.3 Kind Accessors
+///
 TEST_FUNCTION(tile__is_tile_of__this_kind__returns_true_when_matching) {
     Tile tile;
     set_tile_kind_of__tile(&tile, Tile_Kind__None);
@@ -16,6 +24,10 @@ TEST_FUNCTION(tile__is_tile_of__this_kind__returns_true_when_matching) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/world/tile.h.spec.md
+/// @section 1.4.3 Kind Accessors
+///
 TEST_FUNCTION(tile__is_tile_of__this_kind__returns_false_when_not_matching) {
     Tile tile;
     set_tile_kind_of__tile(&tile, Tile_Kind__None);
@@ -23,16 +35,29 @@ TEST_FUNCTION(tile__is_tile_of__this_kind__returns_false_when_not_matching) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/world/tile.h.spec.md
+/// @section 1.4.3 Kind Accessors
+///
 TEST_FUNCTION(tile__is_tile_kind__illegal__none_is_not_illegal) {
     munit_assert_false(is_tile_kind__illegal(Tile_Kind__None));
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/world/tile.h.spec.md
+/// @section 1.4.3 Kind Accessors
+///
 TEST_FUNCTION(tile__is_tile_kind__illegal__unknown_is_illegal) {
     munit_assert_true(is_tile_kind__illegal(Tile_Kind__Unknown));
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/world/tile.h.spec.md
+/// @section 1.4.1 Flag Queries
+/// @section 1.4.2 Flag Mutations
+///
 TEST_FUNCTION(tile__set_tile__is_unpassable__true) {
     Tile_Flags__u8 flags = 0;
     set_tile__is_unpassable(&flags, true);
@@ -40,6 +65,11 @@ TEST_FUNCTION(tile__set_tile__is_unpassable__true) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/world/tile.h.spec.md
+/// @section 1.4.1 Flag Queries
+/// @section 1.4.2 Flag Mutations
+///
 TEST_FUNCTION(tile__set_tile__is_unpassable__false) {
     Tile_Flags__u8 flags = 0;
     set_tile__is_unpassable(&flags, true);
@@ -48,6 +78,11 @@ TEST_FUNCTION(tile__set_tile__is_unpassable__false) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/world/tile.h.spec.md
+/// @section 1.4.1 Flag Queries
+/// @section 1.4.2 Flag Mutations
+///
 TEST_FUNCTION(tile__set_tile__is_sight_blocking__true) {
     Tile_Flags__u8 flags = 0;
     set_tile__is_sight_blocking(&flags, true);
@@ -55,6 +90,11 @@ TEST_FUNCTION(tile__set_tile__is_sight_blocking__true) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/world/tile.h.spec.md
+/// @section 1.4.1 Flag Queries
+/// @section 1.4.2 Flag Mutations
+///
 TEST_FUNCTION(tile__set_tile__is_sight_blocking__false) {
     Tile_Flags__u8 flags = 0;
     set_tile__is_sight_blocking(&flags, true);
@@ -63,6 +103,10 @@ TEST_FUNCTION(tile__set_tile__is_sight_blocking__false) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/world/tile.h.spec.md
+/// @section 1.5.3 Postconditions
+///
 TEST_FUNCTION(tile__flag_mutations_preserve_other_bits) {
     Tile_Flags__u8 flags = 0;
     set_tile__is_unpassable(&flags, true);
