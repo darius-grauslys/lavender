@@ -9,6 +9,13 @@ void m_test_gap_handler__noop(
     (void)p_game;
 }
 
+///
+/// Spec: docs/specs/core/process/game_action_process.h.spec.md
+/// Section: 1.3.1 Initialization
+///
+/// Verifies that initialize_process_as__game_action_process sets
+/// p_process_data to point to the provided Game_Action.
+///
 TEST_FUNCTION(initialize_process_as__game_action_process__sets_data_pointer) {
     Process process;
     Game_Action game_action;
@@ -34,6 +41,13 @@ TEST_FUNCTION(initialize_process_as__game_action_process__sets_data_pointer) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/process/game_action_process.h.spec.md
+/// Section: 1.3.1 Initialization
+///
+/// Verifies that initialize_process_as__game_action_process marks
+/// the process kind as Process_Kind__Game_Action.
+///
 TEST_FUNCTION(initialize_process_as__game_action_process__sets_kind) {
     Process process;
     Game_Action game_action;
@@ -60,6 +74,13 @@ TEST_FUNCTION(initialize_process_as__game_action_process__sets_kind) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/process/game_action_process.h.spec.md
+/// Section: 1.3.1 Initialization
+///
+/// Verifies that initialize_process_as__game_action_process preserves
+/// the previously assigned m_process_run__handler.
+///
 TEST_FUNCTION(initialize_process_as__game_action_process__preserves_handler) {
     Process process;
     Game_Action game_action;
@@ -85,6 +106,13 @@ TEST_FUNCTION(initialize_process_as__game_action_process__preserves_handler) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/process/game_action_process.h.spec.md
+/// Section: 1.3.1 Initialization
+///
+/// Verifies that initialize_process_as__game_action_process preserves
+/// the previously assigned process_priority__u8.
+///
 TEST_FUNCTION(initialize_process_as__game_action_process__preserves_priority) {
     Process process;
     Game_Action game_action;
@@ -111,6 +139,13 @@ TEST_FUNCTION(initialize_process_as__game_action_process__preserves_priority) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/process/game_action_process.h.spec.md
+/// Section: 1.3.1 Initialization
+///
+/// Verifies that initialize_process_as__game_action_process preserves
+/// the previously assigned serialization_header uuid.
+///
 TEST_FUNCTION(initialize_process_as__game_action_process__preserves_uuid) {
     Process process;
     Game_Action game_action;
