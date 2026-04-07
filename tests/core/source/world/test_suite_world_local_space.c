@@ -2,6 +2,10 @@
 
 #include <world/local_space.c>
 
+///
+/// Spec: docs/specs/core/world/local_space.h.spec.md
+/// Section: 1.4.1 Initialization
+///
 TEST_FUNCTION(local_space__initialize__null_global_space) {
     Local_Space ls;
     initialize_local_space(&ls);
@@ -9,6 +13,10 @@ TEST_FUNCTION(local_space__initialize__null_global_space) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/world/local_space.h.spec.md
+/// Section: 1.4.1 Initialization
+///
 TEST_FUNCTION(local_space__initialize__null_neighbors) {
     Local_Space ls;
     initialize_local_space(&ls);
@@ -21,6 +29,10 @@ TEST_FUNCTION(local_space__initialize__null_neighbors) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/world/local_space.h.spec.md
+/// Section: 1.4.1 Initialization
+///
 TEST_FUNCTION(local_space__initialize__not_allocated) {
     Local_Space ls;
     initialize_local_space(&ls);
@@ -28,6 +40,10 @@ TEST_FUNCTION(local_space__initialize__not_allocated) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/world/local_space.h.spec.md
+/// Section: 1.4.1 Initialization
+///
 TEST_FUNCTION(local_space__initialize__not_active) {
     Local_Space ls;
     initialize_local_space(&ls);
@@ -35,6 +51,10 @@ TEST_FUNCTION(local_space__initialize__not_active) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/world/local_space.h.spec.md
+/// Section: 1.4.2 Neighbor Setup
+///
 TEST_FUNCTION(local_space__set_neighbors__sets_all_six) {
     Local_Space ls;
     Local_Space north, east, south, west, above, below;
@@ -55,23 +75,39 @@ TEST_FUNCTION(local_space__set_neighbors__sets_all_six) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/world/local_space.h.spec.md
+/// Section: 1.4.4 State Queries
+///
 TEST_FUNCTION(local_space__is_allocated__null_returns_false) {
     munit_assert_false(is_local_space__allocated(0));
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/world/local_space.h.spec.md
+/// Section: 1.4.3 Accessors
+///
 TEST_FUNCTION(local_space__get_global_space__null_safe) {
     Global_Space *p_gs = get_p_global_space_from__local_space(0);
     munit_assert_ptr_null(p_gs);
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/world/local_space.h.spec.md
+/// Section: 1.4.3 Accessors
+///
 TEST_FUNCTION(local_space__get_chunk__null_safe) {
     Chunk *p_chunk = get_p_chunk_from__local_space(0);
     munit_assert_ptr_null(p_chunk);
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/world/local_space.h.spec.md
+/// Section: 1.4.3 Accessors
+///
 TEST_FUNCTION(local_space__get_chunk__null_global_space_returns_null) {
     Local_Space ls;
     initialize_local_space(&ls);
@@ -80,6 +116,10 @@ TEST_FUNCTION(local_space__get_chunk__null_global_space_returns_null) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/world/local_space.h.spec.md
+/// Section: 1.4.4 State Queries
+///
 TEST_FUNCTION(local_space__is_allocated__with_allocated_global_space) {
     Local_Space ls;
     initialize_local_space(&ls);
@@ -90,6 +130,10 @@ TEST_FUNCTION(local_space__is_allocated__with_allocated_global_space) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/world/local_space.h.spec.md
+/// Section: 1.4.4 State Queries
+///
 TEST_FUNCTION(local_space__is_active__with_active_global_space) {
     Local_Space ls;
     initialize_local_space(&ls);
@@ -101,6 +145,10 @@ TEST_FUNCTION(local_space__is_active__with_active_global_space) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/world/local_space.h.spec.md
+/// Section: 1.4.4 State Queries
+///
 TEST_FUNCTION(local_space__is_active__false_when_constructing) {
     Local_Space ls;
     initialize_local_space(&ls);
