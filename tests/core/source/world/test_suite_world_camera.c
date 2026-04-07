@@ -2,6 +2,11 @@
 
 #include <world/camera.c>
 
+///
+/// Spec:    docs/specs/core/world/camera.h.spec.md
+/// Section: 1.4.1 Initialization — initialize_camera_as__inactive
+///          1.4.3 State Queries — is_camera__active
+///
 TEST_FUNCTION(camera__initialize_camera_as__inactive__position_out_of_bounds) {
     Camera camera;
     initialize_camera_as__inactive(&camera);
@@ -9,6 +14,11 @@ TEST_FUNCTION(camera__initialize_camera_as__inactive__position_out_of_bounds) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:    docs/specs/core/world/camera.h.spec.md
+/// Section: 1.4.1 Initialization — initialize_camera
+///          1.3.1 Camera (struct) — width_of__fulcrum, height_of__fulcrum
+///
 TEST_FUNCTION(camera__initialize_camera__sets_fulcrum) {
     Camera camera;
     Vector__3i32F4 pos;
@@ -28,6 +38,11 @@ TEST_FUNCTION(camera__initialize_camera__sets_fulcrum) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:    docs/specs/core/world/camera.h.spec.md
+/// Section: 1.4.1 Initialization — initialize_camera
+///          1.4.3 State Queries — is_camera__active
+///
 TEST_FUNCTION(camera__initialize_camera__is_active) {
     Camera camera;
     Vector__3i32F4 pos;
@@ -46,6 +61,10 @@ TEST_FUNCTION(camera__initialize_camera__is_active) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:    docs/specs/core/world/camera.h.spec.md
+/// Section: 1.4.4 Follow Target — set_camera_to__follow
+///
 TEST_FUNCTION(camera__set_camera_to__follow__sets_uuid) {
     Camera camera;
     initialize_camera_as__inactive(&camera);
@@ -54,6 +73,10 @@ TEST_FUNCTION(camera__set_camera_to__follow__sets_uuid) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:    docs/specs/core/world/camera.h.spec.md
+/// Section: 1.4.5 Position Accessors — get_position_3i32F4_of__camera
+///
 TEST_FUNCTION(camera__get_position_3i32F4_of__camera__returns_position) {
     Camera camera;
     Vector__3i32F4 pos;
