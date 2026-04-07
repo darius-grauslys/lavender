@@ -2,6 +2,11 @@
 
 #include <game_action/core/world/game_action__world__load_world.c>
 
+///
+/// @spec    game_action__world__load_world.h.spec.md
+/// @section 1.3. Game_Action_Kind
+/// @section 1.5.2. Initialization
+///
 TEST_FUNCTION(game_action__world__load_world__initialize__sets_kind) {
     Game_Action ga;
     initialize_game_action(&ga);
@@ -18,6 +23,11 @@ TEST_FUNCTION(game_action__world__load_world__initialize__sets_kind) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    game_action__world__load_world.h.spec.md
+/// @section 1.4. Payload Fields
+/// @section 1.5.2. Initialization
+///
 TEST_FUNCTION(game_action__world__load_world__initialize__sets_client_uuid) {
     Game_Action ga;
     initialize_game_action(&ga);
@@ -34,6 +44,10 @@ TEST_FUNCTION(game_action__world__load_world__initialize__sets_client_uuid) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    game_action__world__load_world.h.spec.md
+/// @section 1.5.1. Registration
+///
 TEST_FUNCTION(game_action__world__load_world__register__populates_table) {
     Game_Action_Logic_Table table;
     initialize_game_action_logic_table(&table);
