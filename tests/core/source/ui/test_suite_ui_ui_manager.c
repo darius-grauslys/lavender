@@ -2,6 +2,10 @@
 
 #include <ui/ui_manager.c>
 
+///
+/// Spec:   docs/specs/core/ui/ui_manager.h.spec.md
+/// Section: 6.4.1 Initialization and Memory — initialize_ui_manager
+///
 TEST_FUNCTION(initialize_ui_manager__sets_empty_state) {
     UI_Manager ui_manager;
     initialize_ui_manager(&ui_manager);
@@ -12,6 +16,10 @@ TEST_FUNCTION(initialize_ui_manager__sets_empty_state) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/ui/ui_manager.h.spec.md
+/// Section: 6.4.1 Initialization and Memory — allocate_ui_manager__members
+///
 TEST_FUNCTION(allocate_ui_manager__members__succeeds) {
     UI_Manager ui_manager;
     initialize_ui_manager(&ui_manager);
@@ -24,6 +32,10 @@ TEST_FUNCTION(allocate_ui_manager__members__succeeds) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/ui/ui_manager.h.spec.md
+/// Section: 6.4.1 Initialization and Memory — release_ui_manager__members
+///
 TEST_FUNCTION(release_ui_manager__members__cleans_up) {
     UI_Manager ui_manager;
     initialize_ui_manager(&ui_manager);
@@ -34,6 +46,10 @@ TEST_FUNCTION(release_ui_manager__members__cleans_up) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/ui/ui_manager.h.spec.md
+/// Section: 6.4.5 Allocation — allocate_ui_element_from__ui_manager
+///
 TEST_FUNCTION(allocate_ui_element_from__ui_manager__returns_non_null) {
     UI_Manager ui_manager;
     initialize_ui_manager(&ui_manager);
@@ -45,6 +61,10 @@ TEST_FUNCTION(allocate_ui_element_from__ui_manager__returns_non_null) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/ui/ui_manager.h.spec.md
+/// Section: 6.4.5 Allocation — allocate_ui_element_from__ui_manager
+///
 TEST_FUNCTION(allocate_ui_element__exhaust_pool__returns_null) {
     UI_Manager ui_manager;
     initialize_ui_manager(&ui_manager);
@@ -62,6 +82,10 @@ TEST_FUNCTION(allocate_ui_element__exhaust_pool__returns_null) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/ui/ui_manager.h.spec.md
+/// Section: 6.4.8 Inline Functions — is_ui_manager__empty
+///
 TEST_FUNCTION(is_ui_manager__empty__true_when_no_elements) {
     UI_Manager ui_manager;
     initialize_ui_manager(&ui_manager);
@@ -71,6 +95,10 @@ TEST_FUNCTION(is_ui_manager__empty__true_when_no_elements) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/ui/ui_manager.h.spec.md
+/// Section: 6.4.8 Inline Functions — is_ui_manager__empty
+///
 TEST_FUNCTION(is_ui_manager__empty__false_after_allocation) {
     UI_Manager ui_manager;
     initialize_ui_manager(&ui_manager);
@@ -81,6 +109,10 @@ TEST_FUNCTION(is_ui_manager__empty__false_after_allocation) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/ui/ui_manager.h.spec.md
+/// Section: 6.4.8 Inline Functions — is_ui_manager__dirty
+///
 TEST_FUNCTION(is_ui_manager__dirty__initially_not_dirty) {
     UI_Manager ui_manager;
     initialize_ui_manager(&ui_manager);
@@ -88,6 +120,10 @@ TEST_FUNCTION(is_ui_manager__dirty__initially_not_dirty) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/ui/ui_manager.h.spec.md
+/// Section: 6.4.8 Inline Functions — set_ui_manager_as__dirty
+///
 TEST_FUNCTION(set_ui_manager_as__dirty__sets_flag) {
     UI_Manager ui_manager;
     initialize_ui_manager(&ui_manager);
@@ -96,6 +132,10 @@ TEST_FUNCTION(set_ui_manager_as__dirty__sets_flag) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/ui/ui_manager.h.spec.md
+/// Section: 6.4.8 Inline Functions — set_ui_manager_as__NOT_dirty
+///
 TEST_FUNCTION(set_ui_manager_as__NOT_dirty__clears_flag) {
     UI_Manager ui_manager;
     initialize_ui_manager(&ui_manager);
@@ -105,6 +145,10 @@ TEST_FUNCTION(set_ui_manager_as__NOT_dirty__clears_flag) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/ui/ui_manager.h.spec.md
+/// Section: 6.4.5 Allocation — allocate_many_ui_elements_from__ui_manager_in__succession
+///
 TEST_FUNCTION(allocate_many_ui_elements_in__succession__links_elements) {
     UI_Manager ui_manager;
     initialize_ui_manager(&ui_manager);
@@ -124,6 +168,10 @@ TEST_FUNCTION(allocate_many_ui_elements_in__succession__links_elements) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/ui/ui_manager.h.spec.md
+/// Section: 6.4.2 Queries — get_quantity_of__ui_elements_in__ui_manager
+///
 TEST_FUNCTION(get_quantity_of__ui_elements_in__ui_manager__returns_correct_count) {
     UI_Manager ui_manager;
     initialize_ui_manager(&ui_manager);
