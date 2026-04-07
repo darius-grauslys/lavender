@@ -39,6 +39,22 @@ if [ ! -d "$test_dir" ]; then
     exit 1
 fi
 
+# Build a list of all test files sorted by filename length (shortest first).
+# This ensures that when multiple files match a suffix pattern, the shortest
+# (most exact) match is selected first, preventing e.g. "process" from
+# pairing with "filesystem_process".
+sorted_test_files=()
+while IFS= read -r line; do
+    # Each line is "<length> <filepath>"; extract the filepath.
+    sorted_test_files+=("${line#* }")
+done < <(
+    for f in "$test_dir"/test_suite_*.c; do
+        [ -e "$f" ] || continue
+        bname="$(basename "$f")"
+        echo "${#bname} $f"
+    done | sort -n
+)
+
 found_any=false
 
 for spec_file in "$spec_dir"/*.h.spec.md; do
@@ -51,10 +67,9 @@ for spec_file in "$spec_dir"/*.h.spec.md; do
     # The suffix we expect every matching test file's basename to end with
     expected_suffix="_${core_name}.c"
 
-    # Search for a matching test file: test_suite_*_<core_name>.c
+    # Search for a matching test file from the length-sorted list
     match=""
-    for test_file in "$test_dir"/test_suite_*_"${core_name}".c; do
-        [ -e "$test_file" ] || continue
+    for test_file in "${sorted_test_files[@]}"; do
         test_base="$(basename "$test_file")"
         # Verify the basename truly ends with _<core_name>.c so that
         # e.g. "process" does not falsely match "filesystem_process"
