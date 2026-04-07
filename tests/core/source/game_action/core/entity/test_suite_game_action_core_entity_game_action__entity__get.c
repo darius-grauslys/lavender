@@ -2,6 +2,10 @@
 
 #include <game_action/core/entity/game_action__entity__get.c>
 
+///
+/// Spec: game_action__entity__get.h.spec.md
+/// Section: 1.4.2. Initialization
+///
 TEST_FUNCTION(game_action__entity__get__initialize__sets_kind) {
     Game_Action ga;
     initialize_game_action(&ga);
@@ -18,6 +22,10 @@ TEST_FUNCTION(game_action__entity__get__initialize__sets_kind) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: game_action__entity__get.h.spec.md
+/// Section: 1.4.2. Initialization
+///
 TEST_FUNCTION(game_action__entity__get__initialize__sets_uuid) {
     Game_Action ga;
     initialize_game_action(&ga);
@@ -34,6 +42,10 @@ TEST_FUNCTION(game_action__entity__get__initialize__sets_uuid) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: game_action__entity__get.h.spec.md
+/// Section: 1.4.1. Registration
+///
 TEST_FUNCTION(game_action__entity__get__register_for_server__populates_table) {
     Game_Action_Logic_Table table;
     initialize_game_action_logic_table(&table);
@@ -50,6 +62,10 @@ TEST_FUNCTION(game_action__entity__get__register_for_server__populates_table) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: game_action__entity__get.h.spec.md
+/// Section: 1.4.1. Registration
+///
 TEST_FUNCTION(game_action__entity__get__register_for_client__populates_table) {
     Game_Action_Logic_Table table;
     initialize_game_action_logic_table(&table);
