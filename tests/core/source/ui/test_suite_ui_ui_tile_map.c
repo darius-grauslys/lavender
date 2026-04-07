@@ -2,6 +2,10 @@
 
 #include <ui/ui_tile_map.c>
 
+///
+/// Spec:   docs/specs/core/ui/ui_tile_map.h.spec.md
+/// Section: 3.4.1 Initialization
+///
 TEST_FUNCTION(initialize_ui_tile_map__small_as__deallocated__zeroes_data) {
     UI_Tile_Map__Small small_map;
     memset(&small_map, 0xFF, sizeof(small_map));
@@ -12,6 +16,10 @@ TEST_FUNCTION(initialize_ui_tile_map__small_as__deallocated__zeroes_data) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/ui/ui_tile_map.h.spec.md
+/// Section: 3.4.1 Initialization
+///
 TEST_FUNCTION(initialize_ui_tile_map__medium_as__deallocated__zeroes_data) {
     UI_Tile_Map__Medium medium_map;
     memset(&medium_map, 0xFF, sizeof(medium_map));
@@ -22,6 +30,10 @@ TEST_FUNCTION(initialize_ui_tile_map__medium_as__deallocated__zeroes_data) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/ui/ui_tile_map.h.spec.md
+/// Section: 3.4.1 Initialization
+///
 TEST_FUNCTION(initialize_ui_tile_map__large_as__deallocated__zeroes_data) {
     UI_Tile_Map__Large large_map;
     memset(&large_map, 0xFF, sizeof(large_map));
@@ -32,6 +44,10 @@ TEST_FUNCTION(initialize_ui_tile_map__large_as__deallocated__zeroes_data) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/ui/ui_tile_map.h.spec.md
+/// Section: 3.4.1 Initialization
+///
 TEST_FUNCTION(initialize_ui_tile_map__wrapper__sets_fields) {
     UI_Tile_Raw data[64];
     UI_Tile_Map__Wrapper wrapper;
@@ -55,6 +71,10 @@ TEST_FUNCTION(initialize_ui_tile_map__wrapper__sets_fields) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/ui/ui_tile_map.h.spec.md
+/// Section: 3.4.4 Validation
+///
 TEST_FUNCTION(is_ui_tile_map__wrapper_with__data__true_when_non_null) {
     UI_Tile_Raw data[4];
     UI_Tile_Map__Wrapper wrapper;
@@ -64,6 +84,10 @@ TEST_FUNCTION(is_ui_tile_map__wrapper_with__data__true_when_non_null) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/ui/ui_tile_map.h.spec.md
+/// Section: 3.4.4 Validation
+///
 TEST_FUNCTION(is_ui_tile_map__wrapper_with__data__false_when_null) {
     UI_Tile_Map__Wrapper wrapper;
     initialize_ui_tile_map__wrapper(
@@ -72,6 +96,10 @@ TEST_FUNCTION(is_ui_tile_map__wrapper_with__data__false_when_null) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/ui/ui_tile_map.h.spec.md
+/// Section: 3.4.4 Validation
+///
 TEST_FUNCTION(is_ui_tile_map__wrapper_with__valid_size_catagory__valid) {
     UI_Tile_Map__Wrapper wrapper;
     UI_Tile_Raw data[4];
@@ -82,6 +110,10 @@ TEST_FUNCTION(is_ui_tile_map__wrapper_with__valid_size_catagory__valid) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/ui/ui_tile_map.h.spec.md
+/// Section: 3.4.4 Validation
+///
 TEST_FUNCTION(is_ui_tile_map__wrapper_with__valid_size_catagory__invalid_none) {
     UI_Tile_Map__Wrapper wrapper;
     UI_Tile_Raw data[4];
@@ -92,6 +124,10 @@ TEST_FUNCTION(is_ui_tile_map__wrapper_with__valid_size_catagory__invalid_none) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/ui/ui_tile_map.h.spec.md
+/// Section: 3.4.4 Validation
+///
 TEST_FUNCTION(is_ui_tile_map__wrapper_with__valid_size_catagory__invalid_unknown) {
     UI_Tile_Map__Wrapper wrapper;
     UI_Tile_Raw data[4];
@@ -102,6 +138,10 @@ TEST_FUNCTION(is_ui_tile_map__wrapper_with__valid_size_catagory__invalid_unknown
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/ui/ui_tile_map.h.spec.md
+/// Section: 3.4.4 Validation
+///
 TEST_FUNCTION(is_ui_tile_map__wrapper__valid__true_for_valid_wrapper) {
     UI_Tile_Raw data[16];
     UI_Tile_Map__Wrapper wrapper;
@@ -111,6 +151,10 @@ TEST_FUNCTION(is_ui_tile_map__wrapper__valid__true_for_valid_wrapper) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/ui/ui_tile_map.h.spec.md
+/// Section: 3.4.4 Validation
+///
 TEST_FUNCTION(is_ui_tile_map__wrapper__valid__false_for_null_data) {
     UI_Tile_Map__Wrapper wrapper;
     initialize_ui_tile_map__wrapper(
@@ -119,6 +163,10 @@ TEST_FUNCTION(is_ui_tile_map__wrapper__valid__false_for_null_data) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/ui/ui_tile_map.h.spec.md
+/// Section: 3.4.3 Flag Management
+///
 TEST_FUNCTION(ui_tile_map_flags__allocated_and_deallocated) {
     UI_Tile_Map__Flags flags = 0;
     munit_assert_false(is_ui_tile_map_flags__allocated(flags));
@@ -129,6 +177,10 @@ TEST_FUNCTION(ui_tile_map_flags__allocated_and_deallocated) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/ui/ui_tile_map.h.spec.md
+/// Section: 3.4.5 Construction
+///
 TEST_FUNCTION(ui_tile_map__small_to__wrapper__creates_valid_wrapper) {
     UI_Tile_Map__Small small_map;
     initialize_ui_tile_map__small_as__deallocated(&small_map);
@@ -143,6 +195,10 @@ TEST_FUNCTION(ui_tile_map__small_to__wrapper__creates_valid_wrapper) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/ui/ui_tile_map.h.spec.md
+/// Section: 3.4.5 Construction
+///
 TEST_FUNCTION(ui_tile_map__medium_to__wrapper__creates_valid_wrapper) {
     UI_Tile_Map__Medium medium_map;
     initialize_ui_tile_map__medium_as__deallocated(&medium_map);
@@ -157,6 +213,10 @@ TEST_FUNCTION(ui_tile_map__medium_to__wrapper__creates_valid_wrapper) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/ui/ui_tile_map.h.spec.md
+/// Section: 3.4.5 Construction
+///
 TEST_FUNCTION(ui_tile_map__large_to__wrapper__creates_valid_wrapper) {
     UI_Tile_Map__Large large_map;
     initialize_ui_tile_map__large_as__deallocated(&large_map);
@@ -171,6 +231,10 @@ TEST_FUNCTION(ui_tile_map__large_to__wrapper__creates_valid_wrapper) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/ui/ui_tile_map.h.spec.md
+/// Section: 3.4.2 Tile Map Operations
+///
 TEST_FUNCTION(fill_ui_tile_map__fills_all_tiles) {
     UI_Tile_Raw data[16];
     UI_Tile_Map__Wrapper wrapper;
