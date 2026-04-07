@@ -2,6 +2,10 @@
 
 #include <rendering/gfx_context.c>
 
+///
+/// @spec    docs/specs/core/rendering/gfx_context.h.spec.md
+/// @section 1.4.1 Initialization
+///
 TEST_FUNCTION(gfx_context__initialize__sets_platform_context_null) {
     Gfx_Context gfx_context;
     memset(&gfx_context, 0xFF, sizeof(gfx_context));
@@ -13,6 +17,10 @@ TEST_FUNCTION(gfx_context__initialize__sets_platform_context_null) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/rendering/gfx_context.h.spec.md
+/// @section 1.4.2 Accessors (static inline)
+///
 TEST_FUNCTION(gfx_context__get_p_aliased_texture_manager__returns_valid_ptr) {
     Gfx_Context gfx_context;
     initialize_gfx_context(&gfx_context);
@@ -23,6 +31,10 @@ TEST_FUNCTION(gfx_context__get_p_aliased_texture_manager__returns_valid_ptr) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/rendering/gfx_context.h.spec.md
+/// @section 1.4.2 Accessors (static inline)
+///
 TEST_FUNCTION(gfx_context__get_p_graphics_window_manager__returns_valid_ptr) {
     Gfx_Context gfx_context;
     initialize_gfx_context(&gfx_context);
@@ -33,6 +45,10 @@ TEST_FUNCTION(gfx_context__get_p_graphics_window_manager__returns_valid_ptr) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/rendering/gfx_context.h.spec.md
+/// @section 1.4.2 Accessors (static inline)
+///
 TEST_FUNCTION(gfx_context__get_p_font_manager__returns_valid_ptr) {
     Gfx_Context gfx_context;
     initialize_gfx_context(&gfx_context);
@@ -43,6 +59,10 @@ TEST_FUNCTION(gfx_context__get_p_font_manager__returns_valid_ptr) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/rendering/gfx_context.h.spec.md
+/// @section 1.4.2 Accessors (static inline)
+///
 TEST_FUNCTION(gfx_context__get_p_sprite_context__returns_valid_ptr) {
     Gfx_Context gfx_context;
     initialize_gfx_context(&gfx_context);
@@ -53,6 +73,10 @@ TEST_FUNCTION(gfx_context__get_p_sprite_context__returns_valid_ptr) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/rendering/gfx_context.h.spec.md
+/// @section 1.4.2 Accessors (static inline)
+///
 TEST_FUNCTION(gfx_context__get_p_ui_context__returns_valid_ptr) {
     Gfx_Context gfx_context;
     initialize_gfx_context(&gfx_context);
@@ -63,6 +87,10 @@ TEST_FUNCTION(gfx_context__get_p_ui_context__returns_valid_ptr) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/rendering/gfx_context.h.spec.md
+/// @section 1.4.2 Accessors (static inline)
+///
 TEST_FUNCTION(gfx_context__get_p_ui_tile_map_manager__returns_valid_ptr) {
     Gfx_Context gfx_context;
     initialize_gfx_context(&gfx_context);
