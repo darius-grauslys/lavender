@@ -2,6 +2,10 @@
 
 #include <world/tile_logic_table.c>
 
+///
+/// @spec    core/world/tile_logic_table.h.spec.md
+/// @section 1.4.1 Initialization
+///
 TEST_FUNCTION(tile_logic_table__initialize__zeroes_records) {
     Tile_Logic_Table table;
     initialize_tile_logic_table(&table);
@@ -9,6 +13,10 @@ TEST_FUNCTION(tile_logic_table__initialize__zeroes_records) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    core/world/tile_logic_table.h.spec.md
+/// @section 1.4.3 Record Queries
+///
 TEST_FUNCTION(tile_logic_record__is_unpassable__false_by_default) {
     Tile_Logic_Record record;
     record.tile_logic_flags__u8 = 0;
@@ -16,6 +24,10 @@ TEST_FUNCTION(tile_logic_record__is_unpassable__false_by_default) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    core/world/tile_logic_table.h.spec.md
+/// @section 1.4.3 Record Queries
+///
 TEST_FUNCTION(tile_logic_record__is_unpassable__true_when_set) {
     Tile_Logic_Record record;
     record.tile_logic_flags__u8 = TILE_LOGIC_FLAG__IS_UNPASSABLE;
@@ -23,6 +35,10 @@ TEST_FUNCTION(tile_logic_record__is_unpassable__true_when_set) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    core/world/tile_logic_table.h.spec.md
+/// @section 1.4.3 Record Queries
+///
 TEST_FUNCTION(tile_logic_record__is_sight_blocking__false_by_default) {
     Tile_Logic_Record record;
     record.tile_logic_flags__u8 = 0;
@@ -30,6 +46,10 @@ TEST_FUNCTION(tile_logic_record__is_sight_blocking__false_by_default) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    core/world/tile_logic_table.h.spec.md
+/// @section 1.4.3 Record Queries
+///
 TEST_FUNCTION(tile_logic_record__is_sight_blocking__true_when_set) {
     Tile_Logic_Record record;
     record.tile_logic_flags__u8 = TILE_LOGIC_FLAG__IS_SIGHT_BLOCKING;
@@ -37,6 +57,10 @@ TEST_FUNCTION(tile_logic_record__is_sight_blocking__true_when_set) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    core/world/tile_logic_table.h.spec.md
+/// @section 1.4.3 Record Queries
+///
 TEST_FUNCTION(tile_logic_record__is_without_ground__false_by_default) {
     Tile_Logic_Record record;
     record.tile_logic_flags__u8 = 0;
@@ -44,6 +68,10 @@ TEST_FUNCTION(tile_logic_record__is_without_ground__false_by_default) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    core/world/tile_logic_table.h.spec.md
+/// @section 1.4.3 Record Queries
+///
 TEST_FUNCTION(tile_logic_record__is_without_ground__true_when_set) {
     Tile_Logic_Record record;
     record.tile_logic_flags__u8 = TILE_LOGIC_FLAG__IS_WITHOUT_GROUND;
@@ -51,6 +79,10 @@ TEST_FUNCTION(tile_logic_record__is_without_ground__true_when_set) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    core/world/tile_logic_table.h.spec.md
+/// @section 1.3.2 Tile_Logic_Flags__u16
+///
 TEST_FUNCTION(tile_logic_record__multiple_flags) {
     Tile_Logic_Record record;
     record.tile_logic_flags__u8 =
