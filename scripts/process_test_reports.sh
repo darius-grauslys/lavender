@@ -6,6 +6,10 @@
 # referenced spec file name from the first line, searches for it under
 # $LAVENDER_DIR/docs/specs/, and invokes aider with the report and spec
 # as read-only files along with the provided prompt.
+#
+# Additionally, derives the corresponding .c source file name from the
+# spec name and searches for it under $LAVENDER_DIR/core/source/,
+# including it as a read-only file in the aider invocation if found.
 
 if [ -z "$1" ]; then
     echo "Usage: $0 <prompt>"
@@ -23,6 +27,13 @@ SPECS_DIR="${LAVENDER_DIR}/docs/specs"
 
 if [ ! -d "$SPECS_DIR" ]; then
     echo "Error: Specs directory '$SPECS_DIR' not found."
+    exit 1
+fi
+
+CORE_SOURCE_DIR="${LAVENDER_DIR}/core/source"
+
+if [ ! -d "$CORE_SOURCE_DIR" ]; then
+    echo "Error: Core source directory '$CORE_SOURCE_DIR' not found."
     exit 1
 fi
 
@@ -56,11 +67,28 @@ for report_file in "$REPORT_DIR"/*.report; do
         continue
     fi
 
-    echo "Processing: $report_file -> $spec_file"
+    # Derive the .c source file name by stripping .h.spec.md and appending .c
+    source_base_name=$(echo "$spec_name" | sed -E 's/\.h\.spec\.md$//')
+    source_c_name="${source_base_name}.c"
+
+    # Search for the .c source file under $LAVENDER_DIR/core/source/
+    source_c_file=$(find "$CORE_SOURCE_DIR" -name "$source_c_name" -type f | head -n 1)
+
+    # Build the aider read arguments
+    AIDER_READ_ARGS=()
+    AIDER_READ_ARGS+=(--read "$report_file")
+    AIDER_READ_ARGS+=(--read "$spec_file")
+
+    if [ -n "$source_c_file" ]; then
+        echo "Processing: $report_file -> $spec_file + $source_c_file"
+        AIDER_READ_ARGS+=(--read "$source_c_file")
+    else
+        echo "Warning: Source file '$source_c_name' not found under '$CORE_SOURCE_DIR'."
+        echo "Processing: $report_file -> $spec_file (without source)"
+    fi
 
     aider \
-        --read "$report_file" \
-        --read "$spec_file" \
+        "${AIDER_READ_ARGS[@]}" \
         --message "$PROMPT" \
         --model openrouter/anthropic/claude-4.6-sonnet
 
