@@ -2,6 +2,10 @@
 
 #include <process/process.c>
 
+///
+/// Spec:   docs/specs/core/process/process.h.spec.md
+/// Section: 1.4.1 Initialization — initialize_process_as__empty_process
+///
 TEST_FUNCTION(initialize_process_as__empty_process__sets_status_to_none) {
     Process process;
     initialize_process_as__empty_process(&process);
@@ -14,6 +18,10 @@ TEST_FUNCTION(initialize_process_as__empty_process__sets_status_to_none) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/process/process.h.spec.md
+/// Section: 1.4.1 Initialization — initialize_process_as__empty_process
+///
 TEST_FUNCTION(initialize_process_as__empty_process__sets_uuid_to_unknown) {
     Process process;
     initialize_process_as__empty_process(&process);
@@ -26,6 +34,10 @@ TEST_FUNCTION(initialize_process_as__empty_process__sets_uuid_to_unknown) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/process/process.h.spec.md
+/// Section: 1.4.1 Initialization — initialize_process_as__empty_process
+///
 TEST_FUNCTION(initialize_process_as__empty_process__clears_handlers) {
     Process process;
     initialize_process_as__empty_process(&process);
@@ -36,6 +48,10 @@ TEST_FUNCTION(initialize_process_as__empty_process__clears_handlers) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/process/process.h.spec.md
+/// Section: 1.4.1 Initialization — initialize_process_as__empty_process
+///
 TEST_FUNCTION(initialize_process_as__empty_process__clears_data_pointer) {
     Process process;
     initialize_process_as__empty_process(&process);
@@ -45,6 +61,10 @@ TEST_FUNCTION(initialize_process_as__empty_process__clears_data_pointer) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/process/process.h.spec.md
+/// Section: 1.4.1 Initialization — initialize_process_as__empty_process
+///
 TEST_FUNCTION(initialize_process_as__empty_process__clears_enqueued_process) {
     Process process;
     initialize_process_as__empty_process(&process);
@@ -54,6 +74,10 @@ TEST_FUNCTION(initialize_process_as__empty_process__clears_enqueued_process) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/process/process.h.spec.md
+/// Section: 1.4.1 Initialization — initialize_process_as__empty_process
+///
 TEST_FUNCTION(initialize_process_as__empty_process__clears_scratch_values) {
     Process process;
     initialize_process_as__empty_process(&process);
@@ -71,6 +95,10 @@ void m_test_handler__dummy(
     (void)p_game;
 }
 
+///
+/// Spec:   docs/specs/core/process/process.h.spec.md
+/// Section: 1.4.1 Initialization — initialize_process
+///
 TEST_FUNCTION(initialize_process__sets_uuid) {
     Process process;
     Identifier__u32 uuid = 42;
@@ -91,6 +119,10 @@ TEST_FUNCTION(initialize_process__sets_uuid) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/process/process.h.spec.md
+/// Section: 1.4.1 Initialization — initialize_process
+///
 TEST_FUNCTION(initialize_process__sets_run_handler) {
     Process process;
 
@@ -109,6 +141,10 @@ TEST_FUNCTION(initialize_process__sets_run_handler) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/process/process.h.spec.md
+/// Section: 1.4.1 Initialization — initialize_process
+///
 TEST_FUNCTION(initialize_process__sets_data_pointer) {
     Process process;
     int my_data = 99;
@@ -128,6 +164,10 @@ TEST_FUNCTION(initialize_process__sets_data_pointer) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/process/process.h.spec.md
+/// Section: 1.4.1 Initialization — initialize_process
+///
 TEST_FUNCTION(initialize_process__sets_priority) {
     Process process;
 
@@ -147,6 +187,10 @@ TEST_FUNCTION(initialize_process__sets_priority) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/process/process.h.spec.md
+/// Section: 1.4.1 Initialization — initialize_process
+///
 TEST_FUNCTION(initialize_process__sets_flags) {
     Process process;
 
@@ -166,6 +210,10 @@ TEST_FUNCTION(initialize_process__sets_flags) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/process/process.h.spec.md
+/// Section: 1.4.1 Initialization — initialize_process
+///
 TEST_FUNCTION(initialize_process__sets_status_to_idle) {
     Process process;
 
@@ -185,6 +233,10 @@ TEST_FUNCTION(initialize_process__sets_status_to_idle) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/process/process.h.spec.md
+/// Section: 1.4.1 Initialization — initialize_process_as__serialized_process
+///
 TEST_FUNCTION(initialize_process_as__serialized_process__sets_kind_to_serialized) {
     Process process;
     Serialization_Request sr;
@@ -206,6 +258,10 @@ TEST_FUNCTION(initialize_process_as__serialized_process__sets_kind_to_serialized
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/process/process.h.spec.md
+/// Section: 1.4.1 Initialization — initialize_process_as__serialized_process
+///
 TEST_FUNCTION(initialize_process_as__serialized_process__sets_critical_flag) {
     Process process;
     Serialization_Request sr;
@@ -224,6 +280,10 @@ TEST_FUNCTION(initialize_process_as__serialized_process__sets_critical_flag) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/process/process.h.spec.md
+/// Section: 1.4.2 Status Management — complete_process
+///
 TEST_FUNCTION(complete_process__sets_status_to_complete) {
     Process process;
     initialize_process(
@@ -244,6 +304,10 @@ TEST_FUNCTION(complete_process__sets_status_to_complete) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/process/process.h.spec.md
+/// Section: 1.4.2 Status Management — fail_process
+///
 TEST_FUNCTION(fail_process__sets_status_to_fail) {
     Process process;
     initialize_process(
@@ -264,6 +328,10 @@ TEST_FUNCTION(fail_process__sets_status_to_fail) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/process/process.h.spec.md
+/// Section: 1.4.2 Status Management — stop_process
+///
 TEST_FUNCTION(stop_process__sets_status_to_stopping) {
     Process process;
     initialize_process(
@@ -284,6 +352,10 @@ TEST_FUNCTION(stop_process__sets_status_to_stopping) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/process/process.h.spec.md
+/// Section: 1.4.2 Status Management — set_process_as__stopped
+///
 TEST_FUNCTION(set_process_as__stopped__sets_status_to_stopped) {
     Process process;
     initialize_process(
@@ -305,6 +377,10 @@ TEST_FUNCTION(set_process_as__stopped__sets_status_to_stopped) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/process/process.h.spec.md
+/// Section: 1.4.3 Status Queries — is_process__active
+///
 TEST_FUNCTION(is_process__active__true_when_idle) {
     Process process;
     initialize_process(
@@ -320,6 +396,10 @@ TEST_FUNCTION(is_process__active__true_when_idle) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/process/process.h.spec.md
+/// Section: 1.4.3 Status Queries — is_process__active
+///
 TEST_FUNCTION(is_process__active__false_when_complete) {
     Process process;
     initialize_process(
@@ -337,6 +417,10 @@ TEST_FUNCTION(is_process__active__false_when_complete) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/process/process.h.spec.md
+/// Section: 1.4.3 Status Queries — is_process__active
+///
 TEST_FUNCTION(is_process__active__false_when_failed) {
     Process process;
     initialize_process(
@@ -354,6 +438,10 @@ TEST_FUNCTION(is_process__active__false_when_failed) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/process/process.h.spec.md
+/// Section: 1.4.3 Status Queries — is_process__finished
+///
 TEST_FUNCTION(is_process__finished__true_when_complete) {
     Process process;
     initialize_process(
@@ -371,6 +459,10 @@ TEST_FUNCTION(is_process__finished__true_when_complete) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/process/process.h.spec.md
+/// Section: 1.4.3 Status Queries — is_process__finished
+///
 TEST_FUNCTION(is_process__finished__true_when_failed) {
     Process process;
     initialize_process(
@@ -388,6 +480,10 @@ TEST_FUNCTION(is_process__finished__true_when_failed) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/process/process.h.spec.md
+/// Section: 1.4.3 Status Queries — is_process__finished
+///
 TEST_FUNCTION(is_process__finished__true_when_stopped) {
     Process process;
     initialize_process(
@@ -406,6 +502,10 @@ TEST_FUNCTION(is_process__finished__true_when_stopped) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/process/process.h.spec.md
+/// Section: 1.4.3 Status Queries — is_process__finished
+///
 TEST_FUNCTION(is_process__finished__false_when_active) {
     Process process;
     initialize_process(
@@ -421,6 +521,10 @@ TEST_FUNCTION(is_process__finished__false_when_active) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/process/process.h.spec.md
+/// Section: 1.4.3 Status Queries — is_process__available
+///
 TEST_FUNCTION(is_process__available__true_when_none) {
     Process process;
     initialize_process_as__empty_process(&process);
@@ -430,6 +534,10 @@ TEST_FUNCTION(is_process__available__true_when_none) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/process/process.h.spec.md
+/// Section: 1.4.3 Status Queries — is_process__available
+///
 TEST_FUNCTION(is_process__available__false_when_active) {
     Process process;
     initialize_process(
@@ -445,6 +553,10 @@ TEST_FUNCTION(is_process__available__false_when_active) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/process/process.h.spec.md
+/// Section: 1.4.4 Enqueueing — enqueue_process
+///
 TEST_FUNCTION(enqueue_process__sets_enqueued_status) {
     Process process_first;
     Process process_second;
@@ -472,6 +584,10 @@ TEST_FUNCTION(enqueue_process__sets_enqueued_status) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/process/process.h.spec.md
+/// Section: 1.4.4 Enqueueing — enqueue_process
+///
 TEST_FUNCTION(enqueue_process__links_enqueued_process) {
     Process process_first;
     Process process_second;
@@ -501,6 +617,10 @@ TEST_FUNCTION(enqueue_process__links_enqueued_process) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/process/process.h.spec.md
+/// Section: 1.4.4 Enqueueing — set_process_as__dequeued
+///
 TEST_FUNCTION(set_process_as__dequeued__sets_status_to_idle) {
     Process process;
     initialize_process(
@@ -523,6 +643,10 @@ TEST_FUNCTION(set_process_as__dequeued__sets_status_to_idle) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/process/process.h.spec.md
+/// Section: 1.4.5 Handler Queries — does_process_have__run_handler
+///
 TEST_FUNCTION(does_process_have__run_handler__true_when_set) {
     Process process;
     initialize_process(
@@ -538,6 +662,10 @@ TEST_FUNCTION(does_process_have__run_handler__true_when_set) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/process/process.h.spec.md
+/// Section: 1.4.5 Handler Queries — does_process_have__run_handler
+///
 TEST_FUNCTION(does_process_have__run_handler__false_when_empty) {
     Process process;
     initialize_process_as__empty_process(&process);
@@ -547,6 +675,10 @@ TEST_FUNCTION(does_process_have__run_handler__false_when_empty) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/process/process.h.spec.md
+/// Section: 1.4.5 Handler Queries — does_process_have__dispose_handler
+///
 TEST_FUNCTION(does_process_have__dispose_handler__false_when_not_set) {
     Process process;
     initialize_process(
@@ -562,6 +694,10 @@ TEST_FUNCTION(does_process_have__dispose_handler__false_when_not_set) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/process/process.h.spec.md
+/// Section: 1.4.5 Handler Queries — set_process__dispose_handler
+///
 TEST_FUNCTION(set_process__dispose_handler__sets_handler) {
     Process process;
     initialize_process(
@@ -582,6 +718,10 @@ TEST_FUNCTION(set_process__dispose_handler__sets_handler) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/process/process.h.spec.md
+/// Section: 1.4.6 Flag Management — is_process__critical
+///
 TEST_FUNCTION(is_process__critical__false_by_default) {
     Process process;
     initialize_process(
@@ -597,6 +737,10 @@ TEST_FUNCTION(is_process__critical__false_by_default) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/process/process.h.spec.md
+/// Section: 1.4.6 Flag Management — set_process_as__critical
+///
 TEST_FUNCTION(set_process_as__critical__sets_flag) {
     Process process;
     initialize_process(
@@ -614,6 +758,10 @@ TEST_FUNCTION(set_process_as__critical__sets_flag) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/process/process.h.spec.md
+/// Section: 1.4.6 Flag Management — set_process_as__NOT_critical
+///
 TEST_FUNCTION(set_process_as__NOT_critical__clears_flag) {
     Process process;
     initialize_process(
@@ -633,6 +781,10 @@ TEST_FUNCTION(set_process_as__NOT_critical__clears_flag) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/process/process.h.spec.md
+/// Section: 1.4.6 Flag Management — is_process__sub_process
+///
 TEST_FUNCTION(is_process__sub_process__false_by_default) {
     Process process;
     initialize_process(
@@ -648,6 +800,10 @@ TEST_FUNCTION(is_process__sub_process__false_by_default) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/process/process.h.spec.md
+/// Section: 1.4.6 Flag Management — set_process_as__sub_process
+///
 TEST_FUNCTION(set_process_as__sub_process__sets_flag) {
     Process process;
     initialize_process(
@@ -665,6 +821,10 @@ TEST_FUNCTION(set_process_as__sub_process__sets_flag) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/process/process.h.spec.md
+/// Section: 1.4.7 Kind Management — get_the_kind_of__process
+///
 TEST_FUNCTION(get_the_kind_of__process__returns_correct_kind) {
     Process process;
     initialize_process(
@@ -683,6 +843,10 @@ TEST_FUNCTION(get_the_kind_of__process__returns_correct_kind) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/process/process.h.spec.md
+/// Section: 1.4.8 Sub-State — set_process__sub_state
+///
 TEST_FUNCTION(set_process__sub_state__sets_sub_state) {
     Process process;
     initialize_process(
@@ -703,6 +867,10 @@ TEST_FUNCTION(set_process__sub_state__sets_sub_state) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/process/process.h.spec.md
+/// Section: 1.4.7 Kind Management — get_process_priorty_of__process
+///
 TEST_FUNCTION(get_process_priorty_of__process__returns_priority) {
     Process process;
     initialize_process(
