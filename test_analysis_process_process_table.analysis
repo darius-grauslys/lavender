@@ -1,0 +1,27 @@
+# Test Analysis: process_process_table
+
+## Source: process_table.h.spec.md
+## Test Report: test_suite_process_process_table.c.report
+
+---
+
+## Summary of Failures
+
+All 10 test cases failed. The root cause is traced to bugs in
+`add_process_to__process_table` in `process_table.c`.
+
+---
+
+## Failure Analysis
+
+### Failure 1 — Line 57
+**Assertion:** `get_quantity_of__processes_in__process_table(&table) == 1 (0 == 1)`
+**Root Cause:**
+`add_process_to__process_table` has a logic error when the priority entry is
+empty. After calling `initialize_process_priority_table_entry`, it returns
+`true` without ever calling
+`add_process_to__process_priorty_table_entry_in__ptr_array_of__processes`.
+The process is never actually inserted into the pointer array, so the count
+remains 0.
+
+**Relevant Code (process_table.c):**
