@@ -2,6 +2,10 @@
 
 #include <game_action/game_action_manager.c>
 
+///
+/// Spec:   docs/specs/core/game_action/game_action_manager.h.spec.md
+/// Section: 1.4.1. Initialization
+///
 TEST_FUNCTION(game_action_manager__initialize__all_slots_deallocated) {
     Game_Action_Manager manager;
     initialize_game_action_manager(&manager);
@@ -16,6 +20,10 @@ TEST_FUNCTION(game_action_manager__initialize__all_slots_deallocated) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:    docs/specs/core/game_action/game_action_manager.h.spec.md
+/// Section: 1.4.2. Allocation
+///
 TEST_FUNCTION(game_action_manager__allocate__returns_non_null) {
     Game_Action_Manager manager;
     initialize_game_action_manager(&manager);
@@ -30,6 +38,10 @@ TEST_FUNCTION(game_action_manager__allocate__returns_non_null) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:    docs/specs/core/game_action/game_action_manager.h.spec.md
+/// Section: 1.4.2. Allocation
+///
 TEST_FUNCTION(game_action_manager__allocate_with_uuid__returns_non_null) {
     Game_Action_Manager manager;
     initialize_game_action_manager(&manager);
@@ -46,6 +58,10 @@ TEST_FUNCTION(game_action_manager__allocate_with_uuid__returns_non_null) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:    docs/specs/core/game_action/game_action_manager.h.spec.md
+/// Section: 1.4.3. Deallocation
+///
 TEST_FUNCTION(game_action_manager__release__deallocates) {
     Game_Action_Manager manager;
     initialize_game_action_manager(&manager);
@@ -68,6 +84,10 @@ TEST_FUNCTION(game_action_manager__release__deallocates) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:    docs/specs/core/game_action/game_action_manager.h.spec.md
+/// Section: 1.4.2. Allocation
+///
 TEST_FUNCTION(game_action_manager__allocate_copy__copies_kind) {
     Game_Action_Manager manager;
     initialize_game_action_manager(&manager);
@@ -92,6 +112,10 @@ TEST_FUNCTION(game_action_manager__allocate_copy__copies_kind) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:    docs/specs/core/game_action/game_action_manager.h.spec.md
+/// Section: 1.4.2. Allocation
+///
 TEST_FUNCTION(game_action_manager__multiple_allocations__return_different_ptrs) {
     Game_Action_Manager manager;
     initialize_game_action_manager(&manager);
@@ -110,6 +134,11 @@ TEST_FUNCTION(game_action_manager__multiple_allocations__return_different_ptrs) 
     return MUNIT_OK;
 }
 
+///
+/// Spec:    docs/specs/core/game_action/game_action_manager.h.spec.md
+/// Section: 1.4.3. Deallocation
+/// Section: 1.5.4. Postconditions
+///
 TEST_FUNCTION(game_action_manager__release_and_reallocate__succeeds) {
     Game_Action_Manager manager;
     initialize_game_action_manager(&manager);
