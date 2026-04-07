@@ -2,6 +2,13 @@
 
 #include <inventory/inventory_manager.c>
 
+///
+/// Spec: docs/specs/core/inventory/inventory_manager.h.spec.md
+/// Section: 1.4.1 Initialization, 1.5.7 Postconditions
+///
+/// Verifies that after initialize_inventory_manager, all inventory slots
+/// are empty and a lookup by UUID returns null.
+///
 TEST_FUNCTION(inventory_manager__initialize__no_inventories_allocated) {
     Inventory_Manager manager;
     initialize_inventory_manager(&manager);
@@ -11,6 +18,13 @@ TEST_FUNCTION(inventory_manager__initialize__no_inventories_allocated) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/inventory/inventory_manager.h.spec.md
+/// Section: 1.4.2 Allocation and Release
+///
+/// Verifies that allocating an inventory with a given UUID returns a
+/// non-null pointer.
+///
 TEST_FUNCTION(inventory_manager__allocate__returns_non_null) {
     Inventory_Manager manager;
     initialize_inventory_manager(&manager);
@@ -21,6 +35,13 @@ TEST_FUNCTION(inventory_manager__allocate__returns_non_null) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/inventory/inventory_manager.h.spec.md
+/// Section: 1.4.3 Lookup, 1.5.4 Lookup Pattern
+///
+/// Verifies that an allocated inventory can be retrieved by its UUID
+/// and that the returned pointer matches the originally allocated one.
+///
 TEST_FUNCTION(inventory_manager__allocate__can_retrieve_by_uuid) {
     Inventory_Manager manager;
     initialize_inventory_manager(&manager);
@@ -35,6 +56,13 @@ TEST_FUNCTION(inventory_manager__allocate__can_retrieve_by_uuid) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/inventory/inventory_manager.h.spec.md
+/// Section: 1.4.2 Allocation and Release, 1.5.7 Postconditions
+///
+/// Verifies that after releasing an inventory, a lookup by its former
+/// UUID returns null.
+///
 TEST_FUNCTION(inventory_manager__release__cannot_retrieve_after) {
     Inventory_Manager manager;
     initialize_inventory_manager(&manager);
@@ -49,6 +77,13 @@ TEST_FUNCTION(inventory_manager__release__cannot_retrieve_after) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/inventory/inventory_manager.h.spec.md
+/// Section: 1.4.2 Allocation and Release, 1.5.3 Allocation Patterns
+///
+/// Verifies that allocating multiple inventories with different UUIDs
+/// returns distinct non-null pointers.
+///
 TEST_FUNCTION(inventory_manager__allocate_multiple__different_uuids) {
     Inventory_Manager manager;
     initialize_inventory_manager(&manager);
@@ -64,6 +99,13 @@ TEST_FUNCTION(inventory_manager__allocate_multiple__different_uuids) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/inventory/inventory_manager.h.spec.md
+/// Section: 1.4.3 Lookup, 1.5.4 Lookup Pattern
+///
+/// Verifies that each of multiple allocated inventories is independently
+/// retrievable by its UUID and that they are distinct.
+///
 TEST_FUNCTION(inventory_manager__allocate_multiple__each_retrievable) {
     Inventory_Manager manager;
     initialize_inventory_manager(&manager);
@@ -81,6 +123,13 @@ TEST_FUNCTION(inventory_manager__allocate_multiple__each_retrievable) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/inventory/inventory_manager.h.spec.md
+/// Section: 1.5.8 Error Handling
+///
+/// Verifies that looking up a UUID that was never allocated returns null,
+/// even when other inventories are allocated.
+///
 TEST_FUNCTION(inventory_manager__get_nonexistent_uuid__returns_null) {
     Inventory_Manager manager;
     initialize_inventory_manager(&manager);
@@ -92,6 +141,14 @@ TEST_FUNCTION(inventory_manager__get_nonexistent_uuid__returns_null) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: docs/specs/core/inventory/inventory_manager.h.spec.md
+/// Section: 1.5.1 Inventory_Manager Lifecycle
+///
+/// Verifies that after releasing an inventory, the slot can be reused
+/// by a subsequent allocation with a new UUID, and the new inventory
+/// is retrievable.
+///
 TEST_FUNCTION(inventory_manager__release_and_reallocate__works) {
     Inventory_Manager manager;
     initialize_inventory_manager(&manager);
