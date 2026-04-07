@@ -2,6 +2,13 @@
 
 #include <game_action/core/world/game_action__world__load_client.c>
 
+///
+/// Spec: game_action__world__load_client.h.spec.md
+/// Section: 1.4.2. Initialization
+///
+/// Verifies that initialize_game_action_for__world__load_client
+/// sets the game action kind to Game_Action_Kind__World__Load_Client.
+///
 TEST_FUNCTION(game_action__world__load_client__initialize__sets_kind) {
     Game_Action ga;
     initialize_game_action(&ga);
@@ -18,6 +25,14 @@ TEST_FUNCTION(game_action__world__load_client__initialize__sets_kind) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: game_action__world__load_client.h.spec.md
+/// Section: 1.4.2. Initialization, 1.3. Payload Fields
+///
+/// Verifies that initialize_game_action_for__world__load_client
+/// sets the client UUID payload field
+/// (ga_kind__world__load_world__uuid_of__client__u32).
+///
 TEST_FUNCTION(game_action__world__load_client__initialize__sets_client_uuid) {
     Game_Action ga;
     initialize_game_action(&ga);
@@ -34,6 +49,14 @@ TEST_FUNCTION(game_action__world__load_client__initialize__sets_client_uuid) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: game_action__world__load_client.h.spec.md
+/// Section: 1.4.1. Registration
+///
+/// Verifies that register_game_action__world__load_client
+/// populates the Game_Action_Logic_Table with an entry for
+/// Game_Action_Kind__World__Load_Client.
+///
 TEST_FUNCTION(game_action__world__load_client__register__populates_table) {
     Game_Action_Logic_Table table;
     initialize_game_action_logic_table(&table);
