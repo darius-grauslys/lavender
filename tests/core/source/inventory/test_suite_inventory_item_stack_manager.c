@@ -2,6 +2,10 @@
 
 #include <inventory/item_stack_manager.c>
 
+///
+/// @spec    docs/specs/core/inventory/item_stack_manager.h.spec.md
+/// @section 1.5.5 Postconditions
+///
 TEST_FUNCTION(item_stack_manager__initialize__all_slots_deallocated) {
     Item_Stack_Manager manager;
     initialize_item_stack_manager(&manager);
@@ -15,6 +19,10 @@ TEST_FUNCTION(item_stack_manager__initialize__all_slots_deallocated) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/inventory/item_stack_manager.h.spec.md
+/// @section 1.4.1 Initialization
+///
 TEST_FUNCTION(item_stack_manager__initialize__count_is_zero) {
     Item_Stack_Manager manager;
     initialize_item_stack_manager(&manager);
@@ -22,6 +30,10 @@ TEST_FUNCTION(item_stack_manager__initialize__count_is_zero) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/inventory/item_stack_manager.h.spec.md
+/// @section 1.4.2 Allocation and Release
+///
 TEST_FUNCTION(item_stack_manager__allocate__returns_non_null) {
     Item_Stack_Manager manager;
     initialize_item_stack_manager(&manager);
@@ -32,6 +44,10 @@ TEST_FUNCTION(item_stack_manager__allocate__returns_non_null) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/inventory/item_stack_manager.h.spec.md
+/// @section 1.5.5 Postconditions
+///
 TEST_FUNCTION(item_stack_manager__allocate__specifier_is_allocated) {
     Item_Stack_Manager manager;
     initialize_item_stack_manager(&manager);
@@ -44,6 +60,10 @@ TEST_FUNCTION(item_stack_manager__allocate__specifier_is_allocated) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/inventory/item_stack_manager.h.spec.md
+/// @section 1.5.5 Postconditions
+///
 TEST_FUNCTION(item_stack_manager__release__specifier_is_deallocated) {
     Item_Stack_Manager manager;
     initialize_item_stack_manager(&manager);
@@ -58,6 +78,10 @@ TEST_FUNCTION(item_stack_manager__release__specifier_is_deallocated) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/inventory/item_stack_manager.h.spec.md
+/// @section 1.4.4 Lookup
+///
 TEST_FUNCTION(item_stack_manager__get_by_index__returns_valid_specifier) {
     Item_Stack_Manager manager;
     initialize_item_stack_manager(&manager);
@@ -68,6 +92,10 @@ TEST_FUNCTION(item_stack_manager__get_by_index__returns_valid_specifier) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/inventory/item_stack_manager.h.spec.md
+/// @section 1.4.2 Allocation and Release
+///
 TEST_FUNCTION(item_stack_manager__allocate_multiple__all_non_null) {
     Item_Stack_Manager manager;
     initialize_item_stack_manager(&manager);
