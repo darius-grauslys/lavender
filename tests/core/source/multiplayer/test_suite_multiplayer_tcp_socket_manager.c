@@ -9,6 +9,10 @@ static void dummy_poll_callback(
     (void)p_game;
 }
 
+/**
+ * @spec    docs/specs/core/multiplayer/tcp_socket_manager.h.spec.md
+ * @section 1.5.6 Postconditions
+ */
 TEST_FUNCTION(initialize_tcp_socket_manager__quantity_of_connections_is_zero) {
     TCP_Socket_Manager manager;
     initialize_tcp_socket_manager(&manager, dummy_poll_callback);
@@ -17,6 +21,10 @@ TEST_FUNCTION(initialize_tcp_socket_manager__quantity_of_connections_is_zero) {
     return MUNIT_OK;
 }
 
+/**
+ * @spec    docs/specs/core/multiplayer/tcp_socket_manager.h.spec.md
+ * @section 1.4.1 Initialization
+ */
 TEST_FUNCTION(initialize_tcp_socket_manager__sets_poll_callback) {
     TCP_Socket_Manager manager;
     initialize_tcp_socket_manager(&manager, dummy_poll_callback);
@@ -26,6 +34,10 @@ TEST_FUNCTION(initialize_tcp_socket_manager__sets_poll_callback) {
     return MUNIT_OK;
 }
 
+/**
+ * @spec    docs/specs/core/multiplayer/tcp_socket_manager.h.spec.md
+ * @section 1.5.6 Postconditions
+ */
 TEST_FUNCTION(initialize_tcp_socket_manager__all_sockets_are_deallocated) {
     TCP_Socket_Manager manager;
     initialize_tcp_socket_manager(&manager, dummy_poll_callback);
@@ -37,6 +49,10 @@ TEST_FUNCTION(initialize_tcp_socket_manager__all_sockets_are_deallocated) {
     return MUNIT_OK;
 }
 
+/**
+ * @spec    docs/specs/core/multiplayer/tcp_socket_manager.h.spec.md
+ * @section 1.5.6 Postconditions
+ */
 TEST_FUNCTION(initialize_tcp_socket_manager__pending_connection_is_null) {
     TCP_Socket_Manager manager;
     initialize_tcp_socket_manager(&manager, dummy_poll_callback);
@@ -44,6 +60,10 @@ TEST_FUNCTION(initialize_tcp_socket_manager__pending_connection_is_null) {
     return MUNIT_OK;
 }
 
+/**
+ * @spec    docs/specs/core/multiplayer/tcp_socket_manager.h.spec.md
+ * @section 1.4.4 Queries
+ */
 TEST_FUNCTION(get_p_tcp_socket_for__this_uuid__unknown_uuid__returns_null) {
     TCP_Socket_Manager manager;
     initialize_tcp_socket_manager(&manager, dummy_poll_callback);
@@ -53,6 +73,10 @@ TEST_FUNCTION(get_p_tcp_socket_for__this_uuid__unknown_uuid__returns_null) {
     return MUNIT_OK;
 }
 
+/**
+ * @spec    docs/specs/core/multiplayer/tcp_socket_manager.h.spec.md
+ * @section 1.4.4 Queries
+ */
 TEST_FUNCTION(get_quantity_of__active_tcp_sockets__after_init__returns_zero) {
     TCP_Socket_Manager manager;
     initialize_tcp_socket_manager(&manager, dummy_poll_callback);
@@ -61,6 +85,10 @@ TEST_FUNCTION(get_quantity_of__active_tcp_sockets__after_init__returns_zero) {
     return MUNIT_OK;
 }
 
+/**
+ * @spec    docs/specs/core/multiplayer/tcp_socket_manager.h.spec.md
+ * @section 1.4.1 Initialization
+ */
 TEST_FUNCTION(initialize_tcp_socket_manager__null_callback__sets_null) {
     TCP_Socket_Manager manager;
     initialize_tcp_socket_manager(&manager, (m_Poll_TCP_Socket_Manager)0);
