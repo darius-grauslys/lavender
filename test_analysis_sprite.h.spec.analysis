@@ -1,0 +1,66 @@
+# Test Analysis: sprite.h.spec
+
+## Source Files
+- Spec: docs/specs/core/rendering/sprite.h.spec.md
+- Test: tests/core/source/rendering/test_suite_rendering_sprite.c
+- Report: scripts/test_report_digest/test_suite_rendering_sprite.c.report
+
+## Failing Tests
+
+### sprite__is_sprite__deallocated__returns_true_for_zeroed_sprite
+- **Status:** FAIL
+- **Report Error:** `assertion failed: is_sprite__deallocated(&sprite) is not true`
+- **Root Cause:** In `core/include/rendering/sprite.h`, `is_sprite__deallocated`
+  is implemented as:
+
+  ```c
+  static inline
+  bool is_sprite__deallocated(Sprite *p_sprite) {
+      return IS_DEALLOCATED_P(p_sprite);
+  }
+  ```
+
+  `IS_DEALLOCATED_P` is defined in `serialization/serialization_header.h` as:
+
+  ```c
+  #define IS_DEALLOCATED_P(serialized_header)\
+      (!serialized_header || is_serialized_struct__deallocated(\
+              (Serialization_Header*)serialized_header))
+  ```
+
+  It casts its argument directly to `Serialization_Header*`. When `p_sprite`
+  (a `Sprite*`) is passed, the cast reinterprets the first bytes of `Sprite` as
+  a `Serialization_Header`. Since `Serialization_Header` contains
+  `size_of__struct` as its first field (before `uuid`), and `size_of__struct`
+  is zero in a zeroed sprite, `is_serialized_struct__deallocated` then checks
+  `uuid`, which is also zero and equals `IDENTIFIER__UNKNOWN__u32`. This should
+  in principle return true.
+
+  However, the actual problem is that `IS_DEALLOCATED_P` first checks
+  `!serialized_header` — i.e., null pointer. Since `p_sprite` is a valid
+  non-null stack pointer, that check is false. Then it casts `p_sprite` to
+  `Serialization_Header*` and checks `uuid`. The `Serialization_Header` struct
+  is:
+
+  ```c
+  typedef struct Serialization_Header_t {
+      Quantity__u32   size_of__struct;
+      Identifier__u32 uuid;
+  } Serialization_Header;
+  ```
+
+  `uuid` is the **second** `u32` field. When `p_sprite` is cast to
+  `Serialization_Header*`, `uuid` maps to bytes 4–7 of the `Sprite` struct.
+  In a zeroed sprite these are also zero, so `uuid == IDENTIFIER__UNKNOWN__u32`
+  (which is `(uint32_t)(-1)` i.e. `0xFFFFFFFF`) is **false**. Zero does not
+  equal `0xFFFFFFFF`, so `is_serialized_struct__deallocated` returns `false`,
+  and the assertion fails.
+
+  The correct implementation must pass `&p_sprite->_serialization_header`
+  so that the macro operates on the actual embedded `Serialization_Header`,
+  not a raw reinterpretation of the `Sprite` pointer.
+
+## Required Fix
+
+In `core/include/rendering/sprite.h`, change `is_sprite__deallocated` from:
+
