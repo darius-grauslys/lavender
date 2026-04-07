@@ -2,6 +2,14 @@
 
 #include <raycast/ray.c>
 
+/**
+ * Spec: docs/specs/core/raycast/ray.h.spec.md
+ * Section: 1.4.1. Construction
+ *          1.5.14. Postconditions
+ *
+ * Verifies that get_ray initializes ray_current_vector__3i32F20
+ * equal to ray_starting_vector__3i32F20 (zero displacement).
+ */
 TEST_FUNCTION(get_ray__initializes_current_to_starting) {
     Vector__3i32F4 start;
     start.x__i32F4 = 16;
@@ -26,6 +34,13 @@ TEST_FUNCTION(get_ray__initializes_current_to_starting) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/raycast/ray.h.spec.md
+ * Section: 1.4.1. Construction
+ *
+ * Verifies that get_ray stores the provided angle in
+ * angle_of__ray.
+ */
 TEST_FUNCTION(get_ray__stores_angle) {
     Vector__3i32F4 start;
     start.x__i32F4 = 0;
@@ -39,6 +54,13 @@ TEST_FUNCTION(get_ray__stores_angle) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/raycast/ray.h.spec.md
+ * Section: 1.4.1. Construction
+ *
+ * Verifies that get_ray stores Ray_Plane_Mode__XY in
+ * ray_plane_mode.
+ */
 TEST_FUNCTION(get_ray__stores_plane_mode_xy) {
     Vector__3i32F4 start;
     start.x__i32F4 = 0;
@@ -52,6 +74,13 @@ TEST_FUNCTION(get_ray__stores_plane_mode_xy) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/raycast/ray.h.spec.md
+ * Section: 1.4.1. Construction
+ *
+ * Verifies that get_ray stores Ray_Plane_Mode__XZ in
+ * ray_plane_mode.
+ */
 TEST_FUNCTION(get_ray__stores_plane_mode_xz) {
     Vector__3i32F4 start;
     start.x__i32F4 = 0;
@@ -65,6 +94,13 @@ TEST_FUNCTION(get_ray__stores_plane_mode_xz) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/raycast/ray.h.spec.md
+ * Section: 1.4.1. Construction
+ *
+ * Verifies that get_ray stores Ray_Plane_Mode__YZ in
+ * ray_plane_mode.
+ */
 TEST_FUNCTION(get_ray__stores_plane_mode_yz) {
     Vector__3i32F4 start;
     start.x__i32F4 = 0;
@@ -78,6 +114,15 @@ TEST_FUNCTION(get_ray__stores_plane_mode_yz) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/raycast/ray.h.spec.md
+ * Section: 1.4.1. Construction
+ *          1.4.3. Validity Check
+ *          1.5.14. Postconditions
+ *
+ * Verifies that get_ray__out_of_bounds returns a sentinel ray
+ * that is detected as out of bounds by is_ray__out_of_bouds.
+ */
 TEST_FUNCTION(get_ray__out_of_bounds__is_detected_as_out_of_bounds) {
     Ray__3i32F20 ray = get_ray__out_of_bounds();
 
@@ -86,6 +131,13 @@ TEST_FUNCTION(get_ray__out_of_bounds__is_detected_as_out_of_bounds) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/raycast/ray.h.spec.md
+ * Section: 1.4.3. Validity Check
+ *
+ * Verifies that a validly constructed ray is not detected as
+ * out of bounds by is_ray__out_of_bouds.
+ */
 TEST_FUNCTION(get_ray__valid_ray_is_not_out_of_bounds) {
     Vector__3i32F4 start;
     start.x__i32F4 = 0;
@@ -99,6 +151,14 @@ TEST_FUNCTION(get_ray__valid_ray_is_not_out_of_bounds) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/raycast/ray.h.spec.md
+ * Section: 1.4.1. Construction
+ *          1.5.4. Ray Extension Pattern
+ *
+ * Verifies that get_ray_as__extension creates a new ray whose
+ * starting vector equals the source ray's current endpoint.
+ */
 TEST_FUNCTION(get_ray_as__extension__starts_at_source_endpoint) {
     Vector__3i32F4 start;
     start.x__i32F4 = 16;
@@ -126,6 +186,14 @@ TEST_FUNCTION(get_ray_as__extension__starts_at_source_endpoint) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/raycast/ray.h.spec.md
+ * Section: 1.4.1. Construction
+ *          1.5.4. Ray Extension Pattern
+ *
+ * Verifies that get_ray_as__extension inherits the plane mode
+ * from the source ray.
+ */
 TEST_FUNCTION(get_ray_as__extension__inherits_plane_mode) {
     Vector__3i32F4 start;
     start.x__i32F4 = 0;
@@ -140,6 +208,14 @@ TEST_FUNCTION(get_ray_as__extension__inherits_plane_mode) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/raycast/ray.h.spec.md
+ * Section: 1.4.1. Construction
+ *          1.5.4. Ray Extension Pattern
+ *
+ * Verifies that get_ray_as__extension stores the newly provided
+ * angle rather than inheriting the source ray's angle.
+ */
 TEST_FUNCTION(get_ray_as__extension__stores_new_angle) {
     Vector__3i32F4 start;
     start.x__i32F4 = 0;
@@ -154,6 +230,15 @@ TEST_FUNCTION(get_ray_as__extension__stores_new_angle) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/raycast/ray.h.spec.md
+ * Section: 1.4.1. Construction
+ *          1.5.4. Ray Extension Pattern
+ *          1.5.14. Postconditions
+ *
+ * Verifies that get_ray_as__extension initializes the extension's
+ * current vector equal to its starting vector (zero displacement).
+ */
 TEST_FUNCTION(get_ray_as__extension__current_equals_starting) {
     Vector__3i32F4 start;
     start.x__i32F4 = 0;
@@ -181,6 +266,14 @@ TEST_FUNCTION(get_ray_as__extension__current_equals_starting) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/raycast/ray.h.spec.md
+ * Section: 1.4.2. Stepping
+ *          1.5.14. Postconditions
+ *
+ * Verifies that step_p_ray advances the ray's current vector
+ * from its initial position (i.e. at least one component changes).
+ */
 TEST_FUNCTION(step_p_ray__advances_current_vector) {
     Vector__3i32F4 start;
     start.x__i32F4 = 0;
@@ -203,6 +296,14 @@ TEST_FUNCTION(step_p_ray__advances_current_vector) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/raycast/ray.h.spec.md
+ * Section: 1.4.2. Stepping
+ *          1.5.14. Postconditions
+ *
+ * Verifies that step_p_ray does not modify the ray's starting
+ * vector (ray_starting_vector__3i32F20 is unchanged).
+ */
 TEST_FUNCTION(step_p_ray__does_not_change_starting_vector) {
     Vector__3i32F4 start;
     start.x__i32F4 = 16;
@@ -224,6 +325,14 @@ TEST_FUNCTION(step_p_ray__does_not_change_starting_vector) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/raycast/ray.h.spec.md
+ * Section: 1.4.2. Stepping
+ *          1.5.3. Step Granularity
+ *
+ * Verifies that multiple calls to step_p_ray produce
+ * monotonically increasing displacement from the origin.
+ */
 TEST_FUNCTION(step_p_ray__multiple_steps_increase_displacement) {
     Vector__3i32F4 start;
     start.x__i32F4 = 0;
@@ -258,6 +367,15 @@ TEST_FUNCTION(step_p_ray__multiple_steps_increase_displacement) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/raycast/ray.h.spec.md
+ * Section: 1.4.2. Stepping
+ *          1.5.3. Step Granularity
+ *
+ * Verifies that step_p_ray_until__next_tile advances the ray
+ * past a tile boundary such that the integer tile coordinates
+ * change.
+ */
 TEST_FUNCTION(step_p_ray_until__next_tile__advances_past_tile_boundary) {
     Vector__3i32F4 start;
     start.x__i32F4 = 0;
@@ -281,6 +399,15 @@ TEST_FUNCTION(step_p_ray_until__next_tile__advances_past_tile_boundary) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/raycast/ray.h.spec.md
+ * Section: 1.4.4. Endpoint Extraction
+ *          1.5.6. Fixed-Point Precision Hierarchy
+ *
+ * Verifies that get_ray_endpoint_as__vector_3i32 correctly
+ * converts the ray's current endpoint from i32F20 to whole
+ * integer coordinates.
+ */
 TEST_FUNCTION(get_ray_endpoint_as__vector_3i32__returns_integer_coords) {
     Vector__3i32F4 start;
     start.x__i32F4 = 5 << 4;
@@ -298,6 +425,15 @@ TEST_FUNCTION(get_ray_endpoint_as__vector_3i32__returns_integer_coords) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/raycast/ray.h.spec.md
+ * Section: 1.4.4. Endpoint Extraction
+ *          1.5.6. Fixed-Point Precision Hierarchy
+ *
+ * Verifies that get_ray_endpoint_as__vector_3i32F4 correctly
+ * converts the ray's current endpoint from i32F20 to i32F4
+ * precision, matching the original starting position.
+ */
 TEST_FUNCTION(get_ray_endpoint_as__vector_3i32F4__returns_f4_coords) {
     Vector__3i32F4 start;
     start.x__i32F4 = 5 << 4;
@@ -315,6 +451,15 @@ TEST_FUNCTION(get_ray_endpoint_as__vector_3i32F4__returns_f4_coords) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/raycast/ray.h.spec.md
+ * Section: 1.4.5. Displacement Measurement
+ *          1.5.14. Postconditions
+ *
+ * Verifies that get_vector__3i32F20_wrt__p_ray_and_its_origin
+ * returns a zero displacement vector immediately after ray
+ * construction (before any stepping).
+ */
 TEST_FUNCTION(get_vector__3i32F20_wrt__p_ray_and_its_origin__zero_at_start) {
     Vector__3i32F4 start;
     start.x__i32F4 = 16;
@@ -333,6 +478,13 @@ TEST_FUNCTION(get_vector__3i32F20_wrt__p_ray_and_its_origin__zero_at_start) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/raycast/ray.h.spec.md
+ * Section: 1.4.5. Displacement Measurement
+ *
+ * Verifies that get_vector__3i32F20_wrt__p_ray_and_its_origin
+ * returns a nonzero displacement vector after stepping the ray.
+ */
 TEST_FUNCTION(get_vector__3i32F20_wrt__p_ray_and_its_origin__nonzero_after_step) {
     Vector__3i32F4 start;
     start.x__i32F4 = 0;
@@ -354,6 +506,15 @@ TEST_FUNCTION(get_vector__3i32F20_wrt__p_ray_and_its_origin__nonzero_after_step)
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/raycast/ray.h.spec.md
+ * Section: 1.4.6. Distance Measurement
+ *          1.5.7. Squared Distance Convention
+ *
+ * Verifies that is_p_ray_within__squared_length_i32 returns true
+ * for a ray at its origin (zero displacement) when given a
+ * nonzero squared length threshold.
+ */
 TEST_FUNCTION(is_p_ray_within__squared_length_i32__true_at_origin) {
     Vector__3i32F4 start;
     start.x__i32F4 = 0;
@@ -367,6 +528,15 @@ TEST_FUNCTION(is_p_ray_within__squared_length_i32__true_at_origin) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/raycast/ray.h.spec.md
+ * Section: 1.4.2. Stepping
+ *          1.5.11. Relationship to Degree System
+ *
+ * Verifies that rays constructed with different angles (ANGLE__0
+ * vs ANGLE__90) produce different current vectors after stepping,
+ * confirming that the angle affects the direction of travel.
+ */
 TEST_FUNCTION(get_ray__different_angles_produce_different_directions) {
     Vector__3i32F4 start;
     start.x__i32F4 = 0;
@@ -390,6 +560,16 @@ TEST_FUNCTION(get_ray__different_angles_produce_different_directions) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/raycast/ray.h.spec.md
+ * Section: 1.4.2. Stepping
+ *          1.4.5. Displacement Measurement
+ *          1.5.11. Relationship to Degree System
+ *
+ * Verifies that rays constructed with opposite angles (ANGLE__0
+ * vs ANGLE__180) produce opposite displacement vectors after
+ * stepping, confirming directional symmetry.
+ */
 TEST_FUNCTION(get_ray__opposite_angles_produce_opposite_displacements) {
     Vector__3i32F4 start;
     start.x__i32F4 = 0;
