@@ -17,6 +17,10 @@ static void dummy_process_handler_2(
     (void)p_game;
 }
 
+///
+/// Spec:   game_action_logic_entry.h.spec.md
+/// Section: 1.4.1. Core Initialization
+///
 TEST_FUNCTION(game_action_logic_entry__initialize__sets_all_fields) {
     Game_Action_Logic_Entry entry;
     memset(&entry, 0xFF, sizeof(entry));
@@ -43,6 +47,10 @@ TEST_FUNCTION(game_action_logic_entry__initialize__sets_all_fields) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   game_action_logic_entry.h.spec.md
+/// Section: 1.4.2. Convenience Initializers (static inline)
+///
 TEST_FUNCTION(game_action_logic_entry__initialize_as_process_out__sets_outbound) {
     Game_Action_Logic_Entry entry;
     memset(&entry, 0, sizeof(entry));
@@ -62,6 +70,10 @@ TEST_FUNCTION(game_action_logic_entry__initialize_as_process_out__sets_outbound)
     return MUNIT_OK;
 }
 
+///
+/// Spec:   game_action_logic_entry.h.spec.md
+/// Section: 1.4.2. Convenience Initializers (static inline)
+///
 TEST_FUNCTION(game_action_logic_entry__initialize_as_process_in__sets_inbound) {
     Game_Action_Logic_Entry entry;
     memset(&entry, 0, sizeof(entry));
@@ -81,6 +93,10 @@ TEST_FUNCTION(game_action_logic_entry__initialize_as_process_in__sets_inbound) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   game_action_logic_entry.h.spec.md
+/// Section: 1.4.2. Convenience Initializers (static inline)
+///
 TEST_FUNCTION(game_action_logic_entry__initialize_as_process_out_and_in__sets_both) {
     Game_Action_Logic_Entry entry;
     memset(&entry, 0, sizeof(entry));
@@ -103,6 +119,10 @@ TEST_FUNCTION(game_action_logic_entry__initialize_as_process_out_and_in__sets_bo
     return MUNIT_OK;
 }
 
+///
+/// Spec:   game_action_logic_entry.h.spec.md
+/// Section: 1.4.2. Convenience Initializers (static inline)
+///
 TEST_FUNCTION(game_action_logic_entry__initialize_as_message__sets_no_handlers) {
     Game_Action_Logic_Entry entry;
     memset(&entry, 0xFF, sizeof(entry));
@@ -118,6 +138,10 @@ TEST_FUNCTION(game_action_logic_entry__initialize_as_message__sets_no_handlers) 
     return MUNIT_OK;
 }
 
+///
+/// Spec:   game_action_logic_entry.h.spec.md
+/// Section: 1.4.4. Getters (static inline)
+///
 TEST_FUNCTION(game_action_logic_entry__get_process_priority__returns_set_value) {
     Game_Action_Logic_Entry entry;
     memset(&entry, 0, sizeof(entry));
@@ -136,6 +160,10 @@ TEST_FUNCTION(game_action_logic_entry__get_process_priority__returns_set_value) 
     return MUNIT_OK;
 }
 
+///
+/// Spec:   game_action_logic_entry.h.spec.md
+/// Section: 1.4.3. Sanitization
+///
 TEST_FUNCTION(game_action_logic_entry__sanitize_outbound__applies_flags) {
     Game_Action_Logic_Entry entry;
     Game_Action ga;
@@ -163,6 +191,10 @@ TEST_FUNCTION(game_action_logic_entry__sanitize_outbound__applies_flags) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   game_action_logic_entry.h.spec.md
+/// Section: 1.4.3. Sanitization
+///
 TEST_FUNCTION(game_action_logic_entry__sanitize_inbound__applies_flags) {
     Game_Action_Logic_Entry entry;
     Game_Action ga;
