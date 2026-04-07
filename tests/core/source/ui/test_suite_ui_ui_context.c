@@ -2,6 +2,10 @@
 
 #include <ui/ui_context.c>
 
+/**
+ * Spec:    docs/specs/core/ui/ui_context.h.spec.md
+ * Section: 22.4.1 Initialization
+ */
 TEST_FUNCTION(initialize_ui_context__clears_all_managers) {
     UI_Context ui_context;
     initialize_ui_context(&ui_context);
