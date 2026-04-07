@@ -2,6 +2,10 @@
 
 #include <multiplayer/ipv4_address.c>
 
+///
+/// @spec    docs/specs/core/multiplayer/ipv4_address.h.spec.md
+/// @section 1.4.1 Parsing
+///
 TEST_FUNCTION(populate_ipv4_address__valid_input__returns_true) {
     IPv4_Address addr;
     bool result = populate_ipv4_address(&addr, "192.168.1.1", "7777");
@@ -9,6 +13,10 @@ TEST_FUNCTION(populate_ipv4_address__valid_input__returns_true) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/multiplayer/ipv4_address.h.spec.md
+/// @section 1.5.3 Postconditions
+///
 TEST_FUNCTION(populate_ipv4_address__valid_input__parses_first_octet) {
     IPv4_Address addr;
     populate_ipv4_address(&addr, "192.168.1.1", "7777");
@@ -16,6 +24,10 @@ TEST_FUNCTION(populate_ipv4_address__valid_input__parses_first_octet) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/multiplayer/ipv4_address.h.spec.md
+/// @section 1.5.3 Postconditions
+///
 TEST_FUNCTION(populate_ipv4_address__valid_input__parses_second_octet) {
     IPv4_Address addr;
     populate_ipv4_address(&addr, "192.168.1.1", "7777");
@@ -23,6 +35,10 @@ TEST_FUNCTION(populate_ipv4_address__valid_input__parses_second_octet) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/multiplayer/ipv4_address.h.spec.md
+/// @section 1.5.3 Postconditions
+///
 TEST_FUNCTION(populate_ipv4_address__valid_input__parses_third_octet) {
     IPv4_Address addr;
     populate_ipv4_address(&addr, "192.168.1.1", "7777");
@@ -30,6 +46,10 @@ TEST_FUNCTION(populate_ipv4_address__valid_input__parses_third_octet) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/multiplayer/ipv4_address.h.spec.md
+/// @section 1.5.3 Postconditions
+///
 TEST_FUNCTION(populate_ipv4_address__valid_input__parses_fourth_octet) {
     IPv4_Address addr;
     populate_ipv4_address(&addr, "192.168.1.1", "7777");
@@ -37,6 +57,10 @@ TEST_FUNCTION(populate_ipv4_address__valid_input__parses_fourth_octet) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/multiplayer/ipv4_address.h.spec.md
+/// @section 1.5.3 Postconditions
+///
 TEST_FUNCTION(populate_ipv4_address__valid_input__parses_port) {
     IPv4_Address addr;
     populate_ipv4_address(&addr, "192.168.1.1", "7777");
@@ -44,6 +68,11 @@ TEST_FUNCTION(populate_ipv4_address__valid_input__parses_port) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/multiplayer/ipv4_address.h.spec.md
+/// @section 1.4.1 Parsing
+/// @section 1.5.3 Postconditions
+///
 TEST_FUNCTION(populate_ipv4_address__zeroes__parses_correctly) {
     IPv4_Address addr;
     bool result = populate_ipv4_address(&addr, "0.0.0.0", "0");
@@ -56,6 +85,11 @@ TEST_FUNCTION(populate_ipv4_address__zeroes__parses_correctly) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/multiplayer/ipv4_address.h.spec.md
+/// @section 1.4.1 Parsing
+/// @section 1.5.3 Postconditions
+///
 TEST_FUNCTION(populate_ipv4_address__max_octets__parses_correctly) {
     IPv4_Address addr;
     bool result = populate_ipv4_address(&addr, "255.255.255.255", "65535");
@@ -67,6 +101,11 @@ TEST_FUNCTION(populate_ipv4_address__max_octets__parses_correctly) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/multiplayer/ipv4_address.h.spec.md
+/// @section 1.4.1 Parsing
+/// @section 1.5.3 Postconditions
+///
 TEST_FUNCTION(populate_ipv4_address__localhost__parses_correctly) {
     IPv4_Address addr;
     bool result = populate_ipv4_address(&addr, "127.0.0.1", "8080");
@@ -79,6 +118,10 @@ TEST_FUNCTION(populate_ipv4_address__localhost__parses_correctly) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/multiplayer/ipv4_address.h.spec.md
+/// @section 1.5.4 Error Handling
+///
 TEST_FUNCTION(populate_ipv4_address__null_ip_string__returns_false) {
     IPv4_Address addr;
     bool result = populate_ipv4_address(&addr, (const char *)0, "7777");
@@ -86,6 +129,10 @@ TEST_FUNCTION(populate_ipv4_address__null_ip_string__returns_false) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/multiplayer/ipv4_address.h.spec.md
+/// @section 1.5.4 Error Handling
+///
 TEST_FUNCTION(populate_ipv4_address__null_port_string__returns_false) {
     IPv4_Address addr;
     bool result = populate_ipv4_address(&addr, "192.168.1.1", (const char *)0);
@@ -93,6 +140,10 @@ TEST_FUNCTION(populate_ipv4_address__null_port_string__returns_false) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/multiplayer/ipv4_address.h.spec.md
+/// @section 1.5.4 Error Handling
+///
 TEST_FUNCTION(populate_ipv4_address__empty_ip_string__returns_false) {
     IPv4_Address addr;
     bool result = populate_ipv4_address(&addr, "", "7777");
@@ -100,6 +151,10 @@ TEST_FUNCTION(populate_ipv4_address__empty_ip_string__returns_false) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/multiplayer/ipv4_address.h.spec.md
+/// @section 1.5.4 Error Handling
+///
 TEST_FUNCTION(populate_ipv4_address__empty_port_string__returns_false) {
     IPv4_Address addr;
     bool result = populate_ipv4_address(&addr, "192.168.1.1", "");
