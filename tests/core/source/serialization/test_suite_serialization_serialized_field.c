@@ -2,6 +2,10 @@
 
 #include <serialization/serialized_field.c>
 
+///
+/// Spec:    core/serialization/serialized_field.h.spec.md
+/// Section: 1.4.1 Initialization — initialize_serialized_field
+///
 TEST_FUNCTION(serialized_field__initialize_sets_data_and_uuid) {
     Serialization_Header target;
     initialize_serialization_header(&target, 42, sizeof(Serialization_Header));
@@ -12,6 +16,10 @@ TEST_FUNCTION(serialized_field__initialize_sets_data_and_uuid) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:    core/serialization/serialized_field.h.spec.md
+/// Section: 1.4.1 Initialization — initialize_serialized_field_as__unassigned
+///
 TEST_FUNCTION(serialized_field__initialize_as_unassigned_clears_all) {
     Serialized_Field field;
     field.identifier_for__serialized_field = 99;
@@ -25,6 +33,10 @@ TEST_FUNCTION(serialized_field__initialize_as_unassigned_clears_all) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:    core/serialization/serialized_field.h.spec.md
+/// Section: 1.4.1 Initialization — initialize_serialized_field_as__unlinked
+///
 TEST_FUNCTION(serialized_field__initialize_as_unlinked_sets_uuid_only) {
     Serialized_Field field;
     field.p_serialized_field__data = (void*)0xDEADBEEF;
@@ -34,6 +46,10 @@ TEST_FUNCTION(serialized_field__initialize_as_unlinked_sets_uuid_only) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:    core/serialization/serialized_field.h.spec.md
+/// Section: 1.4.3 Validation — is_p_serialized_field__linked
+///
 TEST_FUNCTION(serialized_field__is_linked_returns_false_when_unassigned) {
     Serialized_Field field;
     initialize_serialized_field_as__unassigned(&field);
@@ -41,6 +57,10 @@ TEST_FUNCTION(serialized_field__is_linked_returns_false_when_unassigned) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:    core/serialization/serialized_field.h.spec.md
+/// Section: 1.4.3 Validation — is_p_serialized_field__linked
+///
 TEST_FUNCTION(serialized_field__is_linked_returns_false_when_unlinked) {
     Serialized_Field field;
     initialize_serialized_field_as__unlinked(&field, 77);
@@ -48,6 +68,10 @@ TEST_FUNCTION(serialized_field__is_linked_returns_false_when_unlinked) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:    core/serialization/serialized_field.h.spec.md
+/// Section: 1.4.3 Validation — is_p_serialized_field__linked
+///
 TEST_FUNCTION(serialized_field__is_linked_returns_true_when_properly_linked) {
     Serialization_Header target;
     initialize_serialization_header(&target, 42, sizeof(Serialization_Header));
@@ -57,6 +81,10 @@ TEST_FUNCTION(serialized_field__is_linked_returns_true_when_properly_linked) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:    core/serialization/serialized_field.h.spec.md
+/// Section: 1.4.2 Linking — link_serialized_field_against__contiguous_array
+///
 TEST_FUNCTION(serialized_field__link_against_contiguous_array_succeeds) {
     Serialization_Header headers[4];
     initialize_serialization_header__contiguous_array(
@@ -75,6 +103,10 @@ TEST_FUNCTION(serialized_field__link_against_contiguous_array_succeeds) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:    core/serialization/serialized_field.h.spec.md
+/// Section: 1.4.2 Linking — link_serialized_field_against__contiguous_array
+///
 TEST_FUNCTION(serialized_field__link_against_contiguous_array_fails_when_not_found) {
     Serialization_Header headers[4];
     initialize_serialization_header__contiguous_array(
@@ -93,6 +125,10 @@ TEST_FUNCTION(serialized_field__link_against_contiguous_array_fails_when_not_fou
     return MUNIT_OK;
 }
 
+///
+/// Spec:    core/serialization/serialized_field.h.spec.md
+/// Section: 1.4.3 Validation — is_serialized_field_matching__serialization_header
+///
 TEST_FUNCTION(serialized_field__matching_header_returns_true_on_match) {
     Serialization_Header target;
     initialize_serialization_header(&target, 42, sizeof(Serialization_Header));
@@ -103,6 +139,10 @@ TEST_FUNCTION(serialized_field__matching_header_returns_true_on_match) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:    core/serialization/serialized_field.h.spec.md
+/// Section: 1.4.3 Validation — is_serialized_field_matching__serialization_header
+///
 TEST_FUNCTION(serialized_field__matching_header_returns_false_on_mismatch) {
     Serialization_Header target;
     initialize_serialization_header(&target, 42, sizeof(Serialization_Header));
