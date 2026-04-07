@@ -9,6 +9,10 @@ static void dummy_process_handler(
     (void)p_game;
 }
 
+///
+/// Spec: game_action_logic_table.h.spec.md
+/// Section: 1.4.1. Initialization
+///
 TEST_FUNCTION(game_action_logic_table__initialize__zeroes_entries) {
     Game_Action_Logic_Table table;
     memset(&table, 0xFF, sizeof(table));
@@ -31,6 +35,10 @@ TEST_FUNCTION(game_action_logic_table__initialize__zeroes_entries) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: game_action_logic_table.h.spec.md
+/// Section: 1.4.2. Lookup (static inline)
+///
 TEST_FUNCTION(game_action_logic_table__get_entry__returns_correct_entry) {
     Game_Action_Logic_Table table;
     initialize_game_action_logic_table(&table);
@@ -54,6 +62,10 @@ TEST_FUNCTION(game_action_logic_table__get_entry__returns_correct_entry) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: game_action_logic_table.h.spec.md
+/// Section: 1.4.2. Lookup (static inline)
+///
 TEST_FUNCTION(game_action_logic_table__get_entry__returns_null_for_unknown) {
     Game_Action_Logic_Table table;
     initialize_game_action_logic_table(&table);
@@ -68,6 +80,10 @@ TEST_FUNCTION(game_action_logic_table__get_entry__returns_null_for_unknown) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: game_action_logic_table.h.spec.md
+/// Section: 1.4.2. Lookup (static inline)
+///
 TEST_FUNCTION(game_action_logic_table__get_entry__returns_null_for_none) {
     Game_Action_Logic_Table table;
     initialize_game_action_logic_table(&table);
@@ -82,6 +98,10 @@ TEST_FUNCTION(game_action_logic_table__get_entry__returns_null_for_none) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: game_action_logic_table.h.spec.md
+/// Section: 1.4.4. Handler Lookup
+///
 TEST_FUNCTION(game_action_logic_table__get_outbound_handler__returns_registered) {
     Game_Action_Logic_Table table;
     initialize_game_action_logic_table(&table);
@@ -107,6 +127,10 @@ TEST_FUNCTION(game_action_logic_table__get_outbound_handler__returns_registered)
     return MUNIT_OK;
 }
 
+///
+/// Spec: game_action_logic_table.h.spec.md
+/// Section: 1.4.4. Handler Lookup
+///
 TEST_FUNCTION(game_action_logic_table__get_inbound_handler__returns_registered) {
     Game_Action_Logic_Table table;
     initialize_game_action_logic_table(&table);
@@ -132,6 +156,10 @@ TEST_FUNCTION(game_action_logic_table__get_inbound_handler__returns_registered) 
     return MUNIT_OK;
 }
 
+///
+/// Spec: game_action_logic_table.h.spec.md
+/// Section: 1.4.4. Handler Lookup
+///
 TEST_FUNCTION(game_action_logic_table__unregistered_kind__has_null_handlers) {
     Game_Action_Logic_Table table;
     initialize_game_action_logic_table(&table);
