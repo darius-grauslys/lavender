@@ -2,6 +2,13 @@
 
 #include <ui/ui_window_element.c>
 
+///
+/// Specification:  docs/specs/core/ui/ui_window_element.h.spec.md
+/// Section:        20.4 Functions
+///
+/// Tests that initialize_ui_element_as__window_element_and__open_window
+/// sets the_kind_of_ui_element__this_is to UI_Element_Kind__Window.
+///
 TEST_FUNCTION(initialize_ui_element_as__window_element__sets_kind) {
     UI_Element ui_element;
     memset(&ui_element, 0, sizeof(ui_element));
@@ -22,6 +29,14 @@ TEST_FUNCTION(initialize_ui_element_as__window_element__sets_kind) {
     return MUNIT_OK;
 }
 
+///
+/// Specification:  docs/specs/core/ui/ui_window_element.h.spec.md
+/// Section:        20.4 Functions
+///
+/// Tests that initialize_ui_element_as__window_element_and__open_window
+/// accepts a Vector__3i32 origin parameter and correctly initializes
+/// the element as a window element.
+///
 TEST_FUNCTION(initialize_ui_element_as__window_element__with_origin) {
     UI_Element ui_element;
     memset(&ui_element, 0, sizeof(ui_element));
@@ -44,6 +59,14 @@ TEST_FUNCTION(initialize_ui_element_as__window_element__with_origin) {
     return MUNIT_OK;
 }
 
+///
+/// Specification:  docs/specs/core/ui/ui_window_element.h.spec.md
+/// Section:        20.3.1 Window-Specific Data
+///
+/// Tests that initialize_ui_element_as__window_element_and__open_window
+/// properly associates a Graphics_Window pointer
+/// (p_ui_window__graphics_window) with the UI element.
+///
 TEST_FUNCTION(initialize_ui_element_as__window_element__graphics_window_pointer) {
     UI_Element ui_element;
     memset(&ui_element, 0, sizeof(ui_element));
