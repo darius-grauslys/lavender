@@ -2,6 +2,10 @@
 
 #include <ui/ui_tile_span.c>
 
+///
+/// Spec:   docs/specs/core/ui/ui_tile_span.h.spec.md
+/// Section: 21.4 Functions — initialize_ui_tile_span_as__empty
+///
 TEST_FUNCTION(initialize_ui_tile_span_as__empty__all_tiles_none) {
     UI_Tile_Span span;
     initialize_ui_tile_span_as__empty(&span);
@@ -22,6 +26,10 @@ TEST_FUNCTION(initialize_ui_tile_span_as__empty__all_tiles_none) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/ui/ui_tile_span.h.spec.md
+/// Section: 21.4 Functions — initialize_ui_tile_span
+///
 TEST_FUNCTION(initialize_ui_tile_span__sets_corners_edges_fill) {
     UI_Tile_Span span;
     UI_Tile corners[4];
@@ -50,6 +58,10 @@ TEST_FUNCTION(initialize_ui_tile_span__sets_corners_edges_fill) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:    docs/specs/core/ui/ui_tile_span.h.spec.md
+/// Section: 21.5.1 9-Slice Sampling — Corner positions
+///
 TEST_FUNCTION(get_ui_tile_of__ui_tile_span__returns_corner_top_left) {
     UI_Tile_Span span;
     UI_Tile corners[4];
@@ -71,6 +83,10 @@ TEST_FUNCTION(get_ui_tile_of__ui_tile_span__returns_corner_top_left) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:    docs/specs/core/ui/ui_tile_span.h.spec.md
+/// Section: 21.5.1 9-Slice Sampling — Corner positions
+///
 TEST_FUNCTION(get_ui_tile_of__ui_tile_span__returns_corner_top_right) {
     UI_Tile_Span span;
     UI_Tile corners[4];
@@ -92,6 +108,10 @@ TEST_FUNCTION(get_ui_tile_of__ui_tile_span__returns_corner_top_right) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:    docs/specs/core/ui/ui_tile_span.h.spec.md
+/// Section: 21.5.1 9-Slice Sampling — Corner positions
+///
 TEST_FUNCTION(get_ui_tile_of__ui_tile_span__returns_corner_bottom_left) {
     UI_Tile_Span span;
     UI_Tile corners[4];
@@ -113,6 +133,10 @@ TEST_FUNCTION(get_ui_tile_of__ui_tile_span__returns_corner_bottom_left) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:    docs/specs/core/ui/ui_tile_span.h.spec.md
+/// Section: 21.5.1 9-Slice Sampling — Corner positions
+///
 TEST_FUNCTION(get_ui_tile_of__ui_tile_span__returns_corner_bottom_right) {
     UI_Tile_Span span;
     UI_Tile corners[4];
@@ -134,6 +158,10 @@ TEST_FUNCTION(get_ui_tile_of__ui_tile_span__returns_corner_bottom_right) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:    docs/specs/core/ui/ui_tile_span.h.spec.md
+/// Section: 21.5.1 9-Slice Sampling — Border positions
+///
 TEST_FUNCTION(get_ui_tile_of__ui_tile_span__returns_edge_top) {
     UI_Tile_Span span;
     UI_Tile corners[4];
@@ -155,6 +183,10 @@ TEST_FUNCTION(get_ui_tile_of__ui_tile_span__returns_edge_top) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:    docs/specs/core/ui/ui_tile_span.h.spec.md
+/// Section: 21.5.1 9-Slice Sampling — Border positions
+///
 TEST_FUNCTION(get_ui_tile_of__ui_tile_span__returns_edge_bottom) {
     UI_Tile_Span span;
     UI_Tile corners[4];
@@ -176,6 +208,10 @@ TEST_FUNCTION(get_ui_tile_of__ui_tile_span__returns_edge_bottom) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:    docs/specs/core/ui/ui_tile_span.h.spec.md
+/// Section: 21.5.1 9-Slice Sampling — Border positions
+///
 TEST_FUNCTION(get_ui_tile_of__ui_tile_span__returns_edge_left) {
     UI_Tile_Span span;
     UI_Tile corners[4];
@@ -197,6 +233,10 @@ TEST_FUNCTION(get_ui_tile_of__ui_tile_span__returns_edge_left) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:    docs/specs/core/ui/ui_tile_span.h.spec.md
+/// Section: 21.5.1 9-Slice Sampling — Border positions
+///
 TEST_FUNCTION(get_ui_tile_of__ui_tile_span__returns_edge_right) {
     UI_Tile_Span span;
     UI_Tile corners[4];
@@ -218,6 +258,10 @@ TEST_FUNCTION(get_ui_tile_of__ui_tile_span__returns_edge_right) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:    docs/specs/core/ui/ui_tile_span.h.spec.md
+/// Section: 21.5.1 9-Slice Sampling — Interior positions
+///
 TEST_FUNCTION(get_ui_tile_of__ui_tile_span__returns_fill_for_interior) {
     UI_Tile_Span span;
     UI_Tile corners[4];
