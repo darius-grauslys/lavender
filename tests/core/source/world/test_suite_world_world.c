@@ -2,6 +2,10 @@
 
 #include <world/world.c>
 
+///
+/// Spec:    docs/specs/core/world/world.h.spec.md
+/// Section: 1.4.7 Name Management
+///
 TEST_FUNCTION(world__set_name__sets_name) {
     World world;
     memset(&world, 0, sizeof(World));
@@ -11,6 +15,10 @@ TEST_FUNCTION(world__set_name__sets_name) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:    docs/specs/core/world/world.h.spec.md
+/// Section: 1.4.8 Sub-Component Accessors (static inline)
+///
 TEST_FUNCTION(world__get_p_camera__returns_camera_address) {
     World world;
     memset(&world, 0, sizeof(World));
@@ -19,6 +27,10 @@ TEST_FUNCTION(world__get_p_camera__returns_camera_address) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:    docs/specs/core/world/world.h.spec.md
+/// Section: 1.4.8 Sub-Component Accessors (static inline)
+///
 TEST_FUNCTION(world__get_p_inventory_manager__returns_address) {
     World world;
     memset(&world, 0, sizeof(World));
@@ -27,6 +39,10 @@ TEST_FUNCTION(world__get_p_inventory_manager__returns_address) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:    docs/specs/core/world/world.h.spec.md
+/// Section: 1.4.8 Sub-Component Accessors (static inline)
+///
 TEST_FUNCTION(world__get_p_item_manager__returns_address) {
     World world;
     memset(&world, 0, sizeof(World));
@@ -35,6 +51,10 @@ TEST_FUNCTION(world__get_p_item_manager__returns_address) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:    docs/specs/core/world/world.h.spec.md
+/// Section: 1.4.8 Sub-Component Accessors (static inline)
+///
 TEST_FUNCTION(world__get_p_tile_logic_table__returns_address) {
     World world;
     memset(&world, 0, sizeof(World));
@@ -43,6 +63,10 @@ TEST_FUNCTION(world__get_p_tile_logic_table__returns_address) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:    docs/specs/core/world/world.h.spec.md
+/// Section: 1.4.8 Sub-Component Accessors (static inline)
+///
 TEST_FUNCTION(world__get_p_chunk_generation_table__returns_address) {
     World world;
     memset(&world, 0, sizeof(World));
@@ -51,6 +75,10 @@ TEST_FUNCTION(world__get_p_chunk_generation_table__returns_address) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:    docs/specs/core/world/world.h.spec.md
+/// Section: 1.4.8 Sub-Component Accessors (static inline)
+///
 TEST_FUNCTION(world__get_p_global_space_manager__returns_address) {
     World world;
     memset(&world, 0, sizeof(World));
@@ -59,6 +87,10 @@ TEST_FUNCTION(world__get_p_global_space_manager__returns_address) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:    docs/specs/core/world/world.h.spec.md
+/// Section: 1.4.8 Sub-Component Accessors (static inline)
+///
 TEST_FUNCTION(world__get_p_collision_node_pool__returns_address) {
     World world;
     memset(&world, 0, sizeof(World));
@@ -67,6 +99,10 @@ TEST_FUNCTION(world__get_p_collision_node_pool__returns_address) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:    docs/specs/core/world/world.h.spec.md
+/// Section: 1.4.8 Sub-Component Accessors (static inline)
+///
 TEST_FUNCTION(world__get_p_chunk_pool__returns_address) {
     World world;
     memset(&world, 0, sizeof(World));
@@ -75,6 +111,11 @@ TEST_FUNCTION(world__get_p_chunk_pool__returns_address) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:    docs/specs/core/world/world.h.spec.md
+/// Section: 1.4.9 Handler Setters (static inline)
+///          1.4.10 Spawn Point and Render Kernel (static inline)
+///
 TEST_FUNCTION(world__set_spawn_point__and_get) {
     World world;
     memset(&world, 0, sizeof(World));
