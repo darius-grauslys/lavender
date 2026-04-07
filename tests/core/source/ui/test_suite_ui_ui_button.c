@@ -11,6 +11,10 @@ static void mock_click_handler(
     (void)p_gfx_window;
 }
 
+///
+/// Spec:   docs/specs/core/ui/ui_button.h.spec.md
+/// Section: 11.4.1 Initialization
+///
 TEST_FUNCTION(initialize_ui_element_as__button__sets_kind) {
     UI_Element ui_element;
     memset(&ui_element, 0, sizeof(ui_element));
@@ -26,6 +30,10 @@ TEST_FUNCTION(initialize_ui_element_as__button__sets_kind) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/ui/ui_button.h.spec.md
+/// Section: 11.4.1 Initialization
+///
 TEST_FUNCTION(initialize_ui_element_as__button__toggleable_and_toggled) {
     UI_Element ui_element;
     memset(&ui_element, 0, sizeof(ui_element));
@@ -39,6 +47,10 @@ TEST_FUNCTION(initialize_ui_element_as__button__toggleable_and_toggled) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/ui/ui_button.h.spec.md
+/// Section: 11.4.1 Initialization
+///
 TEST_FUNCTION(initialize_ui_element_as__button__not_toggleable) {
     UI_Element ui_element;
     memset(&ui_element, 0, sizeof(ui_element));
@@ -52,6 +64,10 @@ TEST_FUNCTION(initialize_ui_element_as__button__not_toggleable) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/ui/ui_button.h.spec.md
+/// Section: 11.4.4 Toggle Mutations
+///
 TEST_FUNCTION(set_ui_button_as__toggleable__sets_flag) {
     UI_Element ui_element;
     memset(&ui_element, 0, sizeof(ui_element));
@@ -65,6 +81,10 @@ TEST_FUNCTION(set_ui_button_as__toggleable__sets_flag) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/ui/ui_button.h.spec.md
+/// Section: 11.4.4 Toggle Mutations
+///
 TEST_FUNCTION(set_ui_button_as__toggled__sets_flag) {
     UI_Element ui_element;
     memset(&ui_element, 0, sizeof(ui_element));
@@ -79,6 +99,10 @@ TEST_FUNCTION(set_ui_button_as__toggled__sets_flag) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/ui/ui_button.h.spec.md
+/// Section: 11.4.4 Toggle Mutations
+///
 TEST_FUNCTION(set_ui_button_as__untoggled__clears_flag) {
     UI_Element ui_element;
     memset(&ui_element, 0, sizeof(ui_element));
@@ -93,6 +117,10 @@ TEST_FUNCTION(set_ui_button_as__untoggled__clears_flag) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/ui/ui_button.h.spec.md
+/// Section: 11.4.4 Toggle Mutations
+///
 TEST_FUNCTION(set_ui_button_as__non_toggleable__clears_both_flags) {
     UI_Element ui_element;
     memset(&ui_element, 0, sizeof(ui_element));
@@ -107,6 +135,10 @@ TEST_FUNCTION(set_ui_button_as__non_toggleable__clears_both_flags) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/ui/ui_button.h.spec.md
+/// Section: 11.4.4 Toggle Mutations
+///
 TEST_FUNCTION(toggle_ui_button__flips_state) {
     UI_Element ui_element;
     memset(&ui_element, 0, sizeof(ui_element));
@@ -125,6 +157,10 @@ TEST_FUNCTION(toggle_ui_button__flips_state) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/ui/ui_button.h.spec.md
+/// Section: 11.4.4 Toggle Mutations
+///
 TEST_FUNCTION(set_ui_button_as__toggled_or__not_toggled__true) {
     UI_Element ui_element;
     memset(&ui_element, 0, sizeof(ui_element));
@@ -138,6 +174,10 @@ TEST_FUNCTION(set_ui_button_as__toggled_or__not_toggled__true) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/ui/ui_button.h.spec.md
+/// Section: 11.4.4 Toggle Mutations
+///
 TEST_FUNCTION(set_ui_button_as__toggled_or__not_toggled__false) {
     UI_Element ui_element;
     memset(&ui_element, 0, sizeof(ui_element));
@@ -151,6 +191,10 @@ TEST_FUNCTION(set_ui_button_as__toggled_or__not_toggled__false) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/ui/ui_button.h.spec.md
+/// Section: 11.4.4 Toggle Mutations
+///
 TEST_FUNCTION(set_ui_button_as__toggleable_or__non_toggleable__true) {
     UI_Element ui_element;
     memset(&ui_element, 0, sizeof(ui_element));
@@ -164,6 +208,10 @@ TEST_FUNCTION(set_ui_button_as__toggleable_or__non_toggleable__true) {
     return MUNIT_OK;
 }
 
+///
+/// Spec:   docs/specs/core/ui/ui_button.h.spec.md
+/// Section: 11.4.4 Toggle Mutations
+///
 TEST_FUNCTION(set_ui_button_as__toggleable_or__non_toggleable__false) {
     UI_Element ui_element;
     memset(&ui_element, 0, sizeof(ui_element));
