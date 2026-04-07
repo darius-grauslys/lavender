@@ -2,6 +2,10 @@
 
 #include <rendering/sprite.c>
 
+/**
+ * Spec: docs/specs/core/rendering/sprite.h.spec.md
+ * Section: 1.4.2 Allocation State
+ */
 TEST_FUNCTION(sprite__is_sprite__deallocated__returns_true_for_zeroed_sprite) {
     Sprite sprite;
     memset(&sprite, 0, sizeof(sprite));
@@ -10,6 +14,10 @@ TEST_FUNCTION(sprite__is_sprite__deallocated__returns_true_for_zeroed_sprite) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/rendering/sprite.h.spec.md
+ * Section: 1.4.3 Enabled State
+ */
 TEST_FUNCTION(sprite__is_sprite__enabled__returns_false_when_flags_zero) {
     Sprite sprite;
     memset(&sprite, 0, sizeof(sprite));
@@ -18,6 +26,10 @@ TEST_FUNCTION(sprite__is_sprite__enabled__returns_false_when_flags_zero) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/rendering/sprite.h.spec.md
+ * Section: 1.4.3 Enabled State
+ */
 TEST_FUNCTION(sprite__set_sprite_as__enabled__sets_flag) {
     Sprite sprite;
     memset(&sprite, 0, sizeof(sprite));
@@ -27,6 +39,10 @@ TEST_FUNCTION(sprite__set_sprite_as__enabled__sets_flag) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/rendering/sprite.h.spec.md
+ * Section: 1.4.3 Enabled State
+ */
 TEST_FUNCTION(sprite__set_sprite_as__disabled__clears_flag) {
     Sprite sprite;
     memset(&sprite, 0, sizeof(sprite));
@@ -38,6 +54,10 @@ TEST_FUNCTION(sprite__set_sprite_as__disabled__clears_flag) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/rendering/sprite.h.spec.md
+ * Section: 1.4.4 Graphics Update
+ */
 TEST_FUNCTION(sprite__is_sprite__needing_graphics_update__returns_false_initially) {
     Sprite sprite;
     memset(&sprite, 0, sizeof(sprite));
@@ -46,6 +66,10 @@ TEST_FUNCTION(sprite__is_sprite__needing_graphics_update__returns_false_initiall
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/rendering/sprite.h.spec.md
+ * Section: 1.4.4 Graphics Update
+ */
 TEST_FUNCTION(sprite__set_sprite_as__needing_graphics_update__sets_flag) {
     Sprite sprite;
     memset(&sprite, 0, sizeof(sprite));
@@ -55,6 +79,10 @@ TEST_FUNCTION(sprite__set_sprite_as__needing_graphics_update__sets_flag) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/rendering/sprite.h.spec.md
+ * Section: 1.4.4 Graphics Update
+ */
 TEST_FUNCTION(sprite__set_sprite_as__NOT_needing_graphics_update__clears_flag) {
     Sprite sprite;
     memset(&sprite, 0, sizeof(sprite));
@@ -65,6 +93,10 @@ TEST_FUNCTION(sprite__set_sprite_as__NOT_needing_graphics_update__clears_flag) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/rendering/sprite.h.spec.md
+ * Section: 1.4.6 Flipping
+ */
 TEST_FUNCTION(sprite__is_sprite__flipped_x__returns_false_initially) {
     Sprite sprite;
     memset(&sprite, 0, sizeof(sprite));
@@ -73,6 +105,10 @@ TEST_FUNCTION(sprite__is_sprite__flipped_x__returns_false_initially) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/rendering/sprite.h.spec.md
+ * Section: 1.4.6 Flipping
+ */
 TEST_FUNCTION(sprite__set_sprite_as__flipped_x__sets_flag) {
     Sprite sprite;
     memset(&sprite, 0, sizeof(sprite));
@@ -82,6 +118,10 @@ TEST_FUNCTION(sprite__set_sprite_as__flipped_x__sets_flag) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/rendering/sprite.h.spec.md
+ * Section: 1.4.6 Flipping
+ */
 TEST_FUNCTION(sprite__set_sprite_as__NOT_flipped_x__clears_flag) {
     Sprite sprite;
     memset(&sprite, 0, sizeof(sprite));
@@ -92,6 +132,10 @@ TEST_FUNCTION(sprite__set_sprite_as__NOT_flipped_x__clears_flag) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/rendering/sprite.h.spec.md
+ * Section: 1.4.6 Flipping
+ */
 TEST_FUNCTION(sprite__is_sprite__flipped_y__returns_false_initially) {
     Sprite sprite;
     memset(&sprite, 0, sizeof(sprite));
@@ -100,6 +144,10 @@ TEST_FUNCTION(sprite__is_sprite__flipped_y__returns_false_initially) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/rendering/sprite.h.spec.md
+ * Section: 1.4.6 Flipping
+ */
 TEST_FUNCTION(sprite__set_sprite_as__flipped_y__sets_flag) {
     Sprite sprite;
     memset(&sprite, 0, sizeof(sprite));
@@ -109,6 +157,10 @@ TEST_FUNCTION(sprite__set_sprite_as__flipped_y__sets_flag) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/rendering/sprite.h.spec.md
+ * Section: 1.4.6 Flipping
+ */
 TEST_FUNCTION(sprite__set_sprite_as__NOT_flipped_y__clears_flag) {
     Sprite sprite;
     memset(&sprite, 0, sizeof(sprite));
@@ -119,6 +171,10 @@ TEST_FUNCTION(sprite__set_sprite_as__NOT_flipped_y__clears_flag) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/rendering/sprite.h.spec.md
+ * Section: 1.3.2 Sprite_Flags, 1.4.3 Enabled State, 1.4.4 Graphics Update, 1.4.6 Flipping
+ */
 TEST_FUNCTION(sprite__flags_are_independent) {
     Sprite sprite;
     memset(&sprite, 0, sizeof(sprite));
@@ -148,6 +204,10 @@ TEST_FUNCTION(sprite__flags_are_independent) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/rendering/sprite.h.spec.md
+ * Section: 1.4.7 Animation Access
+ */
 TEST_FUNCTION(sprite__get_p_sprite_animation_from__sprite__returns_embedded_animation) {
     Sprite sprite;
     memset(&sprite, 0, sizeof(sprite));
@@ -157,6 +217,10 @@ TEST_FUNCTION(sprite__get_p_sprite_animation_from__sprite__returns_embedded_anim
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/rendering/sprite.h.spec.md
+ * Section: 1.4.5 Frame
+ */
 TEST_FUNCTION(sprite__set_frame_index__marks_needing_update) {
     Sprite sprite;
     memset(&sprite, 0, sizeof(sprite));
