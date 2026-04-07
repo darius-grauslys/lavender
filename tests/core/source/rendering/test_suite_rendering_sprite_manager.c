@@ -2,6 +2,11 @@
 
 #include <rendering/sprite_manager.c>
 
+///
+/// @spec    docs/specs/core/rendering/sprite_manager.h.spec.md
+/// @section 1.4 Functions — initialize_sprite_manager
+/// @section 1.3.1 Sprite_Manager (struct)
+///
 TEST_FUNCTION(sprite_manager__initialize__clears_state) {
     Sprite_Manager manager;
     memset(&manager, 0xFF, sizeof(manager));
@@ -13,6 +18,11 @@ TEST_FUNCTION(sprite_manager__initialize__clears_state) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/rendering/sprite_manager.h.spec.md
+/// @section 1.4 Functions — allocate_sprite_manager__members
+/// @section 1.3.1 Sprite_Manager (struct)
+///
 TEST_FUNCTION(sprite_manager__allocate_members__succeeds_with_valid_quantity) {
     Sprite_Manager manager;
     initialize_sprite_manager(&manager);
@@ -28,6 +38,11 @@ TEST_FUNCTION(sprite_manager__allocate_members__succeeds_with_valid_quantity) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/rendering/sprite_manager.h.spec.md
+/// @section 1.4 Functions — allocate_sprite_manager__members
+/// @section 1.5.2 Preconditions
+///
 TEST_FUNCTION(sprite_manager__allocate_members__sprites_are_deallocated) {
     Sprite_Manager manager;
     initialize_sprite_manager(&manager);
@@ -44,6 +59,10 @@ TEST_FUNCTION(sprite_manager__allocate_members__sprites_are_deallocated) {
     return MUNIT_OK;
 }
 
+///
+/// @spec    docs/specs/core/rendering/sprite_manager.h.spec.md
+/// @section 1.4 Functions — get_p_sprite_by__uuid_from__sprite_manager
+///
 TEST_FUNCTION(sprite_manager__get_p_sprite_by__uuid__returns_null_when_empty) {
     Sprite_Manager manager;
     initialize_sprite_manager(&manager);
