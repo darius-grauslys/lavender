@@ -2,6 +2,11 @@
 
 #include <rendering/aliased_texture_manager.c>
 
+///
+/// Spec: core/rendering/aliased_texture_manager.h.spec.md
+/// Section: 1.4.1 Initialization — initialize_aliased_texture_manager
+/// Section: 1.3.1 Aliased_Texture_Manager
+///
 TEST_FUNCTION(aliased_texture_manager__initialize__all_slots_unused) {
     Aliased_Texture_Manager manager;
     initialize_aliased_texture_manager(&manager);
@@ -12,6 +17,11 @@ TEST_FUNCTION(aliased_texture_manager__initialize__all_slots_unused) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: core/rendering/aliased_texture_manager.h.spec.md
+/// Section: 1.4.3 Lookup — get_texture_by__alias
+/// Section: 1.5.1 Error Convention
+///
 TEST_FUNCTION(aliased_texture_manager__get_texture_by__alias__fails_when_empty) {
     Aliased_Texture_Manager manager;
     initialize_aliased_texture_manager(&manager);
@@ -22,6 +32,10 @@ TEST_FUNCTION(aliased_texture_manager__get_texture_by__alias__fails_when_empty) 
     return MUNIT_OK;
 }
 
+///
+/// Spec: core/rendering/aliased_texture_manager.h.spec.md
+/// Section: 1.4.3 Lookup — get_uuid_of__aliased_texture
+///
 TEST_FUNCTION(aliased_texture_manager__get_uuid_of__aliased_texture__returns_unknown_when_not_found) {
     Aliased_Texture_Manager manager;
     initialize_aliased_texture_manager(&manager);
@@ -32,6 +46,10 @@ TEST_FUNCTION(aliased_texture_manager__get_uuid_of__aliased_texture__returns_unk
     return MUNIT_OK;
 }
 
+///
+/// Spec: core/rendering/aliased_texture_manager.h.spec.md
+/// Section: 1.4.4 Release — release_all_aliased_textures
+///
 TEST_FUNCTION(aliased_texture_manager__release_all__resets_all_slots) {
     Aliased_Texture_Manager manager;
     initialize_aliased_texture_manager(&manager);
