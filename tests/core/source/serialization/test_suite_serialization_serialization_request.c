@@ -2,6 +2,10 @@
 
 #include <serialization/serialization_request.c>
 
+///
+/// Spec: core/serialization/serialization_request.h.spec.md
+/// Section: 1.4.1 Initialization
+///
 TEST_FUNCTION(serialization_request__initialize_zeroes_all_fields) {
     Serialization_Request request;
     request.p_data = (void*)0xDEADBEEF;
@@ -13,6 +17,11 @@ TEST_FUNCTION(serialization_request__initialize_zeroes_all_fields) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: core/serialization/serialization_request.h.spec.md
+/// Section: 1.4.3 Flag Setters, 1.4.4 Flag Getters
+/// Flag: SERIALZIATION_REQUEST_FLAG__IS_ALLOCATED
+///
 TEST_FUNCTION(serialization_request__set_allocated_flag) {
     Serialization_Request request;
     initialize_serialization_request(&request);
@@ -24,6 +33,11 @@ TEST_FUNCTION(serialization_request__set_allocated_flag) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: core/serialization/serialization_request.h.spec.md
+/// Section: 1.4.3 Flag Setters, 1.4.4 Flag Getters
+/// Flag: SERIALZIATION_REQUEST_FLAG__IS_ACTIVE
+///
 TEST_FUNCTION(serialization_request__set_active_flag) {
     Serialization_Request request;
     initialize_serialization_request(&request);
@@ -35,6 +49,11 @@ TEST_FUNCTION(serialization_request__set_active_flag) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: core/serialization/serialization_request.h.spec.md
+/// Section: 1.4.3 Flag Setters, 1.4.4 Flag Getters
+/// Flag: SERIALIZATION_REQUEST_FLAG__READ_OR_WRITE
+///
 TEST_FUNCTION(serialization_request__set_read_write_flag) {
     Serialization_Request request;
     initialize_serialization_request(&request);
@@ -49,6 +68,11 @@ TEST_FUNCTION(serialization_request__set_read_write_flag) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: core/serialization/serialization_request.h.spec.md
+/// Section: 1.4.3 Flag Setters, 1.4.4 Flag Getters
+/// Flag: SERIALIZATION_REQUEST_FLAG__KEEP_ALIVE
+///
 TEST_FUNCTION(serialization_request__set_keep_alive_flag) {
     Serialization_Request request;
     initialize_serialization_request(&request);
@@ -62,6 +86,11 @@ TEST_FUNCTION(serialization_request__set_keep_alive_flag) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: core/serialization/serialization_request.h.spec.md
+/// Section: 1.4.3 Flag Setters, 1.4.4 Flag Getters
+/// Flag: SERIALIZATION_REQUEST_FLAG__IS_TCP_OR_IO
+///
 TEST_FUNCTION(serialization_request__set_tcp_io_flag) {
     Serialization_Request request;
     initialize_serialization_request(&request);
@@ -73,6 +102,10 @@ TEST_FUNCTION(serialization_request__set_tcp_io_flag) {
     return MUNIT_OK;
 }
 
+///
+/// Spec: core/serialization/serialization_request.h.spec.md
+/// Section: 1.3.2 Serialization_Request_Flags
+///
 TEST_FUNCTION(serialization_request__flags_are_independent) {
     Serialization_Request request;
     initialize_serialization_request(&request);
