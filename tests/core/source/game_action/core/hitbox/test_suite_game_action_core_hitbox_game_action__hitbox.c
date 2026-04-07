@@ -2,6 +2,13 @@
 
 #include <game_action/core/hitbox/game_action__hitbox.c>
 
+/**
+ * Spec: docs/specs/core/game_action/hitbox/game_action__hitbox.h.spec.md
+ * Section: 1.5.2. Initialization
+ *
+ * Verifies that `initialize_game_action_for__hitbox` sets the game action
+ * kind to `Game_Action_Kind__Hitbox`.
+ */
 TEST_FUNCTION(game_action__hitbox__initialize__sets_kind) {
     Game_Action ga;
     initialize_game_action(&ga);
@@ -26,6 +33,13 @@ TEST_FUNCTION(game_action__hitbox__initialize__sets_kind) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/game_action/hitbox/game_action__hitbox.h.spec.md
+ * Section: 1.4. Payload Fields
+ *
+ * Verifies that `initialize_game_action_for__hitbox` correctly sets the
+ * `ga_kind__hitbox__uuid_of__target` payload field to the provided UUID.
+ */
 TEST_FUNCTION(game_action__hitbox__initialize__sets_target_uuid) {
     Game_Action ga;
     initialize_game_action(&ga);
@@ -50,6 +64,14 @@ TEST_FUNCTION(game_action__hitbox__initialize__sets_target_uuid) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/game_action/hitbox/game_action__hitbox.h.spec.md
+ * Section: 1.4. Payload Fields
+ *
+ * Verifies that `initialize_game_action_for__hitbox` correctly sets the
+ * `ga_kind__hitbox__position__3i32F4` payload field to the provided position
+ * vector.
+ */
 TEST_FUNCTION(game_action__hitbox__initialize__sets_position) {
     Game_Action ga;
     initialize_game_action(&ga);
@@ -82,6 +104,14 @@ TEST_FUNCTION(game_action__hitbox__initialize__sets_position) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/game_action/hitbox/game_action__hitbox.h.spec.md
+ * Section: 1.4. Payload Fields
+ *
+ * Verifies that `initialize_game_action_for__hitbox` correctly sets the
+ * `ga_kind__hitbox__velocity__3i32F4` payload field to the provided velocity
+ * vector.
+ */
 TEST_FUNCTION(game_action__hitbox__initialize__sets_velocity) {
     Game_Action ga;
     initialize_game_action(&ga);
@@ -114,6 +144,14 @@ TEST_FUNCTION(game_action__hitbox__initialize__sets_velocity) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/game_action/hitbox/game_action__hitbox.h.spec.md
+ * Section: 1.4. Payload Fields
+ *
+ * Verifies that `initialize_game_action_for__hitbox` correctly sets the
+ * `ga_kind__hitbox__the_kind_of__hitbox` payload field to the provided
+ * `Hitbox_Kind` discriminator.
+ */
 TEST_FUNCTION(game_action__hitbox__initialize__sets_hitbox_kind) {
     Game_Action ga;
     initialize_game_action(&ga);
@@ -138,6 +176,14 @@ TEST_FUNCTION(game_action__hitbox__initialize__sets_hitbox_kind) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/game_action/hitbox/game_action__hitbox.h.spec.md
+ * Section: 1.5.1. Registration
+ *
+ * Verifies that `register_game_action__hitbox_for__server` populates the
+ * `Game_Action_Logic_Table` with a valid entry for
+ * `Game_Action_Kind__Hitbox`, including a non-null outbound process handler.
+ */
 TEST_FUNCTION(game_action__hitbox__register_for_server__populates_table) {
     Game_Action_Logic_Table table;
     initialize_game_action_logic_table(&table);
@@ -157,6 +203,15 @@ TEST_FUNCTION(game_action__hitbox__register_for_server__populates_table) {
     return MUNIT_OK;
 }
 
+/**
+ * Spec: docs/specs/core/game_action/hitbox/game_action__hitbox.h.spec.md
+ * Section: 1.5.1. Registration
+ *
+ * Verifies that `register_game_action__hitbox_for__offline` (which delegates
+ * to `register_game_action__hitbox_for__server`) populates the
+ * `Game_Action_Logic_Table` with a valid entry for
+ * `Game_Action_Kind__Hitbox`, including a non-null outbound process handler.
+ */
 TEST_FUNCTION(game_action__hitbox__register_for_offline__populates_table) {
     Game_Action_Logic_Table table;
     initialize_game_action_logic_table(&table);
