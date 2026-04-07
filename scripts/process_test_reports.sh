@@ -61,7 +61,8 @@ for report_file in "$REPORT_DIR"/*.report; do
     aider \
         --read "$report_file" \
         --read "$spec_file" \
-        --message "$PROMPT"
+        --message "$PROMPT" \
+        --model openrouter/anthropic/claude-4.6-sonnet
 
 done
 
