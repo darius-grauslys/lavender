@@ -41,8 +41,7 @@ git log --reverse --format='%H' '@{u}..HEAD' | while read -r COMMIT_HASH; do
     done <<< "$CHANGED_FILES"
 
     if [ "$MATCHED" = true ]; then
-        SHORT_HASH=$(git rev-parse --short "$COMMIT_HASH")
         SUBJECT=$(git log -1 --format='%s' "$COMMIT_HASH")
-        echo "${SHORT_HASH} ${SUBJECT}"
+        echo "${COMMIT_HASH} ${SUBJECT}"
     fi
 done

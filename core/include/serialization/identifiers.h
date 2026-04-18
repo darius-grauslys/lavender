@@ -54,20 +54,4 @@ bool is_identifier_u64__invalid(
     return IDENTIFIER__UNKNOWN__u64 == identifier__u64;
 }
 
-///
-/// Returns true if the identifier is the reserved provisional in-use
-/// sentinel (IDENTIFIER__RESERVED__u32).
-///
-/// A reserved slot has been claimed by an allocator but has not yet
-/// been assigned a real UUID by the caller. It must not be treated as
-/// free (IDENTIFIER__UNKNOWN__u32), nor as a fully valid allocated entry.
-///
-/// See IDENTIFIER__RESERVED__u32 in defines.h for the full contract.
-///
-static inline
-bool is_identifier_u32__reserved(
-        Identifier__u32 identifier__u32) {
-    return IDENTIFIER__RESERVED__u32 == identifier__u32;
-}
-
 #endif
