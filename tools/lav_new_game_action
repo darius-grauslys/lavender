@@ -137,6 +137,7 @@ function generate_union_header() {
     local guard_name="$3"      # e.g. "GA_TYPES__COLLISIONS_H"
     local struct_name="$4"     # e.g. "GA_Collisions"
     local injection_tag="$5"   # e.g. "COLLISIONS" or "COLLISIONS__AABB"
+    local impl_guard="${guard_name%_H}_IMPL_H"
 
     cat > "$filepath" << HEADER_EOF
 /// This file is deterministically generated. Do not edit manually
@@ -158,6 +159,8 @@ LAV_UNION__BEGIN(${struct_name}){
 #define INJECTION_ACTIVE__${injection_tag}
 #endif
     struct {
+// FIELDS-BEGIN
+// FIELDS-END
         union {
 // GEN-BEGIN
 // GEN-END
@@ -173,6 +176,16 @@ LAV_UNION__BEGIN(${struct_name}){
 
 #undef GA_TYPE_CONTEXT
 #endif // Header guard
+
+#ifndef INJECTION_ACTIVE
+#ifndef ${impl_guard}
+#define ${impl_guard}
+
+// GEN-IMPL-BEGIN
+// GEN-IMPL-END
+
+#endif // Impl Header guard
+#endif // INJECTION_ACTIVE
 HEADER_EOF
 }
 
@@ -336,34 +349,65 @@ function generate_accessors_for_field() {
     local struct_name="$2"
     local field_type="$3"
     local field_name="$4"
+    local header_kind="$5"  # "union" or "leaf"
+
+    local lower_struct
+    lower_struct="$(echo "$struct_name" | tr '[:upper:]' '[:lower:]')"
 
     local accessor_block=""
 
     # Check if getter accessor exists
     if ! accessor_exists_in_impl "$filepath" "// ACCESSOR: ${field_name}"; then
-        accessor_block="${accessor_block}
+        if [ "$header_kind" = "union" ]; then
+            accessor_block="${accessor_block}
 // ACCESSOR: ${field_name}
 static inline
-${field_type} get_${field_name}_from__$(echo "$struct_name" | tr '[:upper:]' '[:lower:]')(
+${field_type} get_${field_name}_from__${lower_struct}(
+        Game_Action *p_game_action) {
+    return p_game_action
+        ->${struct_name}
+        .${field_name}
+        ;
+}"
+        else
+            accessor_block="${accessor_block}
+// ACCESSOR: ${field_name}
+static inline
+${field_type} get_${field_name}_from__${lower_struct}(
         Game_Action *p_game_action) {
     return (GET_P_GAME_ACTION_PAYLOAD_AS(p_game_action, ${struct_name}))
         .${field_name}
         ;
 }"
+        fi
     fi
 
     # Check if pointer accessor exists
     if ! accessor_exists_in_impl "$filepath" "// ACCESSOR: p_${field_name}"; then
-        accessor_block="${accessor_block}
+        if [ "$header_kind" = "union" ]; then
+            accessor_block="${accessor_block}
 
 // ACCESSOR: p_${field_name}
 static inline
-${field_type} *get_p_${field_name}_from__$(echo "$struct_name" | tr '[:upper:]' '[:lower:]')(
+${field_type} *get_p_${field_name}_from__${lower_struct}(
+        Game_Action *p_game_action) {
+    return &p_game_action
+        ->${struct_name}
+        .${field_name}
+        ;
+}"
+        else
+            accessor_block="${accessor_block}
+
+// ACCESSOR: p_${field_name}
+static inline
+${field_type} *get_p_${field_name}_from__${lower_struct}(
         Game_Action *p_game_action) {
     return &(GET_P_GAME_ACTION_PAYLOAD_AS(p_game_action, ${struct_name}))
         .${field_name}
         ;
 }"
+        fi
     fi
 
     if [ -n "$accessor_block" ]; then
@@ -407,6 +451,11 @@ DIR_PARTS=("${PARTS[@]:0:${#PARTS[@]}-1}")
 CURRENT_DIR="$BASE_DIR"
 ACCUMULATED_PREFIX=""
 
+# Track the root union header for step 5
+ROOT_UNION_HEADER_NAME=""
+ROOT_UNION_DIR_PATH=""
+ROOT_UNION_STRUCT_NAME=""
+
 for (( i=0; i<${#DIR_PARTS[@]}; i++ )); do
     COMPONENT="${DIR_PARTS[$i]}"
     CURRENT_DIR="${CURRENT_DIR}/${COMPONENT}"
@@ -429,10 +478,32 @@ for (( i=0; i<${#DIR_PARTS[@]}; i++ )); do
     STRUCT_NAME="$(to_struct_name "$ACCUMULATED_PREFIX" "union")"
     INJECTION_TAG="${UPPER_PREFIX}"
 
+    # Track root for step 5
+    if [ "$i" -eq 0 ]; then
+        ROOT_UNION_HEADER_NAME="$UNION_HEADER_NAME"
+        ROOT_UNION_DIR_PATH="${DIR_PARTS[0]}"
+    fi
+
     if [ ! -f "$UNION_HEADER_PATH" ]; then
         echo "Generating union header: $UNION_HEADER_PATH"
         generate_union_header "$UNION_HEADER_PATH" "$ACCUMULATED_PREFIX" \
             "$GUARD_NAME" "$STRUCT_NAME" "$INJECTION_TAG"
+    fi
+
+    # Generate accessors for union header fields (if any)
+    if [ -f "$UNION_HEADER_PATH" ]; then
+        UNION_FIELDS="$(parse_fields "$UNION_HEADER_PATH")"
+        if [ -n "$UNION_FIELDS" ]; then
+            echo "Generating accessors for union fields in ${UNION_HEADER_PATH}"
+            while IFS= read -r field_line; do
+                FIELD_TYPE="$(echo "$field_line" | cut -d'|' -f1)"
+                FIELD_NAME="$(echo "$field_line" | cut -d'|' -f2)"
+                if [ -n "$FIELD_TYPE" ] && [ -n "$FIELD_NAME" ]; then
+                    generate_accessors_for_field "$UNION_HEADER_PATH" \
+                        "$STRUCT_NAME" "$FIELD_TYPE" "$FIELD_NAME" "union"
+                fi
+            done <<< "$UNION_FIELDS"
+        fi
     fi
 
     # If this is not the first level, the parent union header needs to include this one
@@ -442,9 +513,7 @@ for (( i=0; i<${#DIR_PARTS[@]}; i++ )); do
         PARENT_HEADER_NAME="ga_types__${PARENT_PREFIX}.h"
         PARENT_HEADER_PATH="${PARENT_DIR}/${PARENT_HEADER_NAME}"
 
-        # The include path is relative from the parent's perspective
-        INCLUDE_LINE="#include \"game_action/types/implemented/${ACCUMULATED_PREFIX//__ /__}/${UNION_HEADER_NAME}\""
-        # Fix: build the actual relative include path based on directory structure
+        # Build the actual relative include path based on directory structure
         INCLUDE_DIR_PATH=""
         for (( j=0; j<=i; j++ )); do
             if [ -z "$INCLUDE_DIR_PATH" ]; then
@@ -525,11 +594,30 @@ if [ -f "$LEAF_HEADER_PATH" ]; then
             FIELD_NAME="$(echo "$field_line" | cut -d'|' -f2)"
             if [ -n "$FIELD_TYPE" ] && [ -n "$FIELD_NAME" ]; then
                 generate_accessors_for_field "$LEAF_HEADER_PATH" \
-                    "$LEAF_STRUCT_NAME" "$FIELD_TYPE" "$FIELD_NAME"
+                    "$LEAF_STRUCT_NAME" "$FIELD_TYPE" "$FIELD_NAME" "leaf"
             fi
         done <<< "$FIELDS"
     else
         echo "No fields found in ${LEAF_HEADER_PATH}. Add fields between FIELDS-BEGIN and FIELDS-END, then re-run."
+    fi
+fi
+
+# Step 5: Ensure root union header is included in ga_types__implemented.h
+IMPLEMENTED_HEADER="${BASE_DIR}/ga_types__implemented.h"
+if [ -n "$ROOT_UNION_HEADER_NAME" ] && [ -f "$IMPLEMENTED_HEADER" ]; then
+    ROOT_INCLUDE_LINE="#include \"game_action/types/implemented/${ROOT_UNION_DIR_PATH}/${ROOT_UNION_HEADER_NAME}\""
+    echo "Ensuring include of ${ROOT_UNION_HEADER_NAME} in ${IMPLEMENTED_HEADER}"
+    ensure_include_in_gen_region "$IMPLEMENTED_HEADER" "$ROOT_INCLUDE_LINE" || true
+elif [ -n "$ROOT_UNION_HEADER_NAME" ] && [ ! -f "$IMPLEMENTED_HEADER" ]; then
+    echo "Warning: ${IMPLEMENTED_HEADER} not found. Cannot add root include."
+elif [ ${#DIR_PARTS[@]} -eq 0 ]; then
+    # Leaf directly under implemented/ — include the leaf itself
+    LEAF_INCLUDE_FOR_ROOT="#include \"game_action/types/implemented/${LEAF_HEADER_NAME}\""
+    if [ -f "$IMPLEMENTED_HEADER" ]; then
+        echo "Ensuring include of ${LEAF_HEADER_NAME} in ${IMPLEMENTED_HEADER}"
+        ensure_include_in_gen_region "$IMPLEMENTED_HEADER" "$LEAF_INCLUDE_FOR_ROOT" || true
+    else
+        echo "Warning: ${IMPLEMENTED_HEADER} not found. Cannot add root include."
     fi
 fi
 
