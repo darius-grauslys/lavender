@@ -1,5 +1,9 @@
-#ifndef GA_TYPE__GLOBAL_SPACE__RESOLVE_H
+#if !defined(GA_TYPE__GLOBAL_SPACE__RESOLVE_H) \
+    || defined(INJECTION_ACTIVE)
+
+#ifndef INJECTION_ACTIVE
 #define GA_TYPE__GLOBAL_SPACE__RESOLVE_H
+#endif
 #define GA_TYPE_CONTEXT
 
 #ifndef DEFINES_H
@@ -22,10 +26,10 @@ LAV_TYPE__BEGIN(GA_Global_Space__Resolve){
 static inline
 Global_Space_Vector__3i32 *get_p_gsv_3i32_from__ga_global_space__resolve(
         Game_Action *p_game_action) {
-    return &p_game_action
-        ->GA_Global_Space
-        .GA_Global_Space__Resolve
-        .gsv__3i32
+    return &GET_P_GAME_ACTION_PAYLOAD_AS_P(
+            p_game_action,
+            GA_Global_Space__Resolve)
+        ->gsv__3i32
         ;
 }
 

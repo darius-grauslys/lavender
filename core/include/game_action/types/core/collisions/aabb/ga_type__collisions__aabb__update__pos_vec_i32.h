@@ -1,5 +1,8 @@
-#ifndef GA_TYPE__COLLISIONS__AABB__UPDATE__POS_VEC_I32_H
+#if !defined(GA_TYPE__COLLISIONS__AABB__UPDATE__POS_VEC_I32_H) || defined(INJECTION_ACTIVE)
+
+#ifndef INJECTION_ACTIVE
 #define GA_TYPE__COLLISIONS__AABB__UPDATE__POS_VEC_I32_H
+#endif
 #define GA_TYPE_CONTEXT
 
 #ifndef DEFINES_H
@@ -23,44 +26,40 @@ LAV_TYPE__BEGIN(GA_AABB__Update__PosVec_I32){
 static inline
 Vector__3i32 get_position_3i32_from__ga_aabb__update__pos_vec_i32(
         Game_Action *p_game_action) {
-    return p_game_action
-        ->GA_Collisions
-        .GA_AABB
-        .GA_AABB__Update__PosVec_I32
-        .position__3i32
+    return GET_P_GAME_ACTION_PAYLOAD_AS_P(
+            p_game_action, 
+            GA_AABB__Update__PosVec_I32)
+        ->position__3i32
         ;
 }
 
 static inline
 Vector__3i32 *get_p_position_3i32_from__ga_aabb__update__pos_vec_i32(
         Game_Action *p_game_action) {
-    return &p_game_action
-        ->GA_Collisions
-        .GA_AABB
-        .GA_AABB__Update__PosVec_I32
-        .position__3i32
+    return &GET_P_GAME_ACTION_PAYLOAD_AS_P(
+            p_game_action, 
+            GA_AABB__Update__PosVec_I32)
+        ->position__3i32
         ;
 }
 
 static inline
 Vector__3i32 get_velocity_3i32_from__ga_aabb__update__pos_vec_i32(
         Game_Action *p_game_action) {
-    return p_game_action
-        ->GA_Collisions
-        .GA_AABB
-        .GA_AABB__Update__PosVec_I32
-        .velocity__3i32
+    return GET_P_GAME_ACTION_PAYLOAD_AS_P(
+            p_game_action, 
+            GA_AABB__Update__PosVec_I32)
+        ->velocity__3i32
         ;
 }
 
 static inline
 Vector__3i32 *get_p_velocity_3i32_from__ga_aabb__update__pos_vec_i32(
         Game_Action *p_game_action) {
-    return &p_game_action
-        ->GA_Collisions
-        .GA_AABB
-        .GA_AABB__Update__PosVec_I32
-        .velocity__3i32
+    return &GET_P_GAME_ACTION_PAYLOAD_AS_P(
+            p_game_action, 
+            GA_AABB__Update__PosVec_I32)
+        ->velocity__3i32
         ;
 }
 

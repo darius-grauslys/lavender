@@ -1,5 +1,9 @@
-#ifndef GA_TYPE__WORLD__LOAD__CLIENT_H
+#if !defined(GA_TYPE__WORLD__LOAD__CLIENT_H) \
+    || defined(INJECTION_ACTIVE)
+
+#ifndef INJECTION_ACTIVE
 #define GA_TYPE__WORLD__LOAD__CLIENT_H
+#endif
 #define GA_TYPE_CONTEXT
 
 #include <defines.h>
@@ -20,22 +24,20 @@ LAV_TYPE__BEGIN(GA_World_Load__Client){
 static inline
 Identifier__u32 get_uuid_u32_of__client_from__ga_world_load(
         Game_Action *p_game_action) {
-    return p_game_action
-        ->GA_World
-        .GA_World_Load
-        .GA_World_Load__Client
-        .uuid_of__client__u32
+    return GET_P_GAME_ACTION_PAYLOAD_AS_P(
+            p_game_action, 
+            GA_World_Load__Client)
+        ->uuid_of__client__u32
         ;
 }
 
 static inline
 Identifier__u32 *get_p_uuid_u32_of__client_from__ga_world_load(
         Game_Action *p_game_action) {
-    return &p_game_action
-        ->GA_World
-        .GA_World_Load
-        .GA_World_Load__Client
-        .uuid_of__client__u32
+    return &GET_P_GAME_ACTION_PAYLOAD_AS_P(
+            p_game_action, 
+            GA_World_Load__Client)
+        ->uuid_of__client__u32
         ;
 }
 

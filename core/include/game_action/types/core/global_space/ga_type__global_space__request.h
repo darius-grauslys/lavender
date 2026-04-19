@@ -1,5 +1,9 @@
-#ifndef GA_TYPE__GLOBAL_SPACE__REQUEST_H
+#if !defined(GA_TYPE__GLOBAL_SPACE__REQUEST_H) \
+    || defined(INJECTION_ACTIVE)
+
+#ifndef INJECTION_ACTIVE
 #define GA_TYPE__GLOBAL_SPACE__REQUEST_H
+#endif
 #define GA_TYPE_CONTEXT
 
 #include <defines.h>
@@ -23,56 +27,57 @@ LAV_TYPE__BEGIN(GA_Global_Space__Request){
 #define GA_TYPE__GLOBAL_SPACE__REQUEST_IMPL_H
 
 #define SIZE_OF__TCP_PAYLOAD_BITMAP__CHUNK \
-    (sizeof(((Game_Action*)0)->GA_Global_Space.GA_Global_Space__Request.\
+    (sizeof(((Game_Action*)0)->\
+            _ga_payload_union.GA_Global_Space.GA_Global_Space__Request.\
             chunk_payload_bitmap))
 
 static inline
 Global_Space_Vector__3i32 get_gsv_3i32_from__ga_global_space__request(
         Game_Action *p_game_action) {
-    return p_game_action
-        ->GA_Global_Space
-        .GA_Global_Space__Request
-        .gsv_3i32
+    return GET_P_GAME_ACTION_PAYLOAD_AS_P(
+            p_game_action, 
+            GA_Global_Space__Request)
+        ->gsv_3i32
         ;
 }
 
 static inline
 Global_Space_Vector__3i32 *get_p_gsv_3i32_from__ga_global_space__request(
         Game_Action *p_game_action) {
-    return &p_game_action
-        ->GA_Global_Space
-        .GA_Global_Space__Request
-        .gsv_3i32
+    return &GET_P_GAME_ACTION_PAYLOAD_AS_P(
+            p_game_action, 
+            GA_Global_Space__Request)
+        ->gsv_3i32
         ;
 }
 
 static inline
 u8 *get_p_tcp_payload_bitmap_u8_from__ga_global_space__request(
         Game_Action *p_game_action) {
-    return p_game_action
-        ->GA_Global_Space
-        .GA_Global_Space__Request
-        .chunk_payload_bitmap
+    return GET_P_GAME_ACTION_PAYLOAD_AS_P(
+            p_game_action, 
+            GA_Global_Space__Request)
+        ->chunk_payload_bitmap
         ;
 }
 
 static inline
 Timer__u32 get_timeout_timer_u32_from__ga_global_space__request(
         Game_Action *p_game_action) {
-    return p_game_action
-        ->GA_Global_Space
-        .GA_Global_Space__Request
-        .timeout__timer_u32
+    return GET_P_GAME_ACTION_PAYLOAD_AS_P(
+            p_game_action, 
+            GA_Global_Space__Request)
+        ->timeout__timer_u32
         ;
 }
 
 static inline
 Timer__u32 *get_p_timeout_timer_u32_from__ga_global_space__request(
         Game_Action *p_game_action) {
-    return &p_game_action
-        ->GA_Global_Space
-        .GA_Global_Space__Request
-        .gsv_3i32
+    return &GET_P_GAME_ACTION_PAYLOAD_AS_P(
+            p_game_action, 
+            GA_Global_Space__Request)
+        ->gsv_3i32
         ;
 }
 

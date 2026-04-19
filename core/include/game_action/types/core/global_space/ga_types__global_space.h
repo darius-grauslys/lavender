@@ -18,6 +18,7 @@ LAV_UNION__BEGIN(GA_Global_Space){
 #include "game_action/types/core/global_space/ga_type__global_space__store.h"
 
 #ifdef INJECTION_ACTIVE__GLOBAL_SPACE
+#undef INJECTION_ACTIVE__GLOBAL_SPACE
 #undef INJECTION_ACTIVE
 #endif
 

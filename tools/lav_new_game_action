@@ -234,8 +234,10 @@ function generate_leaf_header() {
     cat > "$filepath" << HEADER_EOF
 /// This file is deterministically generated. Do not edit manually
 /// outside of designated GEN / FIELDS regions.
-#ifndef ${guard_name}
+#if !defined(${guard_name}) || defined(INJECTION_ACTIVE)
+#ifndef INJECTION_ACTIVE
 #define ${guard_name}
+#endif
 #define GA_TYPE_CONTEXT
 
 #ifndef DEFINES_H
@@ -406,7 +408,7 @@ ${field_type} get_${field_name}_from__${lower_struct}(
 static inline
 ${field_type} get_${field_name}_from__${lower_struct}(
         Game_Action *p_game_action) {
-    return (GET_P_GAME_ACTION_PAYLOAD_AS(p_game_action, ${struct_name}))
+    return (GET_P_GAME_ACTION_PAYLOAD_AS_P(p_game_action, ${struct_name}))
         .${field_name}
         ;
 }"
@@ -434,7 +436,7 @@ ${field_type} *get_p_${field_name}_from__${lower_struct}(
 static inline
 ${field_type} *get_p_${field_name}_from__${lower_struct}(
         Game_Action *p_game_action) {
-    return &(GET_P_GAME_ACTION_PAYLOAD_AS(p_game_action, ${struct_name}))
+    return &(GET_P_GAME_ACTION_PAYLOAD_AS_P(p_game_action, ${struct_name}))
         .${field_name}
         ;
 }"

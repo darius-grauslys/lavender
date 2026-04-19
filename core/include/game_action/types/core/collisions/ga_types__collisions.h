@@ -1,11 +1,12 @@
-#ifndef GA_TYPES__COLLISIONS_H
+#if !defined(GA_TYPES__COLLISIONS_H) \
+    || defined(INJECTION_ACTIVE)
+
+#ifndef INJECTION_ACTIVE
 #define GA_TYPES__COLLISIONS_H
+#endif
 #define GA_TYPE_CONTEXT
 
-#ifndef DEFINES_H
 #include <defines.h>
-#endif
-
 #include <util/custom_type_macro.h>
 
 LAV_UNION__BEGIN(GA_Collisions){
@@ -14,6 +15,7 @@ LAV_UNION__BEGIN(GA_Collisions){
 #define INJECTION_ACTIVE
 #define INJECTION_ACTIVE__COLLISIONS
 #endif
+
     struct {
         Identifier__u32 uuid_of__target; 
         union {
@@ -23,6 +25,7 @@ LAV_UNION__BEGIN(GA_Collisions){
     };
 
 #ifdef INJECTION_ACTIVE__COLLISIONS
+#undef INJECTION_ACTIVE__COLLISIONS
 #undef INJECTION_ACTIVE
 #endif
 
@@ -38,36 +41,32 @@ LAV_UNION__BEGIN(GA_Collisions){
 static inline
 Identifier__u32 get_uuid_of__target_from__ga_collisions(
         Game_Action *p_game_action) {
-    return p_game_action
-        ->GA_Collisions
-        .uuid_of__target
+    return GET_P_GAME_ACTION_PAYLOAD_AS_P(p_game_action, GA_Collisions)
+        ->uuid_of__target
         ;
 }
 
 static inline
 Identifier__u32 *get_p_uuid_of__target_from__ga_collisions(
         Game_Action *p_game_action) {
-    return &p_game_action
-        ->GA_Collisions
-        .uuid_of__target
+    return &GET_P_GAME_ACTION_PAYLOAD_AS_P(p_game_action, GA_Collisions)
+        ->uuid_of__target
         ;
 }
 
 static inline
 Identifier__u32 get_the_kind_of_hitbox_from__ga_collisions(
         Game_Action *p_game_action) {
-    return p_game_action
-        ->GA_Collisions
-        .the_kind_of__hitbox
+    return GET_P_GAME_ACTION_PAYLOAD_AS_P(p_game_action, GA_Collisions)
+        ->the_kind_of__hitbox
         ;
 }
 
 static inline
 Identifier__u32 *get_p_the_kind_of_hitbox_from__ga_collisions(
         Game_Action *p_game_action) {
-    return &p_game_action
-        ->GA_Collisions
-        .the_kind_of__hitbox
+    return &GET_P_GAME_ACTION_PAYLOAD_AS_P(p_game_action, GA_Collisions)
+        ->the_kind_of__hitbox
         ;
 }
 

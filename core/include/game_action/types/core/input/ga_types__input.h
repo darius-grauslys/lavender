@@ -7,11 +7,17 @@
 
 LAV_UNION__BEGIN(GA_Input){
 
+#ifndef INJECTION_ACTIVE
 #define INJECTION_ACTIVE
+#define INJECTION_ACTIVE__INPUT
+#endif
 
 #include "game_action/types/core/input/ga_type__input.h"
 
+#ifdef INJECTION_ACTIVE__INPUT
+#undef INJECTION_ACTIVE__INPUT
 #undef INJECTION_ACTIVE
+#endif
 
 } GA_Input;
 

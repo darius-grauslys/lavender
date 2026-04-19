@@ -17,6 +17,7 @@ LAV_UNION__BEGIN(GA_TCP){
 #include "game_action/types/core/tcp/ga_type__tcp__connect_delivery.h"
 
 #ifdef INJECTION_ACTIVE__TCP
+#undef INJECTION_ACTIVE__TCP
 #undef INJECTION_ACTIVE
 #endif
 

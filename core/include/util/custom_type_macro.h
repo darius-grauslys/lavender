@@ -1,6 +1,3 @@
-#ifndef GAME_ACTION__IMPORT_MACRO_H
-#define GAME_ACTION__IMPORT_MACRO_H
-
 ///
 /// The following header file provides import macros to
 /// inject custom game actions into defines.h.
@@ -12,6 +9,8 @@
 
 #ifndef INJECTION_ACTIVE
 
+#define SEE_STRUCT
+
 #define LAV_TYPE__BEGIN(name)\
     typedef struct name ## _t
 
@@ -20,12 +19,12 @@
 
 #else
 
+#undef SEE_STRUCT
+
 #define LAV_TYPE__BEGIN(name)\
     struct 
 
 #define LAV_UNION__BEGIN(name)\
     union
-
-#endif
 
 #endif

@@ -2313,11 +2313,15 @@ typedef struct Game_Action_t {
 #ifndef GA_TYPE_CONTEXT
 #define INJECTION_ACTIVE
 #include <game_action/types/core/ga_types__core.h>
+#include <game_action/types/implemented/ga_types__implemented.h>
 #undef INJECTION_ACTIVE
 #endif
-    };
+    } _ga_payload_union;
 
 } Game_Action;
+
+#define GET_P_GAME_ACTION_PAYLOAD_AS_P(p_game_action, type)\
+    ((type*)&p_game_action->_ga_payload_union)
 
 #ifndef MAX_QUANTITY_OF__GAME_ACTIONS
 #define MAX_QUANTITY_OF__GAME_ACTIONS 512
