@@ -1,14 +1,11 @@
 #ifndef GA_TYPE__COLLISIONS__AABB__UPDATE__ACC_I16_H
 #define GA_TYPE__COLLISIONS__AABB__UPDATE__ACC_I16_H
 
-#ifndef DEFINES_H
-#include <defines.h>
-#endif
+#include "game_action/types/core/collisions/aabb/ga_type__collisions__aabb__update__pos_vec_i32.h"
+#include "game_action/types/core/collisions/aabb/ga_type__collisions__aabb__update__pos_vec_i32F4.h"
 
-#include <util/custom_type_macro.h>
-
-LAV_TYPE__BEGIN(GA_AABB__Update__Acc_I16){
-    Vector__3i16 acceleration__3i16;
-} GA_AABB__Update__Acc_I16;
+#include "game_action/types/core/collisions/aabb/ga_type__collisions__aabb__update__acc_i16.h"
+#include "game_action/types/core/collisions/aabb/ga_type__collisions__aabb__update__acc_i16F4.h"
+#include "game_action/types/core/collisions/aabb/ga_type__collisions__aabb__update__acc_i16F8.h"
 
 #endif
