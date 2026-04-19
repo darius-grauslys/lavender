@@ -165,6 +165,7 @@ LAV_UNION__BEGIN(${struct_name}){
     };
 
 #ifdef INJECTION_ACTIVE__${injection_tag}
+#undef INJECTION_ACTIVE__${injection_tag}
 #undef INJECTION_ACTIVE
 #endif
 
