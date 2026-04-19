@@ -18,16 +18,47 @@
 set -e
 
 ##############################################################################
+# Verbosity & Argument Parsing
+##############################################################################
+
+VERBOSE=false
+
+POSITIONAL_ARGS=()
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -v|--verbose)
+            VERBOSE=true
+            shift
+            ;;
+        -*)
+            echo "Unknown option: $1" >&2
+            echo "Usage: $0 [-v|--verbose] <relative/path/to/leaf.h>" >&2
+            exit 1
+            ;;
+        *)
+            POSITIONAL_ARGS+=("$1")
+            shift
+            ;;
+    esac
+done
+
+function log_verbose() {
+    if [ "$VERBOSE" = true ]; then
+        echo "$@"
+    fi
+}
+
+##############################################################################
 # Validation
 ##############################################################################
 
-if [ "$#" -ne 1 ]; then
-    echo "Usage: $0 <relative/path/to/leaf.h>"
-    echo "Example: $0 collisions/aabb/update__pos_vec_i32.h"
+if [ "${#POSITIONAL_ARGS[@]}" -ne 1 ]; then
+    echo "Usage: $0 [-v|--verbose] <relative/path/to/leaf.h>" >&2
+    echo "Example: $0 collisions/aabb/update__pos_vec_i32.h" >&2
     exit 1
 fi
 
-REL_PATH="$1"
+REL_PATH="${POSITIONAL_ARGS[0]}"
 
 if [[ "$REL_PATH" != *.h ]]; then
     echo "Error: path must end with .h"
@@ -485,7 +516,7 @@ for (( i=0; i<${#DIR_PARTS[@]}; i++ )); do
     fi
 
     if [ ! -f "$UNION_HEADER_PATH" ]; then
-        echo "Generating union header: $UNION_HEADER_PATH"
+        log_verbose "Generating union header: $UNION_HEADER_PATH"
         generate_union_header "$UNION_HEADER_PATH" "$ACCUMULATED_PREFIX" \
             "$GUARD_NAME" "$STRUCT_NAME" "$INJECTION_TAG"
     fi
@@ -494,7 +525,7 @@ for (( i=0; i<${#DIR_PARTS[@]}; i++ )); do
     if [ -f "$UNION_HEADER_PATH" ]; then
         UNION_FIELDS="$(parse_fields "$UNION_HEADER_PATH")"
         if [ -n "$UNION_FIELDS" ]; then
-            echo "Generating accessors for union fields in ${UNION_HEADER_PATH}"
+            log_verbose "Generating accessors for union fields in ${UNION_HEADER_PATH}"
             while IFS= read -r field_line; do
                 FIELD_TYPE="$(echo "$field_line" | cut -d'|' -f1)"
                 FIELD_NAME="$(echo "$field_line" | cut -d'|' -f2)"
@@ -525,7 +556,7 @@ for (( i=0; i<${#DIR_PARTS[@]}; i++ )); do
         INCLUDE_LINE="#include \"game_action/types/implemented/${INCLUDE_DIR_PATH}/${UNION_HEADER_NAME}\""
 
         if [ -f "$PARENT_HEADER_PATH" ]; then
-            echo "Ensuring include of ${UNION_HEADER_NAME} in ${PARENT_HEADER_PATH}"
+            log_verbose "Ensuring include of ${UNION_HEADER_NAME} in ${PARENT_HEADER_PATH}"
             ensure_include_in_gen_region "$PARENT_HEADER_PATH" "$INCLUDE_LINE" || true
         fi
     fi
@@ -555,7 +586,7 @@ LEAF_IMPL_GUARD="GA_TYPE__${UPPER_LEAF_PREFIX}_IMPL_H"
 LEAF_STRUCT_NAME="$(to_struct_name "$LEAF_PREFIX" "type")"
 
 if [ ! -f "$LEAF_HEADER_PATH" ]; then
-    echo "Generating leaf header: $LEAF_HEADER_PATH"
+    log_verbose "Generating leaf header: $LEAF_HEADER_PATH"
     generate_leaf_header "$LEAF_HEADER_PATH" "$LEAF_PREFIX" \
         "$LEAF_GUARD" "$LEAF_STRUCT_NAME" "$LEAF_IMPL_GUARD"
 fi
@@ -578,7 +609,7 @@ if [ ${#DIR_PARTS[@]} -gt 0 ]; then
     LEAF_INCLUDE_LINE="#include \"game_action/types/implemented/${INCLUDE_DIR_PATH}/${LEAF_HEADER_NAME}\""
 
     if [ -f "$PARENT_UNION_HEADER_PATH" ]; then
-        echo "Ensuring include of ${LEAF_HEADER_NAME} in ${PARENT_UNION_HEADER_PATH}"
+        log_verbose "Ensuring include of ${LEAF_HEADER_NAME} in ${PARENT_UNION_HEADER_PATH}"
         ensure_include_in_gen_region "$PARENT_UNION_HEADER_PATH" "$LEAF_INCLUDE_LINE" || true
     fi
 fi
@@ -588,7 +619,7 @@ fi
 if [ -f "$LEAF_HEADER_PATH" ]; then
     FIELDS="$(parse_fields "$LEAF_HEADER_PATH")"
     if [ -n "$FIELDS" ]; then
-        echo "Generating accessors for fields in ${LEAF_HEADER_PATH}"
+        log_verbose "Generating accessors for fields in ${LEAF_HEADER_PATH}"
         while IFS= read -r field_line; do
             FIELD_TYPE="$(echo "$field_line" | cut -d'|' -f1)"
             FIELD_NAME="$(echo "$field_line" | cut -d'|' -f2)"
@@ -598,7 +629,7 @@ if [ -f "$LEAF_HEADER_PATH" ]; then
             fi
         done <<< "$FIELDS"
     else
-        echo "No fields found in ${LEAF_HEADER_PATH}. Add fields between FIELDS-BEGIN and FIELDS-END, then re-run."
+        log_verbose "No fields found in ${LEAF_HEADER_PATH}. Add fields between FIELDS-BEGIN and FIELDS-END, then re-run."
     fi
 fi
 
@@ -606,19 +637,20 @@ fi
 IMPLEMENTED_HEADER="${BASE_DIR}/ga_types__implemented.h"
 if [ -n "$ROOT_UNION_HEADER_NAME" ] && [ -f "$IMPLEMENTED_HEADER" ]; then
     ROOT_INCLUDE_LINE="#include \"game_action/types/implemented/${ROOT_UNION_DIR_PATH}/${ROOT_UNION_HEADER_NAME}\""
-    echo "Ensuring include of ${ROOT_UNION_HEADER_NAME} in ${IMPLEMENTED_HEADER}"
+    log_verbose "Ensuring include of ${ROOT_UNION_HEADER_NAME} in ${IMPLEMENTED_HEADER}"
     ensure_include_in_gen_region "$IMPLEMENTED_HEADER" "$ROOT_INCLUDE_LINE" || true
 elif [ -n "$ROOT_UNION_HEADER_NAME" ] && [ ! -f "$IMPLEMENTED_HEADER" ]; then
-    echo "Warning: ${IMPLEMENTED_HEADER} not found. Cannot add root include."
+    log_verbose "Warning: ${IMPLEMENTED_HEADER} not found. Cannot add root include."
 elif [ ${#DIR_PARTS[@]} -eq 0 ]; then
     # Leaf directly under implemented/ — include the leaf itself
     LEAF_INCLUDE_FOR_ROOT="#include \"game_action/types/implemented/${LEAF_HEADER_NAME}\""
     if [ -f "$IMPLEMENTED_HEADER" ]; then
-        echo "Ensuring include of ${LEAF_HEADER_NAME} in ${IMPLEMENTED_HEADER}"
+        log_verbose "Ensuring include of ${LEAF_HEADER_NAME} in ${IMPLEMENTED_HEADER}"
         ensure_include_in_gen_region "$IMPLEMENTED_HEADER" "$LEAF_INCLUDE_FOR_ROOT" || true
     else
-        echo "Warning: ${IMPLEMENTED_HEADER} not found. Cannot add root include."
+        log_verbose "Warning: ${IMPLEMENTED_HEADER} not found. Cannot add root include."
     fi
 fi
 
-echo "Done."
+# Output the leaf header path relative to pwd on success
+echo "${LEAF_HEADER_PATH}"
