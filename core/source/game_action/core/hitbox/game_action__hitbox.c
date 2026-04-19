@@ -16,7 +16,14 @@
 #include "world/global_space.h"
 #include "world/global_space_manager.h"
 #include "world/world.h"
+#include "game_action/types/core/collisions/ga_types__collisions.h"
 #include "game_action/types/core/collisions/aabb/ga_types__aabb.h"
+
+#include "game_action/types/core/collisions/aabb/ga_type__collisions__aabb__update__pos_vec_i32.h"
+#include "game_action/types/core/collisions/aabb/ga_type__collisions__aabb__update__pos_vec_i32F4.h"
+#include "game_action/types/core/collisions/aabb/ga_type__collisions__aabb__update__acc_i16.h"
+#include "game_action/types/core/collisions/aabb/ga_type__collisions__aabb__update__acc_i16F4.h"
+#include "game_action/types/core/collisions/aabb/ga_type__collisions__aabb__update__acc_i16F8.h"
 
 void m_process__game_action__hitbox(
         Process *p_this_process,
@@ -29,7 +36,7 @@ void m_process__game_action__hitbox(
         get_pV_hitbox_from__hitbox_context(
                 get_p_hitbox_context_from__game(p_game), 
                 GET_UUID_P(get_p_world_from__game(p_game)),
-                p_game_action->ga_kind__hitbox__uuid_of__target);
+                get_uuid_of__target_from__ga_collisions(p_game_action));
 
     if (!pV_hitbox) {
         debug_error("m_process__game_action__hitbox, pV_hitbox == 0.");
@@ -38,14 +45,15 @@ void m_process__game_action__hitbox(
     }
 
     Hitbox_Kind the_kind_of__hitbox =
-        p_game_action->ga_kind__hitbox__the_kind_of__hitbox;
+        get_the_kind_of_hitbox_from__ga_collisions(p_game_action);
 
     Vector__3i32F4 position_of__hitbox__3i32F4 = 
-        p_game_action->ga_kind__hitbox__position__3i32F4;
+        get_position_3i32F4_from__ga_aabb__update__pos_vec_i32F4(p_game_action);
     Vector__3i32F4 velocity_of__hitbox__3i32F4 = 
-        p_game_action->ga_kind__hitbox__velocity__3i32F4;
+        get_velocity_3i32F4_from__ga_aabb__update__pos_vec_i32F4(p_game_action);
     Vector__3i16F8 acceleration_of__hitbox__3i16F8 = 
-        p_game_action->ga_kind__hitbox__acceleration__3i16F8;
+        get_acceleration_3i16F8_from__ga_aabb__update__acc_i16F8(
+                p_game_action);
 
     Vector__3i32F4 position_OLD_of__hitbox__3i32F4;
 
@@ -56,7 +64,7 @@ void m_process__game_action__hitbox(
             opaque_access_to__hitbox(
                     get_p_hitbox_context_from__game(p_game), 
                     GET_UUID_P(get_p_world_from__game(p_game)), 
-                    p_game_action->ga_kind__hitbox__uuid_of__target, 
+                    get_uuid_of__target_from__ga_collisions(p_game_action), 
                     0, 
                     &position_OLD_of__hitbox__3i32F4,
                     0,
@@ -67,7 +75,7 @@ void m_process__game_action__hitbox(
             opaque_access_to__hitbox(
                     get_p_hitbox_context_from__game(p_game), 
                     GET_UUID_P(get_p_world_from__game(p_game)), 
-                    p_game_action->ga_kind__hitbox__uuid_of__target, 
+                    get_uuid_of__target_from__ga_collisions(p_game_action), 
                     0, 
                     &position_of__hitbox__3i32F4,
                     &velocity_of__hitbox__3i32F4,
@@ -84,21 +92,21 @@ void m_process__game_action__hitbox(
                         p_hitbox_aabb);
             set_hitbox_aabb__position_with__3i32F4(
                     p_hitbox_aabb, 
-                    p_game_action->ga_kind__hitbox__position__3i32F4);
+                    position_of__hitbox__3i32F4);
             set_velocity_to__hitbox_aabb(
                     p_hitbox_aabb, 
-                    p_game_action->ga_kind__hitbox__velocity__3i32F4);
+                    velocity_of__hitbox__3i32F4);
             set_acceleration_to__hitbox_aabb(
                     p_hitbox_aabb, 
-                    p_game_action->ga_kind__hitbox__acceleration__3i16F8);
+                    acceleration_of__hitbox__3i16F8);
             break;
     }
 
     poll_for_collision_node_update(
             p_game, 
             position_OLD_of__hitbox__3i32F4, 
-            p_game_action->ga_kind__hitbox__position__3i32F4, 
-            p_game_action->ga_kind__hitbox__uuid_of__target);
+            position_of__hitbox__3i32F4, 
+            get_uuid_of__target_from__ga_collisions(p_game_action));
 
     complete_process(p_this_process);
 }
@@ -150,14 +158,15 @@ void initialize_game_action_for__hitbox(
     set_the_kind_of__game_action(
             p_game_action, 
             Game_Action_Kind__Hitbox);
-    p_game_action->ga_kind__hitbox__uuid_of__target =
+    *get_p_uuid_of__target_from__ga_collisions(p_game_action) =
         uuid_of__target__u32;
-    p_game_action->ga_kind__hitbox__position__3i32F4 =
+    *get_p_position_3i32F4_from__ga_aabb__update__pos_vec_i32F4(p_game_action) =
         position__3i32F4;
-    p_game_action->ga_kind__hitbox__velocity__3i32F4 = 
+    *get_p_velocity_3i32F4_from__ga_aabb__update__pos_vec_i32F4(p_game_action) =
         velocity__3i32F4;
-    p_game_action->ga_kind__hitbox__acceleration__3i16F8 =
+    *get_p_acceleration_3i16F8_from__ga_aabb__update__acc_i16F8(
+            p_game_action) =
         acceleration__3i16F8;
-    p_game_action->ga_kind__hitbox__the_kind_of__hitbox =
+    *get_p_the_kind_of_hitbox_from__ga_collisions(p_game_action) =
         the_kind_of__hitbox;
 }

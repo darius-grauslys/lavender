@@ -10,6 +10,7 @@
 #include "multiplayer/tcp_socket_manager.h"
 #include "platform.h"
 #include "platform_defaults.h"
+#include "game_action/types/core/tcp/ga_type__tcp__connect_begin.h"
 
 void handle_pending_connection(
         Game *p_game,
@@ -35,9 +36,9 @@ void handle_pending_connection(
         case Game_Action_Kind__TCP_Connect:
             receive_game_action__connect(
                     p_game, 
-                    delivery
-                    .ga_connect
-                    .ga_kind__tcp_connect__session_token);
+                    get_session_token_from__ga_tcp_connect__begin(
+                        &delivery.ga_connect).session_token
+                    );
             break;
     }
 }

@@ -7,11 +7,16 @@
 
 LAV_UNION__BEGIN(GA_World){
 
+#ifndef INJECTION_ACTIVE
 #define INJECTION_ACTIVE
+#define INJECTION_ACTIVE__WORLD
+#endif
 
 #include "game_action/types/core/world/load/ga_types__world__load.h"
 
+#ifdef INJECTION_ACTIVE__WORLD
 #undef INJECTION_ACTIVE
+#endif
 
 } GA_World;
 

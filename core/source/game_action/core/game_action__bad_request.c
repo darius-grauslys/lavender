@@ -8,6 +8,7 @@
 #include "game_action/game_action_manager.h"
 #include "process/game_action_process.h"
 #include "serialization/serialization_header.h"
+#include "game_action/types/core/ga_type__bad_request.h"
 
 void m_process__game_action__bad_request__inbound(
         Process *p_this_process,
@@ -65,6 +66,6 @@ void initialize_game_action_for__bad_request(
         get_client_uuid_from__game_action(p_game_action__responding_to);
     p_game_action->uuid_of__game_action__responding_to =
         GET_UUID_P(p_game_action__responding_to);
-    p_game_action->ga_kind__bad_request__request_error_code =
+    *get_p_error_code_u32_from__ga_bad_request(p_game_action) =
         bad_request__code__u32;
 }
