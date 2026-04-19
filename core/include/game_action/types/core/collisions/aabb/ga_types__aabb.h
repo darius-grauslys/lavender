@@ -26,5 +26,5 @@ LAV_UNION__BEGIN(GA_AABB){
 
 } GA_AABB;
 
-#define GA_TYPE_CONTEXT
+#undef GA_TYPE_CONTEXT
 #endif

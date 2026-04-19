@@ -21,4 +21,29 @@ LAV_UNION__BEGIN(GA_Collisions){
 } GA_Collisions;
 
 #undef GA_TYPE_CONTEXT
-#endif
+#endif // Header guard
+
+#ifndef INJECTION_ACTIVE
+#ifndef GA_TYPES__COLLISIONS_IMPL_H
+#define GA_TYPES__COLLISIONS_IMPL_H
+
+static inline
+Identifier__u32 get_uuid_of__target_from__ga_collisions(
+        Game_Action *p_game_action) {
+    return p_game_action
+        ->GA_Collisions
+        .uuid_of__target
+        ;
+}
+
+static inline
+Identifier__u32 *get_p_uuid_of__target_from__ga_collisions(
+        Game_Action *p_game_action) {
+    return &p_game_action
+        ->GA_Collisions
+        .uuid_of__target
+        ;
+}
+
+#endif // Impl Header guard
+#endif // INJECTION_ACTIVE
