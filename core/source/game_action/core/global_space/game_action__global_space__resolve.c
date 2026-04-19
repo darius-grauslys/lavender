@@ -16,6 +16,7 @@
 #include "world/global_space_manager.h"
 #include "world/serialization/world_directory.h"
 #include "world/world.h"
+#include "game_action/types/core/global_space/ga_type__global_space__resolve.h"
 
 void m_process__dispose_handler__game_action__global_space__resolve(
         Process *p_this_process,
@@ -35,8 +36,7 @@ void m_process__game_action__global_space__resolve(
         (Game_Action*)p_this_process->p_process_data;
 
     Global_Space_Vector__3i32 gsv__3i32 =
-        p_game_action
-        ->ga_kind__global_space__resolve__gsv__3i32;
+        *get_p_gsv_3i32_from__ga_global_space__resolve(p_game_action);
 
     World *p_world = get_p_world_from__game(p_game);
     Process_Manager *p_process_manager =
@@ -190,7 +190,6 @@ void initialize_game_action_for__global_space__resolve(
     set_the_kind_of__game_action(
             p_game_action, 
             Game_Action_Kind__Global_Space__Resolve);
-    p_game_action
-        ->ga_kind__global_space__resolve__gsv__3i32=
+    *get_p_gsv_3i32_from__ga_global_space__resolve(p_game_action) =
         global_space_vector__3i32;
 }

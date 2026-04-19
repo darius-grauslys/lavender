@@ -11,6 +11,8 @@
 #include "process/process.h"
 #include "serialization/serialization_header.h"
 #include "game_action/core/tcp/game_action__tcp_connect.h"
+#include "game_action/core/tcp/game_action__tcp_begin_connect.h"
+#include "game_action/types/core/tcp/ga_type__tcp__connect_begin.h"
 
 void m_process__game_action__tcp_connect__begin(
         Process *p_this_process,
@@ -19,12 +21,15 @@ void m_process__game_action__tcp_connect__begin(
 
     Game_Action *p_game_action =
         (Game_Action*)p_this_process->p_process_data;
+
+    Session_Token session_token =
+        get_session_token_from__ga_tcp_connect__begin(p_game_action);
+
     TCP_Socket *p_tcp_socket =
         get_p_tcp_socket_for__this_uuid(
                 get_p_tcp_socket_manager_from__game(p_game), 
                 get_uuid_u32_of__session_token_player_uuid_u64(
-                    p_game_action
-                    ->ga_kind__tcp_connect__begin__session_token));
+                    session_token));
     switch (get_state_of__tcp_socket(p_tcp_socket)) {
         default:
             break;
@@ -73,8 +78,7 @@ void m_process__game_action__tcp_connect__begin(
             dispatch_game_action__connect(
                     p_game, 
                     get_uuid_u32_of__session_token_player_uuid_u64(
-                        p_game_action
-                        ->ga_kind__tcp_connect__begin__session_token)); 
+                        session_token)); 
             set_state_of__tcp_socket(
                     p_tcp_socket, 
                     TCP_Socket_State__Authenticating);
@@ -95,6 +99,12 @@ void m_process__game_action__tcp_connect__begin__init(
         Game *p_game) {
     Game_Action *p_game_action =
         (Game_Action*)p_this_process->p_process_data;
+
+    IPv4_Address ipv4 = 
+        get_ipv4_address_from__ga_tcp_connect__begin(p_game_action);
+    Session_Token session_token = 
+        get_session_token_from__ga_tcp_connect__begin(p_game_action);
+
     // TODO: Need to first determine if client exists in DB, then
     // load their resolved u32 uuid if they do, or otherwise
     // compress their u64 global uuid into u32(branded) and 
@@ -110,13 +120,11 @@ void m_process__game_action__tcp_connect__begin__init(
         get_p_client_by__uuid_from__game(
                 p_game, 
                 get_uuid_u32_of__session_token_player_uuid_u64(
-                    p_game_action
-                    ->ga_kind__tcp_connect__begin__session_token));
+                    session_token));
     TCP_Socket *p_tcp_socket =
         open_socket_on__tcp_socket_manager__ipv4(
                 get_p_tcp_socket_manager_from__game(p_game), 
-                p_game_action
-                ->ga_kind__tcp_connect__begin__ipv4_address, 
+                ipv4, 
                 GET_UUID_P(p_client));
 
     set_tcp_socket_as__manually_driven(p_tcp_socket);
@@ -153,8 +161,9 @@ void initialize_game_action_for__tcp_connect__begin(
     set_the_kind_of__game_action(
             p_game_action, 
             Game_Action_Kind__TCP_Connect__Begin);
-    p_game_action->ga_kind__tcp_connect__begin__ipv4_address =
+
+    *get_p_ipv4_address_from__ga_tcp_connect__begin(p_game_action) =
         ipv4_address;
-    p_game_action->ga_kind__tcp_connect__begin__session_token =
+    *get_p_session_token_from__ga_tcp_connect__begin(p_game_action) =
         session_token;
 }

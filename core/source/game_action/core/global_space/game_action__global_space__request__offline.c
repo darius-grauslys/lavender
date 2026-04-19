@@ -11,6 +11,7 @@
 #include "serialization/serialization_header.h"
 #include "world/global_space.h"
 #include "world/global_space_manager.h"
+#include "game_action/types/core/global_space/ga_type__global_space__request.h"
 
 void m_process__game_action__global_space__request__outbound_offline(
         Process *p_this_process,
@@ -18,8 +19,7 @@ void m_process__game_action__global_space__request__outbound_offline(
     Game_Action *p_game_action =
         (Game_Action*)p_this_process->p_process_data;
     Vector__3i32 gsv__3i32 =
-        p_game_action
-        ->ga_kind__global_space__request__gsv_3i32;
+        get_gsv_3i32_from__ga_global_space__request(p_game_action);
     complete_process(p_this_process);
 
     Global_Space *p_global_space =

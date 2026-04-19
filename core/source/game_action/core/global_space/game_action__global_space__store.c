@@ -11,6 +11,7 @@
 #include "world/global_space.h"
 #include "world/global_space_manager.h"
 #include "world/serialization/world_directory.h"
+#include "game_action/types/core/global_space/ga_type__global_space__store.h"
 
 void m_process__game_action__global_space__store(
         Process *p_this_process,
@@ -22,7 +23,7 @@ void m_process__game_action__global_space__store(
     Global_Space *p_global_space =
         get_p_global_space_from__global_space_manager(
                 get_p_global_space_manager_from__game(p_game), 
-                p_game_action->ga_kind__global_space__store__gsv__3i32);
+                *get_p_gsv_3i32_from__ga_global_space__store(p_game_action));
     
     if (!p_global_space) {
         debug_error("m_process__game_action__global_space__store [%p], p_global_space == 0.",
@@ -89,7 +90,6 @@ void initialize_game_action_for__global_space__store(
     set_the_kind_of__game_action(
             p_game_action, 
             Game_Action_Kind__Global_Space__Store);
-    p_game_action
-        ->ga_kind__global_space__store__gsv__3i32=
+    *get_p_gsv_3i32_from__ga_global_space__store(p_game_action) =
         global_space_vector__3i32;
 }

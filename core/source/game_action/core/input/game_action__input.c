@@ -10,6 +10,7 @@
 #include "process/process.h"
 #include "types/implemented/game_action_kind.h"
 #include <string.h>
+#include "game_action/types/core/input/ga_type__input.h"
 
 void m_process__game_action__input__inbound_server(
         Process *p_this_process,
@@ -35,8 +36,7 @@ void m_process__game_action__input__inbound_server(
 
     copy_input_into__client(
             p_client, 
-            &p_game_action
-            ->ga_kind__input__input);
+            get_p_input_from__game_action(p_game_action));
 
     complete_process(p_this_process);
 }
@@ -97,7 +97,7 @@ void initialize_game_action_for__input(
     p_game_action->ga_kind__input__input.input_flags__held =
         p_input->input_flags__released;
 #else
-    p_game_action->ga_kind__input__input =
+    *get_p_input_from__game_action(p_game_action) =
         *p_input;
 #endif
 }

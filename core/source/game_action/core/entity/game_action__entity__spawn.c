@@ -10,6 +10,7 @@
 #include "game_action/game_action_logic_table.h"
 #include "process/process.h"
 #include "types/implemented/game_action_kind.h"
+#include "game_action/types/core/entity/ga_type__entity__payload.h"
 
 void m_process__game_action__entity__spawn__inbound_client(
         Process *p_this_process,
@@ -19,7 +20,7 @@ void m_process__game_action__entity__spawn__inbound_client(
     Entity *p_entity =
        get_p_entity_by__uuid_from__entity_manager(
                get_p_entity_manager_from__game(p_game), 
-               p_game_action->ga_kind__entity__uuid);
+               get_uuid_u32_of__entity_from__ga_entity__payload(p_game_action));
 
     if (p_entity) {
         // assume the local entity data got corrupted
@@ -32,7 +33,7 @@ void m_process__game_action__entity__spawn__inbound_client(
 
     dispatch_game_action__entity__get(
             p_game,
-            p_game_action->ga_kind__entity__uuid);
+            get_the_kind_of__entity_from__ga_entity__payload(p_game_action));
     complete_process(p_this_process);
 }
 
@@ -44,7 +45,7 @@ void m_process__game_action__entity__spawn__outbound_server(
     Entity *p_entity =
        get_p_entity_by__uuid_from__entity_manager(
                get_p_entity_manager_from__game(p_game), 
-               p_game_action->ga_kind__entity__uuid);
+               get_uuid_u32_of__entity_from__ga_entity__payload(p_game_action));
 
     if (p_entity) {
         debug_error("m_process__game_action__entity__spawn__outbound_server, p_entity already allocated for this uuid.");
@@ -57,7 +58,7 @@ void m_process__game_action__entity__spawn__outbound_server(
                 p_game, 
                 get_p_world_from__game(p_game), 
                 get_p_entity_manager_from__game(p_game), 
-                p_game_action->ga_kind__entity__the_kind_of__entity);
+                get_the_kind_of__entity_from__ga_entity__payload(p_game_action));
 
     if (!p_entity) {
         debug_error("m_process__game_action__entity__spawn__outbound_server, failed to allocate entity.");
@@ -107,7 +108,9 @@ void initialize_game_action_for__entity__spawn(
     set_the_kind_of__game_action(
             p_game_action, 
             Game_Action_Kind__Entity__Spawn);
-    p_game_action->ga_kind__entity__uuid = uuid_of__target__u32;
-    p_game_action->ga_kind__entity__the_kind_of__entity = the_kind_of__entity;
+    *get_p_uuid_u32_of__entity_from__ga_entity__payload(p_game_action) =
+        uuid_of__target__u32;
+    *get_p_the_kind_of__entity_from__ga_entity__payload(p_game_action) = 
+        the_kind_of__entity;
 }
 

@@ -2258,6 +2258,23 @@ typedef struct _Game_Action_Header_t {
     Game_Action_Flags game_action_flags;
 } _Game_Action_Header;
 
+
+#define GA_KIND__TCP_DELIVERY__PAYLOAD_SIZE_IN__BYTES\
+                (sizeof(TCP_Packet)\
+                - sizeof(_Game_Action_Header)\
+                - sizeof(uint64_t))
+#define TCP_PAYLOAD_BITMAP__QUANTITY_OF__PAYLOADS(type)\
+                ((sizeof(type)\
+                        + GA_KIND__TCP_DELIVERY__PAYLOAD_SIZE_IN__BYTES)\
+                        / GA_KIND__TCP_DELIVERY__PAYLOAD_SIZE_IN__BYTES)
+#define TCP_PAYLOAD_BITMAP__QUANTITY_OF__BYTES(type)\
+                (TCP_PAYLOAD_BITMAP__QUANTITY_OF_PAYLOADS\
+                    * GA_KIND__TCP_DELIVERY__PAYLOAD_SIZE_IN__BYTES)
+#define TCP_PAYLOAD_BITMAP(type, name)\
+                u8 name[TCP_PAYLOAD_BITMAP__QUANTITY_OF__PAYLOADS(type)]
+#define TCP_PAYLOAD_BIT(index) (index & MASK(3))
+#define TCP_PAYLOAD_BYTE(index) (index >> 3)
+
 ///
 /// Game actions are invoked using the m_Process signature.
 /// If your game action is NOT processed, then m_process will
@@ -2292,168 +2309,14 @@ typedef struct Game_Action_t {
         _Game_Action_Header _game_action_header;
     };
 
-    ///
-    /// Extend Game_Action here:
-    ///
     union {
-        /// ------------
-        ///     General
-        /// ------------
-        struct {
-            uint32_t ga_kind__bad_request__request_error_code;
-        };
-
-        /// ------------
-        ///     TCP
-        /// ------------
-
-        union {
-            struct {
-                IPv4_Address ga_kind__tcp_connect__begin__ipv4_address;
-                Session_Token ga_kind__tcp_connect__begin__session_token;
-            }; // Connect__Begin
-            struct {
-                Identifier__u64 ga_kind__tcp_connect__session_token;
-            }; // Connect
-            struct {
-#define GA_KIND__TCP_DELIVERY__PAYLOAD_SIZE_IN__BYTES\
-                (sizeof(TCP_Packet)\
-                - sizeof(_Game_Action_Header)\
-                - sizeof(uint64_t))
-#define TCP_PAYLOAD_BITMAP__QUANTITY_OF__PAYLOADS(type)\
-                ((sizeof(type)\
-                        + GA_KIND__TCP_DELIVERY__PAYLOAD_SIZE_IN__BYTES)\
-                        / GA_KIND__TCP_DELIVERY__PAYLOAD_SIZE_IN__BYTES)
-#define TCP_PAYLOAD_BITMAP__QUANTITY_OF__BYTES(type)\
-                (TCP_PAYLOAD_BITMAP__QUANTITY_OF_PAYLOADS\
-                    * GA_KIND__TCP_DELIVERY__PAYLOAD_SIZE_IN__BYTES)
-#define TCP_PAYLOAD_BITMAP(type, name)\
-                u8 name[TCP_PAYLOAD_BITMAP__QUANTITY_OF__PAYLOADS(type)]
-#define TCP_PAYLOAD_BIT(index) (index & MASK(3))
-#define TCP_PAYLOAD_BYTE(index) (index >> 3)
-                u8 ga_kind__tcp_delivery__payload[
-                    GA_KIND__TCP_DELIVERY__PAYLOAD_SIZE_IN__BYTES];
-                Quantity__u16 ga_kind__tcp_delivery__packet_index;
-            }; // Delivery
-        }; // TCP
-
-        /// ------------
-        /// </  TCP    >
-        /// ------------
-
-        /// --------------
-        ///     World
-        /// --------------
-
-        union {
-            struct {
-                Identifier__u32 ga_kind__world__load_world__uuid_of__client__u32;
-            }; // Load_World, Load_Client
-        };
-
-        /// --------------
-        /// </  World    >
-        /// --------------
-
-        /// ---------------------
-        ///     Global_Space
-        /// ---------------------
-
-        union {
-            struct {
-                Global_Space_Vector__3i32 
-                    ga_kind__global_space__request__gsv_3i32;
-                TCP_PAYLOAD_BITMAP(Chunk, 
-                        ga_kind__global_space__request__chunk_payload_bitmap);
-                // in seconds:
-#define GA_KIND__GBLOAL_SPACE__REQUEST__TIMEOUT 4
-                Timer__u32 ga_kind__global_space__request__timeout;
-            }; // Global_Space__Request
-            struct {
-                Global_Space_Vector__3i32 
-                    ga_kind__global_space__resolve__gsv__3i32;
-            }; // Global_Space__Resolve
-            struct {
-                Global_Space_Vector__3i32 
-                    ga_kind__global_space__store__gsv__3i32;
-            }; // Global_Space__Store
-        }; // Global_Space
-
-        /// ---------------------
-        /// </   Global_Space   >
-        /// ---------------------
-
-        /// ---------------------
-        ///     Hitbox
-        /// ---------------------
-
-        union {
-            struct {
-                Identifier__u32 
-                    ga_kind__hitbox__uuid_of__target; 
-                union {
-                    struct { // components 3i32
-                        Vector__3i32
-                            ga_kind__hitbox__position__3i32;
-                        Vector__3i32 
-                            ga_kind__hitbox__velocity__3i32;
-                    }; // components 3i32
-                    struct { // components 3i32F4
-                        Vector__3i32F4 
-                            ga_kind__hitbox__position__3i32F4;
-                        Vector__3i32F4 
-                            ga_kind__hitbox__velocity__3i32F4;
-                    }; // components 3i32F4
-                };
-                union {
-                    struct { // components 3i16
-                        Vector__3i16 
-                            ga_kind__hitbox__acceleration__3i16;
-                    }; // components 3i16
-                    struct { // components 3i16F4
-                    }; // components 3i16F4
-                    struct { // components 3i16F8
-                        Vector__3i16F8 
-                            ga_kind__hitbox__acceleration__3i16F8;
-                    }; // components 3i16F8
-                };
-                Hitbox_Kind ga_kind__hitbox__the_kind_of__hitbox;
-            }; // Hitbox__Update
-        }; // Hitbox
-
-        /// ---------------------
-        /// </   Hitbox_AABB   >
-        /// ---------------------
-        /// ---------------------
-        /// <       Input      >
-        /// ---------------------
-
-        union {
-            struct {
-                Input ga_kind__input__input;
-            }; // Input
-        };
-
-        /// ---------------------
-        /// </      Input      >
-        /// ---------------------
-        /// ---------------------
-        /// <       Entity     >
-        /// ---------------------
-
-        union {
-            struct {
-                TCP_PAYLOAD_BITMAP(Entity, 
-                        ga_kind__entity__get__entity_data_payload_bitmap);
-                Identifier__u32 ga_kind__entity__uuid;
-                Entity_Kind ga_kind__entity__the_kind_of__entity;
-            }; // Entity
-        };
-
-        /// ---------------------
-        /// </      Entity     >
-        /// ---------------------
+#ifndef GA_TYPE_CONTEXT
+#define INJECTION_ACTIVE
+#include <game_action/types/core/ga_types__core.h>
+#undef INJECTION_ACTIVE
+#endif
     };
+
 } Game_Action;
 
 #ifndef MAX_QUANTITY_OF__GAME_ACTIONS

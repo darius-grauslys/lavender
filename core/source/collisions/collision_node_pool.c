@@ -122,16 +122,8 @@ Collision_Node_Entry *allocate_collision_node_entry_from__collision_node_pool(
 
         if (!is_identifier_u32__invalid(
                     p_collision_node_entry->uuid_of__hitbox__u32)) {
-            // Slot is either fully allocated (real UUID) or provisionally
-            // reserved (IDENTIFIER__RESERVED__u32). Either way, skip it.
             continue;
         }
-
-        // Bug 3 fix: stamp the slot with the reserved sentinel immediately
-        // so that a subsequent call before the caller sets the real UUID
-        // cannot return the same slot again.
-        p_collision_node_entry->uuid_of__hitbox__u32 =
-            IDENTIFIER__RESERVED__u32;
 
         return p_collision_node_entry;
     }

@@ -14,6 +14,7 @@
 #include "types/implemented/entity_data.h"
 #include "types/implemented/game_action_kind.h"
 #include "world/world.h"
+#include "game_action/types/core/entity/ga_type__entity__payload.h"
 
 void m_process__game_action__entity__get__inbound_server(
         Process *p_this_process,
@@ -23,7 +24,8 @@ void m_process__game_action__entity__get__inbound_server(
     Entity *p_entity =
         get_p_entity_by__uuid_from__entity_manager(
                 get_p_entity_manager_from__game(p_game), 
-                p_game_action->ga_kind__entity__uuid);
+                get_uuid_u32_of__entity_from__ga_entity__payload(
+                    p_game_action));
 
     if (!p_entity) {
         dispatch_game_action__bad_request(
@@ -41,8 +43,7 @@ void m_process__game_action__entity__get__inbound_server(
                 p_game_action->_serialiation_header.uuid, 
                 (u8*)&p_entity->entity_data, 
                 sizeof(Entity_Data), 
-                p_game_action
-                    ->ga_kind__entity__get__entity_data_payload_bitmap, 
+                get_p_tcp_payload_bitmap__ga_entity__payload(p_game_action),
                 (u16)TCP_PAYLOAD_BITMAP__QUANTITY_OF__PAYLOADS(Entity_Data))) {
         case PLATFORM_Write_File_Error__Max_Size_Reached:
             break;
@@ -65,11 +66,9 @@ void m_process__game_action__entity__get__inbound_server__init(
         (Game_Action*)p_this_process->p_process_data;
 
     memset(
-            p_game_action
-            ->ga_kind__entity__get__entity_data_payload_bitmap,
+            get_p_tcp_payload_bitmap__ga_entity__payload(p_game_action),
             0,
-            sizeof(p_game_action
-                ->ga_kind__entity__get__entity_data_payload_bitmap));
+            SIZE_OF__TCP_PAYLOAD_BITMAP__ENTITY);
 
     p_this_process->m_process_run__handler =
         m_process__game_action__entity__get__inbound_server;
@@ -85,7 +84,7 @@ void m_process__game_action__entity__get__outbound_client(
     Entity *p_entity =
         get_p_entity_by__uuid_from__entity_manager(
                 get_p_entity_manager_from__game(p_game), 
-                p_game_action->ga_kind__entity__uuid);
+                get_uuid_u32_of__entity_from__ga_entity__payload(p_game_action));
 
     if (!p_entity) {
         debug_error("m_process__game_action__entity__get__outbound_client, p_entity == 0.");
@@ -99,8 +98,7 @@ void m_process__game_action__entity__get__outbound_client(
                 p_game_action->_serialiation_header.uuid, 
                 (u8*)&p_entity->entity_data, 
                 sizeof(Entity_Data), 
-                p_game_action
-                    ->ga_kind__entity__get__entity_data_payload_bitmap, 
+                get_p_tcp_payload_bitmap__ga_entity__payload(p_game_action), 
                 (u16)TCP_PAYLOAD_BITMAP__QUANTITY_OF__PAYLOADS(Entity_Data))) {
         case PLATFORM_Write_File_Error__Max_Size_Reached:
             break;
@@ -123,7 +121,7 @@ void m_process__game_action__entity__get__outbound_client__init(
     Game_Action *p_game_action =
         (Game_Action*)p_this_process->p_process_data;
     Identifier__u32 uuid__u32 =
-        p_game_action->ga_kind__entity__uuid;
+        get_uuid_u32_of__entity_from__ga_entity__payload(p_game_action);
     Entity *p_entity =
         get_p_entity_by__uuid_from__entity_manager(
                 get_p_entity_manager_from__game(p_game), 
@@ -210,6 +208,6 @@ void initialize_game_action_for__entity__get(
     set_the_kind_of__game_action(
             p_game_action, 
             Game_Action_Kind__Entity__Get);
-    p_game_action->ga_kind__entity__uuid =
+    *get_p_uuid_u32_of__entity_from__ga_entity__payload(p_game_action) =
         uuid_of__target__u32;
 }

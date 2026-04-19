@@ -16,6 +16,7 @@
 #include "world/global_space.h"
 #include "world/global_space_manager.h"
 #include "world/world.h"
+#include "game_action/types/core/collisions/aabb/ga_types__aabb.h"
 
 void m_process__game_action__hitbox(
         Process *p_this_process,

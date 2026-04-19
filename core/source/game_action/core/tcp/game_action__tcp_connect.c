@@ -15,6 +15,7 @@
 #include "process/game_action_process.h"
 #include "process/process.h"
 #include "world/local_space_manager.h"
+#include "game_action/types/core/tcp/ga_type__tcp__connect.h"
 
 enum _TCP_Connection_State {
     _TCP_Connection_State__Allocate_Client = 0,
@@ -32,7 +33,7 @@ void m_process__game_action__tcp_connect__inbound(
         (Game_Action*)p_this_process->p_process_data;
 
     Identifier__u64 session_token =
-        p_game_action->ga_kind__tcp_connect__session_token;
+        get_session_token_uuid_64_from__ga_tcp_connect(p_game_action);
     Identifier__u32 uuid__u32 = IDENTIFIER__UNKNOWN__u32;
 
     PLATFORM_TCP_Socket *p_PLATFORM_tcp_socket = 0;
@@ -170,7 +171,9 @@ void receive_game_action__connect(
     set_the_kind_of__game_action(
             &ga_connect, 
             Game_Action_Kind__TCP_Connect);
-    ga_connect.ga_kind__tcp_connect__session_token =
+#warning u32 sess token 
+    // TODO Why is a u32 session token being used here
+    *get_p_session_token_uuid_64_from__ga_tcp_connect(&ga_connect) =
         session_token;
 
     receive_game_action(
@@ -186,6 +189,6 @@ void initialize_game_action_for__tcp_connect(
     set_the_kind_of__game_action(
             p_game_action, 
             Game_Action_Kind__TCP_Connect);
-    p_game_action->ga_kind__tcp_connect__session_token =
+    *get_p_session_token_uuid_64_from__ga_tcp_connect(p_game_action) =
         session_token;
 }

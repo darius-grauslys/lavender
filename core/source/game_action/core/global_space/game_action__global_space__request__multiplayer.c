@@ -24,6 +24,7 @@
 #include "world/global_space_manager.h"
 #include "world/global_space.h"
 #include "process/game_action_process.h"
+#include "game_action/types/core/global_space/ga_type__global_space__request.h"
 
 void m_process__game_action__global_space__request__outbound_server(
         Process *p_this_process,
@@ -32,7 +33,7 @@ void m_process__game_action__global_space__request__outbound_server(
         (Game_Action*)p_this_process->p_process_data;
 
     Global_Space_Vector__3i32 *p_gsv__3i32 =
-        &p_game_action->ga_kind__global_space__request__gsv_3i32;
+        get_p_gsv_3i32_from__ga_global_space__request(p_game_action);
 
     Global_Space_Manager *p_global_space_manager =
         get_p_global_space_manager_from__world(
@@ -77,7 +78,7 @@ void m_process__game_action__global_space__request__outbound_server(
     complete_process(p_this_process);
     dispatch_game_action__global_space__resolve(
             p_game, 
-            p_game_action->ga_kind__global_space__request__gsv_3i32);
+            get_gsv_3i32_from__ga_global_space__request(p_game_action));
 }
 
 void m_process__game_action__global_space__request__inbound_server(
@@ -87,7 +88,7 @@ void m_process__game_action__global_space__request__inbound_server(
         (Game_Action*)p_this_process->p_process_data;
 
     Global_Space_Vector__3i32 *p_gsv__3i32 =
-        &p_game_action->ga_kind__global_space__request__gsv_3i32;
+        get_p_gsv_3i32_from__ga_global_space__request(p_game_action);
 
     Global_Space_Manager *p_global_space_manager =
         get_p_global_space_manager_from__world(
@@ -141,8 +142,8 @@ void m_process__game_action__global_space__request__inbound_server(
                 p_game_action->_serialiation_header.uuid, 
                 (u8*)&p_global_space->p_chunk->chunk_data, 
                 sizeof(Chunk_Data), 
-                p_game_action
-                    ->ga_kind__global_space__request__chunk_payload_bitmap, 
+                get_p_tcp_payload_bitmap_u8_from__ga_global_space__request(
+                    p_game_action),
                 (u16)TCP_PAYLOAD_BITMAP__QUANTITY_OF__PAYLOADS(Chunk))) {
         case PLATFORM_Write_File_Error__Max_Size_Reached:
             break;
@@ -164,11 +165,10 @@ void m_process__game_action__global_space__request__inbound_server__init(
         (Game_Action*)p_this_process->p_process_data;
 
     memset(
-            p_game_action
-            ->ga_kind__global_space__request__chunk_payload_bitmap,
+            get_p_tcp_payload_bitmap_u8_from__ga_global_space__request(
+                p_game_action),
             0,
-            sizeof(p_game_action
-                ->ga_kind__global_space__request__chunk_payload_bitmap));
+            SIZE_OF__TCP_PAYLOAD_BITMAP__CHUNK);
 
     p_this_process->m_process_run__handler =
         m_process__game_action__global_space__request__inbound_server;
@@ -189,7 +189,7 @@ void m_process__game_action__global_space__request__outbound_client(
     if (is_game_action__bad_request(p_game_action)) {
         debug_error("m_process__game_action__global_space__request__outbound_client, bad request.");
         Global_Space_Vector__3i32 *p_gsv__3i32 =
-            &p_game_action->ga_kind__global_space__request__gsv_3i32;
+            get_p_gsv_3i32_from__ga_global_space__request(p_game_action);
 
         drop_global_space_within__global_space_manager(
                 p_game, 
@@ -206,8 +206,8 @@ void m_process__game_action__global_space__request__outbound_client(
             break;
         case PLATFORM_Read_File_Error__System_Busy:
             if (!poll_timer_by__this_duration_u32(
-                        &p_game_action
-                        ->ga_kind__global_space__request__timeout, 
+                        get_p_timeout_timer_u32_from__ga_global_space__request(
+                            p_game_action), 
                         get_elapsed_time__u32F20_of__game(p_game))) {
                 return;
             }
@@ -221,7 +221,7 @@ void m_process__game_action__global_space__request__outbound_client(
     }
 
     Global_Space_Vector__3i32 *p_gsv__3i32 =
-        &p_game_action->ga_kind__global_space__request__gsv_3i32;
+        get_p_gsv_3i32_from__ga_global_space__request(p_game_action);
 
     Global_Space_Manager *p_global_space_manager =
         get_p_global_space_manager_from__world(
@@ -251,7 +251,7 @@ void m_process__game_action__global_space__request__outbound_client__init(
         (Game_Action*)p_this_process->p_process_data;
 
     Global_Space_Vector__3i32 *p_gsv__3i32 =
-        &p_game_action->ga_kind__global_space__request__gsv_3i32;
+        get_p_gsv_3i32_from__ga_global_space__request(p_game_action);
 
     Global_Space_Manager *p_global_space_manager =
         get_p_global_space_manager_from__world(
@@ -363,11 +363,11 @@ void initialize_game_action_for__global_space__request(
     set_the_kind_of__game_action(
             p_game_action, 
             Game_Action_Kind__Global_Space__Request);
-    p_game_action
-        ->ga_kind__global_space__request__gsv_3i32 =
+    *get_p_gsv_3i32_from__ga_global_space__request(p_game_action) =
         global_space_vector__3i32;
     initialize_timer_u32(
-            &p_game_action->ga_kind__global_space__request__timeout, 
+            get_p_timeout_timer_u32_from__ga_global_space__request(
+                p_game_action),
             GA_KIND__GBLOAL_SPACE__REQUEST__TIMEOUT
             << 20);
 }

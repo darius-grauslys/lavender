@@ -8,6 +8,7 @@
 #include "process/process.h"
 #include "process/process_manager.h"
 #include "process/game_action_process.h"
+#include "game_action/types/core/tcp/ga_type__tcp__connect_delivery.h"
 
 void m_process__game_action__tcp_delivery__inbound(
         Process *p_this_process,
@@ -38,9 +39,14 @@ void m_process__game_action__tcp_delivery__inbound(
     Serialization_Request *p_serialization_request =
         (Serialization_Request*)p_process->p_process_data;
 
+    u16 packet_index__u16 =
+        get_packet_index_u16_from__ga_tcp_connect__delivery(p_game_action);
+    u8 *p_payload__u8 =
+        get_p_payload_u8_from__ga_tcp_connect__delivery(p_game_action);
+
     if (!p_serialization_request
             || p_serialization_request->quantity_of__tcp_packets__anticipated
-            <= p_game_action->ga_kind__tcp_delivery__packet_index) {
+            <= packet_index__u16) {
         debug_error("m_process__game_action__tcp_delivery__inbound, excessive packet.");
         fail_process(p_this_process);
         return;
@@ -48,7 +54,7 @@ void m_process__game_action__tcp_delivery__inbound(
 
     Index__u32 index_of__memcpy = 
         GA_KIND__TCP_DELIVERY__PAYLOAD_SIZE_IN__BYTES
-        * p_game_action->ga_kind__tcp_delivery__packet_index;
+        * packet_index__u16;
     
     Quantity__u32 quantity_of__bytes_to__copy =
         (p_serialization_request->quantity_of__bytes_in__destination
@@ -59,18 +65,18 @@ void m_process__game_action__tcp_delivery__inbound(
                 p_serialization_request
                     ->quantity_of__bytes_in__destination
                 - (GA_KIND__TCP_DELIVERY__PAYLOAD_SIZE_IN__BYTES
-                    * (p_game_action->ga_kind__tcp_delivery__packet_index+1)));
+                    * (packet_index__u16+1)));
 
     memcpy(
             p_serialization_request->p_tcp_packet_destination
             + index_of__memcpy,
-            p_game_action->ga_kind__tcp_delivery__payload,
+            p_payload__u8,
             quantity_of__bytes_to__copy);
 
     p_serialization_request
         ->pM_packet_bitmap[TCP_PAYLOAD_BYTE(
-                p_game_action->ga_kind__tcp_delivery__packet_index)] |=
-        BIT(TCP_PAYLOAD_BIT(p_game_action->ga_kind__tcp_delivery__packet_index));
+                packet_index__u16)] |=
+        BIT(TCP_PAYLOAD_BIT(packet_index__u16));
 
     complete_process(p_this_process);
 }
@@ -96,12 +102,12 @@ void initialize_game_action_for__tcp_delivery(
     set_the_kind_of__game_action(
             p_game_action, 
             Game_Action_Kind__TCP_Delivery);
-    memcpy(p_game_action->ga_kind__tcp_delivery__payload,
+    memcpy(get_p_payload_u8_from__ga_tcp_connect__delivery(p_game_action),
             p_payload,
             min__u32(
                 quantity_of__bytes_in__payload,
                 GA_KIND__TCP_DELIVERY__PAYLOAD_SIZE_IN__BYTES));
-    p_game_action->ga_kind__tcp_delivery__packet_index =
+    *get_p_packet_index_u16_from__ga_tcp_connect__delivery(p_game_action) =
         index_of__payload;
     p_game_action->uuid_of__client__u32 =
         uuid_of__client_to__send_to;

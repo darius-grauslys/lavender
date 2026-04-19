@@ -18,6 +18,7 @@
 #include "world/local_space_manager.h"
 #include "world/serialization/world_directory.h"
 #include "collisions/core/aabb/hitbox_aabb_manager.h"
+#include "game_action/types/core/world/load/ga_type__world__load__client.h"
 
 void m_process__game_action__world__load_world(
         Process *p_this_process,
@@ -33,8 +34,7 @@ void m_process__game_action__world__load_world(
     Client *p_client =
         get_p_client_by__uuid_from__game(
                 p_game, 
-                p_game_action
-                ->ga_kind__world__load_world__uuid_of__client__u32);
+                get_uuid_u32_of__client_from__ga_world_load(p_game_action));
     if (!p_client) {
         debug_error("m_process__game_action__world__load_world, p_client == 0.");
         dispatch_game_action__bad_request(
@@ -132,7 +132,6 @@ void initialize_game_action_for__world__load_world(
     set_the_kind_of__game_action(
             p_game_action, 
             Game_Action_Kind__World__Load_World);
-    p_game_action
-        ->ga_kind__world__load_world__uuid_of__client__u32 =
+    *get_p_uuid_u32_of__client_from__ga_world_load(p_game_action) =
         uuid_of__client__u32;
 }
