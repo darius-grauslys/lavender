@@ -234,7 +234,9 @@ function generate_leaf_header() {
     cat > "$filepath" << HEADER_EOF
 /// This file is deterministically generated. Do not edit manually
 /// outside of designated GEN / FIELDS regions.
-#if !defined(${guard_name}) || defined(INJECTION_ACTIVE)
+#if !defined(${guard_name}) \\
+    || defined(INJECTION_ACTIVE)
+
 #ifndef INJECTION_ACTIVE
 #define ${guard_name}
 #endif
@@ -470,6 +472,161 @@ with open('${filepath}', 'w') as f:
 }
 
 ##############################################################################
+# Helper: generate the game_action .h file under ./include/game_action/implemented/
+##############################################################################
+function generate_game_action_header() {
+    local filepath="$1"
+    local leaf_prefix="$2"         # e.g. "collisions__aabb__update__pos_vec_i32"
+    local leaf_struct_name="$3"    # e.g. "GA_Collisions__AABB__Update__Pos_Vec_I32"
+    local guard_name="$4"          # e.g. "GAME_ACTION__COLLISIONS__AABB__UPDATE__POS_VEC_I32_H"
+    local func_suffix="$5"         # e.g. "collisions__aabb__update__pos_vec_i32"
+    local type_include_path="$6"   # path to the leaf type header
+    local union_include_paths="$7" # newline-separated list of union type header paths
+    local leaf_type_file="$8"      # absolute path to leaf type header on disk
+
+    # Parse fields from the leaf type header to build function signatures
+    local fields_params=""
+    local dispatch_params=""
+    local dispatch_args=""
+
+    if [ -f "$leaf_type_file" ]; then
+        local parsed_fields
+        parsed_fields="$(parse_fields "$leaf_type_file")"
+        if [ -n "$parsed_fields" ]; then
+            while IFS= read -r field_line; do
+                local ftype fnam
+                ftype="$(echo "$field_line" | cut -d'|' -f1)"
+                fnam="$(echo "$field_line" | cut -d'|' -f2)"
+                if [ -n "$ftype" ] && [ -n "$fnam" ]; then
+                    fields_params="${fields_params},
+        ${ftype} ${fnam}"
+                    dispatch_params="${dispatch_params},
+        ${ftype} ${fnam}"
+                    dispatch_args="${dispatch_args},
+            ${fnam}"
+                fi
+            done <<< "$parsed_fields"
+        fi
+    fi
+
+    # Build union include lines
+    local union_includes=""
+    if [ -n "$union_include_paths" ]; then
+        while IFS= read -r upath; do
+            if [ -n "$upath" ]; then
+                union_includes="${union_includes}
+#include \"${upath}\""
+            fi
+        done <<< "$union_include_paths"
+    fi
+
+    cat > "$filepath" << HEADER_EOF
+/// This file is deterministically generated.
+/// Implement the #error stubs in the corresponding .c file.
+#ifndef ${guard_name}
+#define ${guard_name}
+
+#include "defines.h"
+#include "defines_weak.h"
+#include "game.h"
+${union_includes}
+#include "${type_include_path}"
+
+void register_game_action__${func_suffix}_for__server(
+        Game_Action_Logic_Table *p_game_action_logic_table);
+
+static inline
+void register_game_action__${func_suffix}_for__offline(
+        Game_Action_Logic_Table *p_game_action_logic_table) {
+    register_game_action__${func_suffix}_for__server(
+            p_game_action_logic_table);
+}
+
+void register_game_action__${func_suffix}_for__client(
+        Game_Action_Logic_Table *p_game_action_logic_table);
+
+void initialize_game_action_for__${func_suffix}(
+        Game_Action *p_game_action${fields_params});
+
+static inline
+bool dispatch_game_action__${func_suffix}(
+        Game *p_game${dispatch_params}) {
+    Game_Action ga;
+    initialize_game_action_for__${func_suffix}(
+            &ga${dispatch_args});
+    return dispatch_game_action_to__server(
+            p_game,
+            &ga);
+}
+
+#endif
+HEADER_EOF
+}
+
+##############################################################################
+# Helper: generate the game_action .c file under ./source/game_action/implemented/
+##############################################################################
+function generate_game_action_source() {
+    local filepath="$1"
+    local header_include="$2"      # include path for the .h
+    local func_suffix="$3"         # e.g. "collisions__aabb__update__pos_vec_i32"
+    local leaf_struct_name="$4"    # e.g. "GA_Collisions__AABB__Update__Pos_Vec_I32"
+    local leaf_type_file="$5"      # path to leaf type header on disk
+
+    # Parse fields for initialize stub
+    local fields_params=""
+
+    if [ -f "$leaf_type_file" ]; then
+        local parsed_fields
+        parsed_fields="$(parse_fields "$leaf_type_file")"
+        if [ -n "$parsed_fields" ]; then
+            while IFS= read -r field_line; do
+                local ftype fnam
+                ftype="$(echo "$field_line" | cut -d'|' -f1)"
+                fnam="$(echo "$field_line" | cut -d'|' -f2)"
+                if [ -n "$ftype" ] && [ -n "$fnam" ]; then
+                    fields_params="${fields_params},
+        ${ftype} ${fnam}"
+                fi
+            done <<< "$parsed_fields"
+        fi
+    fi
+
+    cat > "$filepath" << SOURCE_EOF
+/// This file is deterministically generated.
+/// Implement the #error stubs below.
+#include "${header_include}"
+#include "defines.h"
+#include "defines_weak.h"
+#include "game.h"
+#include "game_action/game_action_logic_entry.h"
+#include "game_action/game_action_logic_table.h"
+#include "process/process.h"
+
+void m_process__game_action__${func_suffix}(
+        Process *p_this_process,
+        Game *p_game) {
+#error "Implement m_process__game_action__${func_suffix}"
+}
+
+void register_game_action__${func_suffix}_for__server(
+        Game_Action_Logic_Table *p_game_action_logic_table) {
+#error "Implement register_game_action__${func_suffix}_for__server"
+}
+
+void register_game_action__${func_suffix}_for__client(
+        Game_Action_Logic_Table *p_game_action_logic_table) {
+#error "Implement register_game_action__${func_suffix}_for__client"
+}
+
+void initialize_game_action_for__${func_suffix}(
+        Game_Action *p_game_action${fields_params}) {
+#error "Implement initialize_game_action_for__${func_suffix}"
+}
+SOURCE_EOF
+}
+
+##############################################################################
 # Main logic
 ##############################################################################
 
@@ -652,6 +809,111 @@ elif [ ${#DIR_PARTS[@]} -eq 0 ]; then
     else
         log_verbose "Warning: ${IMPLEMENTED_HEADER} not found. Cannot add root include."
     fi
+fi
+
+# Step 6: Generate game_action .h and .c files under ./include and ./source
+FUNC_SUFFIX="${LEAF_PREFIX}"
+
+# Build subdirectory path for include/source
+GA_SUBDIR_PATH=""
+for (( j=0; j<${#DIR_PARTS[@]}; j++ )); do
+    if [ -z "$GA_SUBDIR_PATH" ]; then
+        GA_SUBDIR_PATH="${DIR_PARTS[$j]}"
+    else
+        GA_SUBDIR_PATH="${GA_SUBDIR_PATH}/${DIR_PARTS[$j]}"
+    fi
+done
+
+# Header file path
+GA_INCLUDE_DIR="./include/game_action/implemented"
+if [ -n "$GA_SUBDIR_PATH" ]; then
+    GA_INCLUDE_DIR="${GA_INCLUDE_DIR}/${GA_SUBDIR_PATH}"
+fi
+mkdir -p "$GA_INCLUDE_DIR"
+
+GA_HEADER_FILENAME="game_action__${LEAF_PREFIX}.h"
+GA_HEADER_PATH="${GA_INCLUDE_DIR}/${GA_HEADER_FILENAME}"
+
+# Source file path
+GA_SOURCE_DIR="./source/game_action/implemented"
+if [ -n "$GA_SUBDIR_PATH" ]; then
+    GA_SOURCE_DIR="${GA_SOURCE_DIR}/${GA_SUBDIR_PATH}"
+fi
+mkdir -p "$GA_SOURCE_DIR"
+
+GA_SOURCE_FILENAME="game_action__${LEAF_PREFIX}.c"
+GA_SOURCE_PATH="${GA_SOURCE_DIR}/${GA_SOURCE_FILENAME}"
+
+# Build guard name for the .h
+GA_HEADER_GUARD="GAME_ACTION__$(to_upper "$LEAF_PREFIX")_H"
+
+# Build the type include path (relative from include/)
+TYPE_INCLUDE_REL_PATH="game_action/types/implemented"
+if [ -n "$GA_SUBDIR_PATH" ]; then
+    TYPE_INCLUDE_REL_PATH="${TYPE_INCLUDE_REL_PATH}/${GA_SUBDIR_PATH}"
+fi
+TYPE_INCLUDE_REL_PATH="${TYPE_INCLUDE_REL_PATH}/${LEAF_HEADER_NAME}"
+
+# Build union include paths (all intermediate union headers)
+UNION_INCLUDE_PATHS=""
+UNION_ACC_PREFIX=""
+UNION_DIR_ACC=""
+for (( i=0; i<${#DIR_PARTS[@]}; i++ )); do
+    if [ -z "$UNION_ACC_PREFIX" ]; then
+        UNION_ACC_PREFIX="${DIR_PARTS[$i]}"
+        UNION_DIR_ACC="${DIR_PARTS[$i]}"
+    else
+        UNION_ACC_PREFIX="${UNION_ACC_PREFIX}__${DIR_PARTS[$i]}"
+        UNION_DIR_ACC="${UNION_DIR_ACC}/${DIR_PARTS[$i]}"
+    fi
+    UNION_HDR="game_action/types/implemented/${UNION_DIR_ACC}/ga_types__${UNION_ACC_PREFIX}.h"
+    if [ -z "$UNION_INCLUDE_PATHS" ]; then
+        UNION_INCLUDE_PATHS="${UNION_HDR}"
+    else
+        UNION_INCLUDE_PATHS="${UNION_INCLUDE_PATHS}
+${UNION_HDR}"
+    fi
+done
+
+# Header include path for the .c file
+GA_HEADER_INCLUDE_PATH="game_action/implemented"
+if [ -n "$GA_SUBDIR_PATH" ]; then
+    GA_HEADER_INCLUDE_PATH="${GA_HEADER_INCLUDE_PATH}/${GA_SUBDIR_PATH}"
+fi
+GA_HEADER_INCLUDE_PATH="${GA_HEADER_INCLUDE_PATH}/${GA_HEADER_FILENAME}"
+
+# Generate .h if missing
+if [ ! -f "$GA_HEADER_PATH" ]; then
+    log_verbose "Generating game action header: $GA_HEADER_PATH"
+    generate_game_action_header \
+        "$GA_HEADER_PATH" \
+        "$LEAF_PREFIX" \
+        "$LEAF_STRUCT_NAME" \
+        "$GA_HEADER_GUARD" \
+        "$FUNC_SUFFIX" \
+        "$TYPE_INCLUDE_REL_PATH" \
+        "$UNION_INCLUDE_PATHS" \
+        "$LEAF_HEADER_PATH"
+else
+    log_verbose "Game action header already exists: $GA_HEADER_PATH"
+fi
+
+# Generate .c if missing
+if [ ! -f "$GA_SOURCE_PATH" ]; then
+    log_verbose "Generating game action source: $GA_SOURCE_PATH"
+    generate_game_action_source \
+        "$GA_SOURCE_PATH" \
+        "$GA_HEADER_INCLUDE_PATH" \
+        "$FUNC_SUFFIX" \
+        "$LEAF_STRUCT_NAME" \
+        "$LEAF_HEADER_PATH"
+else
+    log_verbose "Game action source already exists: $GA_SOURCE_PATH"
+fi
+
+# Reminder about registrar
+if [ -f "./source/game_action/implemented/game_action_registrar.c" ]; then
+    log_verbose "Reminder: Add registration calls for game_action__${FUNC_SUFFIX} to game_action_registrar.c"
 fi
 
 # Output the leaf header path relative to pwd on success
