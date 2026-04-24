@@ -43,8 +43,12 @@ def _color4_to_u32(r: float, g: float, b: float, a: float) -> int:
     return (ai << 24) | (bi << 16) | (gi << 8) | ri
 
 
-def _parse_color_attrib(elem: ET.Element) -> Tuple[float, float, float]:
-    raw = elem.attrib.get("color", "55,55,55")
+def _parse_color_attrib(elem) -> Tuple[float, float, float]:
+    """Parse color from an ET.Element or ResolvedElement."""
+    if hasattr(elem, "xml_elem"):
+        raw = elem.xml_elem.attrib.get("color", "55,55,55")
+    else:
+        raw = elem.attrib.get("color", "55,55,55")
     parts = raw.split(",")
     try:
         return (
@@ -76,7 +80,7 @@ class WorkArea:
 
     def draw(
         self,
-        elements: List[ET.Element],
+        elements: list,
         root: Optional[ET.Element],
         active_tool: Optional[UIElementDef],
         span_configs: dict,
@@ -84,10 +88,11 @@ class WorkArea:
         work_h: int,
         origin_x: float,
         origin_y: float,
-        on_select: Callable[[Optional[ET.Element]], None],
-        on_delete: Callable[[ET.Element], None],
+        on_select: Callable,
+        on_delete: Callable,
         on_create: Callable[[str, Dict[str, str]], None],
         ctrl_f_held: bool = False,
+        backgrounds: Optional[list] = None,
     ) -> None:
         draw_list = imgui.get_window_draw_list()
 
@@ -105,6 +110,18 @@ class WorkArea:
                 origin_x + work_w, origin_y + gy,
                 grid_col,
             )
+
+        # Background images (rendered under elements, over grid)
+        if backgrounds:
+            for bg_tex_id, bg_w, bg_h, bg_x, bg_y in backgrounds:
+                if bg_tex_id is not None:
+                    draw_list.add_image(
+                        bg_tex_id,
+                        (origin_x + bg_x, origin_y + bg_y),
+                        (origin_x + bg_x + bg_w, origin_y + bg_y + bg_h),
+                        uv_a=(0, 1),
+                        uv_b=(1, 0),
+                    )
 
         # Mouse state
         mouse_pos = imgui.get_io().mouse_pos
@@ -126,7 +143,10 @@ class WorkArea:
         if imgui.is_mouse_clicked(0) and in_bounds:
             if self.hovered_element is not None:
                 self.selected_element = self.hovered_element
-                on_select(self.selected_element)
+                xml_elem = self.selected_element
+                if hasattr(xml_elem, "xml_elem"):
+                    xml_elem = xml_elem.xml_elem
+                on_select(xml_elem)
             elif active_tool is not None:
                 # Start drag-create
                 self._drag_start = (
@@ -137,6 +157,11 @@ class WorkArea:
             else:
                 self.selected_element = None
                 on_select(None)
+
+        # Deselect on right-click
+        if imgui.is_mouse_clicked(1) and in_bounds:
+            self.selected_element = None
+            on_select(None)
 
         # Drag-create in progress
         if self._is_dragging and self._drag_start is not None:
@@ -215,7 +240,10 @@ class WorkArea:
                     and bx <= mx <= bx + 10
                     and by <= my <= by + 12
                 ):
-                    on_delete(elem)
+                    xml_elem = elem
+                    if hasattr(xml_elem, "xml_elem"):
+                        xml_elem = xml_elem.xml_elem
+                    on_delete(xml_elem)
                     self.selected_element = None
                     on_select(None)
 

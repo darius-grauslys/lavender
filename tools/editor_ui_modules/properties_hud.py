@@ -17,7 +17,9 @@ class PropertiesHUD:
         self.selected_element: Optional[ET.Element] = None
         self._buf: Dict[str, str] = {}  # per-key input buffers
 
-    def select(self, elem: Optional[ET.Element]) -> None:
+    def select(self, elem) -> None:
+        if elem is not None and hasattr(elem, "xml_elem"):
+            elem = elem.xml_elem
         self.selected_element = elem
         self._buf.clear()
         if elem is not None:

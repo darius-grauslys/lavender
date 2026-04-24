@@ -77,29 +77,67 @@ def save_final(xml_path: str, root: ET.Element) -> None:
 # Element helpers
 # ---------------------------------------------------------------------------
 
-def find_ui_elements(root: ET.Element) -> List[ET.Element]:
-    """Return all elements inside <ui> that have x/y/width/height."""
+class ResolvedElement:
+    """An XML element together with its computed absolute position."""
+    __slots__ = ("xml_elem", "abs_x", "abs_y", "width", "height")
+
+    def __init__(self, xml_elem: ET.Element, abs_x: int, abs_y: int,
+                 width: int, height: int):
+        self.xml_elem = xml_elem
+        self.abs_x = abs_x
+        self.abs_y = abs_y
+        self.width = width
+        self.height = height
+
+
+def find_ui_elements(root: ET.Element) -> List[ResolvedElement]:
+    """Return all visual elements inside ``<ui>`` with absolute positions.
+
+    Walks the tree, accumulating parent ``x``/``y`` offsets so that child
+    positions are resolved to absolute coordinates.
+    """
     ui_node = root.find("ui")
     if ui_node is None:
         return []
-    results: List[ET.Element] = []
-    _collect_positioned(ui_node, results)
+    results: List[ResolvedElement] = []
+    _collect_positioned(ui_node, 0, 0, results)
     return results
 
 
-def _collect_positioned(node: ET.Element, out: List[ET.Element]) -> None:
+def _collect_positioned(
+    node: ET.Element,
+    parent_x: int,
+    parent_y: int,
+    out: List[ResolvedElement],
+) -> None:
     for child in node:
+        # Accumulate this node's own x/y offset
+        local_x = int(child.attrib.get("x", "0"))
+        local_y = int(child.attrib.get("y", "0"))
+        abs_x = parent_x + local_x
+        abs_y = parent_y + local_y
+
         if "width" in child.attrib and "height" in child.attrib:
-            out.append(child)
-        _collect_positioned(child, out)
+            w = int(child.attrib["width"])
+            h = int(child.attrib["height"])
+            out.append(ResolvedElement(child, abs_x, abs_y, w, h))
+
+        # Always recurse — containers pass their offset to children
+        _collect_positioned(child, abs_x, abs_y, out)
 
 
 def snap_to_grid(value: int, grid: int = GRID_PX) -> int:
     return round(value / grid) * grid
 
 
-def elem_rect(elem: ET.Element) -> Tuple[int, int, int, int]:
-    """Return (x, y, w, h) for an element, defaulting to 0."""
+def elem_rect(elem) -> Tuple[int, int, int, int]:
+    """Return (x, y, w, h) for an element.
+
+    Accepts either a ``ResolvedElement`` (with absolute coords) or a raw
+    ``ET.Element`` (falls back to reading attributes directly).
+    """
+    if isinstance(elem, ResolvedElement):
+        return (elem.abs_x, elem.abs_y, elem.width, elem.height)
     return (
         int(elem.attrib.get("x", "0")),
         int(elem.attrib.get("y", "0")),
@@ -117,11 +155,17 @@ def set_elem_rect(
     elem.set("height", str(h))
 
 
-def remove_element(root: ET.Element, target: ET.Element) -> bool:
-    """Remove *target* from anywhere in the tree.  Returns True on success."""
+def remove_element(root: ET.Element, target) -> bool:
+    """Remove *target* from anywhere in the tree.  Returns True on success.
+
+    *target* may be an ``ET.Element`` or a ``ResolvedElement``.
+    """
+    xml_target = target
+    if hasattr(target, "xml_elem"):
+        xml_target = target.xml_elem
     for parent in root.iter():
         for child in list(parent):
-            if child is target:
+            if child is xml_target:
                 parent.remove(child)
                 return True
     return False

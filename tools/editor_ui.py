@@ -30,6 +30,7 @@ import ctypes
 import imgui
 from imgui.integrations.pyglet import PygletProgrammablePipelineRenderer as PygletRenderer
 from OpenGL import GL as gl
+from typing import Tuple
 
 from tools.editor_ui_modules.constants import (
     ASSET_UI_ROOT,
@@ -83,6 +84,9 @@ class EditorApp:
         self._png_w: int = 0
         self._png_h: int = 0
 
+        # Background textures: list of (gl_tex_id, w, h, x, y)
+        self._bg_textures: List[Tuple] = []
+
         # Work area dimensions (from XML config or defaults)
         self.work_w: int = DEFAULT_WORK_W
         self.work_h: int = DEFAULT_WORK_H
@@ -108,6 +112,7 @@ class EditorApp:
         self._xml_root = root
         self._elements = find_ui_elements(root)
         self._read_work_size_from_config()
+        self._load_backgrounds_from_config(path)
         self.history = HistoryManager()
         self.history.push("open", serialize_tree(root))
         self.message_hud.info(f"Opened: {path}")
@@ -220,6 +225,108 @@ class EditorApp:
                         self.work_h = int(parts[1])
                     except ValueError:
                         pass
+
+    # ------------------------------------------------------------------
+    # Background loading from XML <config>
+    # ------------------------------------------------------------------
+
+    def _load_backgrounds_from_config(self, xml_path: str) -> None:
+        """Parse <background> elements from <config> and load textures."""
+        # Free old textures
+        for tex_id, *_ in self._bg_textures:
+            if tex_id is not None:
+                try:
+                    gl.glDeleteTextures([tex_id])
+                except Exception:
+                    pass
+        self._bg_textures = []
+
+        if self._xml_root is None:
+            return
+        cfg = self._xml_root.find("config")
+        if cfg is None:
+            return
+
+        # Resolve paths relative to the XML file's directory
+        xml_dir = os.path.dirname(os.path.abspath(xml_path))
+
+        # Collect backgrounds sorted by layer
+        bg_specs: List[Tuple[int, str, int, int]] = []  # (layer, path, x, y)
+        for elem in cfg:
+            if elem.tag == "background":
+                layer = int(elem.attrib.get("layer", "0"))
+                bg_path = elem.attrib.get("path", "")
+                bg_x = int(elem.attrib.get("x", "0"))
+                bg_y = int(elem.attrib.get("y", "0"))
+                if bg_path:
+                    bg_specs.append((layer, bg_path, bg_x, bg_y))
+
+        bg_specs.sort(key=lambda t: t[0])
+
+        for layer, bg_path, bg_x, bg_y in bg_specs:
+            # Try resolving relative to xml dir first, then cwd
+            full_path = os.path.join(xml_dir, bg_path)
+            if not os.path.exists(full_path):
+                full_path = bg_path
+            if not os.path.exists(full_path):
+                self.message_hud.error(f"Background not found: {bg_path}")
+                continue
+            tex_id, w, h = self._load_bg_texture(full_path)
+            if tex_id is not None:
+                self._bg_textures.append((tex_id, w, h, bg_x, bg_y))
+                self.message_hud.info(
+                    f"Loaded background layer {layer}: {bg_path}"
+                )
+
+    def _load_bg_texture(self, path: str) -> Tuple[Optional[int], int, int]:
+        """Load a PNG into a GL texture with magenta-key transparency.
+
+        Returns (texture_id, width, height) or (None, 0, 0) on failure.
+        """
+        try:
+            img = pyglet.image.load(path)
+            w = img.width
+            h = img.height
+
+            raw = img.get_image_data()
+            fmt = "RGBA"
+            pitch = w * 4
+            pixel_data = bytearray(raw.get_data(fmt, pitch))
+
+            # Apply magenta-key transparency
+            for i in range(len(pixel_data) // 4):
+                r = pixel_data[i * 4]
+                g = pixel_data[i * 4 + 1]
+                b = pixel_data[i * 4 + 2]
+                if r == 0xFF and b == 0xFF and g == 0x00:
+                    pixel_data[i * 4 + 3] = 0x00
+                else:
+                    pixel_data[i * 4 + 3] = 0xFF
+
+            tex_id = gl.glGenTextures(1)
+            gl.glBindTexture(gl.GL_TEXTURE_2D, tex_id)
+            gl.glTexParameteri(
+                gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_NEAREST
+            )
+            gl.glTexParameteri(
+                gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_NEAREST
+            )
+            gl.glTexParameteri(
+                gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_S, gl.GL_CLAMP_TO_EDGE
+            )
+            gl.glTexParameteri(
+                gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_T, gl.GL_CLAMP_TO_EDGE
+            )
+            gl.glTexImage2D(
+                gl.GL_TEXTURE_2D, 0, gl.GL_RGBA,
+                w, h, 0,
+                gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, bytes(pixel_data),
+            )
+            gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
+            return (tex_id, w, h)
+        except Exception as exc:
+            self.message_hud.error(f"BG load error: {exc}")
+            return (None, 0, 0)
 
     # ------------------------------------------------------------------
     # PNG texture loading (pyglet)
@@ -345,6 +452,7 @@ class EditorApp:
                 on_delete=self.on_delete_element,
                 on_create=self.on_create_element,
                 ctrl_f_held=self._ctrl_f_held,
+                backgrounds=self._bg_textures,
             )
             # Reserve space so scrollbars work
             imgui.dummy(self.work_w, self.work_h)
