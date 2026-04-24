@@ -144,6 +144,24 @@ BACKGROUND_DEF = UIElementDef(
     ],
 )
 
+GROUP_DEF = UIElementDef(
+    tag="group",
+    display_name="Group",
+    supports_1x1=False,
+    supports_nxn=False,
+    has_ui_span=False,
+    is_container=True,
+    default_attribs={
+        "x": "0", "y": "0",
+        "stride__x": "0", "stride__y": "0",
+        "color": "220,220,220",
+    },
+    property_keys=[
+        "x", "y", "stride__x", "stride__y",
+        "color", "name",
+    ],
+)
+
 GRID_DEF = UIElementDef(
     tag="grid",
     display_name="Grid",
@@ -198,6 +216,7 @@ ALL_ELEMENT_DEFS: List[UIElementDef] = [
     DROP_ZONE_DEF,
     WINDOW_ELEMENT_DEF,
     BACKGROUND_DEF,
+    GROUP_DEF,
     GRID_DEF,
     ALLOCATE_UI_CONTAINER_DEF,
     CODE_DEF,

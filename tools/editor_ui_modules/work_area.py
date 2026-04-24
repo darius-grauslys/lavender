@@ -209,24 +209,54 @@ class WorkArea:
             ex, ey, ew, eh = elem_rect(elem)
             if ew <= 0 or eh <= 0:
                 continue
-            r, g, b = _parse_color_attrib(elem)
-            fill = _color4_to_u32(r, g, b, 0.45)
-            draw_list.add_rect_filled(
-                origin_x + ex * zoom,
-                origin_y + ey * zoom,
-                origin_x + (ex + ew) * zoom,
-                origin_y + (ey + eh) * zoom,
-                fill,
+
+            is_container_elem = (
+                isinstance(elem, ResolvedElement) and elem.is_container
             )
 
+            r, g, b = _parse_color_attrib(elem)
+
+            if is_container_elem:
+                # Containers: semi-transparent fill + dashed-style outline
+                fill = _color4_to_u32(r, g, b, 0.15)
+                draw_list.add_rect_filled(
+                    origin_x + ex * zoom,
+                    origin_y + ey * zoom,
+                    origin_x + (ex + ew) * zoom,
+                    origin_y + (ey + eh) * zoom,
+                    fill,
+                )
+                border_col = _color4_to_u32(r, g, b, 0.6)
+                draw_list.add_rect(
+                    origin_x + ex * zoom,
+                    origin_y + ey * zoom,
+                    origin_x + (ex + ew) * zoom,
+                    origin_y + (ey + eh) * zoom,
+                    border_col,
+                    thickness=1,
+                )
+            else:
+                fill = _color4_to_u32(r, g, b, 0.45)
+                draw_list.add_rect_filled(
+                    origin_x + ex * zoom,
+                    origin_y + ey * zoom,
+                    origin_x + (ex + ew) * zoom,
+                    origin_y + (ey + eh) * zoom,
+                    fill,
+                )
+
             # Render UI span overlay if element has a span-capable type
-            elem_tag = elem.xml_elem.tag if isinstance(elem, ResolvedElement) else (
-                elem.tag if hasattr(elem, "tag") else ""
-            )
+            if not is_container_elem:
+                elem_tag = elem.xml_elem.tag if isinstance(elem, ResolvedElement) else (
+                    elem.tag if hasattr(elem, "tag") else ""
+                )
+            else:
+                elem_tag = ""
             edef = ELEMENT_DEF_BY_TAG.get(elem_tag)
             if (
                 edef is not None
                 and edef.has_ui_span
+                and not is_container_elem
                 and tileset_picker is not None
                 and tileset_picker.is_loaded
                 and tileset_picker._gl_texture_id is not None
@@ -256,6 +286,17 @@ class WorkArea:
                                 uv_b=(u1, v1),
                             )
 
+            # Container label
+            if is_container_elem:
+                label_tag = elem.xml_elem.tag if isinstance(elem, ResolvedElement) else "container"
+                label_col = _color4_to_u32(r, g, b, 0.9)
+                draw_list.add_text(
+                    origin_x + ex * zoom + 2,
+                    origin_y + ey * zoom + 2,
+                    label_col,
+                    f"<{label_tag}>",
+                )
+
             # Outlines
             show_outline = (
                 elem is self.selected_element
@@ -278,10 +319,13 @@ class WorkArea:
                     thickness=OUTLINE_WIDTH,
                 )
 
-            # Delete X button on selected (only for non-container-owned)
+            # Delete X button on selected
+            # - Not shown on container-owned children (they're repeated)
+            # - Shown on containers themselves (deleting removes the whole container)
             is_owned = (
                 isinstance(elem, ResolvedElement)
                 and elem.is_container_owned
+                and not elem.is_container
             )
             if elem is self.selected_element and not is_owned:
                 bx = origin_x + (ex + ew) * zoom - 10

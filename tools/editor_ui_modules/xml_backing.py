@@ -77,15 +77,20 @@ def save_final(xml_path: str, root: ET.Element) -> None:
 # Element helpers
 # ---------------------------------------------------------------------------
 
+# Tags that are logical containers (group, grid, allocate_ui_container)
+_CONTAINER_TAGS = frozenset({"group", "grid", "allocate_ui_container"})
+
+
 class ResolvedElement:
     """An XML element together with its computed absolute position."""
     __slots__ = ("xml_elem", "abs_x", "abs_y", "width", "height",
-                 "is_container_owned", "iteration_index")
+                 "is_container_owned", "iteration_index", "is_container")
 
     def __init__(self, xml_elem: ET.Element, abs_x: int, abs_y: int,
                  width: int, height: int,
                  is_container_owned: bool = False,
-                 iteration_index: int = 0):
+                 iteration_index: int = 0,
+                 is_container: bool = False):
         self.xml_elem = xml_elem
         self.abs_x = abs_x
         self.abs_y = abs_y
@@ -93,10 +98,115 @@ class ResolvedElement:
         self.height = height
         self.is_container_owned = is_container_owned
         self.iteration_index = iteration_index
+        self.is_container = is_container
 
 
 # Tags that repeat their children with stride offsets
 _REPEATING_TAGS = frozenset({"grid", "allocate_ui_container"})
+
+
+def _compute_children_bbox(
+    node: ET.Element,
+    parent_x: int,
+    parent_y: int,
+) -> Optional[Tuple[int, int, int, int]]:
+    """Compute the bounding box (min_x, min_y, max_x, max_y) of all
+    descendant elements that have width/height, accounting for stride
+    and repetition.  Returns None if no visual descendants exist."""
+    min_x = min_y = 999999
+    max_x = max_y = -999999
+    found = False
+
+    tag = node.tag
+    if tag in _REPEATING_TAGS:
+        size = int(node.attrib.get("size", "1"))
+        stride_x = int(node.attrib.get("stride__x", "0"))
+        stride_y = int(node.attrib.get("stride__y", "0"))
+        for i in range(size):
+            iter_x = parent_x + stride_x * i
+            iter_y = parent_y + stride_y * i
+            for child in node:
+                bb = _compute_children_bbox_single(child, iter_x, iter_y)
+                if bb is not None:
+                    found = True
+                    min_x = min(min_x, bb[0])
+                    min_y = min(min_y, bb[1])
+                    max_x = max(max_x, bb[2])
+                    max_y = max(max_y, bb[3])
+    else:
+        node_stride_x = int(node.attrib.get("stride__x", "0"))
+        node_stride_y = int(node.attrib.get("stride__y", "0"))
+        for child_index, child in enumerate(node):
+            cx = parent_x + node_stride_x * child_index
+            cy = parent_y + node_stride_y * child_index
+            bb = _compute_children_bbox_single(child, cx, cy)
+            if bb is not None:
+                found = True
+                min_x = min(min_x, bb[0])
+                min_y = min(min_y, bb[1])
+                max_x = max(max_x, bb[2])
+                max_y = max(max_y, bb[3])
+
+    return (min_x, min_y, max_x, max_y) if found else None
+
+
+def _compute_children_bbox_single(
+    node: ET.Element,
+    parent_x: int,
+    parent_y: int,
+) -> Optional[Tuple[int, int, int, int]]:
+    """Recursive bbox computation for a single node."""
+    local_x = int(node.attrib.get("x", "0"))
+    local_y = int(node.attrib.get("y", "0"))
+    abs_x = parent_x + local_x
+    abs_y = parent_y + local_y
+
+    min_x = min_y = 999999
+    max_x = max_y = -999999
+    found = False
+
+    # If this node itself has dimensions, include it
+    if "width" in node.attrib and "height" in node.attrib:
+        w = int(node.attrib["width"])
+        h = int(node.attrib["height"])
+        found = True
+        min_x = min(min_x, abs_x)
+        min_y = min(min_y, abs_y)
+        max_x = max(max_x, abs_x + w)
+        max_y = max(max_y, abs_y + h)
+
+    # Recurse into children
+    tag = node.tag
+    if tag in _REPEATING_TAGS:
+        size = int(node.attrib.get("size", "1"))
+        stride_x = int(node.attrib.get("stride__x", "0"))
+        stride_y = int(node.attrib.get("stride__y", "0"))
+        for i in range(size):
+            iter_x = abs_x + stride_x * i
+            iter_y = abs_y + stride_y * i
+            for child in node:
+                bb = _compute_children_bbox_single(child, iter_x, iter_y)
+                if bb is not None:
+                    found = True
+                    min_x = min(min_x, bb[0])
+                    min_y = min(min_y, bb[1])
+                    max_x = max(max_x, bb[2])
+                    max_y = max(max_y, bb[3])
+    else:
+        node_stride_x = int(node.attrib.get("stride__x", "0"))
+        node_stride_y = int(node.attrib.get("stride__y", "0"))
+        for child_index, child in enumerate(node):
+            cx = abs_x + node_stride_x * child_index
+            cy = abs_y + node_stride_y * child_index
+            bb = _compute_children_bbox_single(child, cx, cy)
+            if bb is not None:
+                found = True
+                min_x = min(min_x, bb[0])
+                min_y = min(min_y, bb[1])
+                max_x = max(max_x, bb[2])
+                max_y = max(max_y, bb[3])
+
+    return (min_x, min_y, max_x, max_y) if found else None
 
 
 def find_ui_elements(root: ET.Element) -> List[ResolvedElement]:
@@ -134,6 +244,16 @@ def _collect_positioned(
         abs_y = parent_y + local_y + parent_stride_y * child_index
 
         if tag in _REPEATING_TAGS:
+            # Emit a container element with computed bounding box
+            bbox = _compute_children_bbox(child, abs_x, abs_y)
+            if bbox is not None:
+                out.append(ResolvedElement(
+                    child, bbox[0], bbox[1],
+                    bbox[2] - bbox[0], bbox[3] - bbox[1],
+                    is_container_owned=container_owned,
+                    is_container=True,
+                ))
+
             # Repeating container: expand children `size` times with stride
             size = int(child.attrib.get("size", "1"))
             stride_x = int(child.attrib.get("stride__x", "0"))
@@ -141,13 +261,22 @@ def _collect_positioned(
             for i in range(size):
                 iter_x = abs_x + stride_x * i
                 iter_y = abs_y + stride_y * i
-                # Recurse into children at this iteration's offset
-                # Children of repeating containers are container-owned
                 for grandchild in child:
                     _collect_positioned_single(
                         grandchild, iter_x, iter_y, out,
                         container_owned=True, iteration_index=i,
                     )
+        elif tag in _CONTAINER_TAGS:
+            # Non-repeating container (e.g. group with stride)
+            bbox = _compute_children_bbox(child, abs_x, abs_y)
+            if bbox is not None:
+                out.append(ResolvedElement(
+                    child, bbox[0], bbox[1],
+                    bbox[2] - bbox[0], bbox[3] - bbox[1],
+                    is_container_owned=container_owned,
+                    is_container=True,
+                ))
+            _collect_positioned(child, abs_x, abs_y, out, container_owned)
         else:
             # Non-repeating: emit self if visual, then recurse
             if "width" in child.attrib and "height" in child.attrib:
