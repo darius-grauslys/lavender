@@ -79,15 +79,20 @@ def save_final(xml_path: str, root: ET.Element) -> None:
 
 class ResolvedElement:
     """An XML element together with its computed absolute position."""
-    __slots__ = ("xml_elem", "abs_x", "abs_y", "width", "height")
+    __slots__ = ("xml_elem", "abs_x", "abs_y", "width", "height",
+                 "is_container_owned", "iteration_index")
 
     def __init__(self, xml_elem: ET.Element, abs_x: int, abs_y: int,
-                 width: int, height: int):
+                 width: int, height: int,
+                 is_container_owned: bool = False,
+                 iteration_index: int = 0):
         self.xml_elem = xml_elem
         self.abs_x = abs_x
         self.abs_y = abs_y
         self.width = width
         self.height = height
+        self.is_container_owned = is_container_owned
+        self.iteration_index = iteration_index
 
 
 # Tags that repeat their children with stride offsets
@@ -114,6 +119,7 @@ def _collect_positioned(
     parent_x: int,
     parent_y: int,
     out: List[ResolvedElement],
+    container_owned: bool = False,
 ) -> None:
     for child in node:
         tag = child.tag
@@ -131,17 +137,24 @@ def _collect_positioned(
                 iter_x = abs_x + stride_x * i
                 iter_y = abs_y + stride_y * i
                 # Recurse into children at this iteration's offset
+                # Children of repeating containers are container-owned
                 for grandchild in child:
-                    _collect_positioned_single(grandchild, iter_x, iter_y, out)
+                    _collect_positioned_single(
+                        grandchild, iter_x, iter_y, out,
+                        container_owned=True, iteration_index=i,
+                    )
         else:
             # Non-repeating: emit self if visual, then recurse
             if "width" in child.attrib and "height" in child.attrib:
                 w = int(child.attrib["width"])
                 h = int(child.attrib["height"])
-                out.append(ResolvedElement(child, abs_x, abs_y, w, h))
+                out.append(ResolvedElement(
+                    child, abs_x, abs_y, w, h,
+                    is_container_owned=container_owned,
+                ))
 
             # Recurse into children
-            _collect_positioned(child, abs_x, abs_y, out)
+            _collect_positioned(child, abs_x, abs_y, out, container_owned)
 
 
 def _collect_positioned_single(
@@ -149,6 +162,8 @@ def _collect_positioned_single(
     parent_x: int,
     parent_y: int,
     out: List[ResolvedElement],
+    container_owned: bool = False,
+    iteration_index: int = 0,
 ) -> None:
     """Process a single element and recurse — used by repeating expansion."""
     tag = node.tag
@@ -165,15 +180,26 @@ def _collect_positioned_single(
             iter_x = abs_x + stride_x * i
             iter_y = abs_y + stride_y * i
             for child in node:
-                _collect_positioned_single(child, iter_x, iter_y, out)
+                _collect_positioned_single(
+                    child, iter_x, iter_y, out,
+                    container_owned=True, iteration_index=i,
+                )
     else:
         if "width" in node.attrib and "height" in node.attrib:
             w = int(node.attrib["width"])
             h = int(node.attrib["height"])
-            out.append(ResolvedElement(node, abs_x, abs_y, w, h))
+            out.append(ResolvedElement(
+                node, abs_x, abs_y, w, h,
+                is_container_owned=container_owned,
+                iteration_index=iteration_index,
+            ))
 
         for child in node:
-            _collect_positioned_single(child, abs_x, abs_y, out)
+            _collect_positioned_single(
+                child, abs_x, abs_y, out,
+                container_owned=container_owned,
+                iteration_index=iteration_index,
+            )
 
 
 def snap_to_grid(value: int, grid: int = GRID_PX) -> int:

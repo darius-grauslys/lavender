@@ -554,6 +554,7 @@ class EditorApp:
                 ctrl_f_held=self._ctrl_f_held,
                 backgrounds=self._bg_textures,
                 zoom=self._zoom,
+                tileset_picker=self.tool_hud._tileset_picker,
             )
             imgui.dummy(
                 int(self.work_w * self._zoom),

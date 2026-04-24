@@ -25,6 +25,7 @@ from tools.editor_ui_modules.constants import (
 )
 from tools.editor_ui_modules.span_renderer import build_span_tile_grid
 from tools.editor_ui_modules.ui_element_defs import ELEMENT_DEF_BY_TAG, UIElementDef
+from tools.editor_ui_modules.xml_backing import ResolvedElement
 from tools.editor_ui_modules.xml_backing import (
     add_element_to_ui,
     elem_rect,
@@ -94,6 +95,7 @@ class WorkArea:
         ctrl_f_held: bool = False,
         backgrounds: Optional[list] = None,
         zoom: float = 1.0,
+        tileset_picker=None,
     ) -> None:
         draw_list = imgui.get_window_draw_list()
         zw = int(work_w * zoom)
@@ -217,6 +219,43 @@ class WorkArea:
                 fill,
             )
 
+            # Render UI span overlay if element has a span-capable type
+            elem_tag = elem.xml_elem.tag if isinstance(elem, ResolvedElement) else (
+                elem.tag if hasattr(elem, "tag") else ""
+            )
+            edef = ELEMENT_DEF_BY_TAG.get(elem_tag)
+            if (
+                edef is not None
+                and edef.has_ui_span
+                and tileset_picker is not None
+                and tileset_picker.is_loaded
+                and tileset_picker._gl_texture_id is not None
+            ):
+                span_cfg = span_configs.get(elem_tag)
+                if span_cfg is not None:
+                    tiles_w = max(1, ew // GRID_PX)
+                    tiles_h = max(1, eh // GRID_PX)
+                    tile_grid = build_span_tile_grid(
+                        tiles_w, tiles_h,
+                        span_cfg.span_1x1_index,
+                        span_cfg.span_9_indices,
+                        span_cfg.supports_1x1,
+                        span_cfg.supports_nxn,
+                    )
+                    tile_sz = GRID_PX * zoom
+                    for row_idx, row in enumerate(tile_grid):
+                        for col_idx, tile_index in enumerate(row):
+                            u0, v0, u1, v1 = tileset_picker.get_tile_uv(tile_index)
+                            tx = origin_x + (ex + col_idx * GRID_PX) * zoom
+                            ty = origin_y + (ey + row_idx * GRID_PX) * zoom
+                            draw_list.add_image(
+                                tileset_picker._gl_texture_id,
+                                (tx, ty),
+                                (tx + tile_sz, ty + tile_sz),
+                                uv_a=(u0, v0),
+                                uv_b=(u1, v1),
+                            )
+
             # Outlines
             show_outline = (
                 elem is self.selected_element
@@ -239,8 +278,12 @@ class WorkArea:
                     thickness=OUTLINE_WIDTH,
                 )
 
-            # Delete X button on selected
-            if elem is self.selected_element:
+            # Delete X button on selected (only for non-container-owned)
+            is_owned = (
+                isinstance(elem, ResolvedElement)
+                and elem.is_container_owned
+            )
+            if elem is self.selected_element and not is_owned:
                 bx = origin_x + (ex + ew) * zoom - 10
                 by = origin_y + ey * zoom + 2
                 draw_list.add_text(bx, by, _color4_to_u32(*COLOR_DELETE_X), "X")

@@ -21,6 +21,8 @@ class UIElementDef:
     display_name: str
     supports_1x1: bool = True
     supports_nxn: bool = True
+    has_ui_span: bool = True
+    is_container: bool = False
     default_attribs: Dict[str, str] = field(default_factory=dict)
     property_keys: List[str] = field(default_factory=list)
 
@@ -142,11 +144,48 @@ BACKGROUND_DEF = UIElementDef(
     ],
 )
 
+GRID_DEF = UIElementDef(
+    tag="grid",
+    display_name="Grid",
+    supports_1x1=False,
+    supports_nxn=True,
+    has_ui_span=False,
+    is_container=True,
+    default_attribs={
+        "x": "0", "y": "0", "size": "1",
+        "stride__x": "0", "stride__y": "0",
+        "color": "200,200,200",
+    },
+    property_keys=[
+        "x", "y", "size", "stride__x", "stride__y",
+        "color", "name",
+    ],
+)
+
+ALLOCATE_UI_CONTAINER_DEF = UIElementDef(
+    tag="allocate_ui_container",
+    display_name="Alloc Container",
+    supports_1x1=False,
+    supports_nxn=True,
+    has_ui_span=False,
+    is_container=True,
+    default_attribs={
+        "x": "0", "y": "0", "size": "1",
+        "stride__x": "0", "stride__y": "0",
+        "color": "180,180,180",
+    },
+    property_keys=[
+        "x", "y", "size", "stride__x", "stride__y",
+        "color", "name",
+    ],
+)
+
 CODE_DEF = UIElementDef(
     tag="code",
     display_name="Code (raw)",
     supports_1x1=True,
     supports_nxn=False,
+    has_ui_span=False,
     default_attribs={},
     property_keys=[],
 )
@@ -159,6 +198,8 @@ ALL_ELEMENT_DEFS: List[UIElementDef] = [
     DROP_ZONE_DEF,
     WINDOW_ELEMENT_DEF,
     BACKGROUND_DEF,
+    GRID_DEF,
+    ALLOCATE_UI_CONTAINER_DEF,
     CODE_DEF,
 ]
 

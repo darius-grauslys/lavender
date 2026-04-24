@@ -101,10 +101,21 @@ If the bounding box covers 2x2 tiles, the first ui tileset selection
 is the top left, the 3rd is the top right, the 7th is bottom left
 and the 9th is bottom right.
 
-If th ebounding box covers NxN tiles where N>=3 then the corners
+If the bounding box covers NxN tiles where N>=3 then the corners
 are set per 2x2 rule, and the top edge is the 2nd ui tileset selection
 the left edge is the 4th, the right edge is the 6th and the bottom edge
 is the 8th. The center space is filled with the 5th selection.
+
+Only element types with ``has_ui_span = True`` in their UIElementDef
+will have span overlays rendered.  Container types (``grid``,
+``allocate_ui_container``) have ``has_ui_span = False`` and
+``is_container = True``.  Their children inherit span rendering from
+their own element type definitions.
+
+Elements that are propagated (repeated) by a container are marked as
+*container-owned*.  Container-owned elements cannot be individually
+deleted via the X button in the work area; the parent container must
+be edited or deleted instead.
 
 # 2. Left hand file HUD navigator.
 

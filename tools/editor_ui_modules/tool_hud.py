@@ -355,9 +355,11 @@ class ToolHUD:
                 for i, label in enumerate(labels):
                     if i % 3 != 0:
                         imgui.same_line()
+                    imgui.push_id(f"span9_{tag}_{i}")
                     self._tileset_picker.draw_tile_button(
                         label, cfg.span_9_indices[i], ("9", tag, i), 32,
                     )
+                    imgui.pop_id()
 
             if changed:
                 self._save_tools_json()
@@ -365,10 +367,18 @@ class ToolHUD:
         imgui.end()
 
         # Draw the tileset picker overlay (if active)
+        pick_id = self._tileset_picker.picking_for
         picked_index = self._tileset_picker.draw_picker_popup()
-        if picked_index is not None and self._tileset_picker.picking_for is None:
-            # Selection was just made — apply it
-            self._apply_tile_pick(picked_index)
+        if picked_index is not None and pick_id is not None:
+            if pick_id[0] == "1x1":
+                pick_cfg = self._span_configs.get(pick_id[1])
+                if pick_cfg:
+                    pick_cfg.span_1x1_index = picked_index
+            elif pick_id[0] == "9":
+                pick_cfg = self._span_configs.get(pick_id[1])
+                if pick_cfg:
+                    pick_cfg.span_9_indices[pick_id[2]] = picked_index
+            self._save_tools_json()
 
         return self.selected_tool
 
@@ -408,39 +418,46 @@ class ToolHUD:
 
         if self.selected_tool is not None:
             tag = self.selected_tool.tag
-            cfg = self._span_configs.setdefault(tag, ToolSpanConfig())
-            changed = False
 
-            imgui.text(f"Span: {self.selected_tool.display_name}")
+            if self.selected_tool.has_ui_span:
+                cfg = self._span_configs.setdefault(tag, ToolSpanConfig())
+                changed = False
 
-            c1, cfg.supports_1x1 = imgui.checkbox("1x1 support", cfg.supports_1x1)
-            changed = changed or c1
-            c2, cfg.supports_nxn = imgui.checkbox("NxN support", cfg.supports_nxn)
-            changed = changed or c2
+                imgui.text(f"Span: {self.selected_tool.display_name}")
 
-            if cfg.supports_1x1:
-                imgui.text("1x1 tile:")
-                imgui.same_line()
-                self._tileset_picker.draw_tile_button(
-                    "1x1", cfg.span_1x1_index, ("1x1", tag), 32,
-                )
+                c1, cfg.supports_1x1 = imgui.checkbox("1x1 support##wpc", cfg.supports_1x1)
+                changed = changed or c1
+                c2, cfg.supports_nxn = imgui.checkbox("NxN support##wpc", cfg.supports_nxn)
+                changed = changed or c2
 
-            if cfg.supports_nxn:
-                imgui.text("9-slice tiles:")
-                labels = [
-                    "TL", "T", "TR",
-                    "L", "C", "R",
-                    "BL", "B", "BR",
-                ]
-                for i, label in enumerate(labels):
-                    if i % 3 != 0:
-                        imgui.same_line()
+                if cfg.supports_1x1:
+                    imgui.text("1x1 tile:")
+                    imgui.same_line()
                     self._tileset_picker.draw_tile_button(
-                        label, cfg.span_9_indices[i], ("9", tag, i), 32,
+                        "1x1", cfg.span_1x1_index, ("1x1", tag), 32,
                     )
 
-            if changed:
-                self._save_tools_json()
+                if cfg.supports_nxn:
+                    imgui.text("9-slice tiles:")
+                    labels = [
+                        "TL", "T", "TR",
+                        "L", "C", "R",
+                        "BL", "B", "BR",
+                    ]
+                    for i, label in enumerate(labels):
+                        if i % 3 != 0:
+                            imgui.same_line()
+                        imgui.push_id(f"span9wpc_{tag}_{i}")
+                        self._tileset_picker.draw_tile_button(
+                            label, cfg.span_9_indices[i], ("9", tag, i), 32,
+                        )
+                        imgui.pop_id()
+
+                if changed:
+                    self._save_tools_json()
+            else:
+                imgui.text(f"{self.selected_tool.display_name}")
+                imgui.text_colored("(no UI span)", 0.6, 0.6, 0.6)
 
         imgui.end()
 
@@ -449,18 +466,14 @@ class ToolHUD:
         picked_index = self._tileset_picker.draw_picker_popup()
 
         if picked_index is not None and pick_id is not None:
-            # Apply the selection
             if pick_id[0] == "1x1":
-                pick_tag = pick_id[1]
-                pick_cfg = self._span_configs.get(pick_tag)
+                pick_cfg = self._span_configs.get(pick_id[1])
                 if pick_cfg:
                     pick_cfg.span_1x1_index = picked_index
             elif pick_id[0] == "9":
-                pick_tag = pick_id[1]
-                slot = pick_id[2]
-                pick_cfg = self._span_configs.get(pick_tag)
+                pick_cfg = self._span_configs.get(pick_id[1])
                 if pick_cfg:
-                    pick_cfg.span_9_indices[slot] = picked_index
+                    pick_cfg.span_9_indices[pick_id[2]] = picked_index
             self._save_tools_json()
 
         return self.selected_tool
