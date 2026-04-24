@@ -25,8 +25,9 @@ if _REPO_ROOT not in sys.path:
     sys.path.insert(0, _REPO_ROOT)
 
 import pyglet
+from pyglet import gl as pgl
 import imgui
-from imgui.integrations.pyglet import PygletRenderer
+from imgui.integrations.pyglet import PygletProgrammablePipelineRenderer as PygletRenderer
 
 from tools.editor_ui_modules.constants import (
     ASSET_UI_ROOT,
@@ -242,14 +243,21 @@ class EditorApp:
 
         # Keyboard shortcuts
         ctrl = io.key_ctrl
-        self._ctrl_f_held = ctrl and imgui.is_key_down(imgui.KEY_F)
 
-        if ctrl and imgui.is_key_pressed(imgui.KEY_Z):
+        # pyimgui key indices: use key_map or raw indices
+        # For letter keys we use pyglet's key constants mapped through io
+        key_f = pyglet.window.key.F
+        key_z = pyglet.window.key.Z
+        key_s = pyglet.window.key.S
+
+        self._ctrl_f_held = ctrl and io.keys_down[key_f]
+
+        if ctrl and imgui.is_key_pressed(key_z):
             if io.key_shift:
                 self.redo()
             else:
                 self.undo()
-        if ctrl and imgui.is_key_pressed(imgui.KEY_S):
+        if ctrl and imgui.is_key_pressed(key_s):
             self.save()
 
         # Left panel – file browser
@@ -285,8 +293,8 @@ class EditorApp:
         imgui.begin("##work_area_window", closable=False, flags=flags)
 
         cursor_pos = imgui.get_cursor_screen_position()
-        origin_x = cursor_pos.x
-        origin_y = cursor_pos.y
+        origin_x = cursor_pos[0]
+        origin_y = cursor_pos[1]
 
         if self._png_texture_id is not None and self._xml_root is None:
             # PNG preview mode
@@ -298,19 +306,11 @@ class EditorApp:
                 origin_y,
             )
         elif self._xml_root is not None:
-            span_cfgs = {
-                tag: self.tool_hud.get_span_config(tag)
-                for tag in [
-                    d.tag
-                    for d in self.tool_hud._span_configs
-                ]
-            } if hasattr(self.tool_hud, '_span_configs') else {}
-
             self.work_area.draw(
                 elements=self._elements,
                 root=self._xml_root,
                 active_tool=active_tool,
-                span_configs=self.tool_hud._span_configs,
+                span_configs=self.tool_hud._span_configs if hasattr(self.tool_hud, '_span_configs') else {},
                 work_w=self.work_w,
                 work_h=self.work_h,
                 origin_x=origin_x,

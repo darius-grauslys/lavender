@@ -107,7 +107,8 @@ class WorkArea:
             )
 
         # Mouse state
-        mx, my = imgui.get_mouse_position()
+        mouse_pos = imgui.get_io().mouse_pos
+        mx, my = mouse_pos[0], mouse_pos[1]
         rel_mx = mx - origin_x
         rel_my = my - origin_y
         in_bounds = 0 <= rel_mx <= work_w and 0 <= rel_my <= work_h
