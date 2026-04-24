@@ -144,7 +144,7 @@ typedef struct Date_Time_t Date_Time;
 typedef u8 Audio_Flags__u8;
 typedef struct Audio_Effect_t Audio_Effect;
 
-#include <types/implemented/audio_effect_kind.h>
+#include <types/implemented/audio/audio_effect_kind.h>
 #ifndef DEFINE_AUDIO_EFFECT_KIND
 enum Audio_Effect_Kind {
     Audio_Effect_Kind__None,
@@ -152,7 +152,7 @@ enum Audio_Effect_Kind {
 };
 #endif
 
-#include <types/implemented/audio_stream_kind.h>
+#include <types/implemented/audio/audio_stream_kind.h>
 #ifndef DEFINE_AUDIO_STREAM_KIND
 enum Audio_Stream_Kind {
     Audio_Stream_Kind__None,
@@ -164,6 +164,19 @@ enum Audio_Stream_Kind {
 /// SECTION_collisions
 ///
 
+#include <types/implemented/collisions/hitbox_kind.h>
+#ifndef DEFINE_HITBOX_KIND
+#define DEFINE_HITBOX_KIND
+typedef enum Hitbox_Kind {
+    Hitbox_Kind__Opaque,
+    Hitbox_Kind__AABB,
+    // Hitbox_Kind__AAABBB,
+    // Hitbox_Kind__Ball,
+    // Hitbox_Kind__Sphere,
+    Hitbox_Kind__Unknown
+} Hitbox_Kind;
+#endif
+
 ///
 /// SECTION_debug
 ///
@@ -172,7 +185,7 @@ enum Audio_Stream_Kind {
 /// SECTION_entity
 ///
 
-#include <types/implemented/entity_kind.h>
+#include <types/implemented/entity/entity_kind.h>
 #ifndef DEFINE_ENTITY_KIND
 typedef enum Entity_Kind {
     Entity_Kind__None,
@@ -285,7 +298,7 @@ typedef struct Item_t Item;
 typedef struct Item_Stack_t Item_Stack;
 typedef struct Inventory_t Inventory;
 
-#include <types/implemented/item_kind.h>
+#include <types/implemented/inventory/item_kind.h>
 #ifndef DEFINE_ITEM_KIND
 typedef enum Item_Kind {
     Item_Kind__None = 0,
@@ -334,7 +347,7 @@ typedef u16 Graphics_Window__Usage_Hint_Flags__u16;
 typedef struct PLATFORM_Graphics_Window_t PLATFORM_Graphics_Window;
 typedef struct Graphics_Window_t Graphics_Window;
 
-#include <types/implemented/graphics_window_kind.h>
+#include <types/implemented/rendering/graphics_window_kind.h>
 #ifndef DEFINE_GRAPHICS_WINDOW_KIND
 typedef enum Graphics_Window_Kind {
     Graphics_Window_Kind__None,
@@ -342,7 +355,7 @@ typedef enum Graphics_Window_Kind {
 } Graphics_Window_Kind;
 #endif
 
-#include <types/implemented/sprite_animation_kind.h>
+#include <types/implemented/rendering/sprite_animation_kind.h>
 #ifndef DEFINE_SPRITE_ANIMATION_KIND
 typdef enum Sprite_Animation_Kind {
     Sprite_Animation_Kind__None,
@@ -350,7 +363,7 @@ typdef enum Sprite_Animation_Kind {
 } Sprite_Animation_Kind;
 #endif
 
-#include <types/implemented/sprite_animation_group_kind.h>
+#include <types/implemented/rendering/sprite_animation_group_kind.h>
 #ifndef DEFINE_SPRITE_ANIMATION_GROUP_KIND
 typedef enum Sprite_Animation_Group_Kind {
     Sprite_Animation_Group_Kind__None,
@@ -358,7 +371,7 @@ typedef enum Sprite_Animation_Group_Kind {
 } Sprite_Animation_Group_Kind;
 #endif
 
-#include <types/implemented/sprite_kind.h>
+#include <types/implemented/rendering/sprite_kind.h>
 #ifndef DEFINE_SPRITE_KIND
 typedef enum Sprite_Kind {
     Sprite_Kind__None = 0,
@@ -377,7 +390,7 @@ typedef struct Texture_Allocation_Specification_t
 /// SECTION_scene
 ///
 
-#include <types/implemented/scene_kind.h>
+#include <types/implemented/scene/scene_kind.h>
 #ifndef DEFINE_SCENE_KIND
 typedef enum Scene_Kind {
     Scene_Kind__None,
@@ -431,7 +444,7 @@ typedef enum UI_Tile_Map_Size {
     UI_Tile_Map_Size__Unknown
 } UI_Tile_Map_Size;
 
-#include <types/implemented/ui_tile_kind.h>
+#include <types/implemented/ui/ui_tile_kind.h>
 #ifndef DEFINE_UI_TILE_KIND
 typedef enum UI_Tile_Kind {
     UI_Tile_Kind__None = 0,
@@ -439,7 +452,7 @@ typedef enum UI_Tile_Kind {
 } UI_Tile_Kind;
 #endif
 
-#include <types/implemented/ui_sprite_kind.h>
+#include <types/implemented/ui/ui_sprite_kind.h>
 #ifndef DEFINE_UI_SPRITE_KIND
 typedef enum UI_Sprite_Kind {
     UI_Sprite_Kind__None = 0,
@@ -455,7 +468,7 @@ typedef enum UI_Sprite_Kind {
 typedef struct UI_Element_t UI_Element;
 typedef struct UI_Manager_t UI_Manager;
 
-#include <types/implemented/ui_element_kind.h>
+#include <types/implemented/ui/ui_element_kind.h>
 #ifndef DEFINE_UI_ELEMENT_KIND
 enum UI_Element_Kind {
     UI_Element_Kind__None,
@@ -481,7 +494,7 @@ typedef struct Global_Space_t Global_Space;
 typedef struct Local_Space_t Local_Space;
 typedef struct Local_Space_Manager_t Local_Space_Manager;
 
-#include <types/implemented/tile_kind.h>
+#include <types/implemented/world/tile_kind.h>
 #ifndef DEFINE_TILE_KIND
 typedef enum Tile_Kind {
     Tile_Kind__None = 0,
@@ -502,7 +515,7 @@ typedef enum Tile_Kind {
 /// than or equal to Game_Action_Kind__Custom, and less than 
 /// the value of Game_Action_Kind__Unknown.
 ///
-#include <types/implemented/game_action_kind.h>
+#include <types/implemented/game_action/game_action_kind.h>
 #ifndef DEFINE_GAME_ACTION_KIND
 typedef enum Game_Action_Kind {
     Game_Action_Kind__None = 0,
@@ -534,57 +547,11 @@ typedef struct Chunk_t Chunk;
 typedef struct Chunk_Manager__Chunk_Map_Node_t Chunk_Manager__Chunk_Map_Node;
 typedef struct Tile_t Tile;
 
-// TODO: add tile flags as a implemented/type
 typedef uint8_t Tile_Flags__u8;
-
-#define TILE_FLAGS__NONE 0
-
-#define TILE_FLAGS__BIT_SHIFT_IS_SIGHT_BLOCKING 0
-#define TILE_FLAGS__BIT_SHIFT_IS_UNPASSABLE \
-    (TILE_FLAGS__BIT_SHIFT_IS_SIGHT_BLOCKING + 1)
-#define TILE_FLAGS__BIT_SHIFT_IS_CONTAINER \
-    (TILE_FLAGS__BIT_SHIFT_IS_UNPASSABLE + 1)
-#define TILE_FLAGS__BIT_SHIFT_GENERAL_PURPOSE_DATA_BIT \
-    (TILE_FLAGS__BIT_IS_CONTAINER + 1)
-
-#define TILE_FLAGS__BIT_IS_SIGHT_BLOCKING \
-    BIT(TILE_FLAGS__BIT_SHIFT_IS_SIGHT_BLOCKING)
-#define TILE_FLAGS__BIT_IS_UNPASSABLE \
-    BIT(TILE_FLAGS__BIT_SHIFT_IS_UNPASSABLE)
-#define TILE_FLAGS__BIT_IS_CONTAINER \
-    BIT(TILE_FLAGS__BIT_SHIFT_IS_CONTAINER)
-#define TILE_FLAGS__BIT_GENERAL_PURPOSE_DATA_BIT \
-    BIT(TILE_FLAGS__BIT_SHIFT_GENERAL_PURPOSE_DATA_BIT)
-
 typedef uint16_t Tile_Logic_Flags__u16;
-
-#define TILE_LOGIC_FLAGS__NONE 0
-#define TILE_LOGIC_FLAG__IS_UNPASSABLE BIT(0)
-#define TILE_LOGIC_FLAG__IS_SIGHT_BLOCKING BIT(1)
-#define TILE_LOGIC_FLAG__IS_WITHOUT_GROUND BIT(2)
-#define TILE_LOGIC_FLAG__RESERVED_1 BIT(3)
-#define TILE_LOGIC_FLAG__RESERVED_2 BIT(4)
-#define TILE_LOGIC_FLAG__RESERVED_3 BIT(5)
-#define TILE_LOGIC_FLAG__RESERVED_4 BIT(6)
-#define TILE_LOGIC_FLAG__RESERVED_5 BIT(7)
-
-#define TILE_LOGIC_FLAG__CUSTOM_0 BIT(8)
-#define TILE_LOGIC_FLAG__CUSTOM_1 BIT(9)
-#define TILE_LOGIC_FLAG__CUSTOM_2 BIT(10)
-#define TILE_LOGIC_FLAG__CUSTOM_3 BIT(11)
-#define TILE_LOGIC_FLAG__CUSTOM_4 BIT(12)
-#define TILE_LOGIC_FLAG__CUSTOM_5 BIT(13)
-#define TILE_LOGIC_FLAG__CUSTOM_6 BIT(14)
-#define TILE_LOGIC_FLAG__CUSTOM_7 BIT(15)
-
-#ifndef DEFINE_TILE_LOGIC_RECORD
-// TODO: impl header config
-#define DEFINE_TILE_LOGIC_RECORD
-typedef struct Tile_Logic_Record_t {
-    Tile_Logic_Flags__u16       tile_logic_flags__u8;
-    i32F4                       tile_height__i32F4; // [0 - 1 + (15/16) ]
-} Tile_Logic_Record;
-#endif
+typedef struct Tile_Logic_Record_t Tile_Logic_Record;
+typedef struct Tile_Logic_Table_t Tile_Logic_Table;
+typedef struct Tile_Logic_Context_t Tile_Logic_Context;
 
 typedef struct Tile_Render_Kernel_Result_t Tile_Render_Kernel_Result;
 
@@ -599,7 +566,7 @@ typedef void (*f_Tile_Render_Kernel)(
         u8 y__local,
         u8 z__local);
 
-#include "types/implemented/chunk_generator_kind.h"
+#include "types/implemented/world/chunk_generator_kind.h"
 #ifndef DEFINE_CHUNK_GENERATOR_KIND
 typedef enum Chunk_Generator_Kind {
     /// Assign enum to same value as None to specify default generator.
@@ -607,6 +574,13 @@ typedef enum Chunk_Generator_Kind {
     Chunk_Generator_Kind__Unknown
 } Chunk_Generator_Kind;
 #endif
+
+typedef enum Chunk_Generation__State {
+    Chunk_Generation__State__Default,
+    Chunk_Generation__State__Terrain,
+    Chunk_Generation__State__Awaiting_Neighbors,
+    Chunk_Generation__State__Unknown,
+} Chunk_Generation__State;
 
 ///
 /// SECTION_core

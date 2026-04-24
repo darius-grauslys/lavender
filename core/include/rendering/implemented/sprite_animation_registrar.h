@@ -4,6 +4,6 @@
 #include "defines.h"
 
 void register_sprite_animations(
-        Sprite_Manager *p_sprite_manager);
+        Sprite_Context *p_sprite_context);
 
 #endif

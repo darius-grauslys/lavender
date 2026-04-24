@@ -32,7 +32,9 @@ void register_game_actions__offline(
 
     register_game_action__input_for__offline(
             p_game_action_logic_table);
+    // GEN-OFFLINE-BEGIN
     debug_warning("register_game_actions__offline, impl.");
+    // GEN-OFFLINE-END
 }
 
 void register_game_actions__client(
@@ -61,7 +63,9 @@ void register_game_actions__client(
 
     register_game_action__input_for__client(
             p_game_action_logic_table);
+    // GEN-CLIENT-BEGIN
     debug_warning("register_game_actions__client, impl.");
+    // GEN-CLIENT-END
 }
 
 void register_game_actions__server(
@@ -96,5 +100,7 @@ void register_game_actions__server(
 
     register_game_action__input_for__server(
             p_game_action_logic_table);
+    // GEN-SERVER-BEGIN
     debug_warning("register_game_actions__server, impl.");
+    // GEN-SERVER-END
 }

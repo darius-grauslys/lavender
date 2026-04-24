@@ -3,13 +3,6 @@
 
 #include "platform.h"
 #include "platform_defaults.h"
-#include "types/implemented/chunk_generator_kind.h"
-#include "types/implemented/entity_kind.h"
-#include "types/implemented/game_action_kind.h"
-#include "types/implemented/graphics_window_kind.h"
-#include "types/implemented/hitbox_kind.h"
-#include "types/implemented/scene_kind.h"
-#include "types/implemented/sprite_animation_group_kind.h"
 #include "util/bitmap/bitmap.h"
 #include <stdbool.h>
 #include <stdint.h>
@@ -340,7 +333,7 @@ typedef u8 Hitbox_Flags__u8;
 
 #define HITBOX_FLAGS__NONE 0;
 
-#include <types/implemented/hitbox_manager_type.h>
+#include <types/implemented/collisions/hitbox_manager_type.h>
 #ifndef DEFINE_HITBOX_MANAGER_TYPE
 typedef enum Hitbox_Manager_Type_t {
     Hitbox_Manager_Type__Default,
@@ -944,7 +937,7 @@ typedef struct Typer_t {
 /// SECTION_inventory
 ///
 
-#include "types/implemented/item_data.h"
+#include "types/implemented/inventory/item_data.h"
 #ifndef DEFINE_ITEM_DATA
 typedef struct Item_Data_t {
 
@@ -1110,14 +1103,14 @@ typedef struct Entity_t Entity;
 #define ENTITY_FLAG__CUSTOM_15 \
     NEXT_BIT(ENTITY_FLAG__CUSTOM_14)
 
-#include <types/implemented/entity_data.h>
+#include <types/implemented/entity/entity_data.h>
 #ifndef DEFINE_ENTITY_DATA
 typedef struct Entity_Data_t {
     Entity_Kind the_kind_of__entity;
 } Entity_Data;
 #endif
 
-#include <types/implemented/entity_functions.h>
+#include <types/implemented/entity/entity_functions.h>
 #ifndef DEFINE_ENTITY_FUNCTIONS
 typedef struct Entity_Functions_t {
     m_Entity_Handler                m_entity_dispose_handler;
@@ -1665,7 +1658,7 @@ typedef uint8_t UI_Button_Flags__u8;
 #define UI_BUTTON_FLAGS__BIT_IS_TOGGLED \
     BIT(UI_BUTTON_FLAGS__BIT_SHIFT_IS_TOGGLED)
 
-#include <types/implemented/ui_element_data.h>
+#include <types/implemented/ui/ui_element_data.h>
 #ifndef DEFINE_UI_ELEMENT_DATA
 typedef struct UI_Element_Data_t {
 
@@ -2003,19 +1996,15 @@ typedef Vector__3u8 Local_Tile_Vector__3u8;
 typedef struct Tile_t Tile;
 
 typedef struct Tile_Logic_Table_t Tile_Logic_Table;
-typedef struct Tile_Logic_Record_t Tile_Logic_Record;
 
-typedef void (*m_Tile_Logic_Table__Get_Tile_Logic_Record)(
-        Tile_Logic_Table *p_tile_logic_manager,
-        Tile_Logic_Record *p_tile_logic_record,
-        Tile *p_tile);
-
-#include <types/implemented/tile_logic_table_data.h>
-#ifndef DEFINE_TILE_LOGIC_TABLE_DATA
-typedef struct Tile_Logic_Table_Data_t {
-    Tile_Logic_Record tile_logic_record__tile_kind[
-        Tile_Kind__Unknown];
-} Tile_Logic_Table_Data;
+#include <types/implemented/world/tile_layer.h>
+#ifndef DEFINE_TILE_LAYER
+typedef enum Tile_Layer {
+    Tile_Layer__Default = 0,
+    // GEN-BEGIN
+    // GEN-END
+    Tile_Layer__Unknown
+} Tile_Layer;
 #endif
 
 #ifndef TILE_STAIR_HEIGHT
@@ -2026,17 +2015,73 @@ typedef struct Tile_Logic_Table_Data_t {
 #define TILE_STAIR_HEIGHT 0b1000
 #endif
 
+// TODO: add tile flags as a implemented/type
+typedef uint8_t Tile_Flags__u8;
+
+#define TILE_FLAGS__NONE 0
+
+#define TILE_FLAGS__BIT_SHIFT_IS_SIGHT_BLOCKING 0
+#define TILE_FLAGS__BIT_SHIFT_IS_UNPASSABLE \
+    (TILE_FLAGS__BIT_SHIFT_IS_SIGHT_BLOCKING + 1)
+#define TILE_FLAGS__BIT_SHIFT_IS_CONTAINER \
+    (TILE_FLAGS__BIT_SHIFT_IS_UNPASSABLE + 1)
+#define TILE_FLAGS__BIT_SHIFT_GENERAL_PURPOSE_DATA_BIT \
+    (TILE_FLAGS__BIT_IS_CONTAINER + 1)
+
+#define TILE_FLAGS__BIT_IS_SIGHT_BLOCKING \
+    BIT(TILE_FLAGS__BIT_SHIFT_IS_SIGHT_BLOCKING)
+#define TILE_FLAGS__BIT_IS_UNPASSABLE \
+    BIT(TILE_FLAGS__BIT_SHIFT_IS_UNPASSABLE)
+#define TILE_FLAGS__BIT_IS_CONTAINER \
+    BIT(TILE_FLAGS__BIT_SHIFT_IS_CONTAINER)
+#define TILE_FLAGS__BIT_GENERAL_PURPOSE_DATA_BIT \
+    BIT(TILE_FLAGS__BIT_SHIFT_GENERAL_PURPOSE_DATA_BIT)
+
+typedef uint16_t Tile_Logic_Flags__u16;
+
+#define TILE_LOGIC_FLAGS__NONE 0
+#define TILE_LOGIC_FLAG__IS_UNPASSABLE BIT(0)
+#define TILE_LOGIC_FLAG__IS_SIGHT_BLOCKING BIT(1)
+#define TILE_LOGIC_FLAG__IS_WITHOUT_GROUND BIT(2)
+#define TILE_LOGIC_FLAG__RESERVED_1 BIT(3)
+#define TILE_LOGIC_FLAG__RESERVED_2 BIT(4)
+#define TILE_LOGIC_FLAG__RESERVED_3 BIT(5)
+#define TILE_LOGIC_FLAG__RESERVED_4 BIT(6)
+#define TILE_LOGIC_FLAG__RESERVED_5 BIT(7)
+
+#define TILE_LOGIC_FLAG__CUSTOM_0 BIT(8)
+#define TILE_LOGIC_FLAG__CUSTOM_1 BIT(9)
+#define TILE_LOGIC_FLAG__CUSTOM_2 BIT(10)
+#define TILE_LOGIC_FLAG__CUSTOM_3 BIT(11)
+#define TILE_LOGIC_FLAG__CUSTOM_4 BIT(12)
+#define TILE_LOGIC_FLAG__CUSTOM_5 BIT(13)
+#define TILE_LOGIC_FLAG__CUSTOM_6 BIT(14)
+#define TILE_LOGIC_FLAG__CUSTOM_7 BIT(15)
+
+#include <types/implemented/world/tile_logic_record.h>
+#ifndef DEFINE_TILE_LOGIC_RECORD
+#define DEFINE_TILE_LOGIC_RECORD
+typedef struct Tile_Logic_Record_t {
+    i32F4                       tile_height__i32F4; // [0 - 1 + (15/16) ]
+    Tile_Logic_Flags__u16       tile_logic_flags__u8;
+} Tile_Logic_Record;
+#endif
+
 ///
 /// Manages the logic associated with special tiles.
 /// IE. lava tile, water tile, chest tile, etc.
 ///
 typedef struct Tile_Logic_Table_t {
-    Tile_Logic_Table_Data tile_logic_table_data;
-    m_Tile_Logic_Table__Get_Tile_Logic_Record m_get_tile_logic_record;
-    Quantity__u32 quantity_of__records;
+    Tile_Logic_Record *pM_tile_logic_records;
+    Quantity__u16 quantity_of__tile_logic_records__u16;
+    Quantity__u16 size_of__tile_logic_records__u16;
 } Tile_Logic_Table;
 
-#include <types/implemented/tile.h>
+typedef struct Tile_Logic_Context_t {
+    Tile_Logic_Table *array_of__pM_tile_logic_tables[Tile_Layer__Unknown];
+} Tile_Logic_Context;
+
+#include <types/implemented/world/tile.h>
 #ifndef DEFINE_TILE
 typedef struct Tile_t {
     Tile_Kind the_kind_of__tile;
@@ -2312,8 +2357,8 @@ typedef struct Game_Action_t {
     union {
 #ifndef GA_TYPE_CONTEXT
 #define INJECTION_ACTIVE
-#include <game_action/types/core/ga_types__core.h>
-#include <game_action/types/implemented/ga_types__implemented.h>
+#include <types/core/game_action/ga_types__core.h>
+#include <types/implemented/game_action/ga_types__implemented.h>
 #undef INJECTION_ACTIVE
 #endif
     } _ga_payload_union;
@@ -2381,7 +2426,7 @@ typedef struct World_t {
     Chunk_Pool chunk_pool;
 
     Structure_Manager structure_manager;
-    Tile_Logic_Table tile_logic_table;
+    Tile_Logic_Context tile_logic_context;
     Chunk_Generator_Table chunk_generator_table;
     Repeatable_Psuedo_Random repeatable_pseudo_random;
 

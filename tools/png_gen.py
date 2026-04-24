@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-png_gen.py - Generate sprite sheet PNG(s) with distinctive per-frame colors.
+gen_png.py - Generate sprite sheet PNG(s) with distinctive per-frame colors.
 
 Usage:
-    python png_gen.py \
+    python gen_png.py \
         --output <path relative to ./assets> \
         --frame-resolution <8|16|32|64|128|256|512|1024> \
         --row-count <int> \
@@ -15,11 +15,9 @@ If --groups is given without a value, reads JSON from stdin until EOF.
 
 import argparse
 import json
-import math
 import os
 import sys
 from abc import ABC, abstractmethod
-from pathlib import Path
 
 try:
     from PIL import Image
