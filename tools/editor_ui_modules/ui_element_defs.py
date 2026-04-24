@@ -144,6 +144,23 @@ BACKGROUND_DEF = UIElementDef(
     ],
 )
 
+ALLOCATE_UI_DEF = UIElementDef(
+    tag="allocate_ui",
+    display_name="Alloc UI",
+    supports_1x1=False,
+    supports_nxn=False,
+    has_ui_span=False,
+    is_container=True,
+    default_attribs={
+        "x": "0", "y": "0",
+        "color": "200,220,200",
+    },
+    property_keys=[
+        "x", "y", "__width", "__height",
+        "color", "name",
+    ],
+)
+
 GROUP_DEF = UIElementDef(
     tag="group",
     display_name="Group",
@@ -158,6 +175,7 @@ GROUP_DEF = UIElementDef(
     },
     property_keys=[
         "x", "y", "stride__x", "stride__y",
+        "__width", "__height",
         "color", "name",
     ],
 )
@@ -176,6 +194,7 @@ GRID_DEF = UIElementDef(
     },
     property_keys=[
         "x", "y", "size", "stride__x", "stride__y",
+        "__width", "__height",
         "color", "name",
     ],
 )
@@ -194,6 +213,7 @@ ALLOCATE_UI_CONTAINER_DEF = UIElementDef(
     },
     property_keys=[
         "x", "y", "size", "stride__x", "stride__y",
+        "__width", "__height",
         "color", "name",
     ],
 )
@@ -216,6 +236,7 @@ ALL_ELEMENT_DEFS: List[UIElementDef] = [
     DROP_ZONE_DEF,
     WINDOW_ELEMENT_DEF,
     BACKGROUND_DEF,
+    ALLOCATE_UI_DEF,
     GROUP_DEF,
     GRID_DEF,
     ALLOCATE_UI_CONTAINER_DEF,

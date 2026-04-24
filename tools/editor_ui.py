@@ -46,8 +46,10 @@ from tools.editor_ui_modules.message_hud import MessageHUD
 from tools.editor_ui_modules.properties_hud import PropertiesHUD
 from tools.editor_ui_modules.tool_hud import ToolHUD
 from tools.editor_ui_modules.work_area import WorkArea
+from tools.editor_ui_modules.ui_hierarchy import UIHierarchy
 from tools.editor_ui_modules.xml_backing import (
     add_element_to_ui,
+    add_element_under,
     find_ui_elements,
     load_xml,
     remove_element,
@@ -93,6 +95,10 @@ class EditorApp:
 
         # Keyboard state
         self._ctrl_f_held: bool = False
+
+        # UI hierarchy
+        self.ui_hierarchy = UIHierarchy()
+        self._left_tab: int = 0  # 0=Files, 1=UI Hierarchy
 
         # Panel widths (resizable)
         self.left_panel_w: float = 200.0
@@ -143,6 +149,7 @@ class EditorApp:
 
     def on_select_element(self, elem: Optional[ET.Element]) -> None:
         self.properties_hud.select(elem)
+        self.ui_hierarchy.selected_xml_elem = elem
 
     def on_delete_element(self, elem: ET.Element) -> None:
         if self._xml_root is None:
@@ -162,6 +169,21 @@ class EditorApp:
             self.work_area.selected_element = new_elem
             self.properties_hud.select(new_elem)
             self.message_hud.info(f"Created <{tag}>")
+
+    def on_add_child_element(self, parent_elem: ET.Element) -> bool:
+        """Called from UI hierarchy + button. Returns True on success."""
+        tool = self.tool_hud.selected_tool
+        if tool is None:
+            self.message_hud.error("Select a tool first to add a child element.")
+            return False
+        if self._xml_root is None:
+            return False
+        attribs = dict(tool.default_attribs)
+        new_elem = add_element_under(parent_elem, tool.tag, attribs)
+        self._elements = find_ui_elements(self._xml_root)
+        self._commit(f"add child <{tool.tag}>")
+        self.message_hud.info(f"Added <{tool.tag}> under <{parent_elem.tag}>")
+        return True
 
     def on_property_changed(self) -> None:
         """Called by PropertiesHUD when an attribute is edited."""
@@ -476,52 +498,72 @@ class EditorApp:
             if _right:
                 self._pan_x += pan_speed
 
-        # Mouse wheel: Ctrl = zoom, Shift = horizontal pan, else vertical pan
-        wheel = io.mouse_wheel
-        if wheel != 0:
-            if ctrl:
-                factor = 1.1 if wheel > 0 else 1.0 / 1.1
-                self._zoom = max(0.125, min(8.0, self._zoom * factor))
-            elif shift:
-                self._pan_x -= wheel * 40.0
-            else:
-                self._pan_y -= wheel * 40.0
+        # Mouse wheel: only process for work area when no HUD is capturing
+        # (deferred to after HUD drawing – stored for later)
+        self._pending_wheel = io.mouse_wheel
+        self._pending_ctrl = ctrl
+        self._pending_shift = shift
 
-        # Left panel – file browser (resizable via drag on right edge)
+        # Left panel with tabs (Files / UI Hierarchy)
         left_w = self.left_panel_w
         imgui.set_next_window_position(0, 0)
         imgui.set_next_window_size(left_w, win_h - self.message_hud.panel_height)
         imgui.begin(
-            "Files##file_browser",
+            "Navigator##left_panel",
             closable=False,
             flags=(
                 imgui.WINDOW_NO_MOVE
                 | imgui.WINDOW_NO_SAVED_SETTINGS
             ),
         )
-        # Detect resize from imgui
         new_left_w = imgui.get_window_width()
         if new_left_w != left_w:
             self.left_panel_w = max(100, min(win_w * 0.4, new_left_w))
-        if os.path.isdir(ASSET_UI_ROOT):
-            self.file_browser._draw_dir(
-                self.file_browser.root_dir,
-                self.on_open_xml,
-                self.on_open_png,
+
+        # Tab buttons
+        if imgui.button("Files##tab0"):
+            self._left_tab = 0
+        imgui.same_line()
+        if imgui.button("UI Tree##tab1"):
+            self._left_tab = 1
+
+        imgui.separator()
+
+        imgui.begin_child("##left_tab_content", 0, 0, border=False)
+        if self._left_tab == 0:
+            if os.path.isdir(ASSET_UI_ROOT):
+                self.file_browser._draw_dir(
+                    self.file_browser.root_dir,
+                    self.on_open_xml,
+                    self.on_open_png,
+                )
+            else:
+                imgui.text_colored("(missing assets/ui)", 1, 0.3, 0.3)
+        elif self._left_tab == 1:
+            self.ui_hierarchy.draw(
+                self._xml_root,
+                on_select=self.on_select_element,
+                on_delete=self.on_delete_element,
+                on_add_child=self.on_add_child_element,
+                selected_tool_name=(
+                    self.tool_hud.selected_tool.display_name
+                    if self.tool_hud.selected_tool else ""
+                ),
             )
-        else:
-            imgui.text_colored("(missing assets/ui)", 1, 0.3, 0.3)
+        imgui.end_child()
         imgui.end()
 
-        # Right panels
+        # Right panels – resizable, synced width
         right_w = self.right_panel_w
         msg_h = self.message_hud.panel_height
         half_h = (win_h - msg_h) * 0.5
 
-        # Tool HUD (top-right, resizable width)
+        # Tool HUD (top-right)
         imgui.set_next_window_position(win_w - right_w, 0)
         imgui.set_next_window_size(right_w, half_h)
         active_tool = self.tool_hud.draw_with_pick_capture(win_w, win_h, right_w)
+        # Detect resize
+        new_rw_tool = imgui.get_window_width()
 
         # Properties HUD (bottom-right)
         imgui.set_next_window_position(win_w - right_w, half_h)
@@ -530,6 +572,12 @@ class EditorApp:
             win_w, win_h, right_w,
             on_change=self.on_property_changed,
         )
+        new_rw_prop = imgui.get_window_width()
+
+        # Sync: use whichever was resized
+        new_rw = max(new_rw_tool, new_rw_prop)
+        if new_rw != right_w:
+            self.right_panel_w = max(150, min(win_w * 0.5, new_rw))
 
         # Central work area
         work_x = self.left_panel_w
@@ -547,6 +595,18 @@ class EditorApp:
         )
         imgui.begin("##work_area_window", closable=False, flags=flags)
 
+        # Process scroll only when work area window is hovered
+        work_area_hovered = imgui.is_window_hovered(imgui.HOVERED_CHILD_WINDOWS)
+        wheel = self._pending_wheel
+        if wheel != 0 and work_area_hovered:
+            if self._pending_ctrl:
+                factor = 1.1 if wheel > 0 else 1.0 / 1.1
+                self._zoom = max(0.125, min(8.0, self._zoom * factor))
+            elif self._pending_shift:
+                self._pan_x -= wheel * 40.0
+            else:
+                self._pan_y -= wheel * 40.0
+
         cursor_pos = imgui.get_cursor_screen_position()
         origin_x = cursor_pos[0] + self._pan_x
         origin_y = cursor_pos[1] + self._pan_y
@@ -560,6 +620,9 @@ class EditorApp:
                 origin_y,
             )
         elif self._xml_root is not None:
+            # Sync concealed elements to work area
+            self.work_area.concealed_ids = self.ui_hierarchy.concealed_elements
+
             self.work_area.draw(
                 elements=self._elements,
                 root=self._xml_root,

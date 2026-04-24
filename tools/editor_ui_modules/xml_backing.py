@@ -77,8 +77,12 @@ def save_final(xml_path: str, root: ET.Element) -> None:
 # Element helpers
 # ---------------------------------------------------------------------------
 
-# Tags that are logical containers (group, grid, allocate_ui_container)
-_CONTAINER_TAGS = frozenset({"group", "grid", "allocate_ui_container"})
+# Tags that are logical containers (group, grid, allocate_ui_container, allocate_ui)
+_CONTAINER_TAGS = frozenset({"group", "grid", "allocate_ui_container", "allocate_ui"})
+
+# Default size for containers that have no children with dimensions
+CONTAINER_DEFAULT_W = 32
+CONTAINER_DEFAULT_H = 32
 
 
 class ResolvedElement:
@@ -253,6 +257,15 @@ def _collect_positioned(
                     is_container_owned=container_owned,
                     is_container=True,
                 ))
+            else:
+                # No children with dimensions; use __width/__height or defaults
+                cw = int(child.attrib.get("__width", str(CONTAINER_DEFAULT_W)))
+                ch = int(child.attrib.get("__height", str(CONTAINER_DEFAULT_H)))
+                out.append(ResolvedElement(
+                    child, abs_x, abs_y, cw, ch,
+                    is_container_owned=container_owned,
+                    is_container=True,
+                ))
 
             # Repeating container: expand children `size` times with stride
             size = int(child.attrib.get("size", "1"))
@@ -273,6 +286,14 @@ def _collect_positioned(
                 out.append(ResolvedElement(
                     child, bbox[0], bbox[1],
                     bbox[2] - bbox[0], bbox[3] - bbox[1],
+                    is_container_owned=container_owned,
+                    is_container=True,
+                ))
+            else:
+                cw = int(child.attrib.get("__width", str(CONTAINER_DEFAULT_W)))
+                ch = int(child.attrib.get("__height", str(CONTAINER_DEFAULT_H)))
+                out.append(ResolvedElement(
+                    child, abs_x, abs_y, cw, ch,
                     is_container_owned=container_owned,
                     is_container=True,
                 ))
@@ -397,3 +418,12 @@ def add_element_to_ui(
         return None
     elem = ET.SubElement(ui_node, tag, attribs)
     return elem
+
+
+def add_element_under(
+    parent: ET.Element,
+    tag: str,
+    attribs: Dict[str, str],
+) -> ET.Element:
+    """Append a new element under *parent* and return it."""
+    return ET.SubElement(parent, tag, attribs)

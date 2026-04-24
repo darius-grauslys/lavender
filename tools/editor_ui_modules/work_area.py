@@ -65,8 +65,9 @@ class WorkArea:
     """Manages the interactive canvas region."""
 
     def __init__(self):
-        self.selected_element: Optional[ET.Element] = None
-        self.hovered_element: Optional[ET.Element] = None
+        self.selected_element = None
+        self.hovered_element = None
+        self.concealed_ids: set = set()  # set of id(xml_elem) for concealed elements
         self._drag_start: Optional[Tuple[int, int]] = None
         self._is_dragging: bool = False
         self._scroll_x: float = 0.0
@@ -142,10 +143,13 @@ class WorkArea:
         rel_my = rel_my_screen / zoom if zoom != 0 else 0
         in_bounds = 0 <= rel_mx <= work_w and 0 <= rel_my <= work_h
 
-        # Hover detection
+        # Hover detection (skip concealed)
         self.hovered_element = None
         if in_bounds:
             for elem in reversed(elements):
+                xml_e = elem.xml_elem if isinstance(elem, ResolvedElement) else elem
+                if id(xml_e) in self.concealed_ids:
+                    continue
                 ex, ey, ew, eh = elem_rect(elem)
                 if ex <= rel_mx <= ex + ew and ey <= rel_my <= ey + eh:
                     self.hovered_element = elem
@@ -204,8 +208,15 @@ class WorkArea:
                 self._is_dragging = False
                 self._drag_start = None
 
-        # Draw elements
+        # Draw elements (skip concealed)
+        selected_x_info = None  # will store (bx, by, elem) for top-layer X
+
         for elem in elements:
+            # Check concealment
+            xml_e = elem.xml_elem if isinstance(elem, ResolvedElement) else elem
+            if id(xml_e) in self.concealed_ids:
+                continue
+
             ex, ey, ew, eh = elem_rect(elem)
             if ew <= 0 or eh <= 0:
                 continue
@@ -319,9 +330,7 @@ class WorkArea:
                     thickness=OUTLINE_WIDTH,
                 )
 
-            # Delete X button on selected
-            # - Not shown on container-owned children (they're repeated)
-            # - Shown on containers themselves (deleting removes the whole container)
+            # Record X button position for selected element (drawn on top later)
             is_owned = (
                 isinstance(elem, ResolvedElement)
                 and elem.is_container_owned
@@ -330,19 +339,27 @@ class WorkArea:
             if elem is self.selected_element and not is_owned:
                 bx = origin_x + (ex + ew) * zoom - 10
                 by = origin_y + ey * zoom + 2
-                draw_list.add_text(bx, by, _color4_to_u32(*COLOR_DELETE_X), "X")
-                # Check click on X region
-                if (
-                    imgui.is_mouse_clicked(0)
-                    and bx <= mx <= bx + 10
-                    and by <= my <= by + 12
-                ):
-                    xml_elem = elem
-                    if hasattr(xml_elem, "xml_elem"):
-                        xml_elem = xml_elem.xml_elem
-                    on_delete(xml_elem)
-                    self.selected_element = None
-                    on_select(None)
+                selected_x_info = (bx, by, elem)
+
+        # Draw the X delete button on TOP of everything (for selected element)
+        if selected_x_info is not None:
+            bx, by, sel_elem = selected_x_info
+            draw_list.add_rect_filled(
+                bx - 2, by - 1, bx + 12, by + 14,
+                _color4_to_u32(0.15, 0.15, 0.15, 0.85),
+            )
+            draw_list.add_text(bx, by, _color4_to_u32(*COLOR_DELETE_X), "X")
+            if (
+                imgui.is_mouse_clicked(0)
+                and bx <= mx <= bx + 10
+                and by <= my <= by + 12
+            ):
+                xml_elem = sel_elem
+                if hasattr(xml_elem, "xml_elem"):
+                    xml_elem = xml_elem.xml_elem
+                on_delete(xml_elem)
+                self.selected_element = None
+                on_select(None)
 
     # ------------------------------------------------------------------
     def _finalize_create(

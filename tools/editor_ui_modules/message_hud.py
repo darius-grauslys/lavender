@@ -28,6 +28,7 @@ class MessageHUD:
         self._max = max_messages
         self._collapsed: bool = False
         self._auto_scroll: bool = True
+        self._new_message_added: bool = False
 
     # -- public API --------------------------------------------------------
 
@@ -86,8 +87,13 @@ class MessageHUD:
                 else:
                     imgui.text(msg.text)
 
-            if self._auto_scroll:
+            # Only auto-scroll when a new message was added AND user is near bottom
+            scroll_y = imgui.get_scroll_y()
+            scroll_max = imgui.get_scroll_max_y()
+            at_bottom = (scroll_max <= 0) or (scroll_y >= scroll_max - 20)
+            if self._new_message_added and at_bottom:
                 imgui.set_scroll_here_y(1.0)
+            self._new_message_added = False
             imgui.end_child()
 
         imgui.end()
@@ -96,5 +102,6 @@ class MessageHUD:
 
     def _append(self, msg: Message) -> None:
         self._messages.append(msg)
+        self._new_message_added = True
         if len(self._messages) > self._max:
             self._messages = self._messages[-self._max:]
