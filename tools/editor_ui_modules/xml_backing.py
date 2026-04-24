@@ -121,12 +121,17 @@ def _collect_positioned(
     out: List[ResolvedElement],
     container_owned: bool = False,
 ) -> None:
-    for child in node:
+    # The parent node may define stride that applies to its children
+    parent_stride_x = int(node.attrib.get("stride__x", "0"))
+    parent_stride_y = int(node.attrib.get("stride__y", "0"))
+
+    for child_index, child in enumerate(node):
         tag = child.tag
         local_x = int(child.attrib.get("x", "0"))
         local_y = int(child.attrib.get("y", "0"))
-        abs_x = parent_x + local_x
-        abs_y = parent_y + local_y
+        # Apply parent stride per child index (like group stride__y)
+        abs_x = parent_x + local_x + parent_stride_x * child_index
+        abs_y = parent_y + local_y + parent_stride_y * child_index
 
         if tag in _REPEATING_TAGS:
             # Repeating container: expand children `size` times with stride
@@ -194,9 +199,14 @@ def _collect_positioned_single(
                 iteration_index=iteration_index,
             ))
 
-        for child in node:
+        # Apply this node's stride to its children
+        node_stride_x = int(node.attrib.get("stride__x", "0"))
+        node_stride_y = int(node.attrib.get("stride__y", "0"))
+        for child_index, child in enumerate(node):
+            child_abs_x = abs_x + node_stride_x * child_index
+            child_abs_y = abs_y + node_stride_y * child_index
             _collect_positioned_single(
-                child, abs_x, abs_y, out,
+                child, child_abs_x, child_abs_y, out,
                 container_owned=container_owned,
                 iteration_index=iteration_index,
             )

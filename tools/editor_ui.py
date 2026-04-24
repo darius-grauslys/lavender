@@ -402,17 +402,23 @@ class EditorApp:
     def draw_frame(self, win_w: float, win_h: float) -> None:
         io = imgui.get_io()
 
-        # Keyboard shortcuts
-        ctrl = io.key_ctrl
-        shift = io.key_shift
+        # Use pyglet's key state for reliable modifier tracking
+        _ks = getattr(self, '_key_state', None)
+        if _ks is not None:
+            ctrl = _ks[pyglet.window.key.LCTRL] or _ks[pyglet.window.key.RCTRL]
+            shift = _ks[pyglet.window.key.LSHIFT] or _ks[pyglet.window.key.RSHIFT]
+        else:
+            ctrl = io.key_ctrl
+            shift = io.key_shift
 
         # imgui key indices (safe, always < 512)
         key_idx_z = io.key_map[imgui.KEY_Z] if io.key_map[imgui.KEY_Z] >= 0 else -1
 
-        # For keys not in imgui's key_map we clamp to buffer size
-        _KD_LEN = 512
-
+        # Use pyglet key state for reliable key checks
         def _is_down(pyglet_key: int) -> bool:
+            if _ks is not None:
+                return _ks[pyglet_key]
+            _KD_LEN = 512
             return pyglet_key < _KD_LEN and io.keys_down[pyglet_key]
 
         key_f = pyglet.window.key.F
@@ -437,22 +443,37 @@ class EditorApp:
         arrow_right = io.key_map[imgui.KEY_RIGHT_ARROW]
 
         def _arrow_down_check(mapped_key: int) -> bool:
+            if _ks is not None:
+                # Try pyglet key constants directly for arrows
+                return False  # arrows handled below via pyglet
+            _KD_LEN = 512
             return mapped_key >= 0 and mapped_key < _KD_LEN and io.keys_down[mapped_key]
+
+        if _ks is not None:
+            _up = _ks[pyglet.window.key.UP]
+            _down = _ks[pyglet.window.key.DOWN]
+            _left = _ks[pyglet.window.key.LEFT]
+            _right = _ks[pyglet.window.key.RIGHT]
+        else:
+            _up = _arrow_down_check(arrow_up)
+            _down = _arrow_down_check(arrow_down)
+            _left = _arrow_down_check(arrow_left)
+            _right = _arrow_down_check(arrow_right)
 
         if ctrl:
             # Ctrl + Up/Down = zoom
-            if _arrow_down_check(arrow_up):
+            if _up:
                 self._zoom = min(8.0, self._zoom * 1.05)
-            if _arrow_down_check(arrow_down):
+            if _down:
                 self._zoom = max(0.125, self._zoom / 1.05)
         else:
-            if _arrow_down_check(arrow_up):
+            if _up:
                 self._pan_y -= pan_speed
-            if _arrow_down_check(arrow_down):
+            if _down:
                 self._pan_y += pan_speed
-            if _arrow_down_check(arrow_left):
+            if _left:
                 self._pan_x -= pan_speed
-            if _arrow_down_check(arrow_right):
+            if _right:
                 self._pan_x += pan_speed
 
         # Mouse wheel: Ctrl = zoom, Shift = horizontal pan, else vertical pan
@@ -581,11 +602,16 @@ def main() -> None:
         caption="Lavender UI Editor",
     )
 
+    # Use pyglet's KeyStateHandler for reliable modifier tracking
+    key_state = pyglet.window.key.KeyStateHandler()
+    window.push_handlers(key_state)
+
     imgui.create_context()
     renderer = PygletRenderer(window)
 
     app = EditorApp()
     app.message_hud.info("Welcome to the Lavender UI Editor.")
+    app._key_state = key_state  # expose to draw_frame
 
     @window.event
     def on_draw():
