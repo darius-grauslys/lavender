@@ -288,7 +288,6 @@ class EditorApp:
             | imgui.WINDOW_NO_RESIZE
             | imgui.WINDOW_NO_MOVE
             | imgui.WINDOW_NO_SAVED_SETTINGS
-            | imgui.WINDOW_HORIZONTAL_SCROLLBAR
         )
         imgui.begin("##work_area_window", closable=False, flags=flags)
 
