@@ -403,7 +403,7 @@ class EditorApp:
 
         # Right panels
         panel_w = 220.0
-        active_tool = self.tool_hud.draw(win_w, win_h, panel_w)
+        active_tool = self.tool_hud.draw_with_pick_capture(win_w, win_h, panel_w)
         self.properties_hud.draw(
             win_w, win_h, panel_w,
             on_change=self.on_property_changed,

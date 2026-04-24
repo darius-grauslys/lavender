@@ -90,11 +90,16 @@ class ResolvedElement:
         self.height = height
 
 
+# Tags that repeat their children with stride offsets
+_REPEATING_TAGS = frozenset({"grid", "allocate_ui_container"})
+
+
 def find_ui_elements(root: ET.Element) -> List[ResolvedElement]:
     """Return all visual elements inside ``<ui>`` with absolute positions.
 
-    Walks the tree, accumulating parent ``x``/``y`` offsets so that child
-    positions are resolved to absolute coordinates.
+    Walks the tree, accumulating parent ``x``/``y`` offsets.  For repeating
+    containers (``grid``, ``allocate_ui_container``) children are expanded
+    ``size`` times with the appropriate stride applied per iteration.
     """
     ui_node = root.find("ui")
     if ui_node is None:
@@ -111,19 +116,64 @@ def _collect_positioned(
     out: List[ResolvedElement],
 ) -> None:
     for child in node:
-        # Accumulate this node's own x/y offset
+        tag = child.tag
         local_x = int(child.attrib.get("x", "0"))
         local_y = int(child.attrib.get("y", "0"))
         abs_x = parent_x + local_x
         abs_y = parent_y + local_y
 
-        if "width" in child.attrib and "height" in child.attrib:
-            w = int(child.attrib["width"])
-            h = int(child.attrib["height"])
-            out.append(ResolvedElement(child, abs_x, abs_y, w, h))
+        if tag in _REPEATING_TAGS:
+            # Repeating container: expand children `size` times with stride
+            size = int(child.attrib.get("size", "1"))
+            stride_x = int(child.attrib.get("stride__x", "0"))
+            stride_y = int(child.attrib.get("stride__y", "0"))
+            for i in range(size):
+                iter_x = abs_x + stride_x * i
+                iter_y = abs_y + stride_y * i
+                # Recurse into children at this iteration's offset
+                for grandchild in child:
+                    _collect_positioned_single(grandchild, iter_x, iter_y, out)
+        else:
+            # Non-repeating: emit self if visual, then recurse
+            if "width" in child.attrib and "height" in child.attrib:
+                w = int(child.attrib["width"])
+                h = int(child.attrib["height"])
+                out.append(ResolvedElement(child, abs_x, abs_y, w, h))
 
-        # Always recurse — containers pass their offset to children
-        _collect_positioned(child, abs_x, abs_y, out)
+            # Recurse into children
+            _collect_positioned(child, abs_x, abs_y, out)
+
+
+def _collect_positioned_single(
+    node: ET.Element,
+    parent_x: int,
+    parent_y: int,
+    out: List[ResolvedElement],
+) -> None:
+    """Process a single element and recurse — used by repeating expansion."""
+    tag = node.tag
+    local_x = int(node.attrib.get("x", "0"))
+    local_y = int(node.attrib.get("y", "0"))
+    abs_x = parent_x + local_x
+    abs_y = parent_y + local_y
+
+    if tag in _REPEATING_TAGS:
+        size = int(node.attrib.get("size", "1"))
+        stride_x = int(node.attrib.get("stride__x", "0"))
+        stride_y = int(node.attrib.get("stride__y", "0"))
+        for i in range(size):
+            iter_x = abs_x + stride_x * i
+            iter_y = abs_y + stride_y * i
+            for child in node:
+                _collect_positioned_single(child, iter_x, iter_y, out)
+    else:
+        if "width" in node.attrib and "height" in node.attrib:
+            w = int(node.attrib["width"])
+            h = int(node.attrib["height"])
+            out.append(ResolvedElement(node, abs_x, abs_y, w, h))
+
+        for child in node:
+            _collect_positioned_single(child, abs_x, abs_y, out)
 
 
 def snap_to_grid(value: int, grid: int = GRID_PX) -> int:
