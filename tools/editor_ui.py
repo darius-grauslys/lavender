@@ -406,41 +406,53 @@ class EditorApp:
         ctrl = io.key_ctrl
         shift = io.key_shift
 
+        # imgui key indices (safe, always < 512)
+        key_idx_z = io.key_map[imgui.KEY_Z] if io.key_map[imgui.KEY_Z] >= 0 else -1
+
+        # For keys not in imgui's key_map we clamp to buffer size
+        _KD_LEN = 512
+
+        def _is_down(pyglet_key: int) -> bool:
+            return pyglet_key < _KD_LEN and io.keys_down[pyglet_key]
+
         key_f = pyglet.window.key.F
         key_z = pyglet.window.key.Z
         key_s = pyglet.window.key.S
 
-        self._ctrl_f_held = ctrl and io.keys_down[key_f]
+        self._ctrl_f_held = ctrl and _is_down(key_f)
 
-        if ctrl and imgui.is_key_pressed(key_z):
+        if ctrl and key_idx_z >= 0 and imgui.is_key_pressed(key_idx_z):
             if shift:
                 self.redo()
             else:
                 self.undo()
-        if ctrl and imgui.is_key_pressed(key_s):
+        if ctrl and _is_down(key_s):
             self.save()
 
-        # Arrow key panning
+        # Arrow key panning — use imgui mapped arrow keys
         pan_speed = 16.0
-        key_up = pyglet.window.key.UP
-        key_down = pyglet.window.key.DOWN
-        key_left = pyglet.window.key.LEFT
-        key_right = pyglet.window.key.RIGHT
+        arrow_up = io.key_map[imgui.KEY_UP_ARROW]
+        arrow_down = io.key_map[imgui.KEY_DOWN_ARROW]
+        arrow_left = io.key_map[imgui.KEY_LEFT_ARROW]
+        arrow_right = io.key_map[imgui.KEY_RIGHT_ARROW]
+
+        def _arrow_down_check(mapped_key: int) -> bool:
+            return mapped_key >= 0 and mapped_key < _KD_LEN and io.keys_down[mapped_key]
 
         if ctrl:
             # Ctrl + Up/Down = zoom
-            if io.keys_down[key_up]:
+            if _arrow_down_check(arrow_up):
                 self._zoom = min(8.0, self._zoom * 1.05)
-            if io.keys_down[key_down]:
+            if _arrow_down_check(arrow_down):
                 self._zoom = max(0.125, self._zoom / 1.05)
         else:
-            if io.keys_down[key_up]:
+            if _arrow_down_check(arrow_up):
                 self._pan_y -= pan_speed
-            if io.keys_down[key_down]:
+            if _arrow_down_check(arrow_down):
                 self._pan_y += pan_speed
-            if io.keys_down[key_left]:
+            if _arrow_down_check(arrow_left):
                 self._pan_x -= pan_speed
-            if io.keys_down[key_right]:
+            if _arrow_down_check(arrow_right):
                 self._pan_x += pan_speed
 
         # Mouse wheel: Ctrl = zoom, Shift = horizontal pan, else vertical pan
