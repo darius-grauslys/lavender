@@ -270,8 +270,12 @@ class WorkArea:
     ) -> None:
         """Draw a read-only PNG preview in the work area."""
         draw_list = imgui.get_window_draw_list()
+        # Flip UVs vertically: pyglet pixel data is top-to-bottom,
+        # but GL texture origin is bottom-left.
         draw_list.add_image(
             texture_id,
             (origin_x, origin_y),
             (origin_x + tex_w, origin_y + tex_h),
+            uv_a=(0, 1),
+            uv_b=(1, 0),
         )

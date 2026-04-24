@@ -26,8 +26,10 @@ if _REPO_ROOT not in sys.path:
 
 import pyglet
 from pyglet import gl as pgl
+import ctypes
 import imgui
 from imgui.integrations.pyglet import PygletProgrammablePipelineRenderer as PygletRenderer
+from OpenGL import GL as gl
 
 from tools.editor_ui_modules.constants import (
     ASSET_UI_ROOT,
@@ -224,12 +226,37 @@ class EditorApp:
     # ------------------------------------------------------------------
 
     def _load_png_texture(self, path: str) -> None:
+        """Load a PNG into a plain GL texture compatible with imgui."""
         try:
             img = pyglet.image.load(path)
             self._png_w = img.width
             self._png_h = img.height
-            texture = img.get_texture()
-            self._png_texture_id = texture.id
+
+            # Get raw RGBA pixel data
+            raw = img.get_image_data()
+            fmt = "RGBA"
+            pitch = raw.width * 4
+            pixel_data = raw.get_data(fmt, pitch)
+
+            # Create a plain OpenGL texture
+            tex_id = gl.glGenTextures(1)
+            gl.glBindTexture(gl.GL_TEXTURE_2D, tex_id)
+            gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_NEAREST)
+            gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_NEAREST)
+            gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_S, gl.GL_CLAMP_TO_EDGE)
+            gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_T, gl.GL_CLAMP_TO_EDGE)
+            gl.glTexImage2D(
+                gl.GL_TEXTURE_2D, 0, gl.GL_RGBA,
+                self._png_w, self._png_h, 0,
+                gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, pixel_data,
+            )
+            gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
+
+            # Clean up old texture if any
+            if self._png_texture_id is not None:
+                gl.glDeleteTextures([self._png_texture_id])
+
+            self._png_texture_id = tex_id
         except Exception as exc:
             self.message_hud.error(f"PNG load error: {exc}")
             self._png_texture_id = None
