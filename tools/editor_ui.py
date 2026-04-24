@@ -94,6 +94,15 @@ class EditorApp:
         # Keyboard state
         self._ctrl_f_held: bool = False
 
+        # Panel widths (resizable)
+        self.left_panel_w: float = 200.0
+        self.right_panel_w: float = 220.0
+
+        # Zoom / pan
+        self._zoom: float = 1.0
+        self._pan_x: float = 0.0
+        self._pan_y: float = 0.0
+
     # ------------------------------------------------------------------
     # File callbacks
     # ------------------------------------------------------------------
@@ -303,6 +312,15 @@ class EditorApp:
                 else:
                     pixel_data[i * 4 + 3] = 0xFF
 
+            # Flip rows so GL texture is right-side-up (GL origin = bottom)
+            row_size = w * 4
+            flipped = bytearray(len(pixel_data))
+            for row in range(h):
+                src_off = row * row_size
+                dst_off = (h - 1 - row) * row_size
+                flipped[dst_off:dst_off + row_size] = pixel_data[src_off:src_off + row_size]
+            pixel_data = flipped
+
             tex_id = gl.glGenTextures(1)
             gl.glBindTexture(gl.GL_TEXTURE_2D, tex_id)
             gl.glTexParameteri(
@@ -345,6 +363,15 @@ class EditorApp:
             pitch = raw.width * 4
             pixel_data = raw.get_data(fmt, pitch)
 
+            # Flip rows so GL texture is right-side-up
+            pixel_data = bytearray(pixel_data)
+            row_size = self._png_w * 4
+            flipped = bytearray(len(pixel_data))
+            for row in range(self._png_h):
+                src_off = row * row_size
+                dst_off = (self._png_h - 1 - row) * row_size
+                flipped[dst_off:dst_off + row_size] = pixel_data[src_off:src_off + row_size]
+
             # Create a plain OpenGL texture
             tex_id = gl.glGenTextures(1)
             gl.glBindTexture(gl.GL_TEXTURE_2D, tex_id)
@@ -355,7 +382,7 @@ class EditorApp:
             gl.glTexImage2D(
                 gl.GL_TEXTURE_2D, 0, gl.GL_RGBA,
                 self._png_w, self._png_h, 0,
-                gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, pixel_data,
+                gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, bytes(flipped),
             )
             gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
 
@@ -377,9 +404,8 @@ class EditorApp:
 
         # Keyboard shortcuts
         ctrl = io.key_ctrl
+        shift = io.key_shift
 
-        # pyimgui key indices: use key_map or raw indices
-        # For letter keys we use pyglet's key constants mapped through io
         key_f = pyglet.window.key.F
         key_z = pyglet.window.key.Z
         key_s = pyglet.window.key.S
@@ -387,33 +413,96 @@ class EditorApp:
         self._ctrl_f_held = ctrl and io.keys_down[key_f]
 
         if ctrl and imgui.is_key_pressed(key_z):
-            if io.key_shift:
+            if shift:
                 self.redo()
             else:
                 self.undo()
         if ctrl and imgui.is_key_pressed(key_s):
             self.save()
 
-        # Left panel – file browser
-        self.file_browser.draw(
-            on_select_xml=self.on_open_xml,
-            on_select_png=self.on_open_png,
-            width=200,
+        # Arrow key panning
+        pan_speed = 16.0
+        key_up = pyglet.window.key.UP
+        key_down = pyglet.window.key.DOWN
+        key_left = pyglet.window.key.LEFT
+        key_right = pyglet.window.key.RIGHT
+
+        if ctrl:
+            # Ctrl + Up/Down = zoom
+            if io.keys_down[key_up]:
+                self._zoom = min(8.0, self._zoom * 1.05)
+            if io.keys_down[key_down]:
+                self._zoom = max(0.125, self._zoom / 1.05)
+        else:
+            if io.keys_down[key_up]:
+                self._pan_y -= pan_speed
+            if io.keys_down[key_down]:
+                self._pan_y += pan_speed
+            if io.keys_down[key_left]:
+                self._pan_x -= pan_speed
+            if io.keys_down[key_right]:
+                self._pan_x += pan_speed
+
+        # Mouse wheel: Ctrl = zoom, Shift = horizontal pan, else vertical pan
+        wheel = io.mouse_wheel
+        if wheel != 0:
+            if ctrl:
+                factor = 1.1 if wheel > 0 else 1.0 / 1.1
+                self._zoom = max(0.125, min(8.0, self._zoom * factor))
+            elif shift:
+                self._pan_x -= wheel * 40.0
+            else:
+                self._pan_y -= wheel * 40.0
+
+        # Left panel – file browser (resizable via drag on right edge)
+        left_w = self.left_panel_w
+        imgui.set_next_window_position(0, 0)
+        imgui.set_next_window_size(left_w, win_h - self.message_hud.panel_height)
+        imgui.begin(
+            "Files##file_browser",
+            closable=False,
+            flags=(
+                imgui.WINDOW_NO_MOVE
+                | imgui.WINDOW_NO_SAVED_SETTINGS
+            ),
         )
+        # Detect resize from imgui
+        new_left_w = imgui.get_window_width()
+        if new_left_w != left_w:
+            self.left_panel_w = max(100, min(win_w * 0.4, new_left_w))
+        if os.path.isdir(ASSET_UI_ROOT):
+            self.file_browser._draw_dir(
+                self.file_browser.root_dir,
+                self.on_open_xml,
+                self.on_open_png,
+            )
+        else:
+            imgui.text_colored("(missing assets/ui)", 1, 0.3, 0.3)
+        imgui.end()
 
         # Right panels
-        panel_w = 220.0
-        active_tool = self.tool_hud.draw_with_pick_capture(win_w, win_h, panel_w)
+        right_w = self.right_panel_w
+        msg_h = self.message_hud.panel_height
+        half_h = (win_h - msg_h) * 0.5
+
+        # Tool HUD (top-right, resizable width)
+        imgui.set_next_window_position(win_w - right_w, 0)
+        imgui.set_next_window_size(right_w, half_h)
+        active_tool = self.tool_hud.draw_with_pick_capture(win_w, win_h, right_w)
+
+        # Properties HUD (bottom-right)
+        imgui.set_next_window_position(win_w - right_w, half_h)
+        imgui.set_next_window_size(right_w, half_h)
         self.properties_hud.draw(
-            win_w, win_h, panel_w,
+            win_w, win_h, right_w,
             on_change=self.on_property_changed,
         )
 
         # Central work area
-        work_x = 200.0
+        work_x = self.left_panel_w
         work_y = 0.0
-        work_region_w = win_w - 200 - panel_w
-        work_region_h = win_h - 150  # leave room for message hud
+        work_region_w = win_w - self.left_panel_w - right_w
+        work_region_h = win_h - msg_h
 
         imgui.set_next_window_position(work_x, work_y)
         imgui.set_next_window_size(work_region_w, work_region_h)
@@ -426,15 +515,14 @@ class EditorApp:
         imgui.begin("##work_area_window", closable=False, flags=flags)
 
         cursor_pos = imgui.get_cursor_screen_position()
-        origin_x = cursor_pos[0]
-        origin_y = cursor_pos[1]
+        origin_x = cursor_pos[0] + self._pan_x
+        origin_y = cursor_pos[1] + self._pan_y
 
         if self._png_texture_id is not None and self._xml_root is None:
-            # PNG preview mode
             self.work_area.draw_png_preview(
                 self._png_texture_id,
-                self._png_w,
-                self._png_h,
+                int(self._png_w * self._zoom),
+                int(self._png_h * self._zoom),
                 origin_x,
                 origin_y,
             )
@@ -453,9 +541,12 @@ class EditorApp:
                 on_create=self.on_create_element,
                 ctrl_f_held=self._ctrl_f_held,
                 backgrounds=self._bg_textures,
+                zoom=self._zoom,
             )
-            # Reserve space so scrollbars work
-            imgui.dummy(self.work_w, self.work_h)
+            imgui.dummy(
+                int(self.work_w * self._zoom),
+                int(self.work_h * self._zoom),
+            )
         else:
             imgui.text("Open a file from the left panel.")
 

@@ -42,8 +42,14 @@ class MessageHUD:
 
     # -- drawing -----------------------------------------------------------
 
+    @property
+    def panel_height(self) -> float:
+        """Return the current height of the message panel."""
+        return 150.0 if not self._collapsed else 26.0
+
     def draw(self, window_width: float, window_height: float) -> None:
-        panel_h = 150 if not self._collapsed else 26
+        panel_h = self.panel_height
+        # Always anchored to the very bottom of the window
         imgui.set_next_window_position(0, window_height - panel_h)
         imgui.set_next_window_size(window_width, panel_h)
 
@@ -51,15 +57,18 @@ class MessageHUD:
             imgui.WINDOW_NO_RESIZE
             | imgui.WINDOW_NO_MOVE
             | imgui.WINDOW_NO_SAVED_SETTINGS
+            | imgui.WINDOW_NO_TITLE_BAR
         )
 
         imgui.begin("Messages##msg_hud", closable=False, flags=flags)
 
-        # Title bar acts as collapse toggle
-        if imgui.button("Messages  [toggle]##collapse_btn"):
-            self._collapsed = not self._collapsed
-
-        if not self._collapsed:
+        if self._collapsed:
+            # Only show the toggle bar at the very bottom
+            if imgui.button("Messages  [expand]##collapse_btn", width=window_width - 16):
+                self._collapsed = False
+        else:
+            if imgui.button("Messages  [collapse]##collapse_btn", width=window_width - 16):
+                self._collapsed = True
             imgui.separator()
             imgui.begin_child(
                 "##msg_scroll",

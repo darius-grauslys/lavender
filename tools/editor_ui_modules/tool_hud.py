@@ -103,6 +103,14 @@ class TilesetPicker:
                 if r == 0xFF and b == 0xFF and g == 0x00:
                     pixel_data[i * 4 + 3] = 0x00
 
+            # Flip rows so GL texture is right-side-up
+            row_size = self._tex_w * 4
+            flipped = bytearray(len(pixel_data))
+            for row in range(self._tex_h):
+                src_off = row * row_size
+                dst_off = (self._tex_h - 1 - row) * row_size
+                flipped[dst_off:dst_off + row_size] = pixel_data[src_off:src_off + row_size]
+
             tex_id = gl.glGenTextures(1)
             gl.glBindTexture(gl.GL_TEXTURE_2D, tex_id)
             gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_NEAREST)
@@ -112,7 +120,7 @@ class TilesetPicker:
             gl.glTexImage2D(
                 gl.GL_TEXTURE_2D, 0, gl.GL_RGBA,
                 self._tex_w, self._tex_h, 0,
-                gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, bytes(pixel_data),
+                gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, bytes(flipped),
             )
             gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
             self._gl_texture_id = tex_id
@@ -129,16 +137,16 @@ class TilesetPicker:
     def get_tile_uv(self, tile_index: int) -> Tuple[float, float, float, float]:
         """Return (u0, v0, u1, v1) in [0..1] for a tile index.
 
-        Note: GL texture is bottom-up, so v is flipped.
+        Texture rows have been pre-flipped so UVs are standard top-left origin.
         """
         if self._cols == 0 or self._tex_w == 0 or self._tex_h == 0:
             return (0, 0, 1, 1)
         col = tile_index % self._cols
         row = tile_index // self._cols
         u0 = col * GRID_PX / self._tex_w
-        v0 = 1.0 - (row + 1) * GRID_PX / self._tex_h  # flip
+        v0 = row * GRID_PX / self._tex_h
         u1 = (col + 1) * GRID_PX / self._tex_w
-        v1 = 1.0 - row * GRID_PX / self._tex_h  # flip
+        v1 = (row + 1) * GRID_PX / self._tex_h
         return (u0, v0, u1, v1)
 
     def draw_tile_button(
@@ -380,13 +388,8 @@ class ToolHUD:
         """Wrapper that properly captures tile picks."""
         self._tileset_picker.ensure_loaded()
 
-        half_h = window_height * 0.5
-        imgui.set_next_window_position(window_width - panel_width, 0)
-        imgui.set_next_window_size(panel_width, half_h)
-
         flags = (
-            imgui.WINDOW_NO_RESIZE
-            | imgui.WINDOW_NO_MOVE
+            imgui.WINDOW_NO_MOVE
             | imgui.WINDOW_NO_SAVED_SETTINGS
         )
         imgui.begin("Tools##tool_hud", closable=False, flags=flags)

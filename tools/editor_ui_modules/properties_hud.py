@@ -33,15 +33,8 @@ class PropertiesHUD:
         panel_width: float = 220,
         on_change: Optional[Callable[[], None]] = None,
     ) -> None:
-        half_h = window_height * 0.5
-        imgui.set_next_window_position(
-            window_width - panel_width, half_h
-        )
-        imgui.set_next_window_size(panel_width, half_h)
-
         flags = (
-            imgui.WINDOW_NO_RESIZE
-            | imgui.WINDOW_NO_MOVE
+            imgui.WINDOW_NO_MOVE
             | imgui.WINDOW_NO_SAVED_SETTINGS
         )
         imgui.begin("Properties##prop_hud", closable=False, flags=flags)

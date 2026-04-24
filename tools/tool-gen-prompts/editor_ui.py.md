@@ -54,7 +54,23 @@ and will be overwritten by new records.
 Setting the properties of a UI element per section 5 is redo/undoable
 Creation and deletion of UI elements are redo/undoable
 
-## 1.1 Creating UI_Elements
+## 1.1 Zoom and Pan
+
+The work area supports zoom and pan:
+
+* **Ctrl + Mouse Wheel** or **Ctrl + Up/Down Arrow**: Zoom in/out
+  (range 0.125× to 8×).
+* **Mouse Wheel**: Pan vertically.
+* **Shift + Mouse Wheel**: Pan horizontally.
+* **Arrow Keys** (without Ctrl): Pan in the corresponding direction.
+
+Zoom is centered on the current view origin. All element positions,
+grid lines, backgrounds, and drag-create previews scale with the
+zoom factor.
+
+## 1.2 Creating UI_Elements
+
+(Previously section 1.1)
 
 See section 4 on the tool selection of UI elements.
 
@@ -72,7 +88,7 @@ If the tool does not support 1x1 tile, and the bounding box of click
 and drag only covers a 1x1 section, the ui element will not be made.
 No error is written to message hud for this.
 
-### 1.1.1 Span generation
+### 1.2.1 Span generation
 
 The underlying workspace will render the the UI_Span defined by
 the TOOL section 4. Going off of the bounding box defined in

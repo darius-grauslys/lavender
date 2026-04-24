@@ -93,23 +93,31 @@ class WorkArea:
         on_create: Callable[[str, Dict[str, str]], None],
         ctrl_f_held: bool = False,
         backgrounds: Optional[list] = None,
+        zoom: float = 1.0,
     ) -> None:
         draw_list = imgui.get_window_draw_list()
+        zw = int(work_w * zoom)
+        zh = int(work_h * zoom)
+        grid_step = max(1, int(GRID_PX * zoom))
 
         # Grid lines
         grid_col = _color4_to_u32(0.25, 0.25, 0.25, 0.3)
-        for gx in range(0, work_w + 1, GRID_PX):
+        gx = 0
+        while gx <= zw:
             draw_list.add_line(
                 origin_x + gx, origin_y,
-                origin_x + gx, origin_y + work_h,
+                origin_x + gx, origin_y + zh,
                 grid_col,
             )
-        for gy in range(0, work_h + 1, GRID_PX):
+            gx += grid_step
+        gy = 0
+        while gy <= zh:
             draw_list.add_line(
                 origin_x, origin_y + gy,
-                origin_x + work_w, origin_y + gy,
+                origin_x + zw, origin_y + gy,
                 grid_col,
             )
+            gy += grid_step
 
         # Background images (rendered under elements, over grid)
         if backgrounds:
@@ -117,17 +125,19 @@ class WorkArea:
                 if bg_tex_id is not None:
                     draw_list.add_image(
                         bg_tex_id,
-                        (origin_x + bg_x, origin_y + bg_y),
-                        (origin_x + bg_x + bg_w, origin_y + bg_y + bg_h),
-                        uv_a=(0, 1),
-                        uv_b=(1, 0),
+                        (origin_x + bg_x * zoom, origin_y + bg_y * zoom),
+                        (origin_x + (bg_x + bg_w) * zoom,
+                         origin_y + (bg_y + bg_h) * zoom),
                     )
 
         # Mouse state
         mouse_pos = imgui.get_io().mouse_pos
         mx, my = mouse_pos[0], mouse_pos[1]
-        rel_mx = mx - origin_x
-        rel_my = my - origin_y
+        # Convert screen coords to logical (unzoomed) coords
+        rel_mx_screen = mx - origin_x
+        rel_my_screen = my - origin_y
+        rel_mx = rel_mx_screen / zoom if zoom != 0 else 0
+        rel_my = rel_my_screen / zoom if zoom != 0 else 0
         in_bounds = 0 <= rel_mx <= work_w and 0 <= rel_my <= work_h
 
         # Hover detection
@@ -177,10 +187,10 @@ class WorkArea:
                 h = max(GRID_PX, y1 - y0)
                 # Preview rectangle
                 draw_list.add_rect(
-                    origin_x + x0,
-                    origin_y + y0,
-                    origin_x + x0 + w,
-                    origin_y + y0 + h,
+                    origin_x + x0 * zoom,
+                    origin_y + y0 * zoom,
+                    origin_x + (x0 + w) * zoom,
+                    origin_y + (y0 + h) * zoom,
                     _color4_to_u32(1, 1, 0, 0.7),
                     thickness=2,
                 )
@@ -200,10 +210,10 @@ class WorkArea:
             r, g, b = _parse_color_attrib(elem)
             fill = _color4_to_u32(r, g, b, 0.45)
             draw_list.add_rect_filled(
-                origin_x + ex,
-                origin_y + ey,
-                origin_x + ex + ew,
-                origin_y + ey + eh,
+                origin_x + ex * zoom,
+                origin_y + ey * zoom,
+                origin_x + (ex + ew) * zoom,
+                origin_y + (ey + eh) * zoom,
                 fill,
             )
 
@@ -221,18 +231,18 @@ class WorkArea:
                     ol_col = _color4_to_u32(*COLOR_OUTLINE_REVEAL)
 
                 draw_list.add_rect(
-                    origin_x + ex,
-                    origin_y + ey,
-                    origin_x + ex + ew,
-                    origin_y + ey + eh,
+                    origin_x + ex * zoom,
+                    origin_y + ey * zoom,
+                    origin_x + (ex + ew) * zoom,
+                    origin_y + (ey + eh) * zoom,
                     ol_col,
                     thickness=OUTLINE_WIDTH,
                 )
 
             # Delete X button on selected
             if elem is self.selected_element:
-                bx = origin_x + ex + ew - 10
-                by = origin_y + ey + 2
+                bx = origin_x + (ex + ew) * zoom - 10
+                by = origin_y + ey * zoom + 2
                 draw_list.add_text(bx, by, _color4_to_u32(*COLOR_DELETE_X), "X")
                 # Check click on X region
                 if (
@@ -304,6 +314,4 @@ class WorkArea:
             texture_id,
             (origin_x, origin_y),
             (origin_x + tex_w, origin_y + tex_h),
-            uv_a=(0, 1),
-            uv_b=(1, 0),
         )

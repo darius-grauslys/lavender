@@ -25,6 +25,7 @@ class FileBrowser:
         on_select_png: Callable[[str], None],
         width: float = 200,
     ) -> None:
+        """Standalone draw (creates its own window). Used if not embedded."""
         imgui.set_next_window_size(width, 0)
         imgui.set_next_window_position(0, 0, condition=imgui.FIRST_USE_EVER)
 
