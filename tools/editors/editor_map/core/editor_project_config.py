@@ -11,9 +11,9 @@ Two levels of configuration:
 
 Per-world schema:
 {
-    "tilesheet": {
-        "path": "assets/world/tilesheet.png"
-    }
+    "tilesheets": ["assets/world/tilesheet.png"],
+    "layers": [],
+    "workspace_position": {"x": 0, "y": 0, "z": 0}
 }
 
 Project-level schema:

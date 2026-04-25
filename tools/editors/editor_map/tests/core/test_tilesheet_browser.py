@@ -154,7 +154,7 @@ class TestBrowseAndSetTilesheet:
 
         # Verify config was saved
         cfg = load_world_editor_config(tmp_path, "test_world")
-        assert cfg.tilesheet_path == rel
+        assert rel in cfg.tilesheets
 
     def test_valid_file_saves_forward_slashes(self, tmp_path):
         """Relative path should use forward slashes."""
@@ -178,13 +178,14 @@ class TestBrowseAndSetTilesheet:
 class TestClearTilesheet:
     def test_clear(self, tmp_path):
         hud = MessageHUD()
-        cfg = WorldEditorConfig(tilesheet_path="assets/sheet.png")
+        cfg = WorldEditorConfig(tilesheets=["assets/sheet.png"])
         save_world_editor_config(tmp_path, "test_world", cfg)
 
         clear_tilesheet(tmp_path, "test_world", hud)
 
         cfg = load_world_editor_config(tmp_path, "test_world")
-        assert cfg.tilesheet_path == ""
+        assert cfg.tilesheets == []
+        assert cfg.primary_tilesheet_path == ""
 
     def test_clear_no_world(self, tmp_path):
         hud = MessageHUD()
@@ -207,7 +208,7 @@ class TestLoadTilesheetForWorld:
     def test_configured_but_missing_file(self, tmp_path):
         hud = MessageHUD()
         cfg = WorldEditorConfig(
-            tilesheet_path="assets/missing.png")
+            tilesheets=["assets/missing.png"])
         save_world_editor_config(tmp_path, "test_world", cfg)
 
         path, ts = load_tilesheet_for_world(
@@ -224,7 +225,7 @@ class TestLoadTilesheetForWorld:
         _create_fake_png(png_path)
 
         cfg = WorldEditorConfig(
-            tilesheet_path="assets/sheet.png")
+            tilesheets=["assets/sheet.png"])
         save_world_editor_config(tmp_path, "test_world", cfg)
 
         path, ts = load_tilesheet_for_world(
