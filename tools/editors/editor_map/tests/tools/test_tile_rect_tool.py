@@ -36,7 +36,7 @@ def tool(objects):
     t = TileRectTool(objects=objects, tile_byte_size=1)
     t._chunk_w = 8
     t._chunk_h = 8
-    t._selected_tile_value = 5
+    t._selected_tile_values[0] = 5
     return t
 
 
@@ -117,7 +117,7 @@ class TestTileRectToolHollow:
     def test_hollow_rect_edge_2(self, tool, objects):
         tool._fill = False
         tool._edge_thickness = 2
-        tool._selected_tile_value = 3
+        tool._selected_tile_values[0] = 3
         tool.on_workspace_drag_begin(0.0, 0.0, 0)
         tool.on_workspace_drag_end(5.0, 5.0, 0)
 

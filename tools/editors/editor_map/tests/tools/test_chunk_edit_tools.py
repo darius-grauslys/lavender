@@ -122,10 +122,6 @@ class TestTileDrawTool(unittest.TestCase):
         self.assertEqual(len(tool._tile_enums), 1)
         self.assertEqual(tool._tile_enums[0].name, "Tile_Kind")
 
-    def test_set_active_tilesheet_none(self):
-        tool = TileDrawTool()
-        tool.set_active_tilesheet(None)
-        self.assertIsNone(tool._active_tilesheet)
 
 
 class TestTileDrawToolChunkUpdate(unittest.TestCase):

@@ -36,7 +36,7 @@ def tool(objects):
     t = TileDrawTool(objects=objects, tile_byte_size=1)
     t._chunk_w = 8
     t._chunk_h = 8
-    t._selected_tile_value = 7
+    t._selected_tile_values[0] = 7
     return t
 
 
