@@ -72,6 +72,8 @@ class WorkArea:
         self._is_dragging: bool = False
         self._scroll_x: float = 0.0
         self._scroll_y: float = 0.0
+        self._selection_frame: int = 0  # frame counter when selection happened
+        self._frame_counter: int = 0    # monotonic frame counter
         # PNG preview
         self._preview_texture_id: Optional[int] = None
         self._preview_path: Optional[str] = None
@@ -98,6 +100,7 @@ class WorkArea:
         zoom: float = 1.0,
         tileset_picker=None,
     ) -> None:
+        self._frame_counter += 1
         draw_list = imgui.get_window_draw_list()
         zw = int(work_w * zoom)
         zh = int(work_h * zoom)
@@ -159,6 +162,7 @@ class WorkArea:
         if imgui.is_mouse_clicked(0) and in_bounds:
             if self.hovered_element is not None:
                 self.selected_element = self.hovered_element
+                self._selection_frame = self._frame_counter
                 xml_elem = self.selected_element
                 if hasattr(xml_elem, "xml_elem"):
                     xml_elem = xml_elem.xml_elem
@@ -342,17 +346,23 @@ class WorkArea:
                 selected_x_info = (bx, by, elem)
 
         # Draw the X delete button on TOP of everything (for selected element)
+        # Only clickable on a frame AFTER the selection frame (two-click system)
         if selected_x_info is not None:
             bx, by, sel_elem = selected_x_info
+            x_is_active = (self._frame_counter > self._selection_frame)
             draw_list.add_rect_filled(
                 bx - 2, by - 1, bx + 12, by + 14,
                 _color4_to_u32(0.15, 0.15, 0.15, 0.85),
             )
-            draw_list.add_text(bx, by, _color4_to_u32(*COLOR_DELETE_X), "X")
+            if x_is_active:
+                draw_list.add_text(bx, by, _color4_to_u32(*COLOR_DELETE_X), "X")
+            else:
+                draw_list.add_text(bx, by, _color4_to_u32(0.5, 0.2, 0.2, 0.5), "X")
             if (
-                imgui.is_mouse_clicked(0)
-                and bx <= mx <= bx + 10
-                and by <= my <= by + 12
+                x_is_active
+                and imgui.is_mouse_clicked(0)
+                and bx - 2 <= mx <= bx + 12
+                and by - 1 <= my <= by + 14
             ):
                 xml_elem = sel_elem
                 if hasattr(xml_elem, "xml_elem"):

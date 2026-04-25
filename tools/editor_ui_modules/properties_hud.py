@@ -25,6 +25,9 @@ class PropertiesHUD:
         if elem is not None:
             for k, v in elem.attrib.items():
                 self._buf[k] = v
+            # Pre-populate code text buffer
+            if elem.tag == "code" and elem.text:
+                self._buf["__code_text__"] = elem.text
 
     def draw(
         self,
@@ -33,16 +36,13 @@ class PropertiesHUD:
         panel_width: float = 220,
         on_change: Optional[Callable[[], None]] = None,
     ) -> None:
-        flags = (
-            imgui.WINDOW_NO_MOVE
-            | imgui.WINDOW_NO_SAVED_SETTINGS
-        )
-        imgui.begin("Properties##prop_hud", closable=False, flags=flags)
+        """Draw properties contents (no window creation – expects to be in a child)."""
+        imgui.text("Properties")
+        imgui.separator()
 
         elem = self.selected_element
         if elem is None:
             imgui.text("(no selection)")
-            imgui.end()
             return
 
         imgui.text(f"<{elem.tag}>")
@@ -84,7 +84,22 @@ class PropertiesHUD:
                     elem.set(key, new_val)
                     changed = True
 
+        # Code element: multiline text editor for inner text
+        if elem.tag == "code":
+            imgui.separator()
+            imgui.text("Code:")
+            code_text = self._buf.get("__code_text__", elem.text or "")
+            c, new_code = imgui.input_text_multiline(
+                "##code_editor",
+                code_text,
+                4096,
+                width=-1,
+                height=150,
+            )
+            if c:
+                self._buf["__code_text__"] = new_code
+                elem.text = new_code
+                changed = True
+
         if changed and on_change:
             on_change()
-
-        imgui.end()

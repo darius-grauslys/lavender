@@ -29,6 +29,7 @@ class MessageHUD:
         self._collapsed: bool = False
         self._auto_scroll: bool = True
         self._new_message_added: bool = False
+        self._expanded_height: float = 150.0
 
     # -- public API --------------------------------------------------------
 
@@ -46,7 +47,7 @@ class MessageHUD:
     @property
     def panel_height(self) -> float:
         """Return the current height of the message panel."""
-        return 150.0 if not self._collapsed else 26.0
+        return self._expanded_height if not self._collapsed else 26.0
 
     def draw(self, window_width: float, window_height: float) -> None:
         panel_h = self.panel_height
@@ -55,13 +56,20 @@ class MessageHUD:
         imgui.set_next_window_size(window_width, panel_h)
 
         flags = (
-            imgui.WINDOW_NO_RESIZE
-            | imgui.WINDOW_NO_MOVE
+            imgui.WINDOW_NO_MOVE
             | imgui.WINDOW_NO_SAVED_SETTINGS
             | imgui.WINDOW_NO_TITLE_BAR
         )
+        if self._collapsed:
+            flags |= imgui.WINDOW_NO_RESIZE
 
         imgui.begin("Messages##msg_hud", closable=False, flags=flags)
+
+        # Detect user resize when expanded
+        if not self._collapsed:
+            new_h = imgui.get_window_height()
+            if abs(new_h - self._expanded_height) > 1:
+                self._expanded_height = max(60, min(window_height * 0.8, new_h))
 
         if self._collapsed:
             # Only show the toggle bar at the very bottom

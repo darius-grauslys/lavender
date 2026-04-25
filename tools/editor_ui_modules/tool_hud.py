@@ -393,16 +393,10 @@ class ToolHUD:
         window_height: float,
         panel_width: float = 220,
     ) -> Optional[UIElementDef]:
-        """Wrapper that properly captures tile picks."""
+        """Draw tool contents (no window creation – expects to be in a child)."""
         self._tileset_picker.ensure_loaded()
 
-        flags = (
-            imgui.WINDOW_NO_MOVE
-            | imgui.WINDOW_NO_SAVED_SETTINGS
-        )
-        imgui.begin("Tools##tool_hud", closable=False, flags=flags)
-
-        imgui.text("Select a tool:")
+        imgui.text("Tools")
         imgui.separator()
 
         for edef in ALL_ELEMENT_DEFS:
@@ -457,9 +451,7 @@ class ToolHUD:
                 imgui.text(f"{self.selected_tool.display_name}")
                 imgui.text_colored("(no UI span)", 0.6, 0.6, 0.6)
 
-        imgui.end()
-
-        # Capture pick_id BEFORE drawing the popup (which clears it on select)
+        # Tileset picker popup (drawn as a separate top-level window)
         pick_id = self._tileset_picker.picking_for
         picked_index = self._tileset_picker.draw_picker_popup()
 

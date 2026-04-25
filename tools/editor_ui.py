@@ -553,31 +553,44 @@ class EditorApp:
         imgui.end_child()
         imgui.end()
 
-        # Right panels – resizable, synced width
+        # Right panel – single resizable parent containing Tools + Properties
         right_w = self.right_panel_w
         msg_h = self.message_hud.panel_height
-        half_h = (win_h - msg_h) * 0.5
+        right_h = win_h - msg_h
 
-        # Tool HUD (top-right)
         imgui.set_next_window_position(win_w - right_w, 0)
-        imgui.set_next_window_size(right_w, half_h)
-        active_tool = self.tool_hud.draw_with_pick_capture(win_w, win_h, right_w)
-        # Detect resize
-        new_rw_tool = imgui.get_window_width()
+        imgui.set_next_window_size(right_w, right_h)
+        imgui.begin(
+            "##right_panel_parent",
+            closable=False,
+            flags=(
+                imgui.WINDOW_NO_TITLE_BAR
+                | imgui.WINDOW_NO_MOVE
+                | imgui.WINDOW_NO_SAVED_SETTINGS
+            ),
+        )
+        # Detect user resize of the parent
+        new_rw = imgui.get_window_width()
+        if abs(new_rw - right_w) > 1:
+            self.right_panel_w = max(150, min(win_w * 0.5, new_rw))
 
-        # Properties HUD (bottom-right)
-        imgui.set_next_window_position(win_w - right_w, half_h)
-        imgui.set_next_window_size(right_w, half_h)
+        inner_w = imgui.get_content_region_available_width()
+        half_h = (right_h - 8) * 0.5  # small padding
+
+        # Tool HUD as child
+        imgui.begin_child("##tool_child", inner_w, half_h, border=True)
+        active_tool = self.tool_hud.draw_with_pick_capture(win_w, win_h, inner_w)
+        imgui.end_child()
+
+        # Properties HUD as child
+        imgui.begin_child("##prop_child", inner_w, 0, border=True)
         self.properties_hud.draw(
-            win_w, win_h, right_w,
+            win_w, win_h, inner_w,
             on_change=self.on_property_changed,
         )
-        new_rw_prop = imgui.get_window_width()
+        imgui.end_child()
 
-        # Sync: use whichever was resized
-        new_rw = max(new_rw_tool, new_rw_prop)
-        if new_rw != right_w:
-            self.right_panel_w = max(150, min(win_w * 0.5, new_rw))
+        imgui.end()
 
         # Central work area
         work_x = self.left_panel_w

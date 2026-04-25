@@ -225,7 +225,7 @@ CODE_DEF = UIElementDef(
     supports_nxn=False,
     has_ui_span=False,
     default_attribs={},
-    property_keys=[],
+    property_keys=["name"],
 )
 
 # Master list
