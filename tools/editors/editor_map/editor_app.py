@@ -190,7 +190,8 @@ class EditorApp:
             self._project_dir)
         self._load_tilesheet()
 
-        # Initialize workspace
+        # Initialize workspace (objects and renderer created here,
+        # but wired into modes after mode creation below).
         max_tmp = (self._editor_project_config.max_tmp_chunks
                    if self._editor_project_config else 1024)
         self._objects = WorkspaceObjects(
@@ -200,14 +201,6 @@ class EditorApp:
             platform=self._platform,
             max_tmp_chunks=max_tmp,
             message_hud=self._message_hud)
-        # Wire objects into chunk edit mode for tile drawing
-        chunk_mode = self._modes[1]
-        if hasattr(chunk_mode, 'set_objects'):
-            chunk_mode.set_objects(self._objects)
-        tile_byte_size = (
-            self._tile_info.size_in_bytes if self._tile_info else 1)
-        if hasattr(chunk_mode, 'set_tile_byte_size'):
-            chunk_mode.set_tile_byte_size(tile_byte_size)
 
         self._renderer = WorkspaceRenderer(self._config)
         if self._tilesheet:
@@ -248,6 +241,14 @@ class EditorApp:
             self._keybind_manager, movement=self._movement)
 
         self._modes = [gs_mode, chunk_mode, entity_mode, inv_mode]
+
+        # Wire objects into chunk edit mode for tile drawing
+        if hasattr(chunk_mode, 'set_objects'):
+            chunk_mode.set_objects(self._objects)
+        tile_byte_size = (
+            self._tile_info.size_in_bytes if self._tile_info else 1)
+        if hasattr(chunk_mode, 'set_tile_byte_size'):
+            chunk_mode.set_tile_byte_size(tile_byte_size)
 
         # Set base keybinds
         self._setup_base_keybinds()
