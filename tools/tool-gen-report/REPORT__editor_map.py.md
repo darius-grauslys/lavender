@@ -339,3 +339,10 @@ struct layouts, constants, and serialization formats from the referenced
 engine source files rather than relying on hardcoded values in the spec
 or report. If the engine source changes, the editor implementation should
 be updated to match by consulting the referenced files.
+
+**Revision 5 note:** Spec clarified that `Tile_Cover_Kind` is a project-
+defined type, not an engine type. The editor discovers tile layer enum
+types dynamically from the `GEN-RENDER-BEGIN` block in the project's
+`tile.h`. Only `Tile_Kind` is guaranteed by the engine as the default
+layer. Implementation begun: `c_enum.py`, `engine_config.py`,
+`tile_parser.py` with full test suites.

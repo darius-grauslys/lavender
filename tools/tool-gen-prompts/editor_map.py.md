@@ -80,7 +80,13 @@ editor should automatically adapt.
   and `GEN-NO-LOGIC-BEGIN/END` markers.
 
 - `examples/template-files/include/types/implemented/world/tile_cover_kind.h` —
-  Reference implementation of `Tile_Cover_Kind` enum.
+  Reference implementation of a project-local tile layer enum.
+  NOTE: `Tile_Cover_Kind` is NOT an engine type — it is a user-defined
+  tile layer enum. The editor must NOT hardcode `Tile_Cover_Kind`.
+  Projects may define different tile layer enums with different names.
+  The engine only guarantees `Tile_Kind` as the default layer
+  (mapped via `Tile_Layer__Default`). Additional layers and their
+  enum types are entirely project-defined.
 
 - `examples/template-files/include/types/implemented/world/tile_layer.h` —
   Reference implementation of `Tile_Layer` enum with `GEN-BEGIN/END` markers.
@@ -90,6 +96,24 @@ editor should automatically adapt.
 
 - `core/include/types/implemented/world/tile_layer.h` — Engine default
   (nearly empty) `Tile_Layer`. Shows the `DEFINE_TILE_LAYER` guard pattern.
+
+### Tile Layer to Tile Kind Enum Mapping
+
+The engine's tile layer system works as follows:
+- `Tile_Layer` enum defines named layers (e.g., `Tile_Layer__Ground`,
+  `Tile_Layer__Cover`). The first layer (`Tile_Layer__Default`) always
+  maps to `Tile_Kind` (from `tile_kind.h`).
+- Additional layers beyond the default are project-defined. Their
+  enum types (e.g., `Tile_Cover_Kind`) are NOT engine types — they
+  are user-defined and may have any name.
+- The mapping from layer to enum type is found in the project-local
+  `tile.h` inside the `GEN-RENDER-BEGIN` / `GEN-RENDER-END` block.
+  Each bitfield in that block corresponds to a tile layer, in order.
+  The type of each bitfield (e.g., `Tile_Kind`, `Tile_Cover_Kind`)
+  tells the editor which enum to use for that layer's dropdown.
+- The editor must parse these bitfield type names dynamically and
+  load the corresponding enum from the project's headers. It must
+  NOT assume any specific layer enum name beyond `Tile_Kind`.
 
 ### Entity System
 
@@ -429,9 +453,14 @@ are runtime-only and should not be displayed.
 **For Tile properties:**
 See the project-local `./include/types/implemented/world/tile.h`.
 Parse the `GEN-RENDER-BEGIN` / `GEN-RENDER-END` block to find
-the tile layer enum fields (e.g., `Tile_Kind`, `Tile_Cover_Kind`).
-Each enum field should be an editable dropdown populated from
-the corresponding parsed enum values.
+the tile layer enum fields. The first field is always `Tile_Kind`
+(the engine-guaranteed default layer). Additional fields are
+project-defined tile layer enums (e.g., a project might define
+`Tile_Cover_Kind` or any other name). The editor must discover
+these types dynamically from the bitfield type names in the
+`GEN-RENDER-BEGIN` block — do NOT hardcode any layer enum name
+beyond `Tile_Kind`. Each enum field should be an editable dropdown
+populated from the corresponding parsed enum values.
 
 **For Entity properties:**
 See the `Entity` struct in `core/include/defines.h` and the
@@ -702,8 +731,11 @@ the tile layout. The key patterns to look for:
 
 1. `u8 array_of__tile_data__u8[N]` — gives `sizeof(Tile) == N`
 2. `GEN-RENDER-BEGIN` / `GEN-RENDER-END` — contains the tile layer
-   enum fields (e.g., `Tile_Kind`, `Tile_Cover_Kind`) with their
-   bit widths. These are the editable properties in the Properties HUD.
+   enum fields with their bit widths. The first field is always
+   `Tile_Kind` (engine default layer). Additional fields are
+   project-defined tile layer enums whose names must be discovered
+   dynamically from the bitfield type names. These are the editable
+   properties in the Properties HUD.
 3. `GEN-LAYER-BEGIN` / `GEN-LAYER-END` — contains the logic and
    animation sub-fields organized into byte-aligned groups.
 
@@ -895,11 +927,17 @@ See `examples/template-files/include/types/implemented/world/tile_kind.h`
 for a populated project-local enum.
 
 NOTE: Enum member names do not always match the enum type name.
-For example, `Tile_Cover_Kind` in
+For example, the template file
 `examples/template-files/include/types/implemented/world/tile_cover_kind.h`
-uses `Tile_Kind__None`, `Tile_Kind__Logical`, and `Tile_Kind__Unknown`
-as member names despite being a `Tile_Cover_Kind` enum. The parser
-must not assume member name prefixes match the typedef name.
+defines a `Tile_Cover_Kind` enum but uses `Tile_Kind__None`,
+`Tile_Kind__Logical`, and `Tile_Kind__Unknown` as member names.
+The parser must not assume member name prefixes match the typedef name.
+
+NOTE: `Tile_Cover_Kind` is a project-defined type, NOT an engine type.
+The editor must discover tile layer enum types dynamically by parsing
+the `GEN-RENDER-BEGIN` / `GEN-RENDER-END` block in the project's
+`tile.h`. See "Tile Layer to Tile Kind Enum Mapping" in the Engine
+Source File References section.
 
 ### 4.5.2 Engine Config Parsing
 
@@ -954,7 +992,7 @@ editor startup to derive or validate implementation:
 | Entity data (engine default) | `core/include/types/implemented/entity/entity_data.h` |
 | Tile struct (reference) | `examples/template-files/include/types/implemented/world/tile.h` |
 | Tile_Kind (reference) | `examples/template-files/include/types/implemented/world/tile_kind.h` |
-| Tile_Cover_Kind (reference) | `examples/template-files/include/types/implemented/world/tile_cover_kind.h` |
+| Tile layer enum (reference, project-defined) | `examples/template-files/include/types/implemented/world/tile_cover_kind.h` |
 | Tile_Layer (reference) | `examples/template-files/include/types/implemented/world/tile_layer.h` |
 
 # 6. Testing
