@@ -43,6 +43,30 @@ class UIHierarchy:
             return self.is_concealed_recursive(parent, root)
         return False
 
+    def initialize_concealment(self, root: Optional[ET.Element]) -> None:
+        """Pre-conceal all container elements in the tree.
+        
+        Call this when a new XML document is loaded so containers
+        start hidden without needing the hierarchy tab to be drawn first.
+        """
+        if root is None:
+            return
+        ui_node = root.find("ui")
+        if ui_node is None:
+            return
+        self._initialized_concealed.clear()
+        self.concealed_elements.clear()
+        self._collapsed.clear()
+        self._init_conceal_recursive(ui_node)
+
+    def _init_conceal_recursive(self, node: ET.Element) -> None:
+        for child in node:
+            elem_id = id(child)
+            if child.tag in _CONTAINER_TAGS:
+                self._initialized_concealed.add(elem_id)
+                self.concealed_elements.add(elem_id)
+            self._init_conceal_recursive(child)
+
     def draw(
         self,
         root: Optional[ET.Element],

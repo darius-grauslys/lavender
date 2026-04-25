@@ -95,6 +95,8 @@ class EditorApp:
 
         # Keyboard state
         self._ctrl_f_held: bool = False
+        self._ctrl_h_was_down: bool = False
+        self._ctrl_s_was_down: bool = False
 
         # UI hierarchy
         self.ui_hierarchy = UIHierarchy()
@@ -108,6 +110,12 @@ class EditorApp:
         self._zoom: float = 1.0
         self._pan_x: float = 0.0
         self._pan_y: float = 0.0
+
+        # Dirty / close confirmation
+        self._last_saved_text: str = ""
+        self._show_close_confirmation: bool = False
+        self._window_ref = None  # set in main()
+        self._renderer_ref = None  # set in main()
 
     # ------------------------------------------------------------------
     # File callbacks
@@ -129,6 +137,8 @@ class EditorApp:
         self._read_work_size_from_config()
         self._load_backgrounds_from_config(path)
         self._load_toolset_from_config()
+        self.ui_hierarchy.initialize_concealment(root)
+        self._last_saved_text = serialize_tree(root)
         self.history = HistoryManager()
         self.history.push("open", serialize_tree(root))
         self.message_hud.info(f"Opened: {path}")
@@ -158,6 +168,10 @@ class EditorApp:
 
     def _on_view_parent(self, parent_elem: ET.Element) -> None:
         """Focus the parent element in both hierarchy and work area."""
+        # Unhide the parent if it's concealed
+        parent_id = id(parent_elem)
+        if parent_id in self.ui_hierarchy.concealed_elements:
+            self.ui_hierarchy.concealed_elements.discard(parent_id)
         self.on_select_element(parent_elem)
 
     def _sync_work_area_selection(self, xml_elem: Optional[ET.Element]) -> None:
@@ -275,11 +289,57 @@ class EditorApp:
         if self._xml_root is not None and self._xml_path is not None:
             self._save_toolset_to_config()
             save_final(self._xml_path, self._xml_root)
+            self._last_saved_text = serialize_tree(self._xml_root)
             self.message_hud.info(f"Saved: {self._xml_path}")
+
+    def _has_unsaved_changes(self) -> bool:
+        if self._xml_root is None:
+            return False
+        current = serialize_tree(self._xml_root)
+        return current != self._last_saved_text
 
     # ------------------------------------------------------------------
     # Config helpers
     # ------------------------------------------------------------------
+
+    def _draw_close_confirmation(self) -> None:
+        imgui.set_next_window_size(340, 130)
+        io = imgui.get_io()
+        imgui.set_next_window_position(
+            io.display_size.x * 0.5 - 170,
+            io.display_size.y * 0.5 - 65,
+            condition=imgui.APPEARING,
+        )
+        imgui.begin(
+            "Unsaved Changes##close_confirm",
+            closable=False,
+            flags=(
+                imgui.WINDOW_NO_RESIZE
+                | imgui.WINDOW_NO_SAVED_SETTINGS
+                | imgui.WINDOW_NO_COLLAPSE
+            ),
+        )
+        imgui.text("You have unsaved changes.")
+        imgui.text("Save before closing?")
+        imgui.separator()
+        if imgui.button("Save & Close", 100, 0):
+            self.save()
+            self._show_close_confirmation = False
+            if self._renderer_ref:
+                self._renderer_ref.shutdown()
+            if self._window_ref:
+                self._window_ref.close()
+        imgui.same_line()
+        if imgui.button("Discard", 100, 0):
+            self._show_close_confirmation = False
+            if self._renderer_ref:
+                self._renderer_ref.shutdown()
+            if self._window_ref:
+                self._window_ref.close()
+        imgui.same_line()
+        if imgui.button("Cancel", 100, 0):
+            self._show_close_confirmation = False
+        imgui.end()
 
     def _read_work_size_from_config(self) -> None:
         if self._xml_root is None:
@@ -522,10 +582,17 @@ class EditorApp:
                 self.redo()
             else:
                 self.undo()
-        if ctrl and _is_down(key_s):
+        # Debounced Ctrl+S (trigger on press, not hold)
+        ctrl_s_down = ctrl and _is_down(key_s)
+        if ctrl_s_down and not self._ctrl_s_was_down:
             self.save()
-        if ctrl and _is_down(pyglet.window.key.H):
+        self._ctrl_s_was_down = ctrl_s_down
+
+        # Debounced Ctrl+H (trigger on press, not hold)
+        ctrl_h_down = ctrl and _is_down(pyglet.window.key.H)
+        if ctrl_h_down and not self._ctrl_h_was_down:
             self._print_keybindings()
+        self._ctrl_h_was_down = ctrl_h_down
 
         # Arrow key panning — use imgui mapped arrow keys
         pan_speed = 16.0
@@ -734,6 +801,10 @@ class EditorApp:
         # Bottom message HUD
         self.message_hud.draw(win_w, win_h)
 
+        # Close confirmation popup
+        if self._show_close_confirmation:
+            self._draw_close_confirmation()
+
 
 # ===================================================================
 # pyglet + imgui bootstrap
@@ -756,7 +827,15 @@ def main() -> None:
 
     app = EditorApp()
     app._key_state = key_state  # expose to draw_frame
+    app._window_ref = window
+    app._renderer_ref = renderer
     app._print_keybindings()
+
+    @window.event
+    def on_key_press(symbol, modifiers):
+        # Prevent ESC from closing the window
+        if symbol == pyglet.window.key.ESCAPE:
+            return True  # consume the event
 
     @window.event
     def on_draw():
@@ -768,7 +847,12 @@ def main() -> None:
 
     @window.event
     def on_close():
+        # If there are unsaved changes, show confirmation instead of closing
+        if app._has_unsaved_changes():
+            app._show_close_confirmation = True
+            return pyglet.event.EVENT_HANDLED  # prevent close
         renderer.shutdown()
+        return None
 
     pyglet.app.run()
 

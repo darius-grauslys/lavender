@@ -75,6 +75,9 @@ class WorkArea:
         self._scroll_y: float = 0.0
         self._selection_frame: int = 0  # frame counter when selection happened
         self._frame_counter: int = 0    # monotonic frame counter
+        self._x_consumed_click: bool = False
+        self._pending_x_rect: Optional[Tuple[float, float, float, float]] = None  # (x0,y0,x1,y1)
+        self._pending_x_elem = None  # the element whose X is shown
         # PNG preview
         self._preview_texture_id: Optional[int] = None
         self._preview_path: Optional[str] = None
@@ -159,8 +162,28 @@ class WorkArea:
                     self.hovered_element = elem
                     break
 
+        # Check if the X delete button from previous frame was clicked
+        self._x_consumed_click = False
+        if (
+            self._pending_x_rect is not None
+            and self._pending_x_elem is not None
+            and imgui.is_mouse_clicked(0)
+        ):
+            px0, py0, px1, py1 = self._pending_x_rect
+            if px0 <= mx <= px1 and py0 <= my <= py1:
+                # X was clicked — delete the element
+                xml_elem = self._pending_x_elem
+                if hasattr(xml_elem, "xml_elem"):
+                    xml_elem = xml_elem.xml_elem
+                on_delete(xml_elem)
+                self.selected_element = None
+                self._pending_x_rect = None
+                self._pending_x_elem = None
+                on_select(None)
+                self._x_consumed_click = True
+
         # Click to select / deselect
-        if imgui.is_mouse_clicked(0) and in_bounds:
+        if imgui.is_mouse_clicked(0) and in_bounds and not self._x_consumed_click:
             if self.hovered_element is not None:
                 self.selected_element = self.hovered_element
                 self._selection_frame = self._frame_counter
@@ -396,20 +419,16 @@ class WorkArea:
             )
             if x_is_active:
                 draw_list.add_text(bx, by, _color4_to_u32(*COLOR_DELETE_X), "X")
+                # Store rect for next frame's click check
+                self._pending_x_rect = (bx - 2, by - 1, bx + 12, by + 14)
+                self._pending_x_elem = sel_elem
             else:
                 draw_list.add_text(bx, by, _color4_to_u32(0.5, 0.2, 0.2, 0.5), "X")
-            if (
-                x_is_active
-                and imgui.is_mouse_clicked(0)
-                and bx - 2 <= mx <= bx + 12
-                and by - 1 <= my <= by + 14
-            ):
-                xml_elem = sel_elem
-                if hasattr(xml_elem, "xml_elem"):
-                    xml_elem = xml_elem.xml_elem
-                on_delete(xml_elem)
-                self.selected_element = None
-                on_select(None)
+                self._pending_x_rect = None
+                self._pending_x_elem = None
+        else:
+            self._pending_x_rect = None
+            self._pending_x_elem = None
 
     # ------------------------------------------------------------------
     def _finalize_create(
