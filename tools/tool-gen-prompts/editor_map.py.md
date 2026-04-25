@@ -322,13 +322,90 @@ by whole chunks.
 ##### 1.1.2.1.3 Tile Draw
 
 When this tool is selected, the Tool Properties menu
-will be populated with a complete 5 element wide scrollable
-grid of tiles. Tiles selected in this grid are used to
-replace tiles as describe here:
+will be populated with:
 
-This tool will disable the selecting logic of valid objects on the Workspace.
-When this tool is selected and the workspace is left clicked, Tiles that
-would otherwise be selected are replaced.
+1. A **layer selector** dropdown to choose which tile layer
+   to edit.
+2. A **scrollable list** of tile enum members for the selected
+   layer. Each entry shows the enum member name and its value.
+   The first entry in the list is **"- Edit -"** which, when
+   clicked, opens the Tile Kind Editor sub-window (see section
+   1.1.2.1.3.1).
+3. Clicking a tile enum entry in the list selects it as the
+   active drawing tile for that layer.
+
+This tool will disable the selecting logic of valid objects
+on the Workspace. When this tool is selected and the workspace
+is left clicked, Tiles that would otherwise be selected are
+replaced with the currently selected tile value.
+
+###### 1.1.2.1.3.1 Tile Kind Editor Sub-Window
+
+When "- Edit -" is clicked in the tile draw tool's enum list,
+a sub-window opens. This sub-window **consumes all input** —
+clicks and keypresses MUST NOT propagate to panels or the
+workspace underneath.
+
+The sub-window contains **three tables** arranged side by side:
+
+**Table 1: "Tile Kinds - [LAYER]"** (where LAYER is the tile
+layer field name, e.g. "the_kind_of__tile")
+
+Each row contains:
+- A **number field** (validated unsigned integer) to set the
+  enum value. Changing this value reorders the entry in the
+  table by value.
+- A **text field** to rename the tile enum member.
+- An **"X" button** to delete the entry.
+
+Below the table:
+- A **text search filter** that filters visible entries by name.
+- A **"+" button** that adds a new entry with the next available
+  index value and scrolls the table to the bottom to reveal it.
+  The "+" button is **disabled** when the number of enum members
+  is greater than or equal to the maximum expressible value for
+  that layer's render bitfield (i.e., `2^bit_width - 1`, reserving
+  the last value for `Unknown`).
+
+**Table 2: "Logical Tiles"** (right of Table 1)
+
+Each row contains:
+- A **dropdown selection** that selects from the entries in
+  Table 1 (the tile kind enum members).
+
+Below the table:
+- A **text search filter**.
+- A **"+" button** that is **disabled** when the number of
+  entries is greater than or equal to the maximum expressible
+  value in the logic sub-bit field for that layer
+  (`2^logic_bits`). If `logic_bits` is 0, the "+" button is
+  always disabled and the table header shows "(disabled)".
+
+**Table 3: "Animation Tiles"** (right of Table 2)
+
+Each row contains:
+- A **dropdown selection** that selects from the entries in
+  Table 1 (the tile kind enum members).
+
+Below the table:
+- A **text search filter**.
+- A **"+" button** that is **disabled** when the number of
+  entries is greater than or equal to the maximum expressible
+  value in the animation sub-bit field for that layer
+  (`2^animation_bits`). If `animation_bits` is 0, the "+"
+  button is always disabled and the table header shows
+  "(disabled)".
+
+When the sub-window's **"OK"** button is clicked:
+- The corresponding `_kind.h` file in the project's
+  `./include/types/implemented/world/` directory is updated
+  to reflect the changes (added/removed/renamed/reordered
+  enum members). The file is written preserving the
+  `GEN-LOGIC-BEGIN` / `GEN-LOGIC-END` and
+  `GEN-NO-LOGIC-BEGIN` / `GEN-NO-LOGIC-END` markers.
+- The editor reloads the affected enum.
+
+When **"Cancel"** is clicked, all changes are discarded.
 
 ### 1.1.3 Entity Edit
 
@@ -1034,7 +1111,31 @@ GEN-LAYER block. See `core/include/types/implemented/world/tile.h`
 for the minimal pattern without bit widths and an empty GEN-LAYER
 block.
 
-### 4.5.4 Source-Driven Validation
+### 4.5.4 Editor Project Configuration
+
+The editor reads and writes a project-local configuration file at
+`./assets/world/editor.json`. This file stores editor-specific
+settings that are not part of the engine source.
+
+Schema:
+```json
+{
+    "tilesheet": {
+        "path": "assets/world/tilesheet.png"
+    }
+}
+```
+
+- If the file does not exist, the editor generates it with
+  default empty values.
+- The `tilesheet.path` is relative to the project directory.
+- The editor validates that the path resolves to an existing
+  `.png` file. If not, tile rendering is disabled and an ERROR
+  is logged.
+
+Implementation: `tools/editors/editor_map/core/editor_project_config.py`
+
+### 4.5.5 Source-Driven Validation
 
 When the editor starts, it should validate its pythonic type
 representations against the engine source files. If the engine
@@ -1060,6 +1161,8 @@ editor startup to derive or validate implementation:
 | Tile_Kind (reference) | `examples/template-files/include/types/implemented/world/tile_kind.h` |
 | Tile layer enum (reference, project-defined) | `examples/template-files/include/types/implemented/world/tile_cover_kind.h` |
 | Tile_Layer (reference) | `examples/template-files/include/types/implemented/world/tile_layer.h` |
+| Editor project config | `./assets/world/editor.json` (project-local) |
+| Tilesheet image | Configured via `editor.json`, `.png` format, 8×8 tiles |
 
 # 6. Testing
 
@@ -1072,5 +1175,18 @@ Preserve folder structure of each module relative to ./editor_map
 into ./tests for example:
 ./tools/editors/editor_map/workspace/movement.py
 -> ./tools/editors/editor_map/tests/workspace/test_movement.py
+
+Key test modules:
+- `tests/core/test_tile_parser.py` — Tile header parsing
+- `tests/core/test_c_enum.py` — C enum parsing
+- `tests/core/test_engine_config.py` — Engine config resolution
+- `tests/core/test_serialization.py` — Chunk serialization
+- `tests/core/test_world_directory.py` — World directory paths
+- `tests/core/test_editor_project_config.py` — Editor JSON config
+- `tests/core/test_tilesheet.py` — Tilesheet loading and sampling
+- `tests/core/test_tile_kind_editor.py` — Tile kind editor model
+- `tests/keybinds/test_keybind_manager.py` — Keybind stack
+- `tests/workspace/test_movement.py` — Viewport movement
+- `tests/workspace/test_objects.py` — Object management
 
 There is no integration testing at this time.

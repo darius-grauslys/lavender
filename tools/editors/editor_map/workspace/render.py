@@ -14,6 +14,8 @@ import imgui
 if TYPE_CHECKING:
     from core.engine_config import EngineConfig
     from core.c_enum import CEnum
+    from core.tilesheet import Tilesheet
+    from core.tile_parser import TileInfo
     from workspace.objects import WorkspaceObjects
     from workspace.movement import WorkspaceMovement
 
@@ -45,6 +47,42 @@ class WorkspaceRenderer:
             tile_size_px: int = 16):
         self._config = config
         self._tile_size_px = tile_size_px
+        self._tilesheet: Optional[Tilesheet] = None
+        self._tilesheet_gl_texture: int = 0
+        self._tile_info: Optional[TileInfo] = None
+        self._rendering_enabled: bool = False
+
+    def set_tilesheet(self, tilesheet: Optional[Tilesheet]) -> None:
+        """Set the tilesheet for rendering. None disables tilesheet rendering."""
+        self._tilesheet = tilesheet
+        self._rendering_enabled = tilesheet is not None
+        if tilesheet is not None:
+            self._upload_tilesheet_texture(tilesheet)
+
+    def set_tile_info(self, tile_info: Optional[TileInfo]) -> None:
+        """Set tile info for layer-aware rendering."""
+        self._tile_info = tile_info
+
+    def _upload_tilesheet_texture(self, tilesheet: Tilesheet) -> None:
+        """Upload tilesheet pixel data to an OpenGL texture."""
+        try:
+            import OpenGL.GL as gl
+            if self._tilesheet_gl_texture:
+                gl.glDeleteTextures([self._tilesheet_gl_texture])
+            tex_id = gl.glGenTextures(1)
+            gl.glBindTexture(gl.GL_TEXTURE_2D, tex_id)
+            gl.glTexParameteri(
+                gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_NEAREST)
+            gl.glTexParameteri(
+                gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_NEAREST)
+            gl.glTexImage2D(
+                gl.GL_TEXTURE_2D, 0, gl.GL_RGBA,
+                tilesheet.width, tilesheet.height, 0,
+                gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, tilesheet.pixels)
+            gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
+            self._tilesheet_gl_texture = tex_id
+        except Exception:
+            self._tilesheet_gl_texture = 0
 
     def draw(
             self,
@@ -55,6 +93,10 @@ class WorkspaceRenderer:
             tile_byte_size: int = 1) -> None:
         """
         Draw the workspace content.
+
+        Renders each tile layer by sampling the tilesheet using
+        the tile's render value as a tile index. Falls back to
+        colored rectangles when tilesheet rendering is disabled.
 
         Args:
             objects: The workspace object store
@@ -80,6 +122,25 @@ class WorkspaceRenderer:
         ox = window_pos[0] - vp.offset_x
         oy = window_pos[1] - vp.offset_y
 
+        # Precompute tilesheet UV info
+        use_tilesheet = (
+            self._rendering_enabled
+            and self._tilesheet is not None
+            and self._tilesheet_gl_texture != 0)
+        ts_w = self._tilesheet.width if self._tilesheet else 1
+        ts_h = self._tilesheet.height if self._tilesheet else 1
+        tiles_per_row = self._tilesheet.tiles_per_row if self._tilesheet else 1
+
+        # Determine layer count and bit extraction info
+        num_layers = 0
+        layer_bit_offsets: List[Tuple[int, int]] = []
+        if self._tile_info:
+            num_layers = len(self._tile_info.layer_fields)
+            bit_offset = 0
+            for lf in self._tile_info.layer_fields:
+                layer_bit_offsets.append((bit_offset, lf.bit_width))
+                bit_offset += lf.bit_width
+
         for cy_off in range(chunks_y):
             for cx_off in range(chunks_x):
                 cx = start_cx + cx_off
@@ -92,24 +153,53 @@ class WorkspaceRenderer:
                 sy = oy + cy_off * ch * ts
 
                 if chunk:
-                    # Draw tiles as colored rectangles
                     for ly in range(ch):
                         for lx in range(cw):
-                            # Read first byte(s) to determine tile kind
                             tile_data = objects.get_tile_bytes(
                                 cx, cy, vp.center_z,
                                 lx, ly, 0, tile_byte_size)
-                            value = 0
-                            if tile_data:
-                                # Use first byte as a simple kind indicator
-                                value = tile_data[0]
 
-                            color = _color_for_value(value)
                             px = sx + lx * ts
                             py = sy + ly * ts
-                            draw_list.add_rect_filled(
-                                px, py, px + ts, py + ts,
-                                imgui.get_color_u32_rgba(*color))
+
+                            if not tile_data:
+                                draw_list.add_rect_filled(
+                                    px, py, px + ts, py + ts,
+                                    imgui.get_color_u32_rgba(
+                                        0.15, 0.15, 0.15, 1.0))
+                                continue
+
+                            tile_int = int.from_bytes(
+                                tile_data, byteorder='little')
+
+                            if use_tilesheet and num_layers > 0:
+                                for layer_idx in range(num_layers):
+                                    bit_off, bit_w = layer_bit_offsets[layer_idx]
+                                    mask = (1 << bit_w) - 1
+                                    tile_value = (tile_int >> bit_off) & mask
+
+                                    if layer_idx > 0 and tile_value == 0:
+                                        continue
+
+                                    tile_row = tile_value // tiles_per_row
+                                    tile_col = tile_value % tiles_per_row
+                                    u0 = (tile_col * 8) / ts_w
+                                    v0 = (tile_row * 8) / ts_h
+                                    u1 = ((tile_col + 1) * 8) / ts_w
+                                    v1 = ((tile_row + 1) * 8) / ts_h
+
+                                    draw_list.add_image(
+                                        self._tilesheet_gl_texture,
+                                        (px, py),
+                                        (px + ts, py + ts),
+                                        uv_a=(u0, v0),
+                                        uv_b=(u1, v1))
+                            else:
+                                value = tile_data[0] if tile_data else 0
+                                color = _color_for_value(value)
+                                draw_list.add_rect_filled(
+                                    px, py, px + ts, py + ts,
+                                    imgui.get_color_u32_rgba(*color))
 
                 # Chunk border
                 draw_list.add_rect(

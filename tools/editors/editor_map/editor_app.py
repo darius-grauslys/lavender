@@ -39,6 +39,12 @@ from core.tile_parser import (
 )
 from core.c_enum import parse_c_enum_from_file, find_enum_by_name, CEnum
 from core.world_directory import list_worlds, ensure_world_dir, world_root
+from core.editor_project_config import (
+    EditorProjectConfig,
+    load_editor_project_config,
+    save_editor_project_config,
+)
+from core.tilesheet import Tilesheet, load_tilesheet
 from ui.message_hud import MessageHUD
 
 VERSION = "0.1.0"
@@ -60,6 +66,9 @@ class EditorApp:
         self._config: Optional[EngineConfig] = None
         self._tile_info: Optional[TileInfo] = None
         self._tile_enums: List[CEnum] = []
+        self._editor_project_config: Optional[EditorProjectConfig] = None
+        self._tilesheet: Optional[Tilesheet] = None
+        self._tilesheet_rendering_enabled: bool = False
 
         # Workspace
         self._movement = WorkspaceMovement()
@@ -76,6 +85,12 @@ class EditorApp:
         self._new_world_name: str = ""
         self._delete_confirm_name: str = ""
         self._delete_target: Optional[str] = None
+
+        # Tilesheet browser
+        self._show_tilesheet_browser: bool = False
+        self._browser_current_dir: Optional[Path] = None
+        self._browser_selected_file: Optional[Path] = None
+        self._browser_entries: List[Path] = []
 
         # UI state
         self._properties_width: float = 250.0
@@ -148,15 +163,30 @@ class EditorApp:
                         f"Ensure a header defines: "
                         f"typedef enum ... {{ ... }} {lf.enum_type_name};")
 
+        # Load editor project config and tilesheet
+        self._editor_project_config = load_editor_project_config(
+            self._project_dir)
+        self._load_tilesheet()
+
         # Initialize workspace
         self._objects = WorkspaceObjects(self._config)
         self._renderer = WorkspaceRenderer(self._config)
+        if self._tilesheet:
+            self._renderer.set_tilesheet(self._tilesheet)
+        if self._tile_info:
+            self._renderer.set_tile_info(self._tile_info)
 
         # Initialize modes
         gs_mode = GlobalSpaceViewMode(self._keybind_manager)
         chunk_mode = ChunkEditMode(self._keybind_manager)
         if self._tile_enums:
             chunk_mode.set_tile_enums(self._tile_enums)
+        if self._tile_info:
+            chunk_mode.set_layer_info(
+                self._tile_info.layer_fields,
+                self._tile_info.layer_layouts)
+        chunk_mode.set_project_dir(self._project_dir)
+        chunk_mode.set_on_enum_updated(self._reload_tile_enums)
         entity_mode = EntityEditMode(self._keybind_manager)
         inv_mode = InventoryEditMode(self._keybind_manager)
 
@@ -171,6 +201,50 @@ class EditorApp:
 
         # Load world list
         self._refresh_worlds()
+
+    def _load_tilesheet(self) -> None:
+        """Load the tilesheet from editor project config."""
+        if not self._editor_project_config:
+            return
+        resolved = self._editor_project_config.resolve_tilesheet(
+            self._project_dir)
+        if resolved:
+            self._tilesheet = load_tilesheet(resolved)
+            if self._tilesheet:
+                self._tilesheet_rendering_enabled = True
+                self._message_hud.info(
+                    f"Tilesheet loaded: {resolved} "
+                    f"({self._tilesheet.width}x{self._tilesheet.height}, "
+                    f"{self._tilesheet.total_tiles} tiles)")
+            else:
+                self._tilesheet_rendering_enabled = False
+                self._message_hud.error(
+                    f"Failed to load tilesheet image at '{resolved}'.")
+        else:
+            path_str = self._editor_project_config.tilesheet_path
+            if path_str:
+                self._message_hud.error(
+                    f"Tilesheet not found at "
+                    f"'{self._project_dir / path_str}'. "
+                    f"Tile rendering disabled.")
+            else:
+                self._message_hud.warning(
+                    "No tilesheet configured. "
+                    "Use the tilesheet browser to add one.")
+            self._tilesheet_rendering_enabled = False
+
+    def _reload_tile_enums(self) -> None:
+        """Reload tile enums after editing."""
+        self._tile_enums.clear()
+        if self._tile_info:
+            for lf in self._tile_info.layer_fields:
+                enum = self._find_project_enum(lf.enum_type_name)
+                if enum:
+                    self._tile_enums.append(enum)
+            chunk_mode = self._modes[1]  # ChunkEditMode
+            if hasattr(chunk_mode, 'set_tile_enums'):
+                chunk_mode.set_tile_enums(self._tile_enums)
+        self._message_hud.info("Tile enums reloaded.")
 
     def _find_project_enum(self, type_name: str) -> Optional[CEnum]:
         """Search project headers for an enum by type name."""
@@ -272,6 +346,7 @@ class EditorApp:
         self._draw_properties_hud(w, h)
         self._draw_workspace(w, h)
         self._message_hud.draw(w, h)
+        self._draw_tilesheet_browser()
 
     def _process_keybinds(self) -> None:
         """Check for keybind activations this frame."""
@@ -365,6 +440,27 @@ class EditorApp:
             imgui.same_line()
             if imgui.button("Cancel##del"):
                 self._delete_target = None
+
+        # Tilesheet browser
+        imgui.separator()
+        imgui.text("Tilesheet:")
+        ts_display = (
+            self._editor_project_config.tilesheet_path
+            if self._editor_project_config
+            and self._editor_project_config.tilesheet_path
+            else "ADD TILESHEET")
+        imgui.push_style_color(
+            imgui.COLOR_FRAME_BACKGROUND, 0.2, 0.2, 0.2, 1.0)
+        imgui.input_text(
+            "##ts_path", ts_display, 256,
+            imgui.INPUT_TEXT_READ_ONLY)
+        imgui.pop_style_color()
+        imgui.same_line()
+        if imgui.button("Browse...##ts_browse"):
+            self._show_tilesheet_browser = True
+            self._browser_current_dir = self._project_dir
+            self._browser_selected_file = None
+            self._refresh_browser_entries()
 
         # Add new world
         imgui.separator()
@@ -510,6 +606,95 @@ class EditorApp:
                 else:
                     self._movement.pan_by_tiles(
                         0, int(-io.mouse_wheel))
+
+        imgui.end()
+
+
+    def _refresh_browser_entries(self) -> None:
+        """Refresh the file browser directory listing."""
+        if self._browser_current_dir is None:
+            self._browser_entries = []
+            return
+        entries = []
+        try:
+            for p in sorted(self._browser_current_dir.iterdir()):
+                if p.is_dir():
+                    entries.append(p)
+                elif p.suffix.lower() == '.png':
+                    entries.append(p)
+        except OSError:
+            pass
+        self._browser_entries = entries
+
+    def _draw_tilesheet_browser(self) -> None:
+        """Draw the tilesheet file browser sub-window."""
+        if not self._show_tilesheet_browser:
+            return
+
+        imgui.set_next_window_size(500, 400, imgui.FIRST_USE_EVER)
+        flags = (
+            imgui.WINDOW_NO_SAVED_SETTINGS
+            | imgui.WINDOW_NO_COLLAPSE
+        )
+        expanded, opened = imgui.begin(
+            "Select Tilesheet##ts_browser", True, flags)
+
+        if not opened:
+            self._show_tilesheet_browser = False
+            imgui.end()
+            return
+
+        imgui.text(f"Directory: {self._browser_current_dir}")
+        imgui.separator()
+
+        if imgui.button(".. (Up)##ts_up"):
+            parent = self._browser_current_dir.parent
+            if parent != self._browser_current_dir:
+                self._browser_current_dir = parent
+                self._browser_selected_file = None
+                self._refresh_browser_entries()
+
+        imgui.begin_child("##ts_file_list", 0, -40, border=True)
+        for entry in self._browser_entries:
+            is_dir = entry.is_dir()
+            label = f"[DIR] {entry.name}" if is_dir else entry.name
+            is_selected = (entry == self._browser_selected_file)
+
+            clicked, _ = imgui.selectable(label, is_selected)
+            if clicked:
+                if is_dir:
+                    self._browser_current_dir = entry
+                    self._browser_selected_file = None
+                    self._refresh_browser_entries()
+                else:
+                    self._browser_selected_file = entry
+        imgui.end_child()
+
+        can_ok = (
+            self._browser_selected_file is not None
+            and self._browser_selected_file.suffix.lower() == '.png')
+
+        if not can_ok:
+            imgui.push_style_var(imgui.STYLE_ALPHA, 0.5)
+        if imgui.button("OK##ts_ok") and can_ok:
+            try:
+                rel_path = self._browser_selected_file.relative_to(
+                    self._project_dir)
+            except ValueError:
+                rel_path = self._browser_selected_file
+            self._editor_project_config.tilesheet_path = str(rel_path)
+            save_editor_project_config(
+                self._project_dir, self._editor_project_config)
+            self._load_tilesheet()
+            if self._tilesheet and self._renderer:
+                self._renderer.set_tilesheet(self._tilesheet)
+            self._show_tilesheet_browser = False
+        if not can_ok:
+            imgui.pop_style_var()
+
+        imgui.same_line()
+        if imgui.button("Cancel##ts_cancel"):
+            self._show_tilesheet_browser = False
 
         imgui.end()
 
