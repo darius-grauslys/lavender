@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass, field
+from typing import Callable
 
 # Default tile size in pixels — matches engine TILE_PX (8).
 DEFAULT_TILE_PX: int = 8
@@ -295,3 +296,113 @@ class WorkspaceMovement:
         Clamped to [0.25, 16.0].
         """
         self.set_zoom(self.viewport.zoom * factor)
+
+    def zoom_in(self) -> None:
+        """Zoom in by one step (×1.25)."""
+        self.adjust_zoom(1.25)
+
+    def zoom_out(self) -> None:
+        """Zoom out by one step (×0.8)."""
+        self.adjust_zoom(0.8)
+
+    # ------------------------------------------------------------------
+    # Keybind callback factories
+    # ------------------------------------------------------------------
+    # These return zero-argument closures suitable for registration
+    # with the KeybindManager.
+
+    def make_pan_tile_up(self) -> Callable[[], None]:
+        """Return callback: pan workspace up by 1 tile."""
+        return lambda: self.pan_by_tiles(0, -1)
+
+    def make_pan_tile_down(self) -> Callable[[], None]:
+        """Return callback: pan workspace down by 1 tile."""
+        return lambda: self.pan_by_tiles(0, 1)
+
+    def make_pan_tile_left(self) -> Callable[[], None]:
+        """Return callback: pan workspace left by 1 tile."""
+        return lambda: self.pan_by_tiles(-1, 0)
+
+    def make_pan_tile_right(self) -> Callable[[], None]:
+        """Return callback: pan workspace right by 1 tile."""
+        return lambda: self.pan_by_tiles(1, 0)
+
+    def make_pan_chunk_up(
+            self, chunk_w: int = 8, chunk_h: int = 8,
+    ) -> Callable[[], None]:
+        """Return callback: pan workspace up by 1 chunk."""
+        return lambda: self.pan_by_chunks(0, -1, chunk_w, chunk_h)
+
+    def make_pan_chunk_down(
+            self, chunk_w: int = 8, chunk_h: int = 8,
+    ) -> Callable[[], None]:
+        """Return callback: pan workspace down by 1 chunk."""
+        return lambda: self.pan_by_chunks(0, 1, chunk_w, chunk_h)
+
+    def make_pan_chunk_left(
+            self, chunk_w: int = 8, chunk_h: int = 8,
+    ) -> Callable[[], None]:
+        """Return callback: pan workspace left by 1 chunk."""
+        return lambda: self.pan_by_chunks(-1, 0, chunk_w, chunk_h)
+
+    def make_pan_chunk_right(
+            self, chunk_w: int = 8, chunk_h: int = 8,
+    ) -> Callable[[], None]:
+        """Return callback: pan workspace right by 1 chunk."""
+        return lambda: self.pan_by_chunks(1, 0, chunk_w, chunk_h)
+
+    def make_pan_global_space_up(
+            self, gs_w: int = 8, gs_h: int = 8,
+    ) -> Callable[[], None]:
+        """Return callback: pan workspace up by 1 global space."""
+        return lambda: self.pan_by_chunks(0, -1, gs_w, gs_h)
+
+    def make_pan_global_space_down(
+            self, gs_w: int = 8, gs_h: int = 8,
+    ) -> Callable[[], None]:
+        """Return callback: pan workspace down by 1 global space."""
+        return lambda: self.pan_by_chunks(0, 1, gs_w, gs_h)
+
+    def make_pan_global_space_left(
+            self, gs_w: int = 8, gs_h: int = 8,
+    ) -> Callable[[], None]:
+        """Return callback: pan workspace left by 1 global space."""
+        return lambda: self.pan_by_chunks(-1, 0, gs_w, gs_h)
+
+    def make_pan_global_space_right(
+            self, gs_w: int = 8, gs_h: int = 8,
+    ) -> Callable[[], None]:
+        """Return callback: pan workspace right by 1 global space."""
+        return lambda: self.pan_by_chunks(1, 0, gs_w, gs_h)
+
+    def make_scroll_up(self) -> Callable[[], None]:
+        """Return callback: scroll workspace up by 1 tile."""
+        return lambda: self.scroll_vertical(-1.0)
+
+    def make_scroll_down(self) -> Callable[[], None]:
+        """Return callback: scroll workspace down by 1 tile."""
+        return lambda: self.scroll_vertical(1.0)
+
+    def make_scroll_left(self) -> Callable[[], None]:
+        """Return callback: scroll workspace left by 1 tile."""
+        return lambda: self.scroll_horizontal(-1.0)
+
+    def make_scroll_right(self) -> Callable[[], None]:
+        """Return callback: scroll workspace right by 1 tile."""
+        return lambda: self.scroll_horizontal(1.0)
+
+    def make_zoom_in(self) -> Callable[[], None]:
+        """Return callback: zoom in by one step."""
+        return lambda: self.zoom_in()
+
+    def make_zoom_out(self) -> Callable[[], None]:
+        """Return callback: zoom out by one step."""
+        return lambda: self.zoom_out()
+
+    def make_move_z_up(self) -> Callable[[], None]:
+        """Return callback: move viewport Z up."""
+        return lambda: self.move_z(1)
+
+    def make_move_z_down(self) -> Callable[[], None]:
+        """Return callback: move viewport Z down."""
+        return lambda: self.move_z(-1)

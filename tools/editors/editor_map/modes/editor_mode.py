@@ -48,13 +48,21 @@ class EditorMode:
             new_tool.on_activate(self._keybind_manager)
 
     def on_activate(self) -> None:
-        """Called when this mode becomes the active mode."""
+        """Called when this mode becomes the active mode.
+
+        Pushes mode-level keybinds, then activates the first tool
+        (which pushes its own keybind overrides on top).
+        """
         self._keybind_manager.push_override(self._get_mode_keybinds())
         if self._tools:
             self.select_tool(0)
 
     def on_deactivate(self) -> None:
-        """Called when this mode is deactivated."""
+        """Called when this mode is deactivated.
+
+        Pops the active tool's keybind overrides, then pops the
+        mode-level overrides.
+        """
         old_tool = self.active_tool
         if old_tool:
             old_tool.on_deactivate(self._keybind_manager)

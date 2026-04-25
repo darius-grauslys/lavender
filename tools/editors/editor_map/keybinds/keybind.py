@@ -34,5 +34,13 @@ class KeyCombo:
         return self.key == other.key and self.modifiers == other.modifiers
 
 
+# Virtual key constants for scroll and zoom events.
+# These are NOT real GLFW key codes — they live above KEY_LAST
+# so they never collide with physical keys.
+VIRTUAL_KEY_SCROLL_UP: int = 0x10000
+VIRTUAL_KEY_SCROLL_DOWN: int = 0x10001
+VIRTUAL_KEY_ZOOM_IN: int = 0x10002
+VIRTUAL_KEY_ZOOM_OUT: int = 0x10003
+
 # Type alias for keybind callbacks
 KeybindCallback = Callable[[], None]

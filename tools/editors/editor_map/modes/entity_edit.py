@@ -6,10 +6,14 @@ Activation shortcut: Ctrl+E
 
 from __future__ import annotations
 
+from typing import Optional
+
 from modes.editor_mode import EditorMode
 from tools.select_tool import SelectTool
 from tools.pan_tool import PanTool
 from tools.tool import Tool
+from keybinds.keybind_manager import KeybindManager
+from workspace.movement import WorkspaceMovement
 
 import imgui
 
@@ -49,10 +53,23 @@ class EntityEditMode(EditorMode):
     name = "Entity Edit"
     shortcut_label = "Ctrl+E"
 
-    def __init__(self, keybind_manager):
+    def __init__(
+            self,
+            keybind_manager: KeybindManager,
+            movement: Optional[WorkspaceMovement] = None):
         super().__init__(keybind_manager)
+        self._movement = movement
+        self._entity_select = EntitySelectTool(movement)
+        self._entity_pan = EntityPanTool(movement)
+        self._create_entity = CreateEntityTool()
         self._tools = [
-            EntitySelectTool(),
-            EntityPanTool(),
-            CreateEntityTool(),
+            self._entity_select,
+            self._entity_pan,
+            self._create_entity,
         ]
+
+    def set_movement(self, movement: WorkspaceMovement) -> None:
+        """Inject movement into tools."""
+        self._movement = movement
+        self._entity_select.set_movement(movement)
+        self._entity_pan.set_movement(movement)

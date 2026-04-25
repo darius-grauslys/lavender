@@ -25,7 +25,11 @@ _editor_map_dir = str(Path(__file__).resolve().parent)
 if _editor_map_dir not in sys.path:
     sys.path.insert(0, _editor_map_dir)
 
-from keybinds.keybind import KeyCombo, Modifier
+from keybinds.keybind import (
+    KeyCombo, Modifier,
+    VIRTUAL_KEY_SCROLL_UP, VIRTUAL_KEY_SCROLL_DOWN,
+    VIRTUAL_KEY_ZOOM_IN, VIRTUAL_KEY_ZOOM_OUT,
+)
 from keybinds.keybind_manager import KeybindManager
 from modes.editor_mode import EditorMode
 from modes.global_space_view import GlobalSpaceViewMode
@@ -181,9 +185,20 @@ class EditorApp:
         if self._tile_info:
             self._renderer.set_tile_info(self._tile_info)
 
-        # Initialize modes
-        gs_mode = GlobalSpaceViewMode(self._keybind_manager)
-        chunk_mode = ChunkEditMode(self._keybind_manager)
+        # Initialize modes — inject movement so tools can register
+        # keybind callbacks that drive the viewport.
+        cfg_cw = self._config.chunk_width if self._config else 8
+        cfg_ch = self._config.chunk_height if self._config else 8
+        gs_mode = GlobalSpaceViewMode(
+            self._keybind_manager,
+            movement=self._movement,
+            gs_width=cfg_cw,
+            gs_height=cfg_ch)
+        chunk_mode = ChunkEditMode(
+            self._keybind_manager,
+            movement=self._movement,
+            chunk_w=cfg_cw,
+            chunk_h=cfg_ch)
         if self._tile_enums:
             chunk_mode.set_tile_enums(self._tile_enums)
         if self._tile_info:
@@ -196,8 +211,10 @@ class EditorApp:
             chunk_mode.set_active_tilesheet(self._tilesheet)
             chunk_mode.set_tilesheet_texture_id(
                 self._tilesheet_texture_id)
-        entity_mode = EntityEditMode(self._keybind_manager)
-        inv_mode = InventoryEditMode(self._keybind_manager)
+        entity_mode = EntityEditMode(
+            self._keybind_manager, movement=self._movement)
+        inv_mode = InventoryEditMode(
+            self._keybind_manager, movement=self._movement)
 
         self._modes = [gs_mode, chunk_mode, entity_mode, inv_mode]
 
@@ -417,14 +434,15 @@ class EditorApp:
         self._message_hud.draw(w, h)
 
     def _process_keybinds(self) -> None:
-        """Check for keybind activations this frame."""
-        io = imgui.get_io()
-        if io.want_capture_keyboard:
-            # Still allow Ctrl-modified keybinds (mode switches, etc.)
-            # even when imgui wants keyboard, but skip unmodified keys.
-            if not io.key_ctrl:
-                return
+        """Check for keybind activations this frame.
 
+        Physical key presses and virtual scroll/zoom events are
+        all routed through the keybind manager so that tools and
+        modes can override behaviour via push_override/pop_override.
+        """
+        io = imgui.get_io()
+
+        # Build current modifier mask
         mods = Modifier.NONE
         if io.key_ctrl:
             mods |= Modifier.CTRL
@@ -433,10 +451,46 @@ class EditorApp:
         if io.key_alt:
             mods |= Modifier.ALT
 
-        for key in range(glfw.KEY_SPACE, glfw.KEY_LAST + 1):
-            if imgui.is_key_pressed(key):
-                combo = KeyCombo(key, mods)
-                self._keybind_manager.fire(combo)
+        # --- Physical key presses ---
+        # When an imgui widget wants the keyboard (e.g. text input),
+        # only allow Ctrl-modified combos (mode switches, etc.)
+        # through.  Unmodified keys are suppressed so they don't
+        # interfere with text editing.
+        if not io.want_capture_keyboard or io.key_ctrl:
+            for key in range(glfw.KEY_SPACE, glfw.KEY_LAST + 1):
+                if imgui.is_key_pressed(key):
+                    combo = KeyCombo(key, mods)
+                    self._keybind_manager.fire(combo)
+
+        # --- Virtual scroll / zoom events ---
+        # These are generated from the mouse scroll wheel and
+        # dispatched as virtual key combos so that tools can
+        # override scroll behaviour via the keybind stack.
+        if io.mouse_wheel != 0 and not io.want_capture_mouse:
+            if mods & Modifier.ALT:
+                # Alt + scroll → zoom
+                if io.mouse_wheel > 0:
+                    self._keybind_manager.fire(
+                        KeyCombo(VIRTUAL_KEY_ZOOM_IN, Modifier.ALT))
+                else:
+                    self._keybind_manager.fire(
+                        KeyCombo(VIRTUAL_KEY_ZOOM_OUT, Modifier.ALT))
+            elif mods & Modifier.SHIFT:
+                # Shift + scroll → horizontal pan
+                if io.mouse_wheel > 0:
+                    self._keybind_manager.fire(
+                        KeyCombo(VIRTUAL_KEY_SCROLL_UP, Modifier.SHIFT))
+                else:
+                    self._keybind_manager.fire(
+                        KeyCombo(VIRTUAL_KEY_SCROLL_DOWN, Modifier.SHIFT))
+            else:
+                # Scroll → vertical pan
+                if io.mouse_wheel > 0:
+                    self._keybind_manager.fire(
+                        KeyCombo(VIRTUAL_KEY_SCROLL_UP, Modifier.NONE))
+                else:
+                    self._keybind_manager.fire(
+                        KeyCombo(VIRTUAL_KEY_SCROLL_DOWN, Modifier.NONE))
 
     def _draw_mode_tabs(self, window_width: float) -> None:
         """Draw the mode tab bar at the top."""
@@ -707,12 +761,12 @@ class EditorApp:
 
         # Draw chunk grid lines
         draw_list = imgui.get_window_draw_list()
-        chunk_w = self._config.chunk_width if self._config else 8
-        chunk_h = self._config.chunk_height if self._config else 8
+        ws_chunk_w = self._config.chunk_width if self._config else 8
+        ws_chunk_h = self._config.chunk_height if self._config else 8
         (first_vx, vstep,
          first_hy, hstep,
          _gl, _gt) = self._movement.get_chunk_grid_params(
-            ws_ox, ws_oy, ws_w, ws_h, chunk_w, chunk_h)
+            ws_ox, ws_oy, ws_w, ws_h, ws_chunk_w, ws_chunk_h)
 
         grid_col = imgui.get_color_u32_rgba(0.3, 0.3, 0.3, 0.4)
         if vstep > 0:
@@ -741,11 +795,11 @@ class EditorApp:
             tile_x, tile_y = self._movement.screen_to_tile(
                 mouse.x, mouse.y, ws_ox, ws_oy, ws_w, ws_h)
             # Chunk coordinates
-            cx = math.floor(tile_x / chunk_w)
-            cy = math.floor(tile_y / chunk_h)
+            cx = math.floor(tile_x / ws_chunk_w)
+            cy = math.floor(tile_y / ws_chunk_h)
             # Local tile within chunk
-            lx = tile_x - cx * chunk_w
-            ly = tile_y - cy * chunk_h
+            lx = tile_x - cx * ws_chunk_w
+            ly = tile_y - cy * ws_chunk_h
             hover_tile_text = (
                 f"Tile: ({tile_x}, {tile_y})  "
                 f"Chunk: ({cx}, {cy})  "
@@ -766,30 +820,10 @@ class EditorApp:
             draw_list.add_text(
                 text_x, text_y, fg_col, hover_tile_text)
 
-        # Handle workspace input
-        if imgui.is_window_hovered():
-            io = imgui.get_io()
-            # Scroll wheel to pan (uses accumulator for fractional deltas)
-            if io.mouse_wheel != 0:
-                if io.key_shift:
-                    self._movement.scroll_horizontal(-io.mouse_wheel)
-                else:
-                    self._movement.scroll_vertical(-io.mouse_wheel)
-
-        # Arrow key panning — check hovered with relaxed flags so
-        # that an active select-drag does not block arrow input.
-        if imgui.is_window_hovered(
-                imgui.HOVERED_ALLOW_WHEN_BLOCKED_BY_ACTIVE_ITEM):
-            io = imgui.get_io()
-            if not io.key_ctrl:
-                if imgui.is_key_pressed(glfw.KEY_UP):
-                    self._movement.pan_by_tiles(0, -1)
-                if imgui.is_key_pressed(glfw.KEY_DOWN):
-                    self._movement.pan_by_tiles(0, 1)
-                if imgui.is_key_pressed(glfw.KEY_LEFT):
-                    self._movement.pan_by_tiles(-1, 0)
-                if imgui.is_key_pressed(glfw.KEY_RIGHT):
-                    self._movement.pan_by_tiles(1, 0)
+        # Workspace input (scroll, arrow keys, zoom) is handled
+        # entirely through the keybind manager — see
+        # _process_keybinds() which translates raw input into
+        # virtual key combos and fires them through the stack.
 
         imgui.end()
 

@@ -17,23 +17,78 @@ from core.tile_kind_editor import (
     create_editor_state_from_enum,
     write_tile_kind_header,
 )
+from keybinds.keybind import (
+    KeyCombo, KeybindCallback, Modifier,
+    VIRTUAL_KEY_SCROLL_UP, VIRTUAL_KEY_SCROLL_DOWN,
+    VIRTUAL_KEY_ZOOM_IN, VIRTUAL_KEY_ZOOM_OUT,
+)
+from keybinds.keybind_manager import KeybindManager
+from workspace.movement import WorkspaceMovement
 
 import imgui
 from pathlib import Path
-from typing import Callable, List, Optional
+from typing import Callable, Dict, List, Optional
 
 from core.tileset_picker import TilesetPickerState
 from core.tilesheet import Tilesheet, TILE_PX
 
+# GLFW key constants (stable values).
+_KEY_UP = 265
+_KEY_DOWN = 264
+_KEY_LEFT = 263
+_KEY_RIGHT = 262
+
 
 class TileSelectTool(SelectTool):
+    """Tile selection tool.
+
+    Shift+Up/Down moves Z axis.
+    """
     name = "Tile Select"
     icon_label = "TS"
 
+    def _build_keybinds(self) -> Dict[KeyCombo, KeybindCallback]:
+        binds = super()._build_keybinds()
+        if self._movement is not None:
+            m = self._movement
+            binds[KeyCombo(_KEY_UP, Modifier.SHIFT)] = \
+                m.make_move_z_up()
+            binds[KeyCombo(_KEY_DOWN, Modifier.SHIFT)] = \
+                m.make_move_z_down()
+        return binds
+
 
 class ChunkPanTool(PanTool):
+    """Chunk pan tool.
+
+    Arrow keys move by 1 tile (inherited).
+    Shift+Arrow keys move by 1 chunk.
+    """
     name = "Chunk Pan"
     icon_label = "CP"
+
+    def __init__(
+            self,
+            movement: Optional[WorkspaceMovement] = None,
+            chunk_w: int = 8,
+            chunk_h: int = 8):
+        super().__init__(movement)
+        self._chunk_w = chunk_w
+        self._chunk_h = chunk_h
+
+    def _build_keybinds(self) -> Dict[KeyCombo, KeybindCallback]:
+        binds = super()._build_keybinds()
+        if self._movement is not None:
+            m = self._movement
+            binds[KeyCombo(_KEY_UP, Modifier.SHIFT)] = \
+                m.make_pan_chunk_up(self._chunk_w, self._chunk_h)
+            binds[KeyCombo(_KEY_DOWN, Modifier.SHIFT)] = \
+                m.make_pan_chunk_down(self._chunk_w, self._chunk_h)
+            binds[KeyCombo(_KEY_LEFT, Modifier.SHIFT)] = \
+                m.make_pan_chunk_left(self._chunk_w, self._chunk_h)
+            binds[KeyCombo(_KEY_RIGHT, Modifier.SHIFT)] = \
+                m.make_pan_chunk_right(self._chunk_w, self._chunk_h)
+        return binds
 
 
 class TileDrawTool(Tool):
@@ -535,14 +590,28 @@ class ChunkEditMode(EditorMode):
     name = "Chunk Edit"
     shortcut_label = "Ctrl+K"
 
-    def __init__(self, keybind_manager):
+    def __init__(
+            self,
+            keybind_manager: KeybindManager,
+            movement: Optional[WorkspaceMovement] = None,
+            chunk_w: int = 8,
+            chunk_h: int = 8):
         super().__init__(keybind_manager)
+        self._movement = movement
+        self._tile_select = TileSelectTool(movement)
+        self._chunk_pan = ChunkPanTool(movement, chunk_w, chunk_h)
         self._tile_draw = TileDrawTool()
         self._tools = [
-            TileSelectTool(),
-            ChunkPanTool(),
+            self._tile_select,
+            self._chunk_pan,
             self._tile_draw,
         ]
+
+    def set_movement(self, movement: WorkspaceMovement) -> None:
+        """Inject movement into tools."""
+        self._movement = movement
+        self._tile_select.set_movement(movement)
+        self._chunk_pan.set_movement(movement)
 
     def set_active_tilesheet(self, tilesheet: Optional[Tilesheet]) -> None:
         """Set the active tilesheet for the tile draw tool's picker."""

@@ -214,15 +214,20 @@ By default the following inputs are overriden:
 
 #### Scrolling Mouse Scroll Wheel: 
 
-When shift is not held:
+When neither Shift nor Alt is held:
 
 Scrolling up pans the Workspace up.
 Scrolling down pans the Workspace down.
 
-When Shift is held:
+When Shift is held (and Alt is not):
 
 Scrolling up pans the Workspace left.
 Scrolling down pans the Workspace right.
+
+When Alt is held:
+
+Scrolling up zooms the Workspace in.
+Scrolling down zooms the Workspace out.
 
 #### Arrow keys
 
