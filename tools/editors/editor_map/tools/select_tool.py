@@ -29,7 +29,7 @@ class SelectTool(Tool):
         super().on_activate(keybind_manager)
         self._is_active = True
 
-    def on_deactivate(self) -> None:
+    def on_deactivate(self, keybind_manager=None) -> None:
         """Clear active state so selection overrides don't persist."""
         self._is_active = False
 

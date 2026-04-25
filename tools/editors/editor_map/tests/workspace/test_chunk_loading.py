@@ -24,13 +24,12 @@ def _make_config(
         chunk_d: int = 1,
 ) -> EngineConfig:
     """Create a minimal EngineConfig for testing."""
-    cfg = EngineConfig.__new__(EngineConfig)
-    cfg.chunk_width = chunk_w
-    cfg.chunk_height = chunk_h
-    cfg.chunk_depth = chunk_d
-    # Provide any other required attributes with safe defaults
-    cfg._values = {}
-    return cfg
+    return EngineConfig(constants={
+        'CHUNK__WIDTH': chunk_w,
+        'CHUNK__HEIGHT': chunk_h,
+        'CHUNK__DEPTH': chunk_d,
+        'CHUNK__QUANTITY_OF__TILES': chunk_w * chunk_h * chunk_d,
+    })
 
 
 def _seed_chunks(
