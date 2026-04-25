@@ -15,6 +15,7 @@ Scroll behaviour (spec section 1.1 — Panning Tool):
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field
 
 # Default tile size in pixels — matches engine TILE_PX (8).
@@ -108,7 +109,7 @@ class WorkspaceMovement:
         (e.g. from high-resolution trackpads) are not lost.
         """
         self.viewport._scroll_accum_y += delta * SCROLL_SENSITIVITY
-        tiles = round(self.viewport._scroll_accum_y)
+        tiles = math.trunc(self.viewport._scroll_accum_y)
         if tiles != 0:
             self.viewport.center_y -= tiles
             self.viewport._scroll_accum_y -= tiles
@@ -125,7 +126,7 @@ class WorkspaceMovement:
         are not lost.
         """
         self.viewport._scroll_accum_x += delta * SCROLL_SENSITIVITY
-        tiles = round(self.viewport._scroll_accum_x)
+        tiles = math.trunc(self.viewport._scroll_accum_x)
         if tiles != 0:
             self.viewport.center_x -= tiles
             self.viewport._scroll_accum_x -= tiles

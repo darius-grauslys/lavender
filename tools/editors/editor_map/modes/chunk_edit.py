@@ -463,8 +463,8 @@ class TileDrawTool(Tool):
                     draw_list.add_image(
                         state.texture_id,
                         (x0, y0), (x1, y1),
-                        uv_min=(uv0_x, uv0_y),
-                        uv_max=(uv1_x, uv1_y))
+                        (uv0_x, uv0_y),
+                        (uv1_x, uv1_y))
 
                 # Grid lines
                 draw_list.add_rect(x0, y0, x1, y1, grid_col)
