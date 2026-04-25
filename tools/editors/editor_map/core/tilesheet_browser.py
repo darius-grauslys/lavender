@@ -25,12 +25,14 @@ if TYPE_CHECKING:
     from ui.message_hud import MessageHUD
 
 
-def _open_png_file_dialog() -> Optional[str]:
+def _open_png_file_dialog(
+        message_hud: Optional[MessageHUD] = None,
+) -> Optional[str]:
     """
     Open a native file browser dialog filtered to .png files.
 
     Returns the selected absolute path as a string, or None
-    if the user cancelled.
+    if the user cancelled or an error occurred.
 
     Uses tkinter.filedialog which is available in the Python
     standard library on most platforms.
@@ -54,8 +56,15 @@ def _open_png_file_dialog() -> Optional[str]:
             return None
         return filepath
     except ImportError:
+        if message_hud:
+            message_hud.error(
+                "Failed to open file dialog: "
+                "tkinter is not available.")
         return None
-    except Exception:
+    except Exception as e:
+        if message_hud:
+            message_hud.error(
+                f"Failed to open file dialog: {e}")
         return None
 
 
@@ -105,7 +114,7 @@ def browse_and_set_tilesheet(
                 "Cannot browse for tilesheet: no world selected.")
         return None, None
 
-    selected = _open_png_file_dialog()
+    selected = _open_png_file_dialog(message_hud)
     if selected is None:
         return None, None
 
