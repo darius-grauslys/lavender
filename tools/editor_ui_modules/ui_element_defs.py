@@ -124,7 +124,7 @@ WINDOW_ELEMENT_DEF = UIElementDef(
         "window_kind",
         "offset_window__x", "offset_window__y", "offset_window__z",
         "layer", "text", "font_expression", "transform_handler",
-        "color", "name",
+        "color", "name", "UI_Span",
     ],
 )
 
