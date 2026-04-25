@@ -48,6 +48,7 @@ from core.editor_project_config import (
     save_world_editor_config,
 )
 from core.tilesheet import Tilesheet, load_tilesheet
+from core.tilesheet_browser import browse_and_set_tilesheet, clear_tilesheet
 from ui.message_hud import MessageHUD
 
 VERSION = "0.1.0"
@@ -90,12 +91,6 @@ class EditorApp:
         self._new_tilesheet_path: str = ""
         self._delete_confirm_name: str = ""
         self._delete_target: Optional[str] = None
-
-        # Tilesheet browser
-        self._show_tilesheet_browser: bool = False
-        self._browser_current_dir: Optional[Path] = None
-        self._browser_selected_file: Optional[Path] = None
-        self._browser_entries: List[Path] = []
 
         # UI state
         self._properties_width: float = 250.0
@@ -192,6 +187,8 @@ class EditorApp:
                 self._tile_info.layer_layouts)
         chunk_mode.set_project_dir(self._project_dir)
         chunk_mode.set_on_enum_updated(self._reload_tile_enums)
+        if self._tilesheet:
+            chunk_mode.set_active_tilesheet(self._tilesheet)
         entity_mode = EntityEditMode(self._keybind_manager)
         inv_mode = InventoryEditMode(self._keybind_manager)
 
@@ -363,7 +360,6 @@ class EditorApp:
         self._draw_properties_hud(w, h)
         self._draw_workspace(w, h)
         self._message_hud.draw(w, h)
-        self._draw_tilesheet_browser()
 
     def _process_keybinds(self) -> None:
         """Check for keybind activations this frame."""
@@ -438,6 +434,7 @@ class EditorApp:
                 self._load_tilesheet()
                 if self._tilesheet and self._renderer:
                     self._renderer.set_tilesheet(self._tilesheet)
+                self._update_chunk_mode_tilesheet()
             imgui.same_line(imgui.get_window_width() - 30)
             if imgui.small_button(f"X##{world_name}"):
                 self._delete_target = world_name
@@ -498,27 +495,45 @@ class EditorApp:
             imgui.input_text(
                 "##ts_path", "(no world selected)", 256,
                 imgui.INPUT_TEXT_READ_ONLY)
+            imgui.button("Browse...##ts_browse")
+            imgui.same_line()
+            imgui.button("Clear##ts_clear")
             imgui.pop_style_var()
         else:
-            changed, self._new_tilesheet_path = imgui.input_text(
-                "##ts_path", self._new_tilesheet_path, 256)
-            imgui.same_line()
-            if imgui.button("Set##ts_set"):
-                self._active_world_config.tilesheet_path = (
-                    self._new_tilesheet_path)
-                save_world_editor_config(
+            display_path = (
+                self._new_tilesheet_path
+                if self._new_tilesheet_path
+                else "(none)")
+            imgui.input_text(
+                "##ts_path", display_path, 256,
+                imgui.INPUT_TEXT_READ_ONLY)
+            if imgui.button("Browse...##ts_browse"):
+                rel_path, tilesheet = browse_and_set_tilesheet(
                     self._project_dir,
                     self._active_world,
-                    self._active_world_config)
-                self._load_tilesheet()
-                if self._tilesheet and self._renderer:
-                    self._renderer.set_tilesheet(self._tilesheet)
+                    self._message_hud)
+                if rel_path is not None:
+                    self._new_tilesheet_path = rel_path
+                    self._active_world_config = load_world_editor_config(
+                        self._project_dir, self._active_world)
+                    self._tilesheet = tilesheet
+                    self._tilesheet_rendering_enabled = tilesheet is not None
+                    if self._tilesheet and self._renderer:
+                        self._renderer.set_tilesheet(self._tilesheet)
+                    # Update chunk edit mode with new tilesheet
+                    self._update_chunk_mode_tilesheet()
             imgui.same_line()
-            if imgui.button("Browse...##ts_browse"):
-                self._show_tilesheet_browser = True
-                self._browser_current_dir = self._project_dir
-                self._browser_selected_file = None
-                self._refresh_browser_entries()
+            if imgui.button("Clear##ts_clear"):
+                clear_tilesheet(
+                    self._project_dir,
+                    self._active_world,
+                    self._message_hud)
+                self._new_tilesheet_path = ""
+                self._active_world_config = load_world_editor_config(
+                    self._project_dir, self._active_world)
+                self._tilesheet = None
+                self._tilesheet_rendering_enabled = False
+                self._update_chunk_mode_tilesheet()
 
         imgui.end()
 
@@ -646,101 +661,12 @@ class EditorApp:
         imgui.end()
 
 
-    def _refresh_browser_entries(self) -> None:
-        """Refresh the file browser directory listing."""
-        if self._browser_current_dir is None:
-            self._browser_entries = []
-            return
-        entries = []
-        try:
-            for p in sorted(self._browser_current_dir.iterdir()):
-                if p.is_dir():
-                    entries.append(p)
-                elif p.suffix.lower() == '.png':
-                    entries.append(p)
-        except OSError:
-            pass
-        self._browser_entries = entries
-
-    def _draw_tilesheet_browser(self) -> None:
-        """Draw the tilesheet file browser sub-window."""
-        if not self._show_tilesheet_browser:
-            return
-
-        imgui.set_next_window_size(500, 400, imgui.FIRST_USE_EVER)
-        flags = (
-            imgui.WINDOW_NO_SAVED_SETTINGS
-            | imgui.WINDOW_NO_COLLAPSE
-        )
-        expanded, opened = imgui.begin(
-            "Select Tilesheet##ts_browser", True, flags)
-
-        if not opened:
-            self._show_tilesheet_browser = False
-            imgui.end()
-            return
-
-        imgui.text(f"Directory: {self._browser_current_dir}")
-        imgui.separator()
-
-        if imgui.button(".. (Up)##ts_up"):
-            parent = self._browser_current_dir.parent
-            if parent != self._browser_current_dir:
-                self._browser_current_dir = parent
-                self._browser_selected_file = None
-                self._refresh_browser_entries()
-
-        imgui.begin_child("##ts_file_list", 0, -40, border=True)
-        for entry in self._browser_entries:
-            is_dir = entry.is_dir()
-            label = f"[DIR] {entry.name}" if is_dir else entry.name
-            is_selected = (entry == self._browser_selected_file)
-
-            clicked, _ = imgui.selectable(label, is_selected)
-            if clicked:
-                if is_dir:
-                    self._browser_current_dir = entry
-                    self._browser_selected_file = None
-                    self._refresh_browser_entries()
-                else:
-                    self._browser_selected_file = entry
-        imgui.end_child()
-
-        can_ok = (
-            self._browser_selected_file is not None
-            and self._browser_selected_file.suffix.lower() == '.png')
-
-        if not can_ok:
-            imgui.push_style_var(imgui.STYLE_ALPHA, 0.5)
-        if imgui.button("OK##ts_ok") and can_ok:
-            try:
-                rel_path = self._browser_selected_file.relative_to(
-                    self._project_dir)
-            except ValueError:
-                rel_path = self._browser_selected_file
-            if self._active_world and self._active_world_config:
-                self._active_world_config.tilesheet_path = str(rel_path)
-                self._new_tilesheet_path = str(rel_path)
-                save_world_editor_config(
-                    self._project_dir,
-                    self._active_world,
-                    self._active_world_config)
-                self._load_tilesheet()
-                if self._tilesheet and self._renderer:
-                    self._renderer.set_tilesheet(self._tilesheet)
-            else:
-                self._message_hud.error(
-                    "No world selected. Select a world first "
-                    "to assign a tilesheet.")
-            self._show_tilesheet_browser = False
-        if not can_ok:
-            imgui.pop_style_var()
-
-        imgui.same_line()
-        if imgui.button("Cancel##ts_cancel"):
-            self._show_tilesheet_browser = False
-
-        imgui.end()
+    def _update_chunk_mode_tilesheet(self) -> None:
+        """Push the active tilesheet to the chunk edit mode."""
+        if len(self._modes) > 1:
+            chunk_mode = self._modes[1]
+            if hasattr(chunk_mode, 'set_active_tilesheet'):
+                chunk_mode.set_active_tilesheet(self._tilesheet)
 
 
 def _key_name(key: int) -> str:

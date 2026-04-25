@@ -22,6 +22,9 @@ import imgui
 from pathlib import Path
 from typing import Callable, List, Optional
 
+from core.tileset_picker import TilesetPickerState
+from core.tilesheet import Tilesheet, TILE_PX
+
 
 class TileSelectTool(SelectTool):
     name = "Tile Select"
@@ -39,6 +42,11 @@ class TileDrawTool(Tool):
     name = "Tile Draw"
     icon_label = "TD"
 
+    # Fixed width for the tile index button (fits "0000" + padding)
+    _INDEX_BTN_WIDTH = 48.0
+    # Fixed width for the X (delete) button
+    _DELETE_BTN_WIDTH = 24.0
+
     def __init__(self):
         self._tile_enums: List[CEnum] = []
         self._layer_fields: List[TileLayerField] = []
@@ -49,6 +57,9 @@ class TileDrawTool(Tool):
         self._editor_state: Optional[TileKindEditorState] = None
         self._project_dir: Optional[Path] = None
         self._on_enum_updated: Optional[Callable] = None
+        self._active_tilesheet: Optional[Tilesheet] = None
+        self._picker_state: TilesetPickerState = TilesetPickerState()
+        self._picker_target_index: int = -1
 
     def set_tile_enums(self, enums: List[CEnum]) -> None:
         """Set the available tile enums (one per layer)."""
@@ -68,6 +79,11 @@ class TileDrawTool(Tool):
     def set_on_enum_updated(self, callback: Callable) -> None:
         """Set callback invoked after enum is written to disk."""
         self._on_enum_updated = callback
+
+    def set_active_tilesheet(self, tilesheet: Optional[Tilesheet]) -> None:
+        """Set the active tilesheet for the tileset picker."""
+        self._active_tilesheet = tilesheet
+        self._picker_state.tilesheet = tilesheet
 
     def draw_properties(self) -> None:
         if not self._tile_enums:
@@ -161,16 +177,33 @@ class TileDrawTool(Tool):
                     and state.kind_filter.lower() not in tk.name.lower()):
                 continue
             imgui.push_id(f"tk_{i}")
-            changed_val, new_val = imgui.input_int("##val", tk.value, 0, 0)
-            if changed_val:
-                tk.value = max(0, new_val)
+
+            # Fixed-width index button (4-digit display)
+            idx_label = f"{tk.value:4d}"
+            if imgui.button(idx_label, width=self._INDEX_BTN_WIDTH):
+                if self._active_tilesheet is not None:
+                    self._picker_target_index = i
+                    self._picker_state.open_for_entry(
+                        i, tk.value)
+
             imgui.same_line()
+
+            # Name field stretches remaining width
+            remaining = (
+                imgui.get_content_region_available_width()
+                - self._DELETE_BTN_WIDTH
+                - imgui.get_style().item_spacing.x)
+            name_w = max(80.0, remaining)
+            imgui.push_item_width(name_w)
             changed_name, new_name = imgui.input_text(
                 "##name", tk.name, 128)
             if changed_name:
                 tk.name = new_name
+            imgui.pop_item_width()
+
             imgui.same_line()
-            if imgui.small_button("X##del"):
+
+            if imgui.button("X##del", width=self._DELETE_BTN_WIDTH):
                 remove_idx = i
             imgui.pop_id()
 
@@ -202,12 +235,18 @@ class TileDrawTool(Tool):
             current_idx = 0
             if lt.tile_kind_name in kind_names:
                 current_idx = kind_names.index(lt.tile_kind_name)
+            remaining = (
+                imgui.get_content_region_available_width()
+                - self._DELETE_BTN_WIDTH
+                - imgui.get_style().item_spacing.x)
+            imgui.push_item_width(max(80.0, remaining))
             changed, new_idx = imgui.combo(
                 "##lsel", current_idx, kind_names)
             if changed and kind_names:
                 lt.tile_kind_name = kind_names[new_idx]
+            imgui.pop_item_width()
             imgui.same_line()
-            if imgui.small_button("X##ldel"):
+            if imgui.button("X##ldel", width=self._DELETE_BTN_WIDTH):
                 logic_remove_idx = i
             imgui.pop_id()
 
@@ -238,12 +277,18 @@ class TileDrawTool(Tool):
             current_idx = 0
             if at.tile_kind_name in kind_names:
                 current_idx = kind_names.index(at.tile_kind_name)
+            remaining = (
+                imgui.get_content_region_available_width()
+                - self._DELETE_BTN_WIDTH
+                - imgui.get_style().item_spacing.x)
+            imgui.push_item_width(max(80.0, remaining))
             changed, new_idx = imgui.combo(
                 "##asel", current_idx, kind_names)
             if changed and kind_names:
                 at.tile_kind_name = kind_names[new_idx]
+            imgui.pop_item_width()
             imgui.same_line()
-            if imgui.small_button("X##adel"):
+            if imgui.button("X##adel", width=self._DELETE_BTN_WIDTH):
                 anim_remove_idx = i
             imgui.pop_id()
 
@@ -296,6 +341,132 @@ class TileDrawTool(Tool):
 
         imgui.end()
 
+        # Draw the tileset picker sub-window if open
+        if self._picker_state.is_open:
+            self._draw_tileset_picker()
+
+    def _draw_tileset_picker(self) -> None:
+        """Draw the tileset picker sub-window and handle result."""
+        state = self._picker_state
+
+        imgui.set_next_window_size(500, 450, imgui.FIRST_USE_EVER)
+        imgui.set_next_window_position(
+            imgui.get_io().display_size.x * 0.5,
+            imgui.get_io().display_size.y * 0.5,
+            imgui.ONCE,
+            pivot_x=0.5, pivot_y=0.5)
+
+        flags = (
+            imgui.WINDOW_NO_SAVED_SETTINGS
+            | imgui.WINDOW_NO_COLLAPSE
+        )
+        expanded, opened = imgui.begin(
+            "Tileset Picker##tsp", True, flags)
+
+        if not opened:
+            state.close()
+            imgui.end()
+            return
+
+        if not state.has_tilesheet:
+            imgui.text("No tilesheet loaded.")
+            imgui.spacing()
+            if imgui.button("Cancel##tsp_cancel", width=80):
+                state.close()
+            imgui.end()
+            return
+
+        # Grid area
+        cell = state.tile_display_size
+        cols = state.tiles_per_row
+        total = state.total_tiles
+        rows = (total + cols - 1) // cols if cols > 0 else 0
+
+        bottom_bar_h = 40.0
+        avail = imgui.get_content_region_available()
+        grid_h = avail.y - bottom_bar_h
+
+        imgui.begin_child(
+            "##tsp_grid", width=0, height=grid_h,
+            border=True)
+
+        draw_list = imgui.get_window_draw_list()
+        cursor_screen = imgui.get_cursor_screen_position()
+        origin_x, origin_y = cursor_screen.x, cursor_screen.y
+
+        grid_w_px = cols * cell
+        grid_h_px = rows * cell
+        if grid_w_px > 0 and grid_h_px > 0:
+            imgui.invisible_button("##tsp_grid_btn", grid_w_px, grid_h_px)
+
+            if imgui.is_item_hovered():
+                mouse = imgui.get_mouse_position()
+                local_x = mouse.x - origin_x
+                local_y = mouse.y - origin_y
+                state.hover_at(local_x, local_y)
+                if imgui.is_mouse_clicked(0):
+                    state.select_at(local_x, local_y)
+            else:
+                state.hovered_index = -1
+
+            # Draw tile cells
+            grid_col = imgui.get_color_u32_rgba(0.3, 0.3, 0.3, 0.6)
+            hover_col = imgui.get_color_u32_rgba(1.0, 1.0, 0.0, 0.8)
+            sel_col = imgui.get_color_u32_rgba(1.0, 1.0, 1.0, 1.0)
+
+            for idx in range(total):
+                col = idx % cols
+                row = idx // cols
+                x0 = origin_x + col * cell
+                y0 = origin_y + row * cell
+                x1 = x0 + cell
+                y1 = y0 + cell
+
+                # Checkerboard background
+                shade = 0.25 if (col + row) % 2 == 0 else 0.35
+                fill = imgui.get_color_u32_rgba(
+                    shade, shade, shade, 1.0)
+                draw_list.add_rect_filled(x0, y0, x1, y1, fill)
+
+                # Grid lines
+                draw_list.add_rect(x0, y0, x1, y1, grid_col)
+
+                # Hover highlight
+                if idx == state.hovered_index:
+                    draw_list.add_rect(
+                        x0, y0, x1, y1, hover_col, thickness=2.0)
+
+                # Selection highlight
+                if idx == state.selected_index:
+                    draw_list.add_rect(
+                        x0, y0, x1, y1, sel_col, thickness=2.0)
+
+        imgui.end_child()
+
+        # Bottom bar
+        if state.selected_index >= 0:
+            imgui.text(f"Selected: {state.selected_index}")
+        else:
+            imgui.text("Selected: (none)")
+
+        imgui.same_line(imgui.get_content_region_available_width() - 170)
+
+        if imgui.button("OK##tsp_ok", width=80):
+            result = state.confirm()
+            if result is not None and self._editor_state is not None:
+                target = self._picker_target_index
+                if 0 <= target < len(self._editor_state.tile_kinds):
+                    self._editor_state.tile_kinds[target].value = result
+            self._picker_target_index = -1
+
+        imgui.same_line()
+
+        if imgui.button("Cancel##tsp_cancel", width=80):
+            state.close()
+            self._picker_target_index = -1
+
+        imgui.end()
+
     def _apply_editor_changes(self) -> None:
         """Write the edited enum back to the project _kind.h file."""
         if self._editor_state is None or self._project_dir is None:
@@ -334,6 +505,10 @@ class ChunkEditMode(EditorMode):
             ChunkPanTool(),
             self._tile_draw,
         ]
+
+    def set_active_tilesheet(self, tilesheet: Optional[Tilesheet]) -> None:
+        """Set the active tilesheet for the tile draw tool's picker."""
+        self._tile_draw.set_active_tilesheet(tilesheet)
 
     def set_tile_enums(self, enums: List[CEnum]) -> None:
         self._tile_draw.set_tile_enums(enums)
