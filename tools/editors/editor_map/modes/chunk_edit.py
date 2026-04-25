@@ -100,7 +100,8 @@ class TileDrawTool(Tool):
         self._layer_fields: List[TileLayerField] = []
         self._layer_layouts: List[TileLayerLayout] = []
         self._selected_layer: int = 0
-        self._selected_tile_value: int = 0
+        # Per-layer selected tile value: layer_index -> value
+        self._selected_tile_values: Dict[int, int] = {}
 
     def set_tile_enums(self, enums: List[CEnum]) -> None:
         """Set the available tile enums (one per layer)."""
@@ -121,6 +122,34 @@ class TileDrawTool(Tool):
     def set_tile_byte_size(self, size: int) -> None:
         """Set sizeof(Tile) for the project."""
         self._tile_byte_size = size
+
+    # ------------------------------------------------------------------
+    # Tile byte packing helpers
+    # ------------------------------------------------------------------
+
+    def _build_tile_bytes(self) -> bytes:
+        """Pack per-layer selected values into a tile byte array.
+
+        Each layer occupies a bitfield whose width comes from
+        ``_layer_fields``.  Layers are packed LSB-first (layer 0
+        starts at bit 0).  When no layer metadata is available the
+        selected value for the *current* layer is written as the
+        whole tile (legacy behaviour).
+        """
+        if not self._layer_fields:
+            val = self._selected_tile_values.get(self._selected_layer, 0)
+            return val.to_bytes(self._tile_byte_size, byteorder='little')
+
+        composite: int = 0
+        bit_offset: int = 0
+        for idx, field in enumerate(self._layer_fields):
+            bits = field.bit_width if field.bit_width else 8
+            mask = (1 << bits) - 1
+            val = self._selected_tile_values.get(idx, 0) & mask
+            composite |= val << bit_offset
+            bit_offset += bits
+
+        return composite.to_bytes(self._tile_byte_size, byteorder='little')
 
     def on_workspace_click(
             self, world_x: float, world_y: float, world_z: int) -> None:
@@ -146,9 +175,8 @@ class TileDrawTool(Tool):
         lx = tile_x - cx * cw
         ly = tile_y - cy * ch
 
-        # Build tile bytes from selected value
-        val = self._selected_tile_value
-        tile_bytes = val.to_bytes(self._tile_byte_size, byteorder='little')
+        # Build tile bytes compositing all layers
+        tile_bytes = self._build_tile_bytes()
 
         # Ensure chunk exists
         chunk = self._objects.get_or_create_chunk(cx, cy, world_z)
@@ -191,24 +219,27 @@ class TileDrawTool(Tool):
             return
 
         enum = self._tile_enums[self._selected_layer]
+        current_val = self._selected_tile_values.get(
+            self._selected_layer, 0)
 
         # Scrollable tile list
         imgui.text(f"Tiles ({enum.name}):")
         imgui.begin_child("##tile_palette", 0, 200, border=True)
 
         for member in enum.members:
-            is_selected = member.value == self._selected_tile_value
+            is_selected = member.value == current_val
             clicked, _ = imgui.selectable(
                 f"{member.name} ({member.value})##{member.value}",
                 is_selected)
             if clicked:
-                self._selected_tile_value = member.value
+                self._selected_tile_values[self._selected_layer] = \
+                    member.value
 
         imgui.end_child()
 
     @property
     def selected_tile_value(self) -> int:
-        return self._selected_tile_value
+        return self._selected_tile_values.get(self._selected_layer, 0)
 
     @property
     def selected_layer(self) -> int:
@@ -237,7 +268,8 @@ class TileRectTool(Tool):
         self._layer_fields: List[TileLayerField] = []
         self._layer_layouts: List[TileLayerLayout] = []
         self._selected_layer: int = 0
-        self._selected_tile_value: int = 0
+        # Per-layer selected tile value: layer_index -> value
+        self._selected_tile_values: Dict[int, int] = {}
         self._fill: bool = True
         self._edge_thickness: int = 1
 
@@ -267,7 +299,7 @@ class TileRectTool(Tool):
 
     @property
     def selected_tile_value(self) -> int:
-        return self._selected_tile_value
+        return self._selected_tile_values.get(self._selected_layer, 0)
 
     @property
     def selected_layer(self) -> int:
@@ -345,6 +377,30 @@ class TileRectTool(Tool):
         self._drag_end_x = None
         self._drag_end_y = None
 
+    def _build_tile_bytes(self) -> bytes:
+        """Pack per-layer selected values into a tile byte array.
+
+        Each layer occupies a bitfield whose width comes from
+        ``_layer_fields``.  Layers are packed LSB-first (layer 0
+        starts at bit 0).  When no layer metadata is available the
+        selected value for the *current* layer is written as the
+        whole tile (legacy behaviour).
+        """
+        if not self._layer_fields:
+            val = self._selected_tile_values.get(self._selected_layer, 0)
+            return val.to_bytes(self._tile_byte_size, byteorder='little')
+
+        composite: int = 0
+        bit_offset: int = 0
+        for idx, field in enumerate(self._layer_fields):
+            bits = field.bit_width if field.bit_width else 8
+            mask = (1 << bits) - 1
+            val = self._selected_tile_values.get(idx, 0) & mask
+            composite |= val << bit_offset
+            bit_offset += bits
+
+        return composite.to_bytes(self._tile_byte_size, byteorder='little')
+
     def _fill_rect(
             self, x0: int, y0: int, x1: int, y1: int,
             z: int) -> None:
@@ -354,9 +410,7 @@ class TileRectTool(Tool):
         cw = getattr(self, '_chunk_w', 8)
         ch = getattr(self, '_chunk_h', 8)
 
-        val = self._selected_tile_value
-        tile_bytes = val.to_bytes(
-            self._tile_byte_size, byteorder='little')
+        tile_bytes = self._build_tile_bytes()
 
         for ty in range(y0, y1 + 1):
             for tx in range(x0, x1 + 1):
@@ -439,16 +493,20 @@ class TileRectTool(Tool):
 
         enum = self._tile_enums[self._selected_layer]
 
+        current_val = self._selected_tile_values.get(
+            self._selected_layer, 0)
+
         # Tile list
         imgui.text(f"Tiles ({enum.name}):")
         imgui.begin_child("##tr_palette", 0, 150, border=True)
         for member in enum.members:
-            is_selected = member.value == self._selected_tile_value
+            is_selected = member.value == current_val
             clicked, _ = imgui.selectable(
                 f"{member.name} ({member.value})##tr_{member.value}",
                 is_selected)
             if clicked:
-                self._selected_tile_value = member.value
+                self._selected_tile_values[self._selected_layer] = \
+                    member.value
         imgui.end_child()
 
         imgui.separator()
