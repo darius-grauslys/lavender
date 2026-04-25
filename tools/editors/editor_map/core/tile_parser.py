@@ -30,29 +30,63 @@ class TileInfo:
     layer_fields: List[TileLayerField] = field(default_factory=list)
 
 
-def parse_tile_header(source: str) -> Optional[TileInfo]:
+@dataclass
+class TileParseError:
+    """Describes why tile header parsing failed."""
+    message: str
+
+
+def parse_tile_header(
+        source: str,
+        filepath: Optional[Path] = None,
+) -> TileInfo | TileParseError:
     """
     Parse a tile.h source to extract tile size and layer fields.
 
-    Returns None if the source cannot be parsed.
+    Returns a TileInfo on success, or a TileParseError describing
+    the problem on failure.
     """
+    location = str(filepath) if filepath else "<source>"
+
     size = _extract_tile_size(source)
     if size is None:
-        return None
+        return TileParseError(
+            f"Failed to parse tile size from '{location}': "
+            f"could not find 'u8 array_of__tile_data__u8[N]' pattern. "
+            f"Ensure the Tile struct contains a "
+            f"'u8 array_of__tile_data__u8[N]' union member that "
+            f"encodes sizeof(Tile)."
+        )
 
     layer_fields = _extract_render_fields(source)
+    if not layer_fields:
+        return TileParseError(
+            f"Failed to parse tile layer fields from '{location}': "
+            f"no bitfield declarations found in GEN-RENDER-BEGIN/END "
+            f"block (or fallback Tile_Kind bitfield). "
+            f"Ensure tile.h contains a GEN-RENDER-BEGIN/END block "
+            f"with typed bitfield declarations (e.g. "
+            f"'Tile_Kind the_kind_of__tile : 10;')."
+        )
 
     return TileInfo(
         size_in_bytes=size,
         layer_fields=layer_fields)
 
 
-def parse_tile_header_from_file(filepath: Path) -> Optional[TileInfo]:
+def parse_tile_header_from_file(
+        filepath: Path,
+) -> TileInfo | TileParseError:
     """Parse tile info from a file path."""
     if not filepath.exists():
-        return None
+        return TileParseError(
+            f"Tile header not found at '{filepath}'. "
+            f"The project must provide "
+            f"'include/types/implemented/world/tile.h' "
+            f"defining the Tile struct."
+        )
     source = filepath.read_text(encoding='utf-8', errors='replace')
-    return parse_tile_header(source)
+    return parse_tile_header(source, filepath)
 
 
 def _extract_tile_size(source: str) -> Optional[int]:

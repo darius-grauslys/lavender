@@ -38,7 +38,7 @@ from workspace.movement import WorkspaceMovement
 from workspace.objects import WorkspaceObjects
 from workspace.render import WorkspaceRenderer
 from core.engine_config import EngineConfig, load_engine_config
-from core.tile_parser import parse_tile_header_from_file, TileInfo
+from core.tile_parser import parse_tile_header_from_file, TileInfo, TileParseError
 from core.c_enum import parse_c_enum_from_file, find_enum_by_name, CEnum
 from core.world_directory import list_worlds, ensure_world_dir, world_root
 from editor_ui_modules.message_hud import MessageHUD
@@ -89,6 +89,20 @@ class EditorApp:
         self._message_hud.system(f"editor_map v{VERSION}")
 
         # Load engine config
+        defaults_path = (
+            self._engine_dir / 'core' / 'include' / 'platform_defaults.h')
+        project_config_path = (
+            self._project_dir / 'include' / 'config' / 'implemented'
+            / 'engine_config.h')
+        if not defaults_path.exists():
+            self._message_hud.error(
+                f"Engine platform_defaults.h not found at "
+                f"'{defaults_path}'. Engine constants will use "
+                f"hardcoded fallbacks.")
+        if not project_config_path.exists():
+            self._message_hud.info(
+                f"No project engine_config.h override found at "
+                f"'{project_config_path}' — using engine defaults only.")
         self._config = load_engine_config(
             self._engine_dir, self._project_dir)
         self._message_hud.info(
@@ -97,11 +111,16 @@ class EditorApp:
 
         # Parse tile header
         tile_h = self._project_dir / "include" / "types" / "implemented" / "world" / "tile.h"
-        self._tile_info = parse_tile_header_from_file(tile_h)
-        if self._tile_info:
+        tile_result = parse_tile_header_from_file(tile_h)
+        if isinstance(tile_result, TileParseError):
+            self._tile_info = None
+            self._message_hud.error(
+                f"Project is Under Defined: {tile_result.message}")
+        else:
+            self._tile_info = tile_result
             self._message_hud.info(
                 f"Tile size: {self._tile_info.size_in_bytes} bytes, "
-                f"{len(self._tile_info.layer_fields)} layers")
+                f"{len(self._tile_info.layer_fields)} layer(s)")
             # Load enums for each tile layer
             for lf in self._tile_info.layer_fields:
                 enum = self._find_project_enum(lf.enum_type_name)
@@ -112,10 +131,15 @@ class EditorApp:
                         f"({len(enum.members)} members)")
                 else:
                     self._message_hud.error(
-                        f"Failed to load tile enum: {lf.enum_type_name}")
-        else:
-            self._message_hud.error(
-                "Failed to parse tile.h — project may be Under Defined")
+                        f"Failed to load tile enum '{lf.enum_type_name}' "
+                        f"for tile layer field '{lf.field_name}' "
+                        f"(bit width {lf.bit_width}). "
+                        f"Searched project headers in "
+                        f"'{self._project_dir / 'include' / 'types' / 'implemented'}' "
+                        f"and engine headers in "
+                        f"'{self._engine_dir / 'core' / 'include' / 'types' / 'implemented'}'. "
+                        f"Ensure a header defines: "
+                        f"typedef enum ... {{ ... }} {lf.enum_type_name};")
 
         # Initialize workspace
         self._objects = WorkspaceObjects(self._config)
@@ -344,7 +368,11 @@ class EditorApp:
             if self._new_world_name.strip():
                 if not self._tile_info:
                     self._message_hud.error(
-                        "Cannot create world: project is Under Defined")
+                        "Cannot create world: project is Under Defined. "
+                        "The tile header at "
+                        f"'{self._project_dir / 'include' / 'types' / 'implemented' / 'world' / 'tile.h'}' "
+                        "could not be parsed. See earlier error messages "
+                        "for details.")
                 else:
                     ensure_world_dir(
                         self._project_dir, self._new_world_name.strip())
