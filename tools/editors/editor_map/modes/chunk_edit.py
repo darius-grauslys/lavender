@@ -423,7 +423,7 @@ class TileDrawTool(Tool):
                 state.hovered_index = -1
 
             # Draw tile cells
-            grid_col = imgui.get_color_u32_rgba(0.3, 0.3, 0.3, 0.6)
+            grid_col = imgui.get_color_u32_rgba(0.1, 0.3, 0.3, 0.6)
             hover_col = imgui.get_color_u32_rgba(1.0, 1.0, 0.0, 0.8)
             sel_col = imgui.get_color_u32_rgba(1.0, 1.0, 1.0, 1.0)
 
@@ -449,7 +449,7 @@ class TileDrawTool(Tool):
                 # transparent regions of the tilesheet)
                 shade = 0.25 if (col + row) % 2 == 0 else 0.35
                 fill = imgui.get_color_u32_rgba(
-                    shade, shade, shade, 1.0)
+                    shade, shade, shade, 0.1)
                 draw_list.add_rect_filled(x0, y0, x1, y1, fill)
 
                 # Draw the actual tile image if texture available
