@@ -235,3 +235,95 @@ def find_enum_by_name(
         if e.name == name:
             return e
     return None
+
+
+def write_tile_layer_enum(
+        layer_names: List[str],
+        default_layer: str = "",
+        sight_blocking_layer: str = "",
+        passable_layer: str = "",
+        ground_layer: str = "",
+) -> str:
+    """Generate the contents of a tile_layer.h header file.
+
+    Args:
+        layer_names: Ordered list of layer enum member names
+            (e.g. ["Tile_Layer__Ground", "Tile_Layer__Cover"]).
+        default_layer: Which layer is Tile_Layer__Default.
+        sight_blocking_layer: Which layer is Default__Sight_Blocking.
+        passable_layer: Which layer is Default__Is_Passable.
+        ground_layer: Which layer is Default__Is_With_Ground.
+
+    Returns:
+        The full C header source text.
+    """
+    lines = [
+        '#ifndef DEFINE_TILE_LAYER',
+        '#define DEFINE_TILE_LAYER',
+        '',
+        'typedef enum Tile_Layer {',
+        '    // GEN-BEGIN',
+    ]
+
+    for name in layer_names:
+        lines.append(f'    {name},')
+
+    lines.append('    // GEN-END')
+
+    # Default aliases
+    if not default_layer and layer_names:
+        default_layer = layer_names[0]
+    if not sight_blocking_layer:
+        sight_blocking_layer = default_layer
+    if not passable_layer:
+        passable_layer = default_layer
+    if not ground_layer:
+        ground_layer = default_layer
+
+    if default_layer:
+        lines.append(f'    Tile_Layer__Default = {default_layer},')
+        lines.append(f'    Tile_Layer__Default__Sight_Blocking = ')
+        lines.append(f'        {sight_blocking_layer},')
+        lines.append(f'    Tile_Layer__Default__Is_Passable = ')
+        lines.append(f'        {passable_layer},')
+        lines.append(f'    Tile_Layer__Default__Is_With_Ground =')
+        lines.append(f'        {ground_layer},')
+    else:
+        lines.append('    Tile_Layer__Default = 0,')
+
+    lines.append('    Tile_Layer__Unknown')
+    lines.append('} Tile_Layer;')
+    lines.append('')
+    lines.append('#endif')
+    lines.append('')
+
+    return '\n'.join(lines)
+
+
+def write_tile_layer_header(
+        filepath: Path,
+        layer_names: List[str],
+        default_layer: str = "",
+        sight_blocking_layer: str = "",
+        passable_layer: str = "",
+        ground_layer: str = "",
+) -> None:
+    """Write a tile_layer.h file.
+
+    Args:
+        filepath: Path to write the header to.
+        layer_names: Ordered list of layer enum member names.
+        default_layer: Which layer is Tile_Layer__Default.
+        sight_blocking_layer: Alias for sight blocking.
+        passable_layer: Alias for passable.
+        ground_layer: Alias for ground.
+    """
+    content = write_tile_layer_enum(
+        layer_names,
+        default_layer=default_layer,
+        sight_blocking_layer=sight_blocking_layer,
+        passable_layer=passable_layer,
+        ground_layer=ground_layer,
+    )
+    filepath.parent.mkdir(parents=True, exist_ok=True)
+    filepath.write_text(content, encoding='utf-8')

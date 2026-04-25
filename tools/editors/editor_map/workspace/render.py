@@ -31,6 +31,7 @@ if TYPE_CHECKING:
     from core.c_enum import CEnum
     from core.tilesheet import Tilesheet
     from core.tile_parser import TileInfo, TileLayerField
+    from core.layer_manager import LayerManager
     from workspace.objects import WorkspaceObjects
     from workspace.movement import WorkspaceMovement
 
@@ -68,10 +69,14 @@ class WorkspaceRenderer:
         self._config = config
         # Display size of each tile in screen pixels (before zoom).
         self._tile_size_px = tile_size_px
+        # Legacy single tilesheet (fallback for layer 0)
         self._tilesheet: Optional[Tilesheet] = None
         self._tilesheet_gl_texture: int = 0
         self._tile_info: Optional[TileInfo] = None
         self._rendering_enabled: bool = False
+        # Per-layer tilesheet mapping: layer_index -> (Tilesheet, gl_tex_id)
+        self._layer_tilesheets: Dict[int, Tuple[Tilesheet, int]] = {}
+        self._layer_manager: Optional[LayerManager] = None
 
     # ------------------------------------------------------------------
     # Configuration
@@ -103,6 +108,54 @@ class WorkspaceRenderer:
     def set_tile_info(self, tile_info: Optional[TileInfo]) -> None:
         """Set tile info for layer-aware rendering."""
         self._tile_info = tile_info
+
+    def set_layer_manager(self, layer_manager: Optional[LayerManager]) -> None:
+        """Set the layer manager for per-layer tilesheet lookup."""
+        self._layer_manager = layer_manager
+
+    def set_layer_tilesheet(
+            self,
+            layer_index: int,
+            tilesheet: Optional[Tilesheet],
+            gl_texture_id: int = 0) -> None:
+        """Set the tilesheet for a specific tile layer.
+
+        Args:
+            layer_index: The tile layer index.
+            tilesheet: The tilesheet, or None to clear.
+            gl_texture_id: Pre-uploaded GL texture handle.
+        """
+        if tilesheet is None:
+            self._layer_tilesheets.pop(layer_index, None)
+        else:
+            if gl_texture_id == 0:
+                gl_texture_id = self._try_upload_texture(tilesheet)
+            self._layer_tilesheets[layer_index] = (tilesheet, gl_texture_id)
+
+    def clear_layer_tilesheets(self) -> None:
+        """Remove all per-layer tilesheet assignments."""
+        self._layer_tilesheets.clear()
+
+    def _try_upload_texture(self, tilesheet: Tilesheet) -> int:
+        """Attempt to upload a tilesheet to GL. Returns tex id or 0."""
+        try:
+            import OpenGL.GL as gl
+            tex_id = gl.glGenTextures(1)
+            gl.glBindTexture(gl.GL_TEXTURE_2D, tex_id)
+            gl.glTexParameteri(
+                gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER,
+                gl.GL_NEAREST)
+            gl.glTexParameteri(
+                gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER,
+                gl.GL_NEAREST)
+            gl.glTexImage2D(
+                gl.GL_TEXTURE_2D, 0, gl.GL_RGBA,
+                tilesheet.width, tilesheet.height, 0,
+                gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, tilesheet.pixels)
+            gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
+            return int(tex_id)
+        except Exception:
+            return 0
 
     def _upload_tilesheet_texture(self, tilesheet: Tilesheet) -> None:
         """Upload tilesheet pixel data to an OpenGL texture."""
@@ -190,7 +243,42 @@ class WorkspaceRenderer:
 
         current_z = vp.center_z
 
-        # Precompute tilesheet UV helpers
+        # Precompute per-layer tilesheet UV helpers
+        # Each layer can have its own tilesheet; fall back to the
+        # global tilesheet when no per-layer sheet is assigned.
+        # layer_ts_info: list of (use_ts, ts_w, ts_h, tiles_per_row, gl_tex)
+        layer_ts_info: List[Tuple[bool, float, float, int, int]] = []
+
+        # Precompute layer bit extraction info
+        num_layers = 0
+        layer_bit_info: List[Tuple[int, int]] = []  # (bit_offset, mask)
+        if self._tile_info:
+            num_layers = len(self._tile_info.layer_fields)
+            bit_offset = 0
+            for li, lf in enumerate(self._tile_info.layer_fields):
+                mask = (1 << lf.bit_width) - 1
+                layer_bit_info.append((bit_offset, mask))
+                bit_offset += lf.bit_width
+
+                # Determine tilesheet for this layer
+                lts, lgl = None, 0
+                if li in self._layer_tilesheets:
+                    lts, lgl = self._layer_tilesheets[li]
+                if lts is None and self._tilesheet is not None:
+                    lts = self._tilesheet
+                    lgl = self._tilesheet_gl_texture
+
+                if lts is not None and lgl != 0:
+                    layer_ts_info.append((
+                        True,
+                        float(lts.width),
+                        float(lts.height),
+                        lts.tiles_per_row,
+                        lgl))
+                else:
+                    layer_ts_info.append((False, 1.0, 1.0, 1, 0))
+
+        # Legacy fallback info for non-layer-aware path
         use_tilesheet = (
             self._rendering_enabled
             and self._tilesheet is not None
@@ -200,17 +288,6 @@ class WorkspaceRenderer:
         tiles_per_row = (
             self._tilesheet.tiles_per_row if self._tilesheet else 1)
         gl_tex = self._tilesheet_gl_texture
-
-        # Precompute layer bit extraction info
-        num_layers = 0
-        layer_bit_info: List[Tuple[int, int]] = []  # (bit_offset, mask)
-        if self._tile_info:
-            num_layers = len(self._tile_info.layer_fields)
-            bit_offset = 0
-            for lf in self._tile_info.layer_fields:
-                mask = (1 << lf.bit_width) - 1
-                layer_bit_info.append((bit_offset, mask))
-                bit_offset += lf.bit_width
 
         none_col = imgui.get_color_u32_rgba(*_NONE_COLOR)
 
@@ -261,12 +338,11 @@ class WorkspaceRenderer:
                         tile_int = int.from_bytes(
                             tile_data, byteorder='little')
 
-                        if use_tilesheet and num_layers > 0:
-                            self._draw_tile_layers(
+                        if num_layers > 0 and layer_ts_info:
+                            self._draw_tile_layers_multi(
                                 draw_list, tile_int,
                                 num_layers, layer_bit_info,
-                                tiles_per_row, ts_w, ts_h,
-                                gl_tex, none_col,
+                                layer_ts_info, none_col,
                                 px, py, px2, py2)
                         else:
                             # Fallback: use first byte as value
@@ -296,6 +372,56 @@ class WorkspaceRenderer:
     # ------------------------------------------------------------------
 
     @staticmethod
+    def _draw_tile_layers_multi(
+            draw_list,
+            tile_int: int,
+            num_layers: int,
+            layer_bit_info: List[Tuple[int, int]],
+            layer_ts_info: List[Tuple[bool, float, float, int, int]],
+            none_col: int,
+            px: float, py: float,
+            px2: float, py2: float) -> None:
+        """Render all layers for a single tile position.
+
+        Each layer samples from its own tilesheet (via layer_ts_info).
+        Layers are drawn bottom-to-top (index 0 first).
+        Value 0 on the base layer draws a dark rectangle;
+        value 0 on upper layers is skipped (transparent).
+        """
+        for layer_idx in range(num_layers):
+            bit_offset, mask = layer_bit_info[layer_idx]
+            tile_value = (tile_int >> bit_offset) & mask
+
+            if tile_value == 0:
+                if layer_idx == 0:
+                    draw_list.add_rect_filled(
+                        px, py, px2, py2, none_col)
+                continue
+
+            use_ts, ts_w, ts_h, tiles_per_row, gl_tex = \
+                layer_ts_info[layer_idx]
+
+            if not use_ts:
+                # No tilesheet for this layer — use fallback color
+                color = _color_for_value(tile_value)
+                draw_list.add_rect_filled(
+                    px, py, px2, py2,
+                    imgui.get_color_u32_rgba(*color))
+                continue
+
+            tile_row = tile_value // tiles_per_row
+            tile_col = tile_value % tiles_per_row
+            u0 = (tile_col * _TILESHEET_TILE_PX) / ts_w
+            v0 = (tile_row * _TILESHEET_TILE_PX) / ts_h
+            u1 = ((tile_col + 1) * _TILESHEET_TILE_PX) / ts_w
+            v1 = ((tile_row + 1) * _TILESHEET_TILE_PX) / ts_h
+
+            draw_list.add_image(
+                gl_tex,
+                (px, py), (px2, py2),
+                uv_a=(u0, v0), uv_b=(u1, v1))
+
+    @staticmethod
     def _draw_tile_layers(
             draw_list,
             tile_int: int,
@@ -308,11 +434,9 @@ class WorkspaceRenderer:
             none_col: int,
             px: float, py: float,
             px2: float, py2: float) -> None:
-        """Render all layers for a single tile position.
+        """Legacy: render all layers using a single tilesheet.
 
-        Layers are drawn bottom-to-top (index 0 first).
-        Value 0 on the base layer draws a dark rectangle;
-        value 0 on upper layers is skipped (transparent).
+        Kept for backward compatibility. Prefer _draw_tile_layers_multi.
         """
         for layer_idx in range(num_layers):
             bit_offset, mask = layer_bit_info[layer_idx]
@@ -320,13 +444,10 @@ class WorkspaceRenderer:
 
             if tile_value == 0:
                 if layer_idx == 0:
-                    # Base layer: dark empty for Tile_Kind__None
                     draw_list.add_rect_filled(
                         px, py, px2, py2, none_col)
-                # Upper layers: skip (transparent)
                 continue
 
-            # Compute tilesheet UV from tile_value as tile index
             tile_row = tile_value // tiles_per_row
             tile_col = tile_value % tiles_per_row
             u0 = (tile_col * _TILESHEET_TILE_PX) / ts_w

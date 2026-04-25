@@ -41,9 +41,13 @@ from workspace.objects import WorkspaceObjects
 from workspace.render import WorkspaceRenderer
 from core.engine_config import EngineConfig, load_engine_config
 from core.tile_parser import (
-    parse_tile_header_from_file, TileInfo, TileParseError, TileLayerLayout,
+    parse_tile_header_from_file, TileInfo, TileParseError,
+    TileLayerField, TileLayerLayout, write_tile_header,
 )
-from core.c_enum import parse_c_enum_from_file, find_enum_by_name, CEnum
+from core.c_enum import (
+    parse_c_enum_from_file, find_enum_by_name, CEnum,
+    write_tile_layer_header,
+)
 from core.world_directory import list_worlds, ensure_world_dir, world_root
 from core.editor_project_config import (
     EditorProjectConfig,
@@ -61,6 +65,7 @@ from core.tilesheet_browser import browse_and_set_tilesheet, clear_tilesheet
 from core.tilesheet_manager import TilesheetManager
 from core.tilesheet_viewer import TilesheetViewer
 from core.file_hud import FileHUD, LayerEditorWindow
+from core.layer_manager import LayerManager, LayerEntry
 from ui.message_hud import MessageHUD
 
 VERSION = "0.1.0"
@@ -115,6 +120,7 @@ class EditorApp:
         self._tilesheet_manager = TilesheetManager()
         self._tilesheet_viewer = TilesheetViewer()
         self._layer_editor_window = LayerEditorWindow()
+        self._layer_manager = LayerManager()
         self._show_kind_editor: bool = False
         self._should_exit: bool = False
 
@@ -222,6 +228,10 @@ class EditorApp:
                 self._tilesheet, self._tilesheet_texture_id)
         if self._tile_info:
             self._renderer.set_tile_info(self._tile_info)
+        self._renderer.set_layer_manager(self._layer_manager)
+
+        # Wire layer editor callback
+        self._layer_editor_window.on_ok = self._on_layer_editor_ok
 
         # Initialize modes — inject movement so tools can register
         # keybind callbacks that drive the viewport.
@@ -306,10 +316,13 @@ class EditorApp:
             if hasattr(chunk_mode_restore, 'set_objects'):
                 chunk_mode_restore.set_objects(self._objects)
             self._load_tilesheet()
+            self._load_layer_manager_from_config()
+            self._sync_tilesheets_from_config()
             if self._renderer:
                 self._renderer.set_tilesheet(
                     self._tilesheet, self._tilesheet_texture_id)
             self._update_chunk_mode_tilesheet()
+            self._update_renderer_layer_tilesheets()
             self._message_hud.info(
                 f"Restored last world: {self._active_world}")
 
@@ -670,12 +683,15 @@ class EditorApp:
                         self._project_dir, self._build_config)
                 self._message_hud.info(f"Selected world: {world_name}")
                 self._load_tilesheet()
+                self._load_layer_manager_from_config()
+                self._sync_tilesheets_from_config()
                 if self._renderer:
                     self._renderer.set_tilesheet(
                         self._tilesheet, self._tilesheet_texture_id)
                     if self._tile_info:
                         self._renderer.set_tile_info(self._tile_info)
                 self._update_chunk_mode_tilesheet()
+                self._update_renderer_layer_tilesheets()
             imgui.same_line(imgui.get_window_width() - 30)
             if imgui.small_button(f"X##{world_name}"):
                 self._delete_target = world_name
@@ -775,8 +791,11 @@ class EditorApp:
                             gl.glDeleteTextures(
                                 1, [self._tilesheet_texture_id])
                             self._tilesheet_texture_id = 0
+                    # Sync tilesheet list in config
+                    self._sync_tilesheets_from_config()
                     # Update chunk edit mode with new tilesheet
                     self._update_chunk_mode_tilesheet()
+                    self._update_renderer_layer_tilesheets()
             imgui.same_line()
             if imgui.button("Clear##ts_clear"):
                 clear_tilesheet(
@@ -792,7 +811,9 @@ class EditorApp:
                     gl.glDeleteTextures(
                         1, [self._tilesheet_texture_id])
                     self._tilesheet_texture_id = 0
+                self._sync_tilesheets_from_config()
                 self._update_chunk_mode_tilesheet()
+                self._update_renderer_layer_tilesheets()
 
         imgui.end()
 
@@ -1026,7 +1047,15 @@ class EditorApp:
 
     def _open_layer_editor(self) -> None:
         """Open the layer editor sub-window."""
-        self._layer_editor_window.open()
+        ts_paths = self._tilesheet_manager.all_paths()
+        # Also include the legacy single tilesheet if not already listed
+        if (self._active_world_config
+                and self._active_world_config.tilesheet_path
+                and self._active_world_config.tilesheet_path not in ts_paths):
+            ts_paths.insert(0, self._active_world_config.tilesheet_path)
+        self._layer_editor_window.open(
+            layer_manager=self._layer_manager,
+            tilesheet_paths=ts_paths)
 
     def _open_kind_editor(self) -> None:
         """Open the tile kind editor as a standalone window."""
@@ -1103,6 +1132,179 @@ class EditorApp:
             self._build_config.workspace_y = vp.center_y
             self._build_config.workspace_z = vp.center_z
             save_build_config(self._project_dir, self._build_config)
+
+    def _load_layer_manager_from_config(self) -> None:
+        """Load layer manager from the active world config."""
+        self._layer_manager.clear()
+        if self._active_world_config and self._active_world_config.layers:
+            self._layer_manager.from_list(
+                self._active_world_config.layers)
+            self._message_hud.info(
+                f"Loaded {self._layer_manager.count} layer(s) "
+                f"from world config.")
+        elif self._tile_info:
+            # Bootstrap from parsed tile.h if no config layers yet
+            for i, lf in enumerate(self._tile_info.layer_fields):
+                layout = (self._tile_info.layer_layouts[i]
+                          if i < len(self._tile_info.layer_layouts)
+                          else TileLayerLayout())
+                ts_path = ""
+                if (self._active_world_config
+                        and self._active_world_config.tilesheet_path):
+                    ts_path = self._active_world_config.tilesheet_path
+                self._layer_manager.add(LayerEntry(
+                    layer_name=f"Tile_Layer__{i}",
+                    enum_type_name=lf.enum_type_name,
+                    tilesheet_path=ts_path,
+                    bit_width=lf.bit_width,
+                    logic_bits=layout.logic_bits,
+                    animation_bits=layout.animation_bits,
+                ))
+
+    def _sync_tilesheets_from_config(self) -> None:
+        """Sync tilesheet manager from world config tilesheet list."""
+        if not self._active_world_config:
+            return
+        paths = list(self._active_world_config.tilesheets)
+        # Also include the legacy single tilesheet path
+        if (self._active_world_config.tilesheet_path
+                and self._active_world_config.tilesheet_path not in paths):
+            paths.insert(0, self._active_world_config.tilesheet_path)
+        # Include paths referenced by layers
+        for entry in self._layer_manager.layers:
+            if entry.tilesheet_path and entry.tilesheet_path not in paths:
+                paths.append(entry.tilesheet_path)
+        self._tilesheet_manager.sync_from_config(
+            self._project_dir, paths)
+        # Upload GL textures for any entries that need them
+        for ts_entry in self._tilesheet_manager.entries:
+            if ts_entry.gl_texture_id == 0 and ts_entry.tilesheet:
+                self._upload_entry_texture(ts_entry)
+
+    def _update_renderer_layer_tilesheets(self) -> None:
+        """Push per-layer tilesheet assignments to the renderer."""
+        if not self._renderer:
+            return
+        self._renderer.clear_layer_tilesheets()
+        for i, layer_entry in enumerate(self._layer_manager.layers):
+            if not layer_entry.tilesheet_path:
+                continue
+            ts_entry = self._tilesheet_manager.get(
+                layer_entry.tilesheet_path)
+            if ts_entry and ts_entry.tilesheet and ts_entry.gl_texture_id:
+                self._renderer.set_layer_tilesheet(
+                    i, ts_entry.tilesheet, ts_entry.gl_texture_id)
+
+    def _on_layer_editor_ok(self, entries) -> None:
+        """Handle Layer Editor OK — write tile_layer.h, tile.h, update config."""
+        from core.c_enum import write_tile_layer_header
+        from core.tile_parser import (
+            TileLayerField, TileLayerLayout, write_tile_header,
+        )
+
+        # Build layer data from editor entries
+        new_layers: List[LayerEntry] = []
+        layer_fields: List[TileLayerField] = []
+        layer_layouts: List[TileLayerLayout] = []
+        layer_names: List[str] = []
+
+        for entry in entries:
+            le = LayerEntry(
+                layer_name=entry.layer_name,
+                enum_type_name=entry.enum_type_name,
+                tilesheet_path=entry.tilesheet_path,
+                bit_width=entry.bit_width,
+                logic_bits=entry.logic_bits,
+                animation_bits=entry.animation_bits,
+            )
+            err = le.validate()
+            if err:
+                self._message_hud.error(
+                    f"Layer '{entry.layer_name}': {err}")
+                return
+            new_layers.append(le)
+            layer_names.append(entry.layer_name)
+
+            # Derive field name from enum type
+            field_name = f"the_kind_of__{entry.layer_name.lower()}"
+            layer_fields.append(TileLayerField(
+                enum_type_name=entry.enum_type_name,
+                field_name=field_name,
+                bit_width=entry.bit_width,
+            ))
+            remainder = (entry.bit_width
+                         - entry.logic_bits
+                         - entry.animation_bits)
+            layer_layouts.append(TileLayerLayout(
+                logic_bits=entry.logic_bits,
+                animation_bits=entry.animation_bits,
+                remainder_bits=max(0, remainder),
+            ))
+
+        # Write tile_layer.h
+        tile_layer_path = (
+            self._project_dir / "include" / "types"
+            / "implemented" / "world" / "tile_layer.h")
+        default_layer = layer_names[0] if layer_names else ""
+        try:
+            write_tile_layer_header(
+                tile_layer_path,
+                layer_names,
+                default_layer=default_layer,
+                sight_blocking_layer=default_layer,
+                passable_layer=default_layer,
+                ground_layer=default_layer,
+            )
+            self._message_hud.info(
+                f"Wrote tile_layer.h with {len(layer_names)} layer(s).")
+        except Exception as e:
+            self._message_hud.error(
+                f"Failed to write tile_layer.h: {e}")
+            return
+
+        # Write tile.h
+        tile_h_path = (
+            self._project_dir / "include" / "types"
+            / "implemented" / "world" / "tile.h")
+        try:
+            write_tile_header(tile_h_path, layer_fields, layer_layouts)
+            self._message_hud.info(
+                f"Wrote tile.h ({len(layer_fields)} layer(s)).")
+        except Exception as e:
+            self._message_hud.error(
+                f"Failed to write tile.h: {e}")
+            return
+
+        # Update layer manager
+        self._layer_manager.set_layers(new_layers)
+
+        # Save to world config
+        if self._active_world and self._active_world_config:
+            self._active_world_config.layers = \
+                self._layer_manager.to_list()
+            # Collect all unique tilesheet paths
+            all_ts = self._layer_manager.get_unique_tilesheet_paths()
+            self._active_world_config.tilesheets = all_ts
+            save_world_editor_config(
+                self._project_dir, self._active_world,
+                self._active_world_config, self._platform)
+
+        # Re-parse tile.h to refresh tile_info
+        tile_result = parse_tile_header_from_file(tile_h_path)
+        if isinstance(tile_result, TileParseError):
+            self._message_hud.error(
+                f"Re-parse tile.h failed: {tile_result.message}")
+        else:
+            self._tile_info = tile_result
+            if self._renderer:
+                self._renderer.set_tile_info(self._tile_info)
+
+        # Reload tile enums
+        self._reload_tile_enums()
+
+        # Sync tilesheets and update renderer
+        self._sync_tilesheets_from_config()
+        self._update_renderer_layer_tilesheets()
 
     def _update_chunk_mode_tilesheet(self) -> None:
         """Push the active tilesheet and GL texture to the chunk edit

@@ -27,7 +27,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 
 
 EDITOR_CONFIG_RELATIVE_PATH = Path("assets") / "world" / "editor.json"
@@ -43,6 +43,8 @@ DEFAULT_WORLD_CONFIG = {
     "tilesheet": {
         "path": ""
     },
+    "tilesheets": [],
+    "layers": [],
     "workspace_position": {
         "x": 0,
         "y": 0,
@@ -102,6 +104,8 @@ class EditorProjectConfig:
 class WorldEditorConfig:
     """Parsed per-world editor configuration."""
     tilesheet_path: str = ""
+    tilesheets: list = field(default_factory=list)
+    layers: list = field(default_factory=list)
     workspace_x: int = 0
     workspace_y: int = 0
     workspace_z: int = 0
@@ -252,9 +256,19 @@ def load_world_editor_config(
     if isinstance(tilesheet, dict):
         tilesheet_path = tilesheet.get("path", "")
 
+    tilesheets_data = data.get("tilesheets", [])
+    if not isinstance(tilesheets_data, list):
+        tilesheets_data = []
+
+    layers_data = data.get("layers", [])
+    if not isinstance(layers_data, list):
+        layers_data = []
+
     ws = data.get("workspace_position", {})
     return WorldEditorConfig(
         tilesheet_path=tilesheet_path,
+        tilesheets=tilesheets_data,
+        layers=layers_data,
         workspace_x=ws.get("x", 0),
         workspace_y=ws.get("y", 0),
         workspace_z=ws.get("z", 0),
@@ -274,6 +288,8 @@ def save_world_editor_config(
         "tilesheet": {
             "path": config.tilesheet_path
         },
+        "tilesheets": config.tilesheets,
+        "layers": config.layers,
         "workspace_position": {
             "x": config.workspace_x,
             "y": config.workspace_y,

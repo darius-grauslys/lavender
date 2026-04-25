@@ -228,6 +228,71 @@ def _extract_layer_layouts(
     return layouts
 
 
+def write_tile_header(
+        filepath: Path,
+        layer_fields: List[TileLayerField],
+        layer_layouts: List[TileLayerLayout],
+) -> None:
+    """Write a tile.h file from layer fields and layouts.
+
+    Computes sizeof(Tile) from the total bits across all layers,
+    rounded up to the nearest byte.
+
+    Args:
+        filepath: Path to write the header to.
+        layer_fields: The render bitfields for each layer.
+        layer_layouts: The sub-bit field layouts for each layer.
+    """
+    total_bits = sum(lf.bit_width for lf in layer_fields)
+    size_in_bytes = max(1, (total_bits + 7) // 8)
+
+    lines = [
+        '#ifndef DEFINE_TILE',
+        '#define DEFINE_TILE',
+        '',
+        'typedef struct Tile_t {',
+        '    union {',
+        '        struct {',
+        '            // GEN-RENDER-BEGIN',
+    ]
+
+    for lf in layer_fields:
+        lines.append(
+            f'            {lf.enum_type_name} {lf.field_name} '
+            f': {lf.bit_width};')
+
+    lines.append('            // GEN-RENDER-END')
+    lines.append('        };')
+    lines.append('        struct {')
+    lines.append('            // GEN-LAYER-BEGIN')
+
+    for i, layout in enumerate(layer_layouts):
+        if layout.logic_bits > 0:
+            lines.append(
+                f'            u8 tile_layer_{i}__field__logic '
+                f': {layout.logic_bits};')
+        if layout.animation_bits > 0:
+            lines.append(
+                f'            u8 tile_layer_{i}__field__animation '
+                f': {layout.animation_bits};')
+        lines.append(
+            f'            u8 tile_layer_{i}__remainder '
+            f': {layout.remainder_bits};')
+
+    lines.append('            // GEN-LAYER-END')
+    lines.append('        };')
+    lines.append(
+        f'        u8 array_of__tile_data__u8[{size_in_bytes}];')
+    lines.append('    };')
+    lines.append('} Tile;')
+    lines.append('')
+    lines.append('#endif')
+    lines.append('')
+
+    filepath.parent.mkdir(parents=True, exist_ok=True)
+    filepath.write_text('\n'.join(lines), encoding='utf-8')
+
+
 def _extract_bitfields_fallback(source: str) -> List[TileLayerField]:
     """
     Fallback: if no GEN-RENDER block, try to find Tile_Kind field

@@ -127,3 +127,32 @@ class TilesheetManager:
         self._entries.clear()
         self._order.clear()
         self._active_path = ""
+
+    def all_paths(self) -> List[str]:
+        """Return all loaded tilesheet paths in order."""
+        return list(self._order)
+
+    def sync_from_config(
+            self,
+            project_dir: Path,
+            tilesheet_paths: List[str]) -> None:
+        """Sync loaded tilesheets from a list of project-relative paths.
+
+        Loads any paths not already present, removes any that are
+        no longer in the list.
+        """
+        current = set(self._order)
+        desired = set(tilesheet_paths)
+
+        # Remove entries no longer in config
+        for path in current - desired:
+            self.remove(path)
+
+        # Add new entries
+        for path in tilesheet_paths:
+            if path and not self.has(path):
+                self.load_and_add(project_dir, path)
+
+    def to_path_list(self) -> List[str]:
+        """Return the list of tilesheet paths for config serialization."""
+        return [p for p in self._order if p]
