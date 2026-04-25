@@ -26,8 +26,9 @@ from keybinds.keybind_manager import KeybindManager
 from workspace.movement import WorkspaceMovement
 
 import imgui
+import math as _math
 from pathlib import Path
-from typing import Callable, Dict, List, Optional
+from typing import Callable, Dict, List, Optional, Tuple
 
 from core.tileset_picker import TilesetPickerState
 from core.tilesheet import Tilesheet, TILE_PX
@@ -106,6 +107,7 @@ class TileDrawTool(Tool):
     def __init__(self, objects=None, tile_byte_size: int = 1):
         self._objects = objects
         self._tile_byte_size = tile_byte_size
+        self._is_dragging: bool = False
         self._tile_enums: List[CEnum] = []
         self._layer_fields: List[TileLayerField] = []
         self._layer_layouts: List[TileLayerLayout] = []
@@ -181,6 +183,25 @@ class TileDrawTool(Tool):
 
         self._objects.set_tile(
             cx, cy, world_z, lx, ly, 0, tile_bytes)
+
+    def on_workspace_drag_begin(
+            self, world_x: float, world_y: float, world_z: int) -> None:
+        """Start drag-painting: place first tile and begin drag."""
+        self._is_dragging = True
+        self.on_workspace_click(world_x, world_y, world_z)
+
+    def on_workspace_drag_update(
+            self, world_x: float, world_y: float, world_z: int) -> None:
+        """Continue drag-painting: place tile at current position."""
+        if self._is_dragging:
+            self.on_workspace_click(world_x, world_y, world_z)
+
+    def on_workspace_drag_end(
+            self, world_x: float, world_y: float, world_z: int) -> None:
+        """End drag-painting."""
+        if self._is_dragging:
+            self.on_workspace_click(world_x, world_y, world_z)
+        self._is_dragging = False
 
     def set_active_tilesheet(self, tilesheet: Optional[Tilesheet]) -> None:
         """Set the active tilesheet for the tileset picker."""
@@ -633,6 +654,216 @@ class TileDrawTool(Tool):
         return self._selected_layer
 
 
+class TileRectTool(Tool):
+    """Tile rectangle fill tool.
+
+    Click-and-drag to define a rectangle. On release, fills the
+    rectangle with the selected tile value.
+
+    Tool properties:
+    - Layer selector (same as TileDraw)
+    - Fill checkbox (default on). When off, reveals an edge
+      thickness field for hollow rectangles.
+    """
+
+    name = "Tile Rect"
+    icon_label = "TR"
+
+    def __init__(self, objects=None, tile_byte_size: int = 1):
+        self._objects = objects
+        self._tile_byte_size = tile_byte_size
+        self._tile_enums: List[CEnum] = []
+        self._layer_fields: List[TileLayerField] = []
+        self._layer_layouts: List[TileLayerLayout] = []
+        self._selected_layer: int = 0
+        self._selected_tile_value: int = 0
+        self._fill: bool = True
+        self._edge_thickness: int = 1
+
+        # Drag state
+        self._drag_start_x: Optional[int] = None
+        self._drag_start_y: Optional[int] = None
+        self._drag_end_x: Optional[int] = None
+        self._drag_end_y: Optional[int] = None
+        self._drag_z: int = 0
+        self._is_dragging: bool = False
+
+    def set_tile_enums(self, enums: List[CEnum]) -> None:
+        self._tile_enums = enums
+
+    def set_layer_info(
+            self,
+            fields: List[TileLayerField],
+            layouts: List[TileLayerLayout]) -> None:
+        self._layer_fields = fields
+        self._layer_layouts = layouts
+
+    def set_objects(self, objects) -> None:
+        self._objects = objects
+
+    def set_tile_byte_size(self, size: int) -> None:
+        self._tile_byte_size = size
+
+    @property
+    def selected_tile_value(self) -> int:
+        return self._selected_tile_value
+
+    @property
+    def selected_layer(self) -> int:
+        return self._selected_layer
+
+    @property
+    def fill(self) -> bool:
+        return self._fill
+
+    @property
+    def edge_thickness(self) -> int:
+        return self._edge_thickness
+
+    @property
+    def is_dragging(self) -> bool:
+        return self._is_dragging
+
+    @property
+    def drag_rect(self) -> Optional[tuple]:
+        """Return (min_x, min_y, max_x, max_y) or None."""
+        if (self._drag_start_x is None
+                or self._drag_end_x is None):
+            return None
+        x0 = min(self._drag_start_x, self._drag_end_x)
+        y0 = min(self._drag_start_y, self._drag_end_y)
+        x1 = max(self._drag_start_x, self._drag_end_x)
+        y1 = max(self._drag_start_y, self._drag_end_y)
+        return (x0, y0, x1, y1)
+
+    def on_workspace_click(
+            self, world_x: float, world_y: float,
+            world_z: int) -> None:
+        """Single click: fill a 1x1 rect."""
+        import math as _math
+        tx = int(_math.floor(world_x))
+        ty = int(_math.floor(world_y))
+        self._fill_rect(tx, ty, tx, ty, world_z)
+
+    def on_workspace_drag_begin(
+            self, world_x: float, world_y: float,
+            world_z: int) -> None:
+        import math as _math
+        self._drag_start_x = int(_math.floor(world_x))
+        self._drag_start_y = int(_math.floor(world_y))
+        self._drag_end_x = self._drag_start_x
+        self._drag_end_y = self._drag_start_y
+        self._drag_z = world_z
+        self._is_dragging = True
+
+    def on_workspace_drag_update(
+            self, world_x: float, world_y: float,
+            world_z: int) -> None:
+        if not self._is_dragging:
+            return
+        import math as _math
+        self._drag_end_x = int(_math.floor(world_x))
+        self._drag_end_y = int(_math.floor(world_y))
+
+    def on_workspace_drag_end(
+            self, world_x: float, world_y: float,
+            world_z: int) -> None:
+        if not self._is_dragging:
+            return
+        import math as _math
+        self._drag_end_x = int(_math.floor(world_x))
+        self._drag_end_y = int(_math.floor(world_y))
+        rect = self.drag_rect
+        if rect:
+            self._fill_rect(
+                rect[0], rect[1], rect[2], rect[3],
+                self._drag_z)
+        self._is_dragging = False
+        self._drag_start_x = None
+        self._drag_start_y = None
+        self._drag_end_x = None
+        self._drag_end_y = None
+
+    def _fill_rect(
+            self, x0: int, y0: int, x1: int, y1: int,
+            z: int) -> None:
+        """Fill a rectangle of tiles."""
+        if self._objects is None:
+            return
+        cw = getattr(self, '_chunk_w', 8)
+        ch = getattr(self, '_chunk_h', 8)
+
+        val = self._selected_tile_value
+        tile_bytes = val.to_bytes(
+            self._tile_byte_size, byteorder='little')
+
+        for ty in range(y0, y1 + 1):
+            for tx in range(x0, x1 + 1):
+                if not self._fill:
+                    # Hollow rect: only draw edges
+                    in_interior = (
+                        tx >= x0 + self._edge_thickness
+                        and tx <= x1 - self._edge_thickness
+                        and ty >= y0 + self._edge_thickness
+                        and ty <= y1 - self._edge_thickness)
+                    if in_interior:
+                        continue
+
+                cx = (tx // cw if tx >= 0
+                      else -(-tx // cw) - (1 if tx % cw else 0))
+                cy = (ty // ch if ty >= 0
+                      else -(-ty // ch) - (1 if ty % ch else 0))
+                lx = tx - cx * cw
+                ly = ty - cy * ch
+
+                chunk = self._objects.get_or_create_chunk(cx, cy, z)
+                if chunk is None:
+                    continue
+                self._objects.set_tile(
+                    cx, cy, z, lx, ly, 0, tile_bytes)
+
+    def draw_properties(self) -> None:
+        if not self._tile_enums:
+            imgui.text("No tile types loaded.")
+            return
+
+        # Layer selector
+        layer_names = [e.name for e in self._tile_enums]
+        _, self._selected_layer = imgui.combo(
+            "Layer##tr", self._selected_layer, layer_names)
+
+        if self._selected_layer >= len(self._tile_enums):
+            return
+
+        enum = self._tile_enums[self._selected_layer]
+
+        # Tile list
+        imgui.text(f"Tiles ({enum.name}):")
+        imgui.begin_child("##tr_palette", 0, 150, border=True)
+        for member in enum.members:
+            is_selected = member.value == self._selected_tile_value
+            clicked, _ = imgui.selectable(
+                f"{member.name} ({member.value})##tr_{member.value}",
+                is_selected)
+            if clicked:
+                self._selected_tile_value = member.value
+        imgui.end_child()
+
+        imgui.separator()
+
+        # Fill checkbox
+        _, self._fill = imgui.checkbox("Fill##tr_fill", self._fill)
+
+        if not self._fill:
+            imgui.same_line()
+            imgui.push_item_width(80)
+            changed, new_val = imgui.input_int(
+                "Edge##tr_edge", self._edge_thickness, 1, 1)
+            if changed:
+                self._edge_thickness = max(1, new_val)
+            imgui.pop_item_width()
+
+
 class ChunkEditMode(EditorMode):
     name = "Chunk Edit"
     shortcut_label = "Ctrl+K"
@@ -652,10 +883,14 @@ class ChunkEditMode(EditorMode):
         self._tile_draw = TileDrawTool()
         self._tile_draw._chunk_w = chunk_w
         self._tile_draw._chunk_h = chunk_h
+        self._tile_rect = TileRectTool()
+        self._tile_rect._chunk_w = chunk_w
+        self._tile_rect._chunk_h = chunk_h
         self._tools = [
             self._tile_select,
             self._chunk_pan,
             self._tile_draw,
+            self._tile_rect,
         ]
 
     def set_movement(self, movement: WorkspaceMovement) -> None:
@@ -665,12 +900,14 @@ class ChunkEditMode(EditorMode):
         self._chunk_pan.set_movement(movement)
 
     def set_objects(self, objects) -> None:
-        """Inject workspace objects into the tile draw tool."""
+        """Inject workspace objects into tile tools."""
         self._tile_draw.set_objects(objects)
+        self._tile_rect.set_objects(objects)
 
     def set_tile_byte_size(self, size: int) -> None:
-        """Set sizeof(Tile) for the tile draw tool."""
+        """Set sizeof(Tile) for tile tools."""
         self._tile_draw.set_tile_byte_size(size)
+        self._tile_rect.set_tile_byte_size(size)
 
     def set_active_tilesheet(self, tilesheet: Optional[Tilesheet]) -> None:
         """Set the active tilesheet for the tile draw tool's picker."""
@@ -682,12 +919,14 @@ class ChunkEditMode(EditorMode):
 
     def set_tile_enums(self, enums: List[CEnum]) -> None:
         self._tile_draw.set_tile_enums(enums)
+        self._tile_rect.set_tile_enums(enums)
 
     def set_layer_info(
             self,
             fields: List[TileLayerField],
             layouts: List[TileLayerLayout]) -> None:
         self._tile_draw.set_layer_info(fields, layouts)
+        self._tile_rect.set_layer_info(fields, layouts)
 
     def set_project_dir(self, project_dir: Path) -> None:
         self._tile_draw.set_project_dir(project_dir)

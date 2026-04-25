@@ -58,6 +58,9 @@ from core.editor_project_config import (
 )
 from core.tilesheet import Tilesheet, load_tilesheet
 from core.tilesheet_browser import browse_and_set_tilesheet, clear_tilesheet
+from core.tilesheet_manager import TilesheetManager
+from core.tilesheet_viewer import TilesheetViewer
+from core.file_hud import FileHUD, LayerEditorWindow
 from ui.message_hud import MessageHUD
 
 VERSION = "0.1.0"
@@ -106,6 +109,17 @@ class EditorApp:
         self._new_tilesheet_path: str = ""
         self._delete_confirm_name: str = ""
         self._delete_target: Optional[str] = None
+
+        # File HUD menu bar
+        self._file_hud = FileHUD()
+        self._tilesheet_manager = TilesheetManager()
+        self._tilesheet_viewer = TilesheetViewer()
+        self._layer_editor_window = LayerEditorWindow()
+        self._show_kind_editor: bool = False
+        self._should_exit: bool = False
+
+        # Drag tracking for workspace tools
+        self._workspace_dragging: bool = False
 
         # UI state
         self._properties_width: float = 250.0
@@ -260,6 +274,16 @@ class EditorApp:
 
         # Load world list
         self._refresh_worlds()
+
+        # Wire file HUD callbacks
+        self._file_hud.on_save = self._save_all
+        self._file_hud.on_exit = self._request_exit
+        self._file_hud.on_open_tilesheet_viewer = \
+            self._open_tilesheet_viewer
+        self._file_hud.on_open_layer_editor = \
+            self._open_layer_editor
+        self._file_hud.on_open_kind_editor = \
+            self._open_kind_editor
 
         # Auto-select last world from build config
         if (self._build_config
@@ -489,12 +513,28 @@ class EditorApp:
         w, h = display_size.x, display_size.y
 
         self._process_keybinds()
+
+        # File HUD menu bar (drawn first, at very top)
+        self._file_hud.draw(self._objects)
+
         self._draw_mode_tabs(w)
         self._draw_file_hierarchy(h)
         self._draw_tool_hud(w, h)
         self._draw_properties_hud(w, h)
         self._draw_workspace(w, h)
         self._message_hud.draw(w, h)
+
+        # Sub-windows
+        self._tilesheet_viewer.draw(
+            self._tilesheet_manager,
+            self._project_dir,
+            self._active_world or "",
+            self._message_hud,
+            upload_texture_callback=self._upload_entry_texture)
+        self._layer_editor_window.draw()
+
+        if self._show_kind_editor:
+            self._draw_kind_editor_standalone()
 
     def _process_keybinds(self) -> None:
         """Check for keybind activations this frame.
@@ -561,8 +601,9 @@ class EditorApp:
                         KeyCombo(VIRTUAL_KEY_SCROLL_DOWN, Modifier.NONE))
 
     def _draw_mode_tabs(self, window_width: float) -> None:
-        """Draw the mode tab bar at the top."""
-        imgui.set_next_window_position(0, 0)
+        """Draw the mode tab bar below the menu bar."""
+        menu_h = FileHUD.MENU_BAR_HEIGHT
+        imgui.set_next_window_position(0, menu_h)
         imgui.set_next_window_size(window_width, 30)
         flags = (
             imgui.WINDOW_NO_MOVE
@@ -586,7 +627,7 @@ class EditorApp:
     def _draw_file_hierarchy(self, window_height: float) -> None:
         """Draw the file hierarchy HUD on the left."""
         msg_h = self._message_hud.panel_height
-        top = 30.0
+        top = 30.0 + FileHUD.MENU_BAR_HEIGHT
         h = window_height - top - msg_h
 
         imgui.set_next_window_position(0, top)
@@ -758,7 +799,7 @@ class EditorApp:
     def _draw_tool_hud(self, window_width: float, window_height: float) -> None:
         """Draw the Tool HUD on the right side."""
         msg_h = self._message_hud.panel_height
-        top = 30.0
+        top = 30.0 + FileHUD.MENU_BAR_HEIGHT
         h = (window_height - top - msg_h) * 0.5
 
         imgui.set_next_window_position(
@@ -803,7 +844,7 @@ class EditorApp:
             self, window_width: float, window_height: float) -> None:
         """Draw the Properties HUD below the Tool HUD."""
         msg_h = self._message_hud.panel_height
-        top = 30.0
+        top = 30.0 + FileHUD.MENU_BAR_HEIGHT
         tool_h = (window_height - top - msg_h) * 0.5
         props_top = top + tool_h
         props_h = window_height - props_top - msg_h
@@ -832,7 +873,7 @@ class EditorApp:
             self, window_width: float, window_height: float) -> None:
         """Draw the main workspace area."""
         msg_h = self._message_hud.panel_height
-        top = 30.0
+        top = 30.0 + FileHUD.MENU_BAR_HEIGHT
         left = self._file_hierarchy_width
         right = self._tool_hud_width
         ws_w = window_width - left - right
@@ -935,20 +976,108 @@ class EditorApp:
             draw_list.add_text(
                 text_x, text_y, fg_col, hover_tile_text)
 
-        # Route workspace clicks to the active tool
-        if imgui.is_window_hovered() and imgui.is_mouse_clicked(0):
+        # Route workspace clicks and drags to the active tool
+        mode = self._modes[self._active_mode_index]
+        tool = mode.active_tool
+        if imgui.is_window_hovered():
             mouse = imgui.get_mouse_position()
             tile_x, tile_y = self._movement.screen_to_tile(
                 mouse.x, mouse.y, ws_ox, ws_oy, ws_w, ws_h)
             tile_z = self._movement.viewport.center_z
-            mode = self._modes[self._active_mode_index]
-            tool = mode.active_tool
-            if tool:
-                tool.on_workspace_click(
+
+            if imgui.is_mouse_clicked(0):
+                self._workspace_dragging = True
+                if tool:
+                    tool.on_workspace_drag_begin(
+                        float(tile_x), float(tile_y), tile_z)
+                    tool.on_workspace_click(
+                        float(tile_x), float(tile_y), tile_z)
+
+        if self._workspace_dragging and tool:
+            mouse = imgui.get_mouse_position()
+            tile_x, tile_y = self._movement.screen_to_tile(
+                mouse.x, mouse.y, ws_ox, ws_oy, ws_w, ws_h)
+            tile_z = self._movement.viewport.center_z
+
+            if imgui.is_mouse_down(0) and not imgui.is_mouse_clicked(0):
+                tool.on_workspace_drag_update(
                     float(tile_x), float(tile_y), tile_z)
+
+            if imgui.is_mouse_released(0):
+                tool.on_workspace_drag_end(
+                    float(tile_x), float(tile_y), tile_z)
+                self._workspace_dragging = False
 
         imgui.end()
 
+
+    def _request_exit(self) -> None:
+        """Request editor exit (called from FileHUD)."""
+        self._should_exit = True
+
+    @property
+    def should_exit(self) -> bool:
+        """True when the editor should close its window."""
+        return self._should_exit
+
+    def _open_tilesheet_viewer(self) -> None:
+        """Open the tilesheet viewer sub-window."""
+        self._tilesheet_viewer.open()
+
+    def _open_layer_editor(self) -> None:
+        """Open the layer editor sub-window."""
+        self._layer_editor_window.open()
+
+    def _open_kind_editor(self) -> None:
+        """Open the tile kind editor as a standalone window."""
+        self._show_kind_editor = True
+
+    def _draw_kind_editor_standalone(self) -> None:
+        """Draw the tile kind editor when opened from Edit menu."""
+        chunk_mode = self._modes[1] if len(self._modes) > 1 else None
+        if chunk_mode is None:
+            self._show_kind_editor = False
+            return
+        tile_draw = getattr(chunk_mode, '_tile_draw', None)
+        if tile_draw is None:
+            self._show_kind_editor = False
+            return
+        if not tile_draw._show_editor:
+            tile_draw._open_editor()
+        if not tile_draw._show_editor:
+            self._show_kind_editor = False
+
+    def _upload_entry_texture(self, entry) -> None:
+        """Upload GL texture for a TilesheetEntry."""
+        if entry.tilesheet is None:
+            return
+        ts = entry.tilesheet
+        try:
+            tex_id = gl.glGenTextures(1)
+            gl.glBindTexture(gl.GL_TEXTURE_2D, tex_id)
+            gl.glTexParameteri(
+                gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER,
+                gl.GL_NEAREST)
+            gl.glTexParameteri(
+                gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER,
+                gl.GL_NEAREST)
+            gl.glTexParameteri(
+                gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_S,
+                gl.GL_CLAMP_TO_EDGE)
+            gl.glTexParameteri(
+                gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_T,
+                gl.GL_CLAMP_TO_EDGE)
+            gl.glTexImage2D(
+                gl.GL_TEXTURE_2D, 0, gl.GL_RGBA,
+                ts.width, ts.height, 0,
+                gl.GL_RGBA, gl.GL_UNSIGNED_BYTE,
+                ts.pixels)
+            gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
+            entry.gl_texture_id = int(tex_id)
+        except Exception as e:
+            self._message_hud.error(
+                f"Failed to upload tilesheet texture: {e}")
+            entry.gl_texture_id = 0
 
     def _save_all(self) -> None:
         """Flush all pending .tmp files to disk (Ctrl+S)."""
@@ -1050,6 +1179,9 @@ def run_editor(
         imgui.new_frame()
         app.draw()
         imgui.render()
+
+        if app.should_exit:
+            glfw.set_window_should_close(window, True)
 
         gl.glClearColor(0.1, 0.1, 0.1, 1.0)
         gl.glClear(gl.GL_COLOR_BUFFER_BIT)

@@ -55,6 +55,21 @@ class Tool:
         """Handle a drag on the workspace."""
         pass
 
+    def on_workspace_drag_begin(
+            self, world_x: float, world_y: float, world_z: int) -> None:
+        """Handle the start of a click-and-drag on the workspace."""
+        pass
+
+    def on_workspace_drag_update(
+            self, world_x: float, world_y: float, world_z: int) -> None:
+        """Handle continued dragging on the workspace."""
+        pass
+
+    def on_workspace_drag_end(
+            self, world_x: float, world_y: float, world_z: int) -> None:
+        """Handle the end of a click-and-drag on the workspace."""
+        pass
+
     def draw_properties(self) -> None:
         """Draw tool-specific properties in the Tool Properties panel."""
         pass
