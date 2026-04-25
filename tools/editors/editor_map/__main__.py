@@ -19,6 +19,11 @@ def main():
         "--project-dir",
         default=".",
         help="Path to the project directory (default: current dir)")
+    parser.add_argument(
+        "--platform",
+        required=True,
+        help="Target platform name (e.g. nds, sdl, no_gui). "
+             "Determines save directory: ./build/<platform>/saves/")
     args = parser.parse_args()
 
     import sys
@@ -27,7 +32,7 @@ def main():
     if _editor_map_dir not in sys.path:
         sys.path.insert(0, _editor_map_dir)
     from editor_app import run_editor
-    run_editor(args.engine_dir, args.project_dir)
+    run_editor(args.engine_dir, args.project_dir, args.platform)
 
 
 if __name__ == "__main__":

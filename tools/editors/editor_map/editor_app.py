@@ -47,9 +47,12 @@ from core.c_enum import parse_c_enum_from_file, find_enum_by_name, CEnum
 from core.world_directory import list_worlds, ensure_world_dir, world_root
 from core.editor_project_config import (
     EditorProjectConfig,
+    EditorBuildConfig,
     WorldEditorConfig,
     load_editor_project_config,
     save_editor_project_config,
+    load_build_config,
+    save_build_config,
     load_world_editor_config,
     save_world_editor_config,
 )
@@ -66,9 +69,11 @@ class EditorApp:
     def __init__(
             self,
             engine_dir: Path,
-            project_dir: Optional[Path] = None):
+            project_dir: Optional[Path] = None,
+            platform: str = ""):
         self._engine_dir = engine_dir
         self._project_dir = project_dir or Path(".")
+        self._platform = platform
 
         # Core systems
         self._keybind_manager = KeybindManager()
@@ -77,6 +82,7 @@ class EditorApp:
         self._tile_info: Optional[TileInfo] = None
         self._tile_enums: List[CEnum] = []
         self._editor_project_config: Optional[EditorProjectConfig] = None
+        self._build_config: Optional[EditorBuildConfig] = None
         self._tilesheet: Optional[Tilesheet] = None
         self._tilesheet_rendering_enabled: bool = False
 
@@ -109,6 +115,13 @@ class EditorApp:
     def initialize(self) -> None:
         """Load config, parse types, set up modes."""
         self._message_hud.system(f"editor_map v{VERSION}")
+        self._message_hud.info(f"Platform: {self._platform}")
+
+        # Wire message hud to keybind manager for logging
+        self._keybind_manager.set_message_hud(self._message_hud)
+
+        # Load build config (last world, workspace position)
+        self._build_config = load_build_config(self._project_dir)
 
         # Load engine config
         defaults_path = (
@@ -178,7 +191,15 @@ class EditorApp:
         self._load_tilesheet()
 
         # Initialize workspace
-        self._objects = WorkspaceObjects(self._config)
+        max_tmp = (self._editor_project_config.max_tmp_chunks
+                   if self._editor_project_config else 1024)
+        self._objects = WorkspaceObjects(
+            self._config,
+            project_dir=self._project_dir,
+            world_name=self._active_world or "",
+            platform=self._platform,
+            max_tmp_chunks=max_tmp,
+            message_hud=self._message_hud)
         self._renderer = WorkspaceRenderer(self._config)
         if self._tilesheet:
             self._renderer.set_tilesheet(self._tilesheet)
@@ -227,6 +248,29 @@ class EditorApp:
 
         # Load world list
         self._refresh_worlds()
+
+        # Auto-select last world from build config
+        if (self._build_config
+                and self._build_config.last_world
+                and self._build_config.last_world in self._worlds):
+            self._active_world = self._build_config.last_world
+            self._active_world_config = load_world_editor_config(
+                self._project_dir, self._active_world)
+            self._new_tilesheet_path = (
+                self._active_world_config.tilesheet_path)
+            self._movement.go_to(
+                self._active_world_config.workspace_x,
+                self._active_world_config.workspace_y,
+                self._active_world_config.workspace_z)
+            self._objects.set_world(
+                self._project_dir, self._active_world,
+                self._platform)
+            self._load_tilesheet()
+            if self._tilesheet and self._renderer:
+                self._renderer.set_tilesheet(self._tilesheet)
+            self._update_chunk_mode_tilesheet()
+            self._message_hud.info(
+                f"Restored last world: {self._active_world}")
 
     def _load_tilesheet(self) -> None:
         """Load the tilesheet from the active world's editor config."""
@@ -416,7 +460,8 @@ class EditorApp:
             mode.select_tool(index)
 
     def _refresh_worlds(self) -> None:
-        self._worlds = list_worlds(self._project_dir)
+        self._worlds = list_worlds(
+            self._project_dir, self._platform)
 
     # -- Drawing ---
 
@@ -542,11 +587,24 @@ class EditorApp:
         for world_name in self._worlds:
             selected = (world_name == self._active_world)
             if imgui.selectable(world_name, selected)[0]:
+                # Save workspace position to previous world config
+                self._save_workspace_position()
                 self._active_world = world_name
                 self._active_world_config = load_world_editor_config(
                     self._project_dir, world_name)
                 self._new_tilesheet_path = (
                     self._active_world_config.tilesheet_path)
+                self._movement.go_to(
+                    self._active_world_config.workspace_x,
+                    self._active_world_config.workspace_y,
+                    self._active_world_config.workspace_z)
+                self._objects.set_world(
+                    self._project_dir, world_name,
+                    self._platform)
+                if self._build_config:
+                    self._build_config.last_world = world_name
+                    save_build_config(
+                        self._project_dir, self._build_config)
                 self._message_hud.info(f"Selected world: {world_name}")
                 self._load_tilesheet()
                 if self._tilesheet and self._renderer:
@@ -566,7 +624,9 @@ class EditorApp:
             if imgui.button("OK##del"):
                 if self._delete_confirm_name == self._delete_target:
                     import shutil
-                    target = world_root(self._project_dir, self._delete_target)
+                    target = world_root(
+                        self._project_dir, self._delete_target,
+                        self._platform)
                     if target.exists():
                         shutil.rmtree(target)
                     self._refresh_worlds()
@@ -597,7 +657,9 @@ class EditorApp:
                         "for details.")
                 else:
                     ensure_world_dir(
-                        self._project_dir, self._new_world_name.strip())
+                        self._project_dir,
+                        self._new_world_name.strip(),
+                        self._platform)
                     self._refresh_worlds()
                     self._message_hud.info(
                         f"Created world: {self._new_world_name.strip()}")
@@ -843,6 +905,23 @@ class EditorApp:
         imgui.end()
 
 
+    def _save_workspace_position(self) -> None:
+        """Save current workspace position to the active world config
+        and build config."""
+        vp = self._movement.viewport
+        if self._active_world and self._active_world_config:
+            self._active_world_config.workspace_x = vp.center_x
+            self._active_world_config.workspace_y = vp.center_y
+            self._active_world_config.workspace_z = vp.center_z
+            save_world_editor_config(
+                self._project_dir, self._active_world,
+                self._active_world_config, self._platform)
+        if self._build_config:
+            self._build_config.workspace_x = vp.center_x
+            self._build_config.workspace_y = vp.center_y
+            self._build_config.workspace_z = vp.center_z
+            save_build_config(self._project_dir, self._build_config)
+
     def _update_chunk_mode_tilesheet(self) -> None:
         """Push the active tilesheet and GL texture to the chunk edit mode."""
         if len(self._modes) > 1:
@@ -877,7 +956,10 @@ def _key_name(key: int) -> str:
     return f"Key({key})"
 
 
-def run_editor(engine_dir: str, project_dir: str = ".") -> None:
+def run_editor(
+        engine_dir: str,
+        project_dir: str = ".",
+        platform: str = "") -> None:
     """Entry point: launch the editor window."""
     if not glfw.init():
         print("Failed to initialize GLFW", file=sys.stderr)
@@ -899,7 +981,7 @@ def run_editor(engine_dir: str, project_dir: str = ".") -> None:
     imgui.create_context()
     impl = GlfwRenderer(window)
 
-    app = EditorApp(Path(engine_dir), Path(project_dir))
+    app = EditorApp(Path(engine_dir), Path(project_dir), platform)
     app.initialize()
 
     while not glfw.window_should_close(window):

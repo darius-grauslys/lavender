@@ -27,14 +27,33 @@ def _hex8(value: int) -> str:
     return f"{value:08x}"
 
 
-def world_root(base_dir: Path, world_name: str) -> Path:
-    """Get the world root directory: <base>/save/<world_name>/"""
+def saves_root(base_dir: Path, platform: str) -> Path:
+    """Get the saves root directory: <base>/build/<platform>/saves/"""
+    return base_dir / "build" / platform / "saves"
+
+
+def world_root(
+        base_dir: Path,
+        world_name: str,
+        platform: str = "") -> Path:
+    """Get the world root directory.
+
+    If *platform* is provided:
+        <base>/build/<platform>/saves/<world_name>/
+    Otherwise falls back to legacy path:
+        <base>/save/<world_name>/
+    """
+    if platform:
+        return saves_root(base_dir, platform) / world_name
     return base_dir / "save" / world_name
 
 
-def world_header_path(base_dir: Path, world_name: str) -> Path:
-    """Get the world header file path: <base>/save/<world_name>/h"""
-    return world_root(base_dir, world_name) / "h"
+def world_header_path(
+        base_dir: Path,
+        world_name: str,
+        platform: str = "") -> Path:
+    """Get the world header file path."""
+    return world_root(base_dir, world_name, platform) / "h"
 
 
 def region_dir(
@@ -42,9 +61,10 @@ def region_dir(
         world_name: str,
         region_x: int,
         region_y: int,
-        region_z: int) -> Path:
+        region_z: int,
+        platform: str = "") -> Path:
     """Get the region directory path."""
-    root = world_root(base_dir, world_name)
+    root = world_root(base_dir, world_name, platform)
     region_name = f"r_{_hex8(region_x)}_{_hex8(region_y)}_{_hex8(region_z)}"
     return root / region_name
 
@@ -55,7 +75,8 @@ def chunk_dir(
         chunk_x: int,
         chunk_y: int,
         chunk_z: int,
-        region_width_bit_shift: int = 11) -> Path:
+        region_width_bit_shift: int = 11,
+        platform: str = "") -> Path:
     """
     Get the full chunk directory path, replicating the engine's
     quad-tree descent from world_directory.c::stat_chunk_directory.
@@ -65,13 +86,16 @@ def chunk_dir(
         world_name: Name of the world
         chunk_x, chunk_y, chunk_z: Chunk coordinates
         region_width_bit_shift: Bit shift for region width (default 11)
+        platform: Target platform name for save directory
     """
     # Compute region vector (same as engine's get_region_that__this_global_space_is_in)
     region_x = chunk_x >> region_width_bit_shift
     region_y = chunk_y >> region_width_bit_shift
     region_z = chunk_z  # z is passed through
 
-    path = region_dir(base_dir, world_name, region_x, region_y, region_z)
+    path = region_dir(
+        base_dir, world_name, region_x, region_y, region_z,
+        platform=platform)
 
     # Mask chunk coords to 8 bits for quad-tree descent
     cx = chunk_x & 0xFF
@@ -114,9 +138,26 @@ def chunk_tile_path(
         chunk_x: int,
         chunk_y: int,
         chunk_z: int,
+        platform: str = "",
         **kwargs) -> Path:
     """Path to the tile file for a chunk."""
-    return chunk_dir(base_dir, world_name, chunk_x, chunk_y, chunk_z, **kwargs) / "t"
+    return chunk_dir(
+        base_dir, world_name, chunk_x, chunk_y, chunk_z,
+        platform=platform, **kwargs) / "t"
+
+
+def chunk_tile_tmp_path(
+        base_dir: Path,
+        world_name: str,
+        chunk_x: int,
+        chunk_y: int,
+        chunk_z: int,
+        platform: str = "",
+        **kwargs) -> Path:
+    """Path to the .tmp tile file for a chunk."""
+    return chunk_dir(
+        base_dir, world_name, chunk_x, chunk_y, chunk_z,
+        platform=platform, **kwargs) / "t.tmp"
 
 
 def chunk_entity_path(
@@ -125,9 +166,12 @@ def chunk_entity_path(
         chunk_x: int,
         chunk_y: int,
         chunk_z: int,
+        platform: str = "",
         **kwargs) -> Path:
     """Path to the entity file for a chunk."""
-    return chunk_dir(base_dir, world_name, chunk_x, chunk_y, chunk_z, **kwargs) / "e"
+    return chunk_dir(
+        base_dir, world_name, chunk_x, chunk_y, chunk_z,
+        platform=platform, **kwargs) / "e"
 
 
 def chunk_inventory_path(
@@ -136,14 +180,20 @@ def chunk_inventory_path(
         chunk_x: int,
         chunk_y: int,
         chunk_z: int,
+        platform: str = "",
         **kwargs) -> Path:
     """Path to the inventory file for a chunk."""
-    return chunk_dir(base_dir, world_name, chunk_x, chunk_y, chunk_z, **kwargs) / "i"
+    return chunk_dir(
+        base_dir, world_name, chunk_x, chunk_y, chunk_z,
+        platform=platform, **kwargs) / "i"
 
 
-def list_worlds(base_dir: Path) -> list[str]:
+def list_worlds(base_dir: Path, platform: str = "") -> list[str]:
     """List all world names in the save directory."""
-    save_dir = base_dir / "save"
+    if platform:
+        save_dir = saves_root(base_dir, platform)
+    else:
+        save_dir = base_dir / "save"
     if not save_dir.is_dir():
         return []
     return sorted([
@@ -158,20 +208,29 @@ def ensure_chunk_dir(
         chunk_x: int,
         chunk_y: int,
         chunk_z: int,
+        platform: str = "",
         **kwargs) -> Path:
     """Create the chunk directory tree if it doesn't exist, return the path."""
-    path = chunk_dir(base_dir, world_name, chunk_x, chunk_y, chunk_z, **kwargs)
+    path = chunk_dir(
+        base_dir, world_name, chunk_x, chunk_y, chunk_z,
+        platform=platform, **kwargs)
     path.mkdir(parents=True, exist_ok=True)
     return path
 
 
-def ensure_world_dir(base_dir: Path, world_name: str) -> Path:
+def ensure_world_dir(
+        base_dir: Path,
+        world_name: str,
+        platform: str = "") -> Path:
     """Create the world root directory if it doesn't exist."""
-    path = world_root(base_dir, world_name)
+    path = world_root(base_dir, world_name, platform)
     path.mkdir(parents=True, exist_ok=True)
     return path
 
 
-def world_editor_config_path(base_dir: Path, world_name: str) -> Path:
-    """Get the per-world editor.json path: <base>/save/<world_name>/editor.json"""
-    return world_root(base_dir, world_name) / "editor.json"
+def world_editor_config_path(
+        base_dir: Path,
+        world_name: str,
+        platform: str = "") -> Path:
+    """Get the per-world editor.json path."""
+    return world_root(base_dir, world_name, platform) / "editor.json"

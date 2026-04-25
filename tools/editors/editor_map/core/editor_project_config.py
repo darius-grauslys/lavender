@@ -31,23 +31,54 @@ from typing import Optional
 
 
 EDITOR_CONFIG_RELATIVE_PATH = Path("assets") / "world" / "editor.json"
+BUILD_CONFIG_FILENAME = "editor.config"
 WORLD_CONFIG_FILENAME = "editor.json"
 
 DEFAULT_PROJECT_CONFIG = {
-    "version": 1
+    "version": 1,
+    "max_tmp_chunks": 1024
 }
 
 DEFAULT_WORLD_CONFIG = {
     "tilesheet": {
         "path": ""
+    },
+    "workspace_position": {
+        "x": 0,
+        "y": 0,
+        "z": 0
     }
 }
+
+DEFAULT_BUILD_CONFIG = {
+    "last_world": "",
+    "workspace_position": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+    }
+}
+
+
+@dataclass
+class EditorBuildConfig:
+    """Parsed build-level editor configuration.
+
+    Stored at ``./build/editor.config``.
+    Tracks the last selected world and workspace position
+    so the editor can restore state on startup.
+    """
+    last_world: str = ""
+    workspace_x: int = 0
+    workspace_y: int = 0
+    workspace_z: int = 0
 
 
 @dataclass
 class EditorProjectConfig:
     """Parsed project-level editor configuration."""
     version: int = 1
+    max_tmp_chunks: int = 1024
 
     @property
     def tilesheet_path(self) -> str:
@@ -71,6 +102,9 @@ class EditorProjectConfig:
 class WorldEditorConfig:
     """Parsed per-world editor configuration."""
     tilesheet_path: str = ""
+    workspace_x: int = 0
+    workspace_y: int = 0
+    workspace_z: int = 0
 
     def resolve_tilesheet(self, project_dir: Path) -> Optional[Path]:
         """
@@ -85,9 +119,69 @@ class WorldEditorConfig:
         return None
 
 
-def world_config_path(project_dir: Path, world_name: str) -> Path:
+def build_config_path(project_dir: Path) -> Path:
+    """Get the path to the build-level editor.config."""
+    return project_dir / "build" / BUILD_CONFIG_FILENAME
+
+
+def world_config_path(
+        project_dir: Path,
+        world_name: str,
+        platform: str = "") -> Path:
     """Get the path to a world's editor.json."""
+    if platform:
+        from core.world_directory import saves_root
+        return (saves_root(project_dir, platform)
+                / world_name / WORLD_CONFIG_FILENAME)
     return project_dir / "save" / world_name / WORLD_CONFIG_FILENAME
+
+
+def load_build_config(project_dir: Path) -> EditorBuildConfig:
+    """Load the build-level editor.config.
+
+    If the file does not exist, generate it with defaults.
+    """
+    cfg_path = build_config_path(project_dir)
+
+    if not cfg_path.exists():
+        cfg_path.parent.mkdir(parents=True, exist_ok=True)
+        cfg_path.write_text(
+            json.dumps(DEFAULT_BUILD_CONFIG, indent=4) + "\n",
+            encoding='utf-8')
+        return EditorBuildConfig()
+
+    try:
+        data = json.loads(
+            cfg_path.read_text(encoding='utf-8', errors='replace'))
+    except (json.JSONDecodeError, OSError):
+        return EditorBuildConfig()
+
+    ws = data.get("workspace_position", {})
+    return EditorBuildConfig(
+        last_world=data.get("last_world", ""),
+        workspace_x=ws.get("x", 0),
+        workspace_y=ws.get("y", 0),
+        workspace_z=ws.get("z", 0),
+    )
+
+
+def save_build_config(
+        project_dir: Path,
+        config: EditorBuildConfig) -> None:
+    """Save the build-level editor.config."""
+    cfg_path = build_config_path(project_dir)
+    cfg_path.parent.mkdir(parents=True, exist_ok=True)
+    data = {
+        "last_world": config.last_world,
+        "workspace_position": {
+            "x": config.workspace_x,
+            "y": config.workspace_y,
+            "z": config.workspace_z,
+        }
+    }
+    cfg_path.write_text(
+        json.dumps(data, indent=4) + "\n",
+        encoding='utf-8')
 
 
 def load_editor_project_config(project_dir: Path) -> EditorProjectConfig:
@@ -111,7 +205,8 @@ def load_editor_project_config(project_dir: Path) -> EditorProjectConfig:
         return EditorProjectConfig()
 
     version = data.get("version", 1)
-    return EditorProjectConfig(version=version)
+    max_tmp = data.get("max_tmp_chunks", 1024)
+    return EditorProjectConfig(version=version, max_tmp_chunks=max_tmp)
 
 
 def save_editor_project_config(
@@ -122,7 +217,8 @@ def save_editor_project_config(
     config_path.parent.mkdir(parents=True, exist_ok=True)
 
     data = {
-        "version": config.version
+        "version": config.version,
+        "max_tmp_chunks": config.max_tmp_chunks,
     }
     config_path.write_text(
         json.dumps(data, indent=4) + "\n",
@@ -156,20 +252,32 @@ def load_world_editor_config(
     if isinstance(tilesheet, dict):
         tilesheet_path = tilesheet.get("path", "")
 
-    return WorldEditorConfig(tilesheet_path=tilesheet_path)
+    ws = data.get("workspace_position", {})
+    return WorldEditorConfig(
+        tilesheet_path=tilesheet_path,
+        workspace_x=ws.get("x", 0),
+        workspace_y=ws.get("y", 0),
+        workspace_z=ws.get("z", 0),
+    )
 
 
 def save_world_editor_config(
         project_dir: Path,
         world_name: str,
-        config: WorldEditorConfig) -> None:
+        config: WorldEditorConfig,
+        platform: str = "") -> None:
     """Save the per-world editor config back to its editor.json."""
-    cfg_path = world_config_path(project_dir, world_name)
+    cfg_path = world_config_path(project_dir, world_name, platform)
     cfg_path.parent.mkdir(parents=True, exist_ok=True)
 
     data = {
         "tilesheet": {
             "path": config.tilesheet_path
+        },
+        "workspace_position": {
+            "x": config.workspace_x,
+            "y": config.workspace_y,
+            "z": config.workspace_z,
         }
     }
     cfg_path.write_text(
