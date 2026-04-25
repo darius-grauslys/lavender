@@ -252,6 +252,11 @@ class WorkspaceRenderer:
         # Precompute layer bit extraction info
         num_layers = 0
         layer_bit_info: List[Tuple[int, int]] = []  # (bit_offset, mask)
+        # render_order: indices into layer arrays sorted by the
+        # lowest enum value of each layer (ascending).  Layers
+        # with a lower minimum enum value are drawn first so that
+        # higher-valued layers composite on top.
+        render_order: List[int] = []
         if self._tile_info:
             num_layers = len(self._tile_info.layer_fields)
             bit_offset = 0
@@ -277,6 +282,10 @@ class WorkspaceRenderer:
                         lgl))
                 else:
                     layer_ts_info.append((False, 1.0, 1.0, 1, 0))
+
+            # Build render order — use definition order (layer 0
+            # is drawn first, highest layer drawn last on top).
+            render_order = list(range(num_layers))
 
         # Legacy fallback info for non-layer-aware path
         use_tilesheet = (
