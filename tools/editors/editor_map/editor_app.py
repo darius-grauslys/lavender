@@ -204,7 +204,8 @@ class EditorApp:
 
         self._renderer = WorkspaceRenderer(self._config)
         if self._tilesheet:
-            self._renderer.set_tilesheet(self._tilesheet)
+            self._renderer.set_tilesheet(
+                self._tilesheet, self._tilesheet_texture_id)
         if self._tile_info:
             self._renderer.set_tile_info(self._tile_info)
 
@@ -281,8 +282,9 @@ class EditorApp:
             if hasattr(chunk_mode_restore, 'set_objects'):
                 chunk_mode_restore.set_objects(self._objects)
             self._load_tilesheet()
-            if self._tilesheet and self._renderer:
-                self._renderer.set_tilesheet(self._tilesheet)
+            if self._renderer:
+                self._renderer.set_tilesheet(
+                    self._tilesheet, self._tilesheet_texture_id)
             self._update_chunk_mode_tilesheet()
             self._message_hud.info(
                 f"Restored last world: {self._active_world}")
@@ -627,8 +629,11 @@ class EditorApp:
                         self._project_dir, self._build_config)
                 self._message_hud.info(f"Selected world: {world_name}")
                 self._load_tilesheet()
-                if self._tilesheet and self._renderer:
-                    self._renderer.set_tilesheet(self._tilesheet)
+                if self._renderer:
+                    self._renderer.set_tilesheet(
+                        self._tilesheet, self._tilesheet_texture_id)
+                    if self._tile_info:
+                        self._renderer.set_tile_info(self._tile_info)
                 self._update_chunk_mode_tilesheet()
             imgui.same_line(imgui.get_window_width() - 30)
             if imgui.small_button(f"X##{world_name}"):
@@ -720,7 +725,9 @@ class EditorApp:
                     if self._tilesheet:
                         self._upload_tilesheet_texture()
                         if self._renderer:
-                            self._renderer.set_tilesheet(self._tilesheet)
+                            self._renderer.set_tilesheet(
+                                self._tilesheet,
+                                self._tilesheet_texture_id)
                     else:
                         # Clear old texture if load failed
                         if self._tilesheet_texture_id != 0:
@@ -871,6 +878,17 @@ class EditorApp:
                         ws_ox, y, ws_ox + ws_w, y, grid_col)
                 y += hstep
 
+        # Draw tiles from loaded chunks
+        if self._renderer and self._objects:
+            tile_byte_size = (
+                self._tile_info.size_in_bytes if self._tile_info else 1)
+            self._renderer.draw(
+                self._objects,
+                self._movement,
+                (ws_ox, ws_oy),
+                (ws_w, ws_h),
+                tile_byte_size=tile_byte_size)
+
         # Draw mode-specific content
         mode = self._modes[self._active_mode_index]
         mode.draw_workspace(None)
@@ -958,7 +976,8 @@ class EditorApp:
             save_build_config(self._project_dir, self._build_config)
 
     def _update_chunk_mode_tilesheet(self) -> None:
-        """Push the active tilesheet and GL texture to the chunk edit mode."""
+        """Push the active tilesheet and GL texture to the chunk edit
+        mode and the workspace renderer."""
         if len(self._modes) > 1:
             chunk_mode = self._modes[1]
             if hasattr(chunk_mode, 'set_active_tilesheet'):
@@ -966,6 +985,11 @@ class EditorApp:
             if hasattr(chunk_mode, 'set_tilesheet_texture_id'):
                 chunk_mode.set_tilesheet_texture_id(
                     self._tilesheet_texture_id)
+        if self._renderer:
+            self._renderer.set_tilesheet(
+                self._tilesheet, self._tilesheet_texture_id)
+            if self._tile_info:
+                self._renderer.set_tile_info(self._tile_info)
 
 
 def _key_name(key: int) -> str:
