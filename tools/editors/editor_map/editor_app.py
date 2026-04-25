@@ -1055,20 +1055,21 @@ class EditorApp:
             layer_guard_macros.append(guard)
 
         # Tilesheet info for preview buttons
+        from core.tilesheet import TILE_PX
         ts_tex_id = self._tilesheet_texture_id
-        ts_tile_w = 8
-        ts_tile_h = 8
+        ts_tile_w = TILE_PX
+        ts_tile_h = TILE_PX
         ts_cols = 1
         ts_rows = 1
         ts_img_w = 0
         ts_img_h = 0
         if self._tilesheet:
-            ts_tile_w = self._tilesheet.tile_width
-            ts_tile_h = self._tilesheet.tile_height
+            ts_tile_w = TILE_PX
+            ts_tile_h = TILE_PX
             ts_img_w = self._tilesheet.width
             ts_img_h = self._tilesheet.height
-            ts_cols = self._tilesheet.columns
-            ts_rows = self._tilesheet.rows
+            ts_cols = self._tilesheet.tiles_per_row
+            ts_rows = (self._tilesheet.height // TILE_PX) if TILE_PX > 0 else 1
 
         self._kind_editor_window.open(
             layer_names=layer_names,
