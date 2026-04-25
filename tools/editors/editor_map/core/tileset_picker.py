@@ -39,6 +39,7 @@ class TilesetPickerState:
     zoom: int = 2
     is_open: bool = False
     callback_target_entry_index: int = -1
+    texture_id: int = 0
 
     @property
     def has_tilesheet(self) -> bool:

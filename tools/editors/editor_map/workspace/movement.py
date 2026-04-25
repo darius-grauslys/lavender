@@ -108,7 +108,7 @@ class WorkspaceMovement:
         (e.g. from high-resolution trackpads) are not lost.
         """
         self.viewport._scroll_accum_y += delta * SCROLL_SENSITIVITY
-        tiles = int(self.viewport._scroll_accum_y)
+        tiles = round(self.viewport._scroll_accum_y)
         if tiles != 0:
             self.viewport.center_y -= tiles
             self.viewport._scroll_accum_y -= tiles
@@ -125,7 +125,7 @@ class WorkspaceMovement:
         are not lost.
         """
         self.viewport._scroll_accum_x += delta * SCROLL_SENSITIVITY
-        tiles = int(self.viewport._scroll_accum_x)
+        tiles = round(self.viewport._scroll_accum_x)
         if tiles != 0:
             self.viewport.center_x -= tiles
             self.viewport._scroll_accum_x -= tiles

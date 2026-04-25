@@ -85,6 +85,10 @@ class TileDrawTool(Tool):
         self._active_tilesheet = tilesheet
         self._picker_state.tilesheet = tilesheet
 
+    def set_tilesheet_texture_id(self, texture_id: int) -> None:
+        """Set the GL texture ID for the tilesheet."""
+        self._picker_state.texture_id = texture_id
+
     def draw_properties(self) -> None:
         if not self._tile_enums:
             imgui.text("No tile types loaded.")
@@ -105,7 +109,16 @@ class TileDrawTool(Tool):
         imgui.begin_child("##tile_palette", 0, 200, border=True)
 
         if imgui.selectable("- Edit -##edit_tile_kinds", False)[0]:
-            self._open_editor()
+            if not self._show_editor or self._editor_state is None:
+                self._open_editor()
+            else:
+                # If already open for a different layer, reopen
+                current_layer_name = (
+                    self._layer_fields[self._selected_layer].field_name
+                    if self._selected_layer < len(self._layer_fields)
+                    else f"layer_{self._selected_layer}")
+                if self._editor_state.layer_name != current_layer_name:
+                    self._open_editor()
 
         imgui.separator()
 
@@ -414,6 +427,16 @@ class TileDrawTool(Tool):
             hover_col = imgui.get_color_u32_rgba(1.0, 1.0, 0.0, 0.8)
             sel_col = imgui.get_color_u32_rgba(1.0, 1.0, 1.0, 1.0)
 
+            has_texture = (
+                state.texture_id != 0
+                and state.tilesheet is not None)
+
+            # If we have a texture, compute UV step per tile
+            if has_texture:
+                ts = state.tilesheet
+                inv_w = 1.0 / ts.width if ts.width > 0 else 0.0
+                inv_h = 1.0 / ts.height if ts.height > 0 else 0.0
+
             for idx in range(total):
                 col = idx % cols
                 row = idx // cols
@@ -422,11 +445,26 @@ class TileDrawTool(Tool):
                 x1 = x0 + cell
                 y1 = y0 + cell
 
-                # Checkerboard background
+                # Checkerboard background (visible through
+                # transparent regions of the tilesheet)
                 shade = 0.25 if (col + row) % 2 == 0 else 0.35
                 fill = imgui.get_color_u32_rgba(
                     shade, shade, shade, 1.0)
                 draw_list.add_rect_filled(x0, y0, x1, y1, fill)
+
+                # Draw the actual tile image if texture available
+                if has_texture:
+                    tile_col = idx % ts.tiles_per_row
+                    tile_row = idx // ts.tiles_per_row
+                    uv0_x = tile_col * TILE_PX * inv_w
+                    uv0_y = tile_row * TILE_PX * inv_h
+                    uv1_x = (tile_col + 1) * TILE_PX * inv_w
+                    uv1_y = (tile_row + 1) * TILE_PX * inv_h
+                    draw_list.add_image(
+                        state.texture_id,
+                        (x0, y0), (x1, y1),
+                        uv_min=(uv0_x, uv0_y),
+                        uv_max=(uv1_x, uv1_y))
 
                 # Grid lines
                 draw_list.add_rect(x0, y0, x1, y1, grid_col)
@@ -509,6 +547,10 @@ class ChunkEditMode(EditorMode):
     def set_active_tilesheet(self, tilesheet: Optional[Tilesheet]) -> None:
         """Set the active tilesheet for the tile draw tool's picker."""
         self._tile_draw.set_active_tilesheet(tilesheet)
+
+    def set_tilesheet_texture_id(self, texture_id: int) -> None:
+        """Set the GL texture ID for the tilesheet."""
+        self._tile_draw.set_tilesheet_texture_id(texture_id)
 
     def set_tile_enums(self, enums: List[CEnum]) -> None:
         self._tile_draw.set_tile_enums(enums)
