@@ -111,6 +111,8 @@ The engine's tile layer system works as follows:
   Each bitfield in that block corresponds to a tile layer, in order.
   The type of each bitfield (e.g., `Tile_Kind`, `Tile_Cover_Kind`)
   tells the editor which enum to use for that layer's dropdown.
+  If a field is declared without an explicit bit width (no `: N`),
+  the editor assumes **8 bits** for that layer.
 - The editor must parse these bitfield type names dynamically and
   load the corresponding enum from the project's headers. It must
   NOT assume any specific layer enum name beyond `Tile_Kind`.
@@ -513,14 +515,21 @@ the project is under defined.
 
 ## 1.5 Message HUD
 
-See `tools/editor_ui_modules/message_hud.py` for the existing
-Message HUD implementation. Extend this with a SYSTEM message level.
+The Message HUD is implemented locally in
+`tools/editors/editor_map/ui/message_hud.py`.
+It supports SYSTEM, INFO, WARNING, and ERROR message levels.
 
 When resizing the Messages HUD, ensure the input is consumed
 and does not propgate to the workspace.
 
 The Message HUD is anchored to the bottom of the editor window
 and anchored to the left and right sides of the window.
+
+Messages MUST word-wrap to the width of the Message HUD panel.
+Long messages should never extend beyond the panel boundary or
+require horizontal scrolling. Use `imgui.push_text_wrap_pos` /
+`imgui.pop_text_wrap_pos` to wrap text at the available content
+region width.
 
 The Messages HUD is collapsable, clicking on a window title button
 on the HUD will minimize the Messages HUD to just the title.
@@ -738,6 +747,50 @@ the tile layout. The key patterns to look for:
    properties in the Properties HUD.
 3. `GEN-LAYER-BEGIN` / `GEN-LAYER-END` — contains the logic and
    animation sub-fields organized into byte-aligned groups.
+
+#### 3.1.2.1.1 Bitfield Default Rules
+
+**GEN-RENDER fields without explicit bit widths:**
+If a field in the `GEN-RENDER-BEGIN` / `GEN-RENDER-END` block is
+declared without an explicit bit width (e.g. `Tile_Kind the_kind_of__tile;`
+instead of `Tile_Kind the_kind_of__tile : 10;`), the editor MUST
+assume the field occupies **8 bits** (one full byte). This is the
+common case for Under Defined or minimal projects where the Tile
+struct has `array_of__tile_data__u8[1]` and a single layer field
+with no bit width annotation.
+
+**GEN-LAYER sub-bit field defaults:**
+If the `GEN-LAYER-BEGIN` / `GEN-LAYER-END` block is empty or
+absent, the editor MUST assume the following defaults for each
+tile layer:
+- Logic bit field width: **0** bits
+- Animation bit field width: **0** bits
+- Remainder bit field width: **8** bits
+
+This means each layer occupies exactly 1 byte with no logic or
+animation sub-partitioning. The full byte is treated as the
+remainder (the raw enum value).
+
+These defaults ensure that a minimal `tile.h` such as:
+```c
+typedef struct Tile_t {
+    union {
+        struct {
+            // GEN-RENDER-BEGIN
+            Tile_Kind the_kind_of__tile;
+            // GEN-RENDER-END
+        };
+        struct {
+            // GEN-LAYER-BEGIN
+            // GEN-LAYER-END
+        };
+        u8 array_of__tile_data__u8[1];
+    };
+} Tile;
+```
+is correctly interpreted as a 1-byte tile with a single 8-bit
+`Tile_Kind` layer, zero logic bits, zero animation bits, and
+8 remainder bits.
 
 Reference files for understanding the patterns:
 - `examples/template-files/include/types/implemented/world/tile.h`
@@ -965,8 +1018,21 @@ to extract `sizeof(Tile)` from the `u8 array_of__tile_data__u8[N]`
 pattern. Also extract tile layer enum fields from the
 `GEN-RENDER-BEGIN` / `GEN-RENDER-END` block.
 
+If a field in the `GEN-RENDER` block is declared without an explicit
+bit width (e.g. `Tile_Kind the_kind_of__tile;` instead of
+`Tile_Kind the_kind_of__tile : 10;`), assume the field is **8 bits**
+wide (one full byte per layer).
+
+Also extract sub-bit field layouts from the `GEN-LAYER-BEGIN` /
+`GEN-LAYER-END` block. If the block is empty or absent, assume
+default layouts for each layer: logic=0 bits, animation=0 bits,
+remainder=8 bits (the full byte is the raw enum value).
+
 See `examples/template-files/include/types/implemented/world/tile.h`
-for the reference pattern.
+for the reference pattern with explicit bit widths and populated
+GEN-LAYER block. See `core/include/types/implemented/world/tile.h`
+for the minimal pattern without bit widths and an empty GEN-LAYER
+block.
 
 ### 4.5.4 Source-Driven Validation
 

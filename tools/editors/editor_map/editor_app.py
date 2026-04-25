@@ -22,10 +22,6 @@ import OpenGL.GL as gl
 _editor_map_dir = str(Path(__file__).resolve().parent)
 if _editor_map_dir not in sys.path:
     sys.path.insert(0, _editor_map_dir)
-# Ensure tools/ is on sys.path for editor_ui_modules
-_tools_dir = str(Path(__file__).resolve().parents[2])
-if _tools_dir not in sys.path:
-    sys.path.insert(0, _tools_dir)
 
 from keybinds.keybind import KeyCombo, Modifier
 from keybinds.keybind_manager import KeybindManager
@@ -38,10 +34,12 @@ from workspace.movement import WorkspaceMovement
 from workspace.objects import WorkspaceObjects
 from workspace.render import WorkspaceRenderer
 from core.engine_config import EngineConfig, load_engine_config
-from core.tile_parser import parse_tile_header_from_file, TileInfo, TileParseError
+from core.tile_parser import (
+    parse_tile_header_from_file, TileInfo, TileParseError, TileLayerLayout,
+)
 from core.c_enum import parse_c_enum_from_file, find_enum_by_name, CEnum
 from core.world_directory import list_worlds, ensure_world_dir, world_root
-from editor_ui_modules.message_hud import MessageHUD
+from ui.message_hud import MessageHUD
 
 VERSION = "0.1.0"
 
@@ -121,6 +119,15 @@ class EditorApp:
             self._message_hud.info(
                 f"Tile size: {self._tile_info.size_in_bytes} bytes, "
                 f"{len(self._tile_info.layer_fields)} layer(s)")
+            for i, layout in enumerate(self._tile_info.layer_layouts):
+                lf = self._tile_info.layer_fields[i] \
+                    if i < len(self._tile_info.layer_fields) else None
+                layer_name = lf.field_name if lf else f"layer_{i}"
+                self._message_hud.info(
+                    f"  Layer '{layer_name}': "
+                    f"logic={layout.logic_bits}b, "
+                    f"anim={layout.animation_bits}b, "
+                    f"remainder={layout.remainder_bits}b")
             # Load enums for each tile layer
             for lf in self._tile_info.layer_fields:
                 enum = self._find_project_enum(lf.enum_type_name)
