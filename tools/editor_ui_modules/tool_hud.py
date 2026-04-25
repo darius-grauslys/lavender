@@ -35,7 +35,12 @@ _VALID_TOOLSET_NAME = re.compile(r'^[a-zA-Z0-9_]+$')
 
 
 class ToolSpanConfig:
-    """Persisted span configuration for one tool."""
+    """Persisted span configuration for one tool.
+
+    Supports multiple span states (e.g. "on"/"off" for toggleable widgets).
+    ``span_states`` is a dict mapping state name -> list of 9 indices.
+    The first state is always "default".
+    """
 
     def __init__(
         self,
@@ -43,11 +48,14 @@ class ToolSpanConfig:
         supports_nxn: bool = False,
         span_1x1_index: int = 0,
         span_9_indices: Optional[List[int]] = None,
+        span_states: Optional[Dict[str, List[int]]] = None,
     ):
         self.supports_1x1 = supports_1x1
         self.supports_nxn = supports_nxn
         self.span_1x1_index = span_1x1_index
         self.span_9_indices = span_9_indices if span_9_indices is not None else [0] * 9
+        # Multi-state spans (for toggleable widgets: "off", "on")
+        self.span_states: Dict[str, List[int]] = span_states if span_states is not None else {}
 
     def to_dict(self) -> dict:
         return {
@@ -55,6 +63,7 @@ class ToolSpanConfig:
             "supports_nxn": self.supports_nxn,
             "span_1x1_index": self.span_1x1_index,
             "span_9_indices": list(self.span_9_indices),
+            "span_states": {k: list(v) for k, v in self.span_states.items()},
         }
 
     @classmethod
@@ -64,7 +73,30 @@ class ToolSpanConfig:
             supports_nxn=d.get("supports_nxn", False),
             span_1x1_index=d.get("span_1x1_index", 0),
             span_9_indices=d.get("span_9_indices", [0] * 9),
+            span_states=d.get("span_states", {}),
         )
+
+    def build_ui_span_string(self) -> str:
+        """Build the UI_Span attribute value from all states.
+
+        Format: "TL,T,TR,L,M,R,BL,B,BR" for single state,
+        "TL,T,TR,L,M,R,BL,B,BR; TL,T,TR,L,M,R,BL,B,BR" for multi-state.
+        """
+        parts = [",".join(str(i) for i in self.span_9_indices)]
+        for state_name in sorted(self.span_states.keys()):
+            parts.append(",".join(str(i) for i in self.span_states[state_name]))
+        return "; ".join(parts)
+
+    def build_ui_span_string_1x1(self) -> str:
+        """Build UI_Span for a 1x1 element (all 9 slots same index)."""
+        idx = self.span_1x1_index
+        single = ",".join([str(idx)] * 9)
+        parts = [single]
+        for state_name in sorted(self.span_states.keys()):
+            # For 1x1, use the first index of each state
+            si = self.span_states[state_name][0] if self.span_states[state_name] else idx
+            parts.append(",".join([str(si)] * 9))
+        return "; ".join(parts)
 
 
 class Toolset:
@@ -514,6 +546,33 @@ class ToolHUD:
                 cfg = ts.span_configs.setdefault(tag, ToolSpanConfig())
                 changed = False
 
+                # Determine if this tool supports toggle states
+                has_toggle = (
+                    "is_toggleable" in self.selected_tool.property_keys
+                    or "is_toggled" in self.selected_tool.property_keys
+                )
+
+                # Span state tab (default / on / off)
+                if has_toggle:
+                    # Ensure toggle states exist
+                    if "on" not in cfg.span_states:
+                        cfg.span_states["on"] = list(cfg.span_9_indices)
+                    if not hasattr(self, '_span_tab'):
+                        self._span_tab = "default"
+                    if imgui.small_button("off##span_tab_def"):
+                        self._span_tab = "default"
+                    imgui.same_line()
+                    if imgui.small_button("on##span_tab_on"):
+                        self._span_tab = "on"
+                    imgui.separator()
+                    active_9 = (
+                        cfg.span_9_indices if self._span_tab == "default"
+                        else cfg.span_states.get("on", cfg.span_9_indices)
+                    )
+                else:
+                    self._span_tab = "default"
+                    active_9 = cfg.span_9_indices
+
                 imgui.text(f"Span: {self.selected_tool.display_name}")
 
                 c1, cfg.supports_1x1 = imgui.checkbox("1x1 support##wpc", cfg.supports_1x1)
@@ -538,9 +597,9 @@ class ToolHUD:
                     for i, label in enumerate(labels):
                         if i % 3 != 0:
                             imgui.same_line()
-                        imgui.push_id(f"span9wpc_{tag}_{i}")
+                        imgui.push_id(f"span9wpc_{tag}_{i}_{self._span_tab}")
                         self._tileset_picker.draw_tile_button(
-                            label, cfg.span_9_indices[i], ("9", tag, i), 32,
+                            label, active_9[i], ("9", tag, i, self._span_tab), 32,
                         )
                         imgui.pop_id()
 
@@ -562,7 +621,15 @@ class ToolHUD:
             elif pick_id[0] == "9":
                 pick_cfg = ts.span_configs.get(pick_id[1])
                 if pick_cfg:
-                    pick_cfg.span_9_indices[pick_id[2]] = picked_index
+                    pick_tag = pick_id[1]
+                    slot = pick_id[2]
+                    span_tab = pick_id[3] if len(pick_id) > 3 else "default"
+                    if span_tab == "default":
+                        pick_cfg.span_9_indices[slot] = picked_index
+                    else:
+                        if span_tab not in pick_cfg.span_states:
+                            pick_cfg.span_states[span_tab] = list(pick_cfg.span_9_indices)
+                        pick_cfg.span_states[span_tab][slot] = picked_index
             self.toolset_mgr.save_active()
 
         # --- Delete confirmation popup ---

@@ -199,6 +199,10 @@ class EditorApp:
     def on_create_element(self, tag: str, attribs: Dict[str, str]) -> None:
         if self._xml_root is None:
             return
+        # Populate UI_Span from active toolset
+        span_str = self._build_ui_span_for_tag(tag, attribs)
+        if span_str:
+            attribs["UI_Span"] = span_str
         new_elem = add_element_to_ui(self._xml_root, tag, attribs)
         if new_elem is not None:
             self._elements = find_ui_elements(self._xml_root)
@@ -221,6 +225,52 @@ class EditorApp:
         self._commit(f"add child <{tool.tag}>")
         self.message_hud.info(f"Added <{tool.tag}> under <{parent_elem.tag}>")
         return True
+
+    def _build_ui_span_for_tag(self, tag: str, attribs: Dict[str, str]) -> str:
+        """Build a UI_Span string from the active toolset for the given tag."""
+        from tools.editor_ui_modules.ui_element_defs import ELEMENT_DEF_BY_TAG
+        edef = ELEMENT_DEF_BY_TAG.get(tag)
+        if edef is None or not edef.has_ui_span:
+            return ""
+        cfg = self.tool_hud.get_span_config(tag)
+        if cfg is None:
+            return ""
+        # Check if 1x1
+        w = int(attribs.get("width", "0"))
+        h = int(attribs.get("height", "0"))
+        is_1x1 = (w <= GRID_PX and h <= GRID_PX)
+        if is_1x1 and cfg.supports_1x1:
+            return cfg.build_ui_span_string_1x1()
+        elif cfg.supports_nxn:
+            return cfg.build_ui_span_string()
+        return ""
+
+    def _update_all_ui_spans(self) -> None:
+        """Update UI_Span on all elements from the active toolset."""
+        if self._xml_root is None:
+            return
+        from tools.editor_ui_modules.ui_element_defs import ELEMENT_DEF_BY_TAG
+        ui_node = self._xml_root.find("ui")
+        if ui_node is None:
+            return
+        self._update_spans_recursive(ui_node)
+        self._elements = find_ui_elements(self._xml_root)
+
+    def _update_spans_recursive(self, node: ET.Element) -> None:
+        from tools.editor_ui_modules.ui_element_defs import ELEMENT_DEF_BY_TAG
+        for child in node:
+            edef = ELEMENT_DEF_BY_TAG.get(child.tag)
+            if edef is not None and edef.has_ui_span:
+                cfg = self.tool_hud.get_span_config(child.tag)
+                if cfg is not None:
+                    w = int(child.attrib.get("width", "0"))
+                    h = int(child.attrib.get("height", "0"))
+                    is_1x1 = (w <= GRID_PX and h <= GRID_PX)
+                    if is_1x1 and cfg.supports_1x1:
+                        child.set("UI_Span", cfg.build_ui_span_string_1x1())
+                    elif cfg.supports_nxn:
+                        child.set("UI_Span", cfg.build_ui_span_string())
+            self._update_spans_recursive(child)
 
     def on_property_changed(self) -> None:
         """Called by PropertiesHUD when an attribute is edited."""
@@ -274,7 +324,7 @@ class EditorApp:
         self.message_hud.info("=== Keybindings ===")
         self.message_hud.info("Ctrl+S          Save (.xml.tmp -> .xml)")
         self.message_hud.info("Ctrl+Z          Undo")
-        self.message_hud.info("Ctrl+Shift+Z    Redo")
+        self.message_hud.info("Ctrl+R          Redo")
         self.message_hud.info("Ctrl+F (hold)   Reveal all element outlines")
         self.message_hud.info("Ctrl+H          Show this help")
         self.message_hud.info("Ctrl+Scroll     Zoom in/out")
@@ -577,11 +627,21 @@ class EditorApp:
 
         self._ctrl_f_held = ctrl and _is_down(key_f)
 
-        if ctrl and key_idx_z >= 0 and imgui.is_key_pressed(key_idx_z):
-            if shift:
-                self.redo()
-            else:
-                self.undo()
+        # Debounced Ctrl+Z for undo
+        ctrl_z_down = ctrl and _is_down(key_z)
+        if not hasattr(self, '_ctrl_z_was_down'):
+            self._ctrl_z_was_down = False
+        if ctrl_z_down and not self._ctrl_z_was_down:
+            self.undo()
+        self._ctrl_z_was_down = ctrl_z_down
+
+        # Debounced Ctrl+R for redo
+        ctrl_r_down = ctrl and _is_down(pyglet.window.key.R)
+        if not hasattr(self, '_ctrl_r_was_down'):
+            self._ctrl_r_was_down = False
+        if ctrl_r_down and not self._ctrl_r_was_down:
+            self.redo()
+        self._ctrl_r_was_down = ctrl_r_down
         # Debounced Ctrl+S (trigger on press, not hold)
         ctrl_s_down = ctrl and _is_down(key_s)
         if ctrl_s_down and not self._ctrl_s_was_down:
@@ -716,9 +776,13 @@ class EditorApp:
         half_h = (right_h - 8) * 0.5  # small padding
 
         # Tool HUD as child
+        prev_toolset_idx = self.tool_hud.toolset_mgr.active_index
         imgui.begin_child("##tool_child", inner_w, half_h, border=True)
         active_tool = self.tool_hud.draw_with_pick_capture(win_w, win_h, inner_w)
         imgui.end_child()
+        # Detect toolset switch
+        if self.tool_hud.toolset_mgr.active_index != prev_toolset_idx:
+            self._update_all_ui_spans()
 
         # Properties HUD as child
         imgui.begin_child("##prop_child", inner_w, 0, border=True)

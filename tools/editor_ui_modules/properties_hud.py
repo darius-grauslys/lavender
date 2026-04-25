@@ -77,12 +77,13 @@ class PropertiesHUD:
                 f"##{key}_prop",
                 current,
                 256,
-                imgui.INPUT_TEXT_ENTER_RETURNS_TRUE,
             )
-            if c:
+            if c and new_val != current:
                 self._buf[key] = new_val
                 elem.set(key, new_val)
                 changed = True
+            elif c:
+                self._buf[key] = new_val
 
         # Show any extra attribs not in the schema
         for key in elem.attrib:
@@ -94,12 +95,13 @@ class PropertiesHUD:
                     f"##{key}_extra",
                     current,
                     256,
-                    imgui.INPUT_TEXT_ENTER_RETURNS_TRUE,
                 )
-                if c:
+                if c and new_val != current:
                     self._buf[key] = new_val
                     elem.set(key, new_val)
                     changed = True
+                elif c:
+                    self._buf[key] = new_val
 
         # Code element: multiline text editor for inner text
         if elem.tag == "code":

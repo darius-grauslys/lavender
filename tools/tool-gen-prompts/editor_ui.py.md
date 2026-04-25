@@ -40,6 +40,8 @@ updated with the UI element .xml.tmp properties. These properties
 can be edited and will automatically update the view and .xml.tmp
 when changed.
 
+Ctrl+R will redo the last undone action.
+
 When CTRL-F is held, ALL UI elements will have their purple
 outlines revealed, and during this mode, whenever a UI element
 is focused (hovered by mouse) it will change its purple outline

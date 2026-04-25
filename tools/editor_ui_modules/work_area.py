@@ -182,8 +182,9 @@ class WorkArea:
                 on_select(None)
                 self._x_consumed_click = True
 
-        # Click to select / deselect
-        if imgui.is_mouse_clicked(0) and in_bounds and not self._x_consumed_click:
+        # Click to select / deselect (skip if any imgui item is active, e.g. HUD resize)
+        any_item_active = imgui.is_any_item_active()
+        if imgui.is_mouse_clicked(0) and in_bounds and not self._x_consumed_click and not any_item_active:
             if self.hovered_element is not None:
                 self.selected_element = self.hovered_element
                 self._selection_frame = self._frame_counter
@@ -307,7 +308,9 @@ class WorkArea:
                 per_elem_9 = None
                 if elem_span_str:
                     try:
-                        parts = [int(p.strip()) for p in elem_span_str.split(",")]
+                        # Multi-span: take first span (before ";")
+                        first_span = elem_span_str.split(";")[0].strip()
+                        parts = [int(p.strip()) for p in first_span.split(",")]
                         if len(parts) == 9:
                             per_elem_9 = parts
                     except ValueError:
