@@ -613,12 +613,35 @@ nothing happens.
 
 The file hierarchy has a "+" below the worlds to add new worlds.
 
-Below the new-world text input and "+" button, a **tilesheet path**
-text field is displayed. This field shows the tilesheet path for
-the currently selected world. Editing this field and pressing Enter
-(or clicking a "Set" button) updates the selected world's
-per-world `editor.json` tilesheet path and reloads the active
-tilesheet. If no world is selected, the field is disabled.
+Below the new-world text input and "+" button, a **tilesheet**
+row is displayed for the currently selected world. This row
+contains:
+
+- A **read-only text field** showing the current tilesheet path
+  (relative to the project directory), or "(none)" if no
+  tilesheet is configured.
+- A **"Browse..."** button that opens a **native file browser
+  dialog** (e.g., via `tkinter.filedialog.askopenfilename` or
+  the platform-appropriate equivalent) filtered to `.png` files.
+  When the user selects a file:
+  1. The editor converts the absolute path returned by the
+     dialog to a **project-relative path** (relative to the
+     current working directory / project root).
+  2. The editor validates that the file exists and is a valid
+     `.png` image.
+  3. On success, the path is written to the selected world's
+     per-world `editor.json` under `tilesheet.path` (see
+     section 4.5.4.2) and the active tilesheet is reloaded
+     immediately.
+  4. On failure (file not found, not a `.png`, or path cannot
+     be made relative), an ERROR is logged to the Message HUD
+     and the tilesheet path is not changed.
+- A **"Clear"** button that removes the tilesheet path from
+  the selected world's `editor.json` (sets `tilesheet.path`
+  to `""`) and unloads the active tilesheet.
+
+If no world is selected, the entire tilesheet row is disabled
+(greyed out, non-interactive).
 
 The file hierarchy can be scrolled.
 
@@ -1194,6 +1217,15 @@ Schema:
   default empty values when the world is created or first
   selected.
 - The `tilesheet.path` is relative to the project directory.
+  It is set via the **"Browse..." file browser** in the File
+  Hierarchy HUD (see section 1.4). The editor opens a native
+  file dialog (e.g., `tkinter.filedialog.askopenfilename`
+  with `filetypes=[("PNG images", "*.png")]`), converts the
+  returned absolute path to a project-relative path using
+  `os.path.relpath(selected_path, project_root)`, validates
+  the file, and stores the relative path. The editor MUST NOT
+  allow the user to type a raw path — the file browser is the
+  only mechanism for setting the tilesheet path.
 - The editor validates that the path resolves to an existing
   `.png` file. If not, tile rendering is disabled and an ERROR
   is logged.
