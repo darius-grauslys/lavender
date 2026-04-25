@@ -38,6 +38,7 @@ class MessageHUD:
 
     def error(self, text: str) -> None:
         self._append(Message(MsgLevel.ERROR, text))
+        self._collapsed = False
 
     def clear(self) -> None:
         self._messages.clear()

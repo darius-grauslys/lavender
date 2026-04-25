@@ -11,6 +11,14 @@ from xml.dom import minidom
 from tools.editor_ui_modules.constants import GRID_PX
 
 
+def _safe_int(value: str, default: int = 0) -> int:
+    """Parse an integer from a string, returning default on failure."""
+    try:
+        return int(value.strip())
+    except (ValueError, AttributeError):
+        return default
+
+
 # ---------------------------------------------------------------------------
 # Pretty-print helpers
 # ---------------------------------------------------------------------------
@@ -123,9 +131,9 @@ def _compute_children_bbox(
 
     tag = node.tag
     if tag in _REPEATING_TAGS:
-        size = int(node.attrib.get("size", "1"))
-        stride_x = int(node.attrib.get("stride__x", "0"))
-        stride_y = int(node.attrib.get("stride__y", "0"))
+        size = _safe_int(node.attrib.get("size", "1"), 1)
+        stride_x = _safe_int(node.attrib.get("stride__x", "0"))
+        stride_y = _safe_int(node.attrib.get("stride__y", "0"))
         for i in range(size):
             iter_x = parent_x + stride_x * i
             iter_y = parent_y + stride_y * i
@@ -138,8 +146,8 @@ def _compute_children_bbox(
                     max_x = max(max_x, bb[2])
                     max_y = max(max_y, bb[3])
     else:
-        node_stride_x = int(node.attrib.get("stride__x", "0"))
-        node_stride_y = int(node.attrib.get("stride__y", "0"))
+        node_stride_x = _safe_int(node.attrib.get("stride__x", "0"))
+        node_stride_y = _safe_int(node.attrib.get("stride__y", "0"))
         for child_index, child in enumerate(node):
             cx = parent_x + node_stride_x * child_index
             cy = parent_y + node_stride_y * child_index
@@ -160,8 +168,8 @@ def _compute_children_bbox_single(
     parent_y: int,
 ) -> Optional[Tuple[int, int, int, int]]:
     """Recursive bbox computation for a single node."""
-    local_x = int(node.attrib.get("x", "0"))
-    local_y = int(node.attrib.get("y", "0"))
+    local_x = _safe_int(node.attrib.get("x", "0"))
+    local_y = _safe_int(node.attrib.get("y", "0"))
     abs_x = parent_x + local_x
     abs_y = parent_y + local_y
 
@@ -171,8 +179,8 @@ def _compute_children_bbox_single(
 
     # If this node itself has dimensions, include it
     if "width" in node.attrib and "height" in node.attrib:
-        w = int(node.attrib["width"])
-        h = int(node.attrib["height"])
+        w = _safe_int(node.attrib["width"])
+        h = _safe_int(node.attrib["height"])
         found = True
         min_x = min(min_x, abs_x)
         min_y = min(min_y, abs_y)
@@ -182,9 +190,9 @@ def _compute_children_bbox_single(
     # Recurse into children
     tag = node.tag
     if tag in _REPEATING_TAGS:
-        size = int(node.attrib.get("size", "1"))
-        stride_x = int(node.attrib.get("stride__x", "0"))
-        stride_y = int(node.attrib.get("stride__y", "0"))
+        size = _safe_int(node.attrib.get("size", "1"), 1)
+        stride_x = _safe_int(node.attrib.get("stride__x", "0"))
+        stride_y = _safe_int(node.attrib.get("stride__y", "0"))
         for i in range(size):
             iter_x = abs_x + stride_x * i
             iter_y = abs_y + stride_y * i
@@ -197,8 +205,8 @@ def _compute_children_bbox_single(
                     max_x = max(max_x, bb[2])
                     max_y = max(max_y, bb[3])
     else:
-        node_stride_x = int(node.attrib.get("stride__x", "0"))
-        node_stride_y = int(node.attrib.get("stride__y", "0"))
+        node_stride_x = _safe_int(node.attrib.get("stride__x", "0"))
+        node_stride_y = _safe_int(node.attrib.get("stride__y", "0"))
         for child_index, child in enumerate(node):
             cx = abs_x + node_stride_x * child_index
             cy = abs_y + node_stride_y * child_index
@@ -236,13 +244,13 @@ def _collect_positioned(
     container_owned: bool = False,
 ) -> None:
     # The parent node may define stride that applies to its children
-    parent_stride_x = int(node.attrib.get("stride__x", "0"))
-    parent_stride_y = int(node.attrib.get("stride__y", "0"))
+    parent_stride_x = _safe_int(node.attrib.get("stride__x", "0"))
+    parent_stride_y = _safe_int(node.attrib.get("stride__y", "0"))
 
     for child_index, child in enumerate(node):
         tag = child.tag
-        local_x = int(child.attrib.get("x", "0"))
-        local_y = int(child.attrib.get("y", "0"))
+        local_x = _safe_int(child.attrib.get("x", "0"))
+        local_y = _safe_int(child.attrib.get("y", "0"))
         # Apply parent stride per child index (like group stride__y)
         abs_x = parent_x + local_x + parent_stride_x * child_index
         abs_y = parent_y + local_y + parent_stride_y * child_index
@@ -259,8 +267,8 @@ def _collect_positioned(
                 ))
             else:
                 # No children with dimensions; use __width/__height or defaults
-                cw = int(child.attrib.get("__width", str(CONTAINER_DEFAULT_W)))
-                ch = int(child.attrib.get("__height", str(CONTAINER_DEFAULT_H)))
+                cw = _safe_int(child.attrib.get("__width", str(CONTAINER_DEFAULT_W)), CONTAINER_DEFAULT_W)
+                ch = _safe_int(child.attrib.get("__height", str(CONTAINER_DEFAULT_H)), CONTAINER_DEFAULT_H)
                 out.append(ResolvedElement(
                     child, abs_x, abs_y, cw, ch,
                     is_container_owned=container_owned,
@@ -268,9 +276,9 @@ def _collect_positioned(
                 ))
 
             # Repeating container: expand children `size` times with stride
-            size = int(child.attrib.get("size", "1"))
-            stride_x = int(child.attrib.get("stride__x", "0"))
-            stride_y = int(child.attrib.get("stride__y", "0"))
+            size = _safe_int(child.attrib.get("size", "1"), 1)
+            stride_x = _safe_int(child.attrib.get("stride__x", "0"))
+            stride_y = _safe_int(child.attrib.get("stride__y", "0"))
             for i in range(size):
                 iter_x = abs_x + stride_x * i
                 iter_y = abs_y + stride_y * i
@@ -290,8 +298,8 @@ def _collect_positioned(
                     is_container=True,
                 ))
             else:
-                cw = int(child.attrib.get("__width", str(CONTAINER_DEFAULT_W)))
-                ch = int(child.attrib.get("__height", str(CONTAINER_DEFAULT_H)))
+                cw = _safe_int(child.attrib.get("__width", str(CONTAINER_DEFAULT_W)), CONTAINER_DEFAULT_W)
+                ch = _safe_int(child.attrib.get("__height", str(CONTAINER_DEFAULT_H)), CONTAINER_DEFAULT_H)
                 out.append(ResolvedElement(
                     child, abs_x, abs_y, cw, ch,
                     is_container_owned=container_owned,
@@ -301,8 +309,8 @@ def _collect_positioned(
         else:
             # Non-repeating: emit self if visual, then recurse
             if "width" in child.attrib and "height" in child.attrib:
-                w = int(child.attrib["width"])
-                h = int(child.attrib["height"])
+                w = _safe_int(child.attrib["width"])
+                h = _safe_int(child.attrib["height"])
                 out.append(ResolvedElement(
                     child, abs_x, abs_y, w, h,
                     is_container_owned=container_owned,
@@ -322,15 +330,15 @@ def _collect_positioned_single(
 ) -> None:
     """Process a single element and recurse — used by repeating expansion."""
     tag = node.tag
-    local_x = int(node.attrib.get("x", "0"))
-    local_y = int(node.attrib.get("y", "0"))
+    local_x = _safe_int(node.attrib.get("x", "0"))
+    local_y = _safe_int(node.attrib.get("y", "0"))
     abs_x = parent_x + local_x
     abs_y = parent_y + local_y
 
     if tag in _REPEATING_TAGS:
-        size = int(node.attrib.get("size", "1"))
-        stride_x = int(node.attrib.get("stride__x", "0"))
-        stride_y = int(node.attrib.get("stride__y", "0"))
+        size = _safe_int(node.attrib.get("size", "1"), 1)
+        stride_x = _safe_int(node.attrib.get("stride__x", "0"))
+        stride_y = _safe_int(node.attrib.get("stride__y", "0"))
         for i in range(size):
             iter_x = abs_x + stride_x * i
             iter_y = abs_y + stride_y * i
@@ -341,8 +349,8 @@ def _collect_positioned_single(
                 )
     else:
         if "width" in node.attrib and "height" in node.attrib:
-            w = int(node.attrib["width"])
-            h = int(node.attrib["height"])
+            w = _safe_int(node.attrib["width"])
+            h = _safe_int(node.attrib["height"])
             out.append(ResolvedElement(
                 node, abs_x, abs_y, w, h,
                 is_container_owned=container_owned,
@@ -350,8 +358,8 @@ def _collect_positioned_single(
             ))
 
         # Apply this node's stride to its children
-        node_stride_x = int(node.attrib.get("stride__x", "0"))
-        node_stride_y = int(node.attrib.get("stride__y", "0"))
+        node_stride_x = _safe_int(node.attrib.get("stride__x", "0"))
+        node_stride_y = _safe_int(node.attrib.get("stride__y", "0"))
         for child_index, child in enumerate(node):
             child_abs_x = abs_x + node_stride_x * child_index
             child_abs_y = abs_y + node_stride_y * child_index
@@ -375,10 +383,10 @@ def elem_rect(elem) -> Tuple[int, int, int, int]:
     if isinstance(elem, ResolvedElement):
         return (elem.abs_x, elem.abs_y, elem.width, elem.height)
     return (
-        int(elem.attrib.get("x", "0")),
-        int(elem.attrib.get("y", "0")),
-        int(elem.attrib.get("width", "0")),
-        int(elem.attrib.get("height", "0")),
+        _safe_int(elem.attrib.get("x", "0")),
+        _safe_int(elem.attrib.get("y", "0")),
+        _safe_int(elem.attrib.get("width", "0")),
+        _safe_int(elem.attrib.get("height", "0")),
     )
 
 

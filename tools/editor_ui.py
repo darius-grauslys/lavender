@@ -162,6 +162,7 @@ class EditorApp:
         self.properties_hud.select(elem)
         self.properties_hud.xml_root = self._xml_root
         self.properties_hud.on_view_parent = self._on_view_parent
+        self.properties_hud.on_error = self.message_hud.error
         self.ui_hierarchy.selected_xml_elem = elem
         # Sync work area selection with hierarchy
         self._sync_work_area_selection(elem)
@@ -895,28 +896,29 @@ def main() -> None:
     app._renderer_ref = renderer
     app._print_keybindings()
 
-    @window.event
-    def on_key_press(symbol, modifiers):
-        # Prevent ESC from closing the window
+    # Push ESC blocker on top of imgui's handlers (push_handlers adds
+    # to the front of the dispatch stack, so it runs first).
+    def _block_esc_on_key_press(symbol, modifiers):
         if symbol == pyglet.window.key.ESCAPE:
-            return True  # consume the event
+            return pyglet.event.EVENT_HANDLED
 
-    @window.event
-    def on_draw():
+    window.push_handlers(on_key_press=_block_esc_on_key_press)
+
+    def _on_draw():
         window.clear()
         imgui.new_frame()
         app.draw_frame(float(window.width), float(window.height))
         imgui.render()
         renderer.render(imgui.get_draw_data())
 
-    @window.event
-    def on_close():
-        # If there are unsaved changes, show confirmation instead of closing
+    def _on_close():
         if app._has_unsaved_changes():
             app._show_close_confirmation = True
-            return pyglet.event.EVENT_HANDLED  # prevent close
+            return pyglet.event.EVENT_HANDLED
         renderer.shutdown()
         return None
+
+    window.push_handlers(on_draw=_on_draw, on_close=_on_close)
 
     pyglet.app.run()
 
