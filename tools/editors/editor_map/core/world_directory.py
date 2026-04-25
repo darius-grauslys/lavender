@@ -170,3 +170,8 @@ def ensure_world_dir(base_dir: Path, world_name: str) -> Path:
     path = world_root(base_dir, world_name)
     path.mkdir(parents=True, exist_ok=True)
     return path
+
+
+def world_editor_config_path(base_dir: Path, world_name: str) -> Path:
+    """Get the per-world editor.json path: <base>/save/<world_name>/editor.json"""
+    return world_root(base_dir, world_name) / "editor.json"

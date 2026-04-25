@@ -11,6 +11,9 @@ from core.tile_kind_editor import (
     AnimationTileEntry,
     create_editor_state_from_enum,
     write_tile_kind_header,
+    get_tilesheet_map_from_state,
+    save_tilesheet_mapping,
+    load_tilesheet_mapping,
 )
 
 
@@ -72,6 +75,14 @@ class TestTileKindEditorState:
         assert len(state.tile_kinds) == 1
         assert state.tile_kinds[0].name == "Tile_Kind__Grass"
         assert state.tile_kinds[0].value == 0
+        assert state.tile_kinds[0].tilesheet_tile_index == -1
+
+    def test_add_tile_kind_with_tilesheet_index(self):
+        state = TileKindEditorState(
+            layer_name="test", enum_type_name="Tile_Kind",
+            render_bit_width=8, logic_bits=0, animation_bits=0)
+        state.add_tile_kind("Tile_Kind__Grass", tilesheet_tile_index=5)
+        assert state.tile_kinds[0].tilesheet_tile_index == 5
 
     def test_add_tile_kind_increments_value(self):
         state = TileKindEditorState(
@@ -198,3 +209,81 @@ class TestWriteTileKindHeader:
         content = filepath.read_text()
         assert "Tile_Kind__Logical = Tile_Kind__None," in content
         assert "Tile_Kind__Grass," in content
+
+
+class TestTilesheetMapping:
+    def test_get_tilesheet_map_from_state(self):
+        state = TileKindEditorState(
+            layer_name="test",
+            enum_type_name="Tile_Kind",
+            render_bit_width=8,
+            logic_bits=0,
+            animation_bits=0,
+            tile_kinds=[
+                TileKindEntry(name="Tile_Kind__Grass", value=1,
+                              tilesheet_tile_index=5),
+                TileKindEntry(name="Tile_Kind__Water", value=2,
+                              tilesheet_tile_index=-1),
+                TileKindEntry(name="Tile_Kind__Stone", value=3,
+                              tilesheet_tile_index=12),
+            ],
+        )
+        mapping = get_tilesheet_map_from_state(state)
+        assert mapping == {
+            "Tile_Kind__Grass": 5,
+            "Tile_Kind__Stone": 12,
+        }
+        assert "Tile_Kind__Water" not in mapping
+
+    def test_get_tilesheet_map_empty(self):
+        state = TileKindEditorState(
+            layer_name="test",
+            enum_type_name="Tile_Kind",
+            render_bit_width=8,
+            logic_bits=0,
+            animation_bits=0,
+        )
+        mapping = get_tilesheet_map_from_state(state)
+        assert mapping == {}
+
+    def test_save_and_load_tilesheet_mapping(self, tmp_path):
+        filepath = tmp_path / "tile_kind.h"
+        mapping = {"Tile_Kind__Grass": 5, "Tile_Kind__Stone": 12}
+        save_tilesheet_mapping(filepath, mapping)
+
+        loaded = load_tilesheet_mapping(filepath)
+        assert loaded == mapping
+
+    def test_load_tilesheet_mapping_missing_file(self, tmp_path):
+        filepath = tmp_path / "tile_kind.h"
+        loaded = load_tilesheet_mapping(filepath)
+        assert loaded == {}
+
+    def test_load_tilesheet_mapping_malformed_json(self, tmp_path):
+        filepath = tmp_path / "tile_kind.h"
+        map_path = tmp_path / "tile_kind_tilesheet.json"
+        map_path.write_text("{bad json")
+        loaded = load_tilesheet_mapping(filepath)
+        assert loaded == {}
+
+    def test_create_editor_state_with_tilesheet_map(self):
+        enum = _make_test_enum()
+        tilesheet_map = {
+            "Tile_Kind__Grass": 3,
+            "Tile_Kind__Water": 7,
+        }
+        state = create_editor_state_from_enum(
+            enum, "test", 10, 4, 0,
+            tilesheet_map=tilesheet_map)
+        grass = next(
+            tk for tk in state.tile_kinds
+            if tk.name == "Tile_Kind__Grass")
+        water = next(
+            tk for tk in state.tile_kinds
+            if tk.name == "Tile_Kind__Water")
+        stone = next(
+            tk for tk in state.tile_kinds
+            if tk.name == "Tile_Kind__Stone")
+        assert grass.tilesheet_tile_index == 3
+        assert water.tilesheet_tile_index == 7
+        assert stone.tilesheet_tile_index == -1

@@ -11,7 +11,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 from core.c_enum import CEnum, CEnumMember
 
@@ -21,6 +21,9 @@ class TileKindEntry:
     """An editable tile kind enum entry."""
     name: str
     value: int
+    # Index into the tilesheet image for visual representation.
+    # -1 means no tilesheet tile assigned.
+    tilesheet_tile_index: int = -1
 
 
 @dataclass
@@ -89,7 +92,9 @@ class TileKindEditorState:
         return (self.animation_bits > 0
                 and len(self.animation_tiles) < self.max_animation_tiles)
 
-    def add_tile_kind(self, name: str = "") -> None:
+    def add_tile_kind(
+            self, name: str = "",
+            tilesheet_tile_index: int = -1) -> None:
         """Add a new tile kind with the next available value."""
         if not self.can_add_tile_kind:
             return
@@ -98,7 +103,9 @@ class TileKindEditorState:
             next_val = max(e.value for e in self.tile_kinds) + 1
         if not name:
             name = f"{self.enum_type_name}__New_{next_val}"
-        self.tile_kinds.append(TileKindEntry(name=name, value=next_val))
+        self.tile_kinds.append(TileKindEntry(
+            name=name, value=next_val,
+            tilesheet_tile_index=tilesheet_tile_index))
 
     def remove_tile_kind(self, index: int) -> None:
         """Remove a tile kind by index."""
@@ -143,13 +150,21 @@ def create_editor_state_from_enum(
         render_bit_width: int,
         logic_bits: int = 0,
         animation_bits: int = 0,
+        tilesheet_map: Optional[Dict[str, int]] = None,
 ) -> TileKindEditorState:
     """
     Create an editable state from a parsed CEnum.
 
     Populates tile_kinds from enum members, and separates
     logical/non-logical members using GEN region markers.
+
+    Args:
+        tilesheet_map: Optional mapping of enum member name to
+            tilesheet tile index. If None, all entries default to -1.
     """
+    if tilesheet_map is None:
+        tilesheet_map = {}
+
     state = TileKindEditorState(
         layer_name=layer_name,
         enum_type_name=enum.name,
@@ -170,8 +185,11 @@ def create_editor_state_from_enum(
             if same_val:
                 continue
 
+        tile_idx = tilesheet_map.get(member.name, -1)
         state.tile_kinds.append(
-            TileKindEntry(name=member.name, value=member.value))
+            TileKindEntry(
+                name=member.name, value=member.value,
+                tilesheet_tile_index=tile_idx))
 
         # Populate logical tiles from GEN-LOGIC-BEGIN region
         if member.gen_region and 'LOGIC-BEGIN' in member.gen_region:
@@ -245,3 +263,52 @@ def write_tile_kind_header(
 
     filepath.parent.mkdir(parents=True, exist_ok=True)
     filepath.write_text("\n".join(lines), encoding='utf-8')
+
+
+def get_tilesheet_map_from_state(
+        state: TileKindEditorState,
+) -> Dict[str, int]:
+    """
+    Extract the tilesheet tile index mapping from editor state.
+    Returns a dict of {enum_member_name: tilesheet_tile_index}
+    for entries that have a valid (>= 0) tilesheet index.
+    """
+    return {
+        tk.name: tk.tilesheet_tile_index
+        for tk in state.tile_kinds
+        if tk.tilesheet_tile_index >= 0
+    }
+
+
+def save_tilesheet_mapping(
+        filepath: Path,
+        mapping: Dict[str, int]) -> None:
+    """
+    Save tilesheet tile index mapping to a JSON file alongside
+    the _kind.h header. The file is named <stem>_tilesheet.json.
+    """
+    import json
+    map_path = filepath.parent / (filepath.stem + "_tilesheet.json")
+    map_path.write_text(
+        json.dumps(mapping, indent=2) + "\n",
+        encoding='utf-8')
+
+
+def load_tilesheet_mapping(filepath: Path) -> Dict[str, int]:
+    """
+    Load tilesheet tile index mapping from the JSON file
+    alongside the _kind.h header.
+    Returns empty dict if file doesn't exist or is invalid.
+    """
+    import json
+    map_path = filepath.parent / (filepath.stem + "_tilesheet.json")
+    if not map_path.exists():
+        return {}
+    try:
+        data = json.loads(
+            map_path.read_text(encoding='utf-8', errors='replace'))
+        if isinstance(data, dict):
+            return {k: int(v) for k, v in data.items() if isinstance(v, int)}
+    except (json.JSONDecodeError, OSError, ValueError):
+        pass
+    return {}

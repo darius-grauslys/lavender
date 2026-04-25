@@ -352,9 +352,13 @@ The sub-window contains **three tables** arranged side by side:
 layer field name, e.g. "the_kind_of__tile")
 
 Each row contains:
-- A **number field** (validated unsigned integer) to set the
-  enum value. Changing this value reorders the entry in the
-  table by value.
+- A **tile preview button** showing the tilesheet tile assigned
+  to this entry (or a placeholder if none is assigned). Clicking
+  this button opens the **Tileset Picker Sub-Window** (see
+  section 1.1.2.1.3.2) to select a tile from the tilesheet.
+  The selected tile index is stored per tile kind entry and
+  persisted in a `<enum_name>_tilesheet.json` file alongside
+  the `_kind.h` header.
 - A **text field** to rename the tile enum member.
 - An **"X" button** to delete the entry.
 
@@ -403,9 +407,41 @@ When the sub-window's **"OK"** button is clicked:
   enum members). The file is written preserving the
   `GEN-LOGIC-BEGIN` / `GEN-LOGIC-END` and
   `GEN-NO-LOGIC-BEGIN` / `GEN-NO-LOGIC-END` markers.
+- The tilesheet tile index mapping is saved to a
+  `<enum_name>_tilesheet.json` file alongside the header.
 - The editor reloads the affected enum.
 
 When **"Cancel"** is clicked, all changes are discarded.
+
+###### 1.1.2.1.3.2 Tileset Picker Sub-Window
+
+When a tile preview button is clicked in the Tile Kind Editor
+(section 1.1.2.1.3.1), a nested sub-window opens displaying
+the active tilesheet as a grid of 8×8 pixel tiles.
+
+This sub-window **consumes all input** — clicks and keypresses
+MUST NOT propagate to the Tile Kind Editor or any other panel.
+
+The tileset grid displays tiles in reading order: index 0 is
+the top-left tile, incrementing left-to-right, wrapping to the
+next row (top-to-bottom). The grid is scrollable if the
+tilesheet is larger than the sub-window.
+
+Each tile cell is displayed at a configurable zoom level
+(default 2×, so each tile appears as 16×16 display pixels).
+
+**Interaction:**
+- Hovering over a tile highlights it with a yellow outline.
+- Clicking a tile selects it (highlighted with a white outline).
+- The currently selected tile index is shown as text below the
+  grid.
+- Clicking **"OK"** confirms the selection and assigns the
+  tile index to the tile kind entry that opened the picker.
+- Clicking **"Cancel"** discards the selection.
+- If no tilesheet is loaded for the active world, the sub-window
+  displays "No tilesheet loaded" and only a "Cancel" button.
+
+Implementation model: `tools/editors/editor_map/core/tileset_picker.py`
 
 ### 1.1.3 Entity Edit
 
@@ -576,6 +612,13 @@ clicking OK. If OK is clicked and the name is not correctly typed
 nothing happens.
 
 The file hierarchy has a "+" below the worlds to add new worlds.
+
+Below the new-world text input and "+" button, a **tilesheet path**
+text field is displayed. This field shows the tilesheet path for
+the currently selected world. Editing this field and pressing Enter
+(or clicking a "Set" button) updates the selected world's
+per-world `editor.json` tilesheet path and reloads the active
+tilesheet. If no world is selected, the field is disabled.
 
 The file hierarchy can be scrolled.
 
@@ -1113,9 +1156,30 @@ block.
 
 ### 4.5.4 Editor Project Configuration
 
-The editor reads and writes a project-local configuration file at
-`./assets/world/editor.json`. This file stores editor-specific
-settings that are not part of the engine source.
+The editor uses two levels of configuration:
+
+#### 4.5.4.1 Project-Level Configuration
+
+The editor reads and writes a project-level configuration file at
+`./assets/world/editor.json`. This file stores global editor
+settings that are not world-specific.
+
+Schema:
+```json
+{
+    "version": 1
+}
+```
+
+- If the file does not exist, the editor generates it with
+  default values.
+
+#### 4.5.4.2 Per-World Configuration
+
+Each world has its own configuration file at
+`./save/<world_name>/editor.json` (inside the world folder).
+This file stores world-specific settings such as the tilesheet
+path.
 
 Schema:
 ```json
@@ -1127,11 +1191,15 @@ Schema:
 ```
 
 - If the file does not exist, the editor generates it with
-  default empty values.
+  default empty values when the world is created or first
+  selected.
 - The `tilesheet.path` is relative to the project directory.
 - The editor validates that the path resolves to an existing
   `.png` file. If not, tile rendering is disabled and an ERROR
   is logged.
+- When a world is clicked in the File Hierarchy HUD, the
+  editor loads that world's `editor.json` and sets the
+  tilesheet as the active tilesheet for the editor session.
 
 Implementation: `tools/editors/editor_map/core/editor_project_config.py`
 
@@ -1161,8 +1229,9 @@ editor startup to derive or validate implementation:
 | Tile_Kind (reference) | `examples/template-files/include/types/implemented/world/tile_kind.h` |
 | Tile layer enum (reference, project-defined) | `examples/template-files/include/types/implemented/world/tile_cover_kind.h` |
 | Tile_Layer (reference) | `examples/template-files/include/types/implemented/world/tile_layer.h` |
-| Editor project config | `./assets/world/editor.json` (project-local) |
-| Tilesheet image | Configured via `editor.json`, `.png` format, 8×8 tiles |
+| Editor project config | `./assets/world/editor.json` (project-level) |
+| Per-world editor config | `./save/<world_name>/editor.json` (per-world) |
+| Tilesheet image | Configured via per-world `editor.json`, `.png` format, 8×8 tiles |
 
 # 6. Testing
 
@@ -1185,6 +1254,7 @@ Key test modules:
 - `tests/core/test_editor_project_config.py` — Editor JSON config
 - `tests/core/test_tilesheet.py` — Tilesheet loading and sampling
 - `tests/core/test_tile_kind_editor.py` — Tile kind editor model
+- `tests/core/test_tileset_picker.py` — Tileset picker model
 - `tests/keybinds/test_keybind_manager.py` — Keybind stack
 - `tests/workspace/test_movement.py` — Viewport movement
 - `tests/workspace/test_objects.py` — Object management
