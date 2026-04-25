@@ -1,5 +1,7 @@
 """Shared constants for the UI editor."""
 
+import os
+
 # Grid
 GRID_PX = 8
 
@@ -14,6 +16,7 @@ COLOR_OUTLINE_REVEAL   = (0.6, 0.0, 0.8, 0.7)       # purple semi
 
 # Delete button
 COLOR_DELETE_X = (1.0, 0.2, 0.2, 1.0)
+X_BUTTON_HEIGHT = 16  # pixels reserved for X button above container
 
 # Message HUD
 COLOR_MSG_INFO_TEXT  = (0.0, 0.0, 0.0, 1.0)
@@ -28,8 +31,11 @@ DEFAULT_WINDOW_H = 600
 DEFAULT_WORK_W = 256
 DEFAULT_WORK_H = 192
 
-# Tools JSON path (relative to assets/ui)
-TOOLS_JSON_RELPATH = "tools.json"
+# Toolset directory (relative to project root)
+TOOLSET_DIR = os.path.join("assets", "ui", "editor", "toolsets")
+TOOLSET_PREFIX = "tools_"
+TOOLSET_SUFFIX = ".json"
+TOOLSET_DEFAULT_NAME = "default"
 
 # Asset root (relative to project root / cwd)
 ASSET_UI_ROOT = "assets/ui"

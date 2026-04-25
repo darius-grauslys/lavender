@@ -22,6 +22,7 @@ from tools.editor_ui_modules.constants import (
     COLOR_OUTLINE_SELECTED,
     GRID_PX,
     OUTLINE_WIDTH,
+    X_BUTTON_HEIGHT,
 )
 from tools.editor_ui_modules.span_renderer import build_span_tile_grid
 from tools.editor_ui_modules.ui_element_defs import ELEMENT_DEF_BY_TAG, UIElementDef
@@ -232,11 +233,12 @@ class WorkArea:
             r, g, b = _parse_color_attrib(elem)
 
             if is_container_elem:
-                # Containers: semi-transparent fill + dashed-style outline
+                # Containers: pad top by X_BUTTON_HEIGHT so X is visible above children
+                pad_top = X_BUTTON_HEIGHT * zoom
                 fill = _color4_to_u32(r, g, b, 0.15)
                 draw_list.add_rect_filled(
                     origin_x + ex * zoom,
-                    origin_y + ey * zoom,
+                    origin_y + ey * zoom - pad_top,
                     origin_x + (ex + ew) * zoom,
                     origin_y + (ey + eh) * zoom,
                     fill,
@@ -244,7 +246,7 @@ class WorkArea:
                 border_col = _color4_to_u32(r, g, b, 0.6)
                 draw_list.add_rect(
                     origin_x + ex * zoom,
-                    origin_y + ey * zoom,
+                    origin_y + ey * zoom - pad_top,
                     origin_x + (ex + ew) * zoom,
                     origin_y + (ey + eh) * zoom,
                     border_col,
@@ -276,23 +278,54 @@ class WorkArea:
                 and tileset_picker.is_loaded
                 and tileset_picker._gl_texture_id is not None
             ):
+                # Check for per-element UI_Span attribute first
+                xml_e_for_span = elem.xml_elem if isinstance(elem, ResolvedElement) else elem
+                elem_span_str = xml_e_for_span.attrib.get("UI_Span", "") if hasattr(xml_e_for_span, 'attrib') else ""
+                per_elem_9 = None
+                if elem_span_str:
+                    try:
+                        parts = [int(p.strip()) for p in elem_span_str.split(",")]
+                        if len(parts) == 9:
+                            per_elem_9 = parts
+                    except ValueError:
+                        pass
+
                 span_cfg = span_configs.get(elem_tag)
-                if span_cfg is not None:
-                    tiles_w = max(1, ew // GRID_PX)
-                    tiles_h = max(1, eh // GRID_PX)
+                if span_cfg is not None or per_elem_9 is not None:
+                    # Snap tile origin to grid
+                    tile_x0 = (ex // GRID_PX) * GRID_PX
+                    tile_y0 = (ey // GRID_PX) * GRID_PX
+                    # Compute tile extent: round up to cover the element
+                    tile_x1 = -(-((ex + ew) - tile_x0) // GRID_PX) * GRID_PX + tile_x0
+                    tile_y1 = -(-((ey + eh) - tile_y0) // GRID_PX) * GRID_PX + tile_y0
+                    tiles_w = max(1, (tile_x1 - tile_x0) // GRID_PX)
+                    tiles_h = max(1, (tile_y1 - tile_y0) // GRID_PX)
+
+                    if per_elem_9 is not None:
+                        s1x1 = per_elem_9[0]
+                        s9 = per_elem_9
+                        sup1 = True
+                        supn = True
+                    elif span_cfg is not None:
+                        s1x1 = span_cfg.span_1x1_index
+                        s9 = span_cfg.span_9_indices
+                        sup1 = span_cfg.supports_1x1
+                        supn = span_cfg.supports_nxn
+                    else:
+                        s1x1 = 0
+                        s9 = [0]*9
+                        sup1 = False
+                        supn = False
+
                     tile_grid = build_span_tile_grid(
-                        tiles_w, tiles_h,
-                        span_cfg.span_1x1_index,
-                        span_cfg.span_9_indices,
-                        span_cfg.supports_1x1,
-                        span_cfg.supports_nxn,
+                        tiles_w, tiles_h, s1x1, s9, sup1, supn,
                     )
                     tile_sz = GRID_PX * zoom
-                    for row_idx, row in enumerate(tile_grid):
-                        for col_idx, tile_index in enumerate(row):
+                    for row_idx, row_tiles in enumerate(tile_grid):
+                        for col_idx, tile_index in enumerate(row_tiles):
                             u0, v0, u1, v1 = tileset_picker.get_tile_uv(tile_index)
-                            tx = origin_x + (ex + col_idx * GRID_PX) * zoom
-                            ty = origin_y + (ey + row_idx * GRID_PX) * zoom
+                            tx = origin_x + (tile_x0 + col_idx * GRID_PX) * zoom
+                            ty = origin_y + (tile_y0 + row_idx * GRID_PX) * zoom
                             draw_list.add_image(
                                 tileset_picker._gl_texture_id,
                                 (tx, ty),
@@ -301,13 +334,14 @@ class WorkArea:
                                 uv_b=(u1, v1),
                             )
 
-            # Container label
+            # Container label (in the padded area above)
             if is_container_elem:
+                pad_top = X_BUTTON_HEIGHT * zoom
                 label_tag = elem.xml_elem.tag if isinstance(elem, ResolvedElement) else "container"
                 label_col = _color4_to_u32(r, g, b, 0.9)
                 draw_list.add_text(
                     origin_x + ex * zoom + 2,
-                    origin_y + ey * zoom + 2,
+                    origin_y + ey * zoom - pad_top + 2,
                     label_col,
                     f"<{label_tag}>",
                 )
@@ -325,9 +359,12 @@ class WorkArea:
                 else:
                     ol_col = _color4_to_u32(*COLOR_OUTLINE_REVEAL)
 
+                top_y = origin_y + ey * zoom
+                if is_container_elem:
+                    top_y -= X_BUTTON_HEIGHT * zoom
                 draw_list.add_rect(
                     origin_x + ex * zoom,
-                    origin_y + ey * zoom,
+                    top_y,
                     origin_x + (ex + ew) * zoom,
                     origin_y + (ey + eh) * zoom,
                     ol_col,
@@ -342,7 +379,10 @@ class WorkArea:
             )
             if elem is self.selected_element and not is_owned:
                 bx = origin_x + (ex + ew) * zoom - 10
-                by = origin_y + ey * zoom + 2
+                if is_container_elem:
+                    by = origin_y + ey * zoom - X_BUTTON_HEIGHT * zoom + 2
+                else:
+                    by = origin_y + ey * zoom + 2
                 selected_x_info = (bx, by, elem)
 
         # Draw the X delete button on TOP of everything (for selected element)

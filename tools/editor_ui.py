@@ -128,6 +128,7 @@ class EditorApp:
         self._elements = find_ui_elements(root)
         self._read_work_size_from_config()
         self._load_backgrounds_from_config(path)
+        self._load_toolset_from_config()
         self.history = HistoryManager()
         self.history.push("open", serialize_tree(root))
         self.message_hud.info(f"Opened: {path}")
@@ -198,6 +199,7 @@ class EditorApp:
     def _commit(self, desc: str) -> None:
         if self._xml_root is None or self._xml_path is None:
             return
+        self._save_toolset_to_config()
         xml_text = serialize_tree(self._xml_root)
         self.history.push(desc, xml_text)
         save_tmp(self._xml_path, self._xml_root)
@@ -233,6 +235,7 @@ class EditorApp:
 
     def save(self) -> None:
         if self._xml_root is not None and self._xml_path is not None:
+            self._save_toolset_to_config()
             save_final(self._xml_path, self._xml_root)
             self.message_hud.info(f"Saved: {self._xml_path}")
 
@@ -256,6 +259,33 @@ class EditorApp:
                         self.work_h = int(parts[1])
                     except ValueError:
                         pass
+
+    # ------------------------------------------------------------------
+    # Toolset config helpers
+    # ------------------------------------------------------------------
+
+    def _load_toolset_from_config(self) -> None:
+        """Read __toolset from <config> and select it."""
+        if self._xml_root is None:
+            return
+        cfg = self._xml_root.find("config")
+        if cfg is None:
+            return
+        toolset_name = cfg.attrib.get("__toolset", "")
+        if toolset_name:
+            if not self.tool_hud.toolset_mgr.select_by_name(toolset_name):
+                self.message_hud.info(
+                    f"Toolset '{toolset_name}' not found, using first available."
+                )
+
+    def _save_toolset_to_config(self) -> None:
+        """Write __toolset to <config> in the XML tree."""
+        if self._xml_root is None:
+            return
+        cfg = self._xml_root.find("config")
+        if cfg is None:
+            return
+        cfg.set("__toolset", self.tool_hud.get_active_toolset_name())
 
     # ------------------------------------------------------------------
     # Background loading from XML <config>
@@ -514,6 +544,7 @@ class EditorApp:
             flags=(
                 imgui.WINDOW_NO_MOVE
                 | imgui.WINDOW_NO_SAVED_SETTINGS
+                | imgui.WINDOW_NO_COLLAPSE
             ),
         )
         new_left_w = imgui.get_window_width()
@@ -640,7 +671,7 @@ class EditorApp:
                 elements=self._elements,
                 root=self._xml_root,
                 active_tool=active_tool,
-                span_configs=self.tool_hud._span_configs if hasattr(self.tool_hud, '_span_configs') else {},
+                span_configs=self.tool_hud._span_configs,
                 work_w=self.work_w,
                 work_h=self.work_h,
                 origin_x=origin_x,

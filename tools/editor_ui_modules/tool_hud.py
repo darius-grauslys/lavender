@@ -1,17 +1,26 @@
-"""Top-right TOOL HUD – tool palette, UI-span configuration, and tileset picker.
+"""Top-right TOOL HUD – tool palette, UI-span configuration, tileset picker,
+and toolset management.
 
-Reads / writes ``tools.json`` from the assets/ui directory.
+Toolsets are stored as individual JSON files in assets/ui/editor/toolsets/.
 """
 
 from __future__ import annotations
 
 import json
 import os
+import re
 from typing import Dict, List, Optional, Tuple
 
 import imgui
 
-from tools.editor_ui_modules.constants import ASSET_UI_ROOT, GRID_PX, TOOLS_JSON_RELPATH
+from tools.editor_ui_modules.constants import (
+    ASSET_UI_ROOT,
+    GRID_PX,
+    TOOLSET_DIR,
+    TOOLSET_PREFIX,
+    TOOLSET_SUFFIX,
+    TOOLSET_DEFAULT_NAME,
+)
 from tools.editor_ui_modules.ui_element_defs import (
     ALL_ELEMENT_DEFS,
     UIElementDef,
@@ -21,6 +30,8 @@ from tools.editor_ui_modules.ui_element_defs import (
 _DEFAULT_TILESET_PATH = os.path.join(
     ASSET_UI_ROOT, "default", "_ui_tileset_default.png"
 )
+
+_VALID_TOOLSET_NAME = re.compile(r'^[a-zA-Z0-9_]+$')
 
 
 class ToolSpanConfig:
@@ -54,6 +65,136 @@ class ToolSpanConfig:
             span_1x1_index=d.get("span_1x1_index", 0),
             span_9_indices=d.get("span_9_indices", [0] * 9),
         )
+
+
+class Toolset:
+    """One named toolset with its own span configurations."""
+
+    def __init__(self, name: str):
+        self.name: str = name
+        self.span_configs: Dict[str, ToolSpanConfig] = {}
+        # Ensure every known element def has a config entry
+        for edef in ALL_ELEMENT_DEFS:
+            if edef.tag not in self.span_configs:
+                self.span_configs[edef.tag] = ToolSpanConfig(
+                    supports_1x1=edef.supports_1x1,
+                    supports_nxn=edef.supports_nxn,
+                )
+
+    def to_dict(self) -> dict:
+        return {
+            "name": self.name,
+            "spans": {tag: cfg.to_dict() for tag, cfg in self.span_configs.items()},
+        }
+
+    @classmethod
+    def from_dict(cls, d: dict) -> "Toolset":
+        name = d.get("name", TOOLSET_DEFAULT_NAME)
+        ts = cls(name)
+        for tag, cfg_dict in d.get("spans", {}).items():
+            ts.span_configs[tag] = ToolSpanConfig.from_dict(cfg_dict)
+        return ts
+
+
+class ToolsetManager:
+    """Manages multiple toolsets stored as individual JSON files."""
+
+    def __init__(self):
+        self.toolsets: List[Toolset] = []
+        self.active_index: int = 0
+        self._load_all()
+
+    @property
+    def active(self) -> Optional[Toolset]:
+        if 0 <= self.active_index < len(self.toolsets):
+            return self.toolsets[self.active_index]
+        return None
+
+    def select_by_name(self, name: str) -> bool:
+        for i, ts in enumerate(self.toolsets):
+            if ts.name == name:
+                self.active_index = i
+                return True
+        if self.toolsets:
+            self.active_index = 0
+        return False
+
+    def _toolset_path(self, name: str) -> str:
+        return os.path.join(TOOLSET_DIR, f"{TOOLSET_PREFIX}{name}{TOOLSET_SUFFIX}")
+
+    def _load_all(self) -> None:
+        self.toolsets = []
+        os.makedirs(TOOLSET_DIR, exist_ok=True)
+        files = sorted(f for f in os.listdir(TOOLSET_DIR)
+                        if f.startswith(TOOLSET_PREFIX) and f.endswith(TOOLSET_SUFFIX))
+        if not files:
+            # Create default
+            ts = Toolset(TOOLSET_DEFAULT_NAME)
+            self.toolsets.append(ts)
+            self._save_toolset(ts)
+        else:
+            for f in files:
+                path = os.path.join(TOOLSET_DIR, f)
+                try:
+                    with open(path, "r", encoding="utf-8") as fh:
+                        data = json.load(fh)
+                    ts = Toolset.from_dict(data)
+                    self.toolsets.append(ts)
+                except (json.JSONDecodeError, OSError):
+                    pass
+        if not self.toolsets:
+            ts = Toolset(TOOLSET_DEFAULT_NAME)
+            self.toolsets.append(ts)
+            self._save_toolset(ts)
+        self.active_index = 0
+
+    def _save_toolset(self, ts: Toolset) -> None:
+        os.makedirs(TOOLSET_DIR, exist_ok=True)
+        path = self._toolset_path(ts.name)
+        with open(path, "w", encoding="utf-8") as fh:
+            json.dump(ts.to_dict(), fh, indent=2)
+
+    def save_active(self) -> None:
+        ts = self.active
+        if ts:
+            self._save_toolset(ts)
+
+    def create_toolset(self, name: str) -> Optional[Toolset]:
+        if not _VALID_TOOLSET_NAME.match(name):
+            return None
+        for ts in self.toolsets:
+            if ts.name == name:
+                return None  # already exists
+        ts = Toolset(name)
+        self.toolsets.append(ts)
+        self._save_toolset(ts)
+        self.active_index = len(self.toolsets) - 1
+        return ts
+
+    def delete_toolset(self, index: int) -> bool:
+        if index < 0 or index >= len(self.toolsets):
+            return False
+        if len(self.toolsets) <= 1:
+            return False  # can't delete last
+        ts = self.toolsets.pop(index)
+        path = self._toolset_path(ts.name)
+        if os.path.exists(path):
+            os.remove(path)
+        if self.active_index >= len(self.toolsets):
+            self.active_index = len(self.toolsets) - 1
+        return True
+
+    def rename_toolset(self, index: int, new_name: str) -> bool:
+        if not _VALID_TOOLSET_NAME.match(new_name):
+            return False
+        if index < 0 or index >= len(self.toolsets):
+            return False
+        old_path = self._toolset_path(self.toolsets[index].name)
+        self.toolsets[index].name = new_name
+        if os.path.exists(old_path):
+            os.remove(old_path)
+        self._save_toolset(self.toolsets[index])
+        return True
 
 
 class TilesetPicker:
@@ -247,145 +388,37 @@ class TilesetPicker:
 
 
 class ToolHUD:
-    """Top-right tool palette."""
+    """Top-right tool palette with toolset management."""
 
     def __init__(self):
         self.selected_tool: Optional[UIElementDef] = None
-        self._span_configs: Dict[str, ToolSpanConfig] = {}
         self._tileset_picker = TilesetPicker()
-        self._load_tools_json()
-        # Ensure every known element def has a config entry
-        for edef in ALL_ELEMENT_DEFS:
-            if edef.tag not in self._span_configs:
-                self._span_configs[edef.tag] = ToolSpanConfig(
-                    supports_1x1=edef.supports_1x1,
-                    supports_nxn=edef.supports_nxn,
-                )
-
-    # -- persistence -------------------------------------------------------
-
-    def _json_path(self) -> str:
-        return os.path.join(ASSET_UI_ROOT, TOOLS_JSON_RELPATH)
-
-    def _load_tools_json(self) -> None:
-        path = self._json_path()
-        if not os.path.exists(path):
-            return
-        try:
-            with open(path, "r", encoding="utf-8") as fh:
-                data = json.load(fh)
-            for tag, cfg_dict in data.items():
-                self._span_configs[tag] = ToolSpanConfig.from_dict(cfg_dict)
-        except (json.JSONDecodeError, OSError):
-            pass
-
-    def _save_tools_json(self) -> None:
-        path = self._json_path()
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        data = {tag: cfg.to_dict() for tag, cfg in self._span_configs.items()}
-        with open(path, "w", encoding="utf-8") as fh:
-            json.dump(data, fh, indent=2)
+        self.toolset_mgr = ToolsetManager()
+        self._new_toolset_name: str = ""
+        self._rename_buf: str = ""
+        self._confirm_delete_index: int = -1  # -1 = no confirmation pending
 
     # -- accessors ---------------------------------------------------------
+
+    @property
+    def _span_configs(self) -> Dict[str, ToolSpanConfig]:
+        ts = self.toolset_mgr.active
+        return ts.span_configs if ts else {}
 
     def get_span_config(self, tag: str) -> ToolSpanConfig:
         return self._span_configs.get(tag, ToolSpanConfig())
 
+    def get_active_toolset_name(self) -> str:
+        ts = self.toolset_mgr.active
+        return ts.name if ts else TOOLSET_DEFAULT_NAME
+
+    def select_toolset_by_name(self, name: str) -> None:
+        self.toolset_mgr.select_by_name(name)
+
     # -- drawing -----------------------------------------------------------
 
-    def draw(
-        self,
-        window_width: float,
-        window_height: float,
-        panel_width: float = 220,
-    ) -> Optional[UIElementDef]:
-        """Draw the tool palette.  Returns the currently selected tool def."""
-        self._tileset_picker.ensure_loaded()
-
-        half_h = window_height * 0.5
-        imgui.set_next_window_position(window_width - panel_width, 0)
-        imgui.set_next_window_size(panel_width, half_h)
-
-        flags = (
-            imgui.WINDOW_NO_RESIZE
-            | imgui.WINDOW_NO_MOVE
-            | imgui.WINDOW_NO_SAVED_SETTINGS
-        )
-        imgui.begin("Tools##tool_hud", closable=False, flags=flags)
-
-        imgui.text("Select a tool:")
-        imgui.separator()
-
-        for edef in ALL_ELEMENT_DEFS:
-            is_sel = self.selected_tool is edef
-            if imgui.selectable(
-                f"{edef.display_name}##{edef.tag}", is_sel
-            )[0]:
-                self.selected_tool = edef
-
-        imgui.separator()
-
-        # Span config for selected tool
-        if self.selected_tool is not None:
-            tag = self.selected_tool.tag
-
-            if self.selected_tool.has_ui_span:
-                cfg = self._span_configs.setdefault(tag, ToolSpanConfig())
-                changed = False
-
-                imgui.text(f"Span: {self.selected_tool.display_name}")
-
-                c1, cfg.supports_1x1 = imgui.checkbox("1x1 support", cfg.supports_1x1)
-                changed = changed or c1
-                c2, cfg.supports_nxn = imgui.checkbox("NxN support", cfg.supports_nxn)
-                changed = changed or c2
-
-                if cfg.supports_1x1:
-                    imgui.text("1x1 tile:")
-                    imgui.same_line()
-                    self._tileset_picker.draw_tile_button(
-                        "1x1", cfg.span_1x1_index, ("1x1", tag), 32,
-                    )
-
-                if cfg.supports_nxn:
-                    imgui.text("9-slice tiles:")
-                    labels = [
-                        "TL", "T", "TR",
-                        "L", "C", "R",
-                        "BL", "B", "BR",
-                    ]
-                    for i, label in enumerate(labels):
-                        if i % 3 != 0:
-                            imgui.same_line()
-                        imgui.push_id(f"span9_{tag}_{i}")
-                        self._tileset_picker.draw_tile_button(
-                            label, cfg.span_9_indices[i], ("9", tag, i), 32,
-                        )
-                        imgui.pop_id()
-
-                if changed:
-                    self._save_tools_json()
-            else:
-                imgui.text(f"{self.selected_tool.display_name}")
-                imgui.text_colored("(no UI span)", 0.6, 0.6, 0.6)
-
-        imgui.end()
-
-        # Draw the tileset picker overlay (if active)
-        pick_id = self._tileset_picker.picking_for
-        picked_index = self._tileset_picker.draw_picker_popup()
-        if picked_index is not None and pick_id is not None:
-            if pick_id[0] == "1x1":
-                pick_cfg = self._span_configs.get(pick_id[1])
-                if pick_cfg:
-                    pick_cfg.span_1x1_index = picked_index
-            elif pick_id[0] == "9":
-                pick_cfg = self._span_configs.get(pick_id[1])
-                if pick_cfg:
-                    pick_cfg.span_9_indices[pick_id[2]] = picked_index
-            self._save_tools_json()
-
-        return self.selected_tool
+    def draw(self, *args, **kwargs):
+        return self.draw_with_pick_capture(*args, **kwargs)
 
     def draw_with_pick_capture(
         self,
@@ -396,9 +429,74 @@ class ToolHUD:
         """Draw tool contents (no window creation – expects to be in a child)."""
         self._tileset_picker.ensure_loaded()
 
-        imgui.text("Tools")
+        # --- Toolset tab bar ---
+        imgui.text("Toolset:")
+        imgui.begin_child("##toolset_tabs", 0, 24, border=False)
+        for i, ts in enumerate(self.toolset_mgr.toolsets):
+            if i > 0:
+                imgui.same_line()
+            is_active = (i == self.toolset_mgr.active_index)
+            if is_active:
+                imgui.push_style_color(imgui.COLOR_BUTTON, 0.3, 0.3, 0.7, 1.0)
+            if imgui.small_button(f"{ts.name}##ts_{i}"):
+                self.toolset_mgr.active_index = i
+            if is_active:
+                imgui.pop_style_color()
+        # "+" tab for new toolset
+        imgui.same_line()
+        if imgui.small_button("+##new_ts"):
+            imgui.open_popup("new_toolset_popup")
+        # New toolset popup
+        if imgui.begin_popup("new_toolset_popup"):
+            imgui.text("New toolset name:")
+            c, self._new_toolset_name = imgui.input_text(
+                "##new_ts_name", self._new_toolset_name, 64,
+                imgui.INPUT_TEXT_ENTER_RETURNS_TRUE,
+            )
+            if c and self._new_toolset_name:
+                if _VALID_TOOLSET_NAME.match(self._new_toolset_name):
+                    result = self.toolset_mgr.create_toolset(self._new_toolset_name)
+                    if result is None:
+                        pass  # name exists or invalid
+                    self._new_toolset_name = ""
+                    imgui.close_current_popup()
+                else:
+                    imgui.text_colored("Invalid name (alphanumeric + _)", 1, 0.3, 0.3)
+            imgui.end_popup()
+        imgui.end_child()
+
+        # --- Toolset name + delete ---
+        ts = self.toolset_mgr.active
+        if ts is not None:
+            imgui.separator()
+            # Rename field
+            if not hasattr(self, '_rename_buf_init') or self._rename_buf_init != ts.name:
+                self._rename_buf = ts.name
+                self._rename_buf_init = ts.name
+            changed_name, new_name = imgui.input_text(
+                "##ts_rename", self._rename_buf, 64,
+                imgui.INPUT_TEXT_ENTER_RETURNS_TRUE,
+            )
+            if changed_name and new_name != ts.name:
+                if _VALID_TOOLSET_NAME.match(new_name):
+                    self.toolset_mgr.rename_toolset(
+                        self.toolset_mgr.active_index, new_name
+                    )
+                    self._rename_buf = new_name
+                    self._rename_buf_init = new_name
+            else:
+                self._rename_buf = new_name if changed_name else self._rename_buf
+
+            imgui.same_line()
+            imgui.push_style_color(imgui.COLOR_BUTTON, 0.6, 0.1, 0.1, 1.0)
+            if imgui.small_button("X##del_ts"):
+                self._confirm_delete_index = self.toolset_mgr.active_index
+            imgui.pop_style_color()
+
         imgui.separator()
 
+        # --- Tool list ---
+        imgui.text("Tools:")
         for edef in ALL_ELEMENT_DEFS:
             is_sel = self.selected_tool is edef
             if imgui.selectable(
@@ -408,11 +506,12 @@ class ToolHUD:
 
         imgui.separator()
 
-        if self.selected_tool is not None:
+        # --- Span config ---
+        if self.selected_tool is not None and ts is not None:
             tag = self.selected_tool.tag
 
             if self.selected_tool.has_ui_span:
-                cfg = self._span_configs.setdefault(tag, ToolSpanConfig())
+                cfg = ts.span_configs.setdefault(tag, ToolSpanConfig())
                 changed = False
 
                 imgui.text(f"Span: {self.selected_tool.display_name}")
@@ -446,24 +545,63 @@ class ToolHUD:
                         imgui.pop_id()
 
                 if changed:
-                    self._save_tools_json()
+                    self.toolset_mgr.save_active()
             else:
                 imgui.text(f"{self.selected_tool.display_name}")
                 imgui.text_colored("(no UI span)", 0.6, 0.6, 0.6)
 
-        # Tileset picker popup (drawn as a separate top-level window)
+        # --- Tileset picker popup ---
         pick_id = self._tileset_picker.picking_for
         picked_index = self._tileset_picker.draw_picker_popup()
 
-        if picked_index is not None and pick_id is not None:
+        if picked_index is not None and pick_id is not None and ts is not None:
             if pick_id[0] == "1x1":
-                pick_cfg = self._span_configs.get(pick_id[1])
+                pick_cfg = ts.span_configs.get(pick_id[1])
                 if pick_cfg:
                     pick_cfg.span_1x1_index = picked_index
             elif pick_id[0] == "9":
-                pick_cfg = self._span_configs.get(pick_id[1])
+                pick_cfg = ts.span_configs.get(pick_id[1])
                 if pick_cfg:
                     pick_cfg.span_9_indices[pick_id[2]] = picked_index
-            self._save_tools_json()
+            self.toolset_mgr.save_active()
+
+        # --- Delete confirmation popup ---
+        if self._confirm_delete_index >= 0:
+            self._draw_delete_confirmation()
 
         return self.selected_tool
+
+    def _draw_delete_confirmation(self) -> None:
+        idx = self._confirm_delete_index
+        if idx < 0 or idx >= len(self.toolset_mgr.toolsets):
+            self._confirm_delete_index = -1
+            return
+        ts_name = self.toolset_mgr.toolsets[idx].name
+
+        imgui.set_next_window_size(300, 120)
+        io = imgui.get_io()
+        imgui.set_next_window_position(
+            io.display_size.x * 0.5 - 150,
+            io.display_size.y * 0.5 - 60,
+            condition=imgui.APPEARING,
+        )
+        imgui.begin(
+            "Delete Toolset?##confirm_del",
+            closable=False,
+            flags=(
+                imgui.WINDOW_NO_RESIZE
+                | imgui.WINDOW_NO_SAVED_SETTINGS
+                | imgui.WINDOW_NO_COLLAPSE
+            ),
+        )
+        imgui.text(f"Delete toolset '{ts_name}'?")
+        imgui.text("This cannot be undone.")
+        imgui.separator()
+        if imgui.button("Yes, delete##confirm_yes", 120, 0):
+            self.toolset_mgr.delete_toolset(idx)
+            self._confirm_delete_index = -1
+            self._rename_buf_init = ""  # force rename buf refresh
+        imgui.same_line()
+        if imgui.button("Cancel##confirm_no", 120, 0):
+            self._confirm_delete_index = -1
+        imgui.end()

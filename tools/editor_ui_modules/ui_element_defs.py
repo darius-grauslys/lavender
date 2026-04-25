@@ -47,7 +47,7 @@ BUTTON_DEF = UIElementDef(
         "x", "y", "width", "height",
         "m_Clicked_Handler", "is_toggleable", "is_toggled",
         "text", "font_expression", "transform_handler",
-        "color", "name",
+        "color", "name", "UI_Span",
     ],
 )
 
@@ -70,7 +70,7 @@ SLIDER_DEF = UIElementDef(
         "spanning_width", "spanning_height", "spanning_depth",
         "m_Dragged_Handler", "snapped_x_or__y",
         "span", "size_of__texture", "name_of__texture",
-        "index_of__sprite_frame", "color", "name",
+        "index_of__sprite_frame", "color", "name", "UI_Span",
     ],
 )
 
@@ -86,7 +86,7 @@ DRAGGABLE_DEF = UIElementDef(
     },
     property_keys=[
         "x", "y", "width", "height",
-        "m_Dragged_Handler", "color", "name",
+        "m_Dragged_Handler", "color", "name", "UI_Span",
     ],
 )
 
@@ -102,7 +102,7 @@ DROP_ZONE_DEF = UIElementDef(
     },
     property_keys=[
         "x", "y", "width", "height",
-        "m_Receive_Drop_Handler", "color", "name",
+        "m_Receive_Drop_Handler", "color", "name", "UI_Span",
     ],
 )
 
@@ -140,7 +140,7 @@ BACKGROUND_DEF = UIElementDef(
     },
     property_keys=[
         "x", "y", "width", "height",
-        "p_gfx_window", "color", "name",
+        "p_gfx_window", "color", "name", "UI_Span",
     ],
 )
 
