@@ -293,6 +293,61 @@ def write_tile_header(
     filepath.write_text('\n'.join(lines), encoding='utf-8')
 
 
+def write_tile_kind_header_for_layer(
+        filepath: Path,
+        enum_type_name: str,
+        logic_bits: int = 0,
+) -> None:
+    """Generate a tile kind enum header for a layer.
+
+    Creates a skeleton ``_kind.h`` file matching the project
+    convention (see ``examples/template-files/``).  The generated
+    file contains:
+
+    - Include guard (``#ifndef IMPL_<UPPER>_H``)
+    - ``#define DEFINE_<UPPER>`` macro so ``defines_weak.h``
+      detects the project override and skips its fallback
+    - ``typedef enum`` with ``__None``, ``GEN-LOGIC-BEGIN/END``,
+      ``__Logical`` sentinel, ``GEN-NO-LOGIC-BEGIN/END``, and
+      ``__Unknown``
+
+    If no logic members exist, ``__Logical`` aliases ``__None``.
+
+    Args:
+        filepath: Destination path (e.g. ``tile_kind.h``).
+        enum_type_name: The C typedef name (e.g. ``Tile_Kind``).
+        logic_bits: Number of logic bits for this layer.  Only
+            affects documentation; no members are generated.
+    """
+    stem_upper = filepath.stem.upper()
+    header_guard = f"IMPL_{stem_upper}_H"
+    define_macro = f"DEFINE_{enum_type_name.upper()}"
+
+    lines = [
+        f"#ifndef {header_guard}",
+        f"#define {header_guard}",
+        "",
+        f"#define {define_macro}",
+        "",
+        f"typedef enum {enum_type_name} {{",
+        f"    {enum_type_name}__None = 0,",
+        "    // GEN-LOGIC-BEGIN",
+        "    // GEN-LOGIC-END",
+        f"    {enum_type_name}__Logical = {enum_type_name}__None,",
+        "",
+        "    // GEN-NO-LOGIC-BEGIN",
+        "    // GEN-NO-LOGIC-END",
+        f"    {enum_type_name}__Unknown",
+        f"}} {enum_type_name};",
+        "",
+        "#endif",
+        "",
+    ]
+
+    filepath.parent.mkdir(parents=True, exist_ok=True)
+    filepath.write_text("\n".join(lines), encoding="utf-8")
+
+
 def _extract_bitfields_fallback(source: str) -> List[TileLayerField]:
     """
     Fallback: if no GEN-RENDER block, try to find Tile_Kind field

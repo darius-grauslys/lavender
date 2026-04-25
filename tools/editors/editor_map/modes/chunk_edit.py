@@ -12,11 +12,6 @@ from tools.pan_tool import PanTool
 from tools.tool import Tool
 from core.c_enum import CEnum, CEnumMember
 from core.tile_parser import TileLayerField, TileLayerLayout
-from core.tile_kind_editor import (
-    TileKindEditorState,
-    create_editor_state_from_enum,
-    write_tile_kind_header,
-)
 from keybinds.keybind import (
     KeyCombo, KeybindCallback, Modifier,
     VIRTUAL_KEY_SCROLL_UP, VIRTUAL_KEY_SCROLL_DOWN,
@@ -106,10 +101,6 @@ class TileDrawTool(Tool):
         self._layer_layouts: List[TileLayerLayout] = []
         self._selected_layer: int = 0
         self._selected_tile_value: int = 0
-        self._show_editor: bool = False
-        self._editor_state: Optional[TileKindEditorState] = None
-        self._project_dir: Optional[Path] = None
-        self._on_enum_updated: Optional[Callable] = None
 
     def set_tile_enums(self, enums: List[CEnum]) -> None:
         """Set the available tile enums (one per layer)."""
@@ -122,13 +113,6 @@ class TileDrawTool(Tool):
         """Set tile layer field and layout info."""
         self._layer_fields = fields
         self._layer_layouts = layouts
-
-    def set_project_dir(self, project_dir: Path) -> None:
-        self._project_dir = project_dir
-
-    def set_on_enum_updated(self, callback: Callable) -> None:
-        """Set callback invoked after enum is written to disk."""
-        self._on_enum_updated = callback
 
     def set_objects(self, objects) -> None:
         """Inject the workspace objects store."""
@@ -208,23 +192,9 @@ class TileDrawTool(Tool):
 
         enum = self._tile_enums[self._selected_layer]
 
-        # Scrollable list with "- Edit -" at top
+        # Scrollable tile list
         imgui.text(f"Tiles ({enum.name}):")
         imgui.begin_child("##tile_palette", 0, 200, border=True)
-
-        if imgui.selectable("- Edit -##edit_tile_kinds", False)[0]:
-            if not self._show_editor or self._editor_state is None:
-                self._open_editor()
-            else:
-                # If already open for a different layer, reopen
-                current_layer_name = (
-                    self._layer_fields[self._selected_layer].field_name
-                    if self._selected_layer < len(self._layer_fields)
-                    else f"layer_{self._selected_layer}")
-                if self._editor_state.layer_name != current_layer_name:
-                    self._open_editor()
-
-        imgui.separator()
 
         for member in enum.members:
             is_selected = member.value == self._selected_tile_value
@@ -235,42 +205,6 @@ class TileDrawTool(Tool):
                 self._selected_tile_value = member.value
 
         imgui.end_child()
-
-    def _open_editor(self) -> None:
-        """Open the Tile Kind Editor sub-window."""
-        if self._selected_layer >= len(self._tile_enums):
-            return
-        enum = self._tile_enums[self._selected_layer]
-        lf = (self._layer_fields[self._selected_layer]
-              if self._selected_layer < len(self._layer_fields) else None)
-        ll = (self._layer_layouts[self._selected_layer]
-              if self._selected_layer < len(self._layer_layouts) else None)
-
-        layer_name = lf.field_name if lf else f"layer_{self._selected_layer}"
-        bit_width = lf.bit_width if lf else 8
-        logic_bits = ll.logic_bits if ll else 0
-        anim_bits = ll.animation_bits if ll else 0
-
-        self._editor_state = create_editor_state_from_enum(
-            enum, layer_name, bit_width, logic_bits, anim_bits)
-        self._show_editor = True
-
-    def _apply_editor_changes(self) -> None:
-        """Write the edited enum back to the project _kind.h file."""
-        if self._editor_state is None or self._project_dir is None:
-            return
-
-        state = self._editor_state
-        filename = state.enum_type_name.lower() + ".h"
-        filepath = (
-            self._project_dir / "include" / "types" / "implemented"
-            / "world" / filename)
-
-        guard_macro = "DEFINE_" + state.enum_type_name.upper()
-        write_tile_kind_header(filepath, state, guard_macro)
-
-        if self._on_enum_updated:
-            self._on_enum_updated()
 
     @property
     def selected_tile_value(self) -> int:
@@ -588,8 +522,3 @@ class ChunkEditMode(EditorMode):
         self._tile_draw.set_layer_info(fields, layouts)
         self._tile_rect.set_layer_info(fields, layouts)
 
-    def set_project_dir(self, project_dir: Path) -> None:
-        self._tile_draw.set_project_dir(project_dir)
-
-    def set_on_enum_updated(self, callback: Callable) -> None:
-        self._tile_draw.set_on_enum_updated(callback)

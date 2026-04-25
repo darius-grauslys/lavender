@@ -43,6 +43,7 @@ from core.engine_config import EngineConfig, load_engine_config
 from core.tile_parser import (
     parse_tile_header_from_file, TileInfo, TileParseError,
     TileLayerField, TileLayerLayout, write_tile_header,
+    write_tile_kind_header_for_layer,
 )
 from core.c_enum import (
     parse_c_enum_from_file, find_enum_by_name, CEnum,
@@ -119,7 +120,6 @@ class EditorApp:
         self._tilesheet_viewer = TilesheetViewer()
         self._layer_editor_window = LayerEditorWindow()
         self._layer_manager = LayerManager()
-        self._show_kind_editor: bool = False
         self._should_exit: bool = False
 
         # Drag tracking for workspace tools
@@ -251,8 +251,6 @@ class EditorApp:
             chunk_mode.set_layer_info(
                 self._tile_info.layer_fields,
                 self._tile_info.layer_layouts)
-        chunk_mode.set_project_dir(self._project_dir)
-        chunk_mode.set_on_enum_updated(self._reload_tile_enums)
         entity_mode = EntityEditMode(
             self._keybind_manager, movement=self._movement)
         inv_mode = InventoryEditMode(
@@ -551,9 +549,6 @@ class EditorApp:
             self._message_hud,
             upload_texture_callback=self._upload_entry_texture)
         self._layer_editor_window.draw()
-
-        if self._show_kind_editor:
-            self._draw_kind_editor_standalone()
 
     def _process_keybinds(self) -> None:
         """Check for keybind activations this frame.
@@ -1004,31 +999,15 @@ class EditorApp:
             tilesheet_paths=ts_paths)
 
     def _open_kind_editor(self) -> None:
-        """Open the tile kind editor as a standalone window."""
-        self._show_kind_editor = True
+        """Open the tile kind editor.
 
-    def _draw_kind_editor_standalone(self) -> None:
-        """Engage the tile kind editor state when opened from Edit menu.
-
-        Opens the TileDrawTool's editor state.  Rendering of the
-        editor window has been removed — this only ensures the
-        state is initialised so that external UI can consume it.
+        Kind headers are now generated automatically when the
+        Layer Editor is committed (OK).  This callback informs
+        the user accordingly.
         """
-        chunk_mode = self._modes[1] if len(self._modes) > 1 else None
-        if chunk_mode is None:
-            self._show_kind_editor = False
-            return
-        tile_draw = getattr(chunk_mode, '_tile_draw', None)
-        if tile_draw is None:
-            self._show_kind_editor = False
-            return
-        # Ensure the editor state is initialised
-        if not tile_draw._show_editor:
-            tile_draw._open_editor()
-        # If it still couldn't open (no enums), bail
-        if not tile_draw._show_editor:
-            self._show_kind_editor = False
-            return
+        self._message_hud.info(
+            "Tile kind headers are generated automatically "
+            "when the Layer Editor is committed (OK).")
 
     def _upload_entry_texture(self, entry) -> None:
         """Upload GL texture for a TilesheetEntry."""
@@ -1238,6 +1217,33 @@ class EditorApp:
             self._message_hud.error(
                 f"Failed to write tile.h: {e}")
             return
+
+        # Generate _kind.h files for each layer that doesn't
+        # already have one.  This ensures the project has the
+        # enum header that defines_weak.h expects so the weak
+        # fallback is skipped.
+        for entry in entries:
+            kind_filename = entry.enum_type_name.lower() + ".h"
+            kind_filepath = (
+                self._project_dir / "include" / "types"
+                / "implemented" / "world" / kind_filename)
+            if not kind_filepath.exists():
+                try:
+                    write_tile_kind_header_for_layer(
+                        kind_filepath,
+                        entry.enum_type_name,
+                        logic_bits=entry.logic_bits,
+                    )
+                    self._message_hud.info(
+                        f"Generated {kind_filename} for layer "
+                        f"'{entry.layer_name}'.")
+                except Exception as e:
+                    self._message_hud.error(
+                        f"Failed to write {kind_filename}: {e}")
+            else:
+                self._message_hud.info(
+                    f"{kind_filename} already exists, skipping "
+                    f"generation.")
 
         # Update layer manager
         self._layer_manager.set_layers(new_layers)
