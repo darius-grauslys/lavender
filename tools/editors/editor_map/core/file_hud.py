@@ -15,7 +15,7 @@ Edit:
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable, List, Optional
+from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Tuple
 
 import imgui
 
@@ -24,6 +24,19 @@ if TYPE_CHECKING:
     from core.layer_manager import LayerEntry, LayerManager
     from core.tilesheet_manager import TilesheetManager
     from core.tile_parser import TileLayerField, TileLayerLayout
+
+from core.tile_kind_editor import (
+    TileKindEditorState,
+    TileKindEntry,
+    LogicalTileEntry,
+    AnimationTileEntry,
+    create_editor_state_from_enum,
+    write_tile_kind_header,
+    get_tilesheet_map_from_state,
+    save_tilesheet_mapping,
+    load_tilesheet_mapping,
+)
+from core.c_enum import CEnum
 
 
 class FileHUD:
@@ -372,6 +385,573 @@ class LayerEditorWindow:
             imgui.push_style_color(imgui.COLOR_TEXT, 1.0, 0.3, 0.3, 1.0)
             imgui.text(f"Error: {err}")
             imgui.pop_style_color()
+
+
+class KindEditorWindow:
+    """Tile Kind Editor sub-window.
+
+    Displays three side-by-side tables for a single tile layer:
+      1. Tile Kinds — enum members with tilesheet preview, rename, delete
+      2. Logical Tiles — dropdown references into tile kinds
+      3. Animation Tiles — dropdown references into tile kinds
+
+    On "OK", writes the updated _kind.h header and tilesheet mapping
+    JSON.  On "Cancel", all changes are discarded.
+
+    Follows the same open/close/draw pattern as LayerEditorWindow.
+    """
+
+    def __init__(self) -> None:
+        self.is_open: bool = False
+        self._state: Optional[TileKindEditorState] = None
+
+        # Source data needed for OK commit
+        self._header_path: Optional[Path] = None
+        self._guard_macro: str = ""
+
+        # Layer selector
+        self._layer_names: List[str] = []
+        self._layer_enums: List[CEnum] = []
+        self._layer_bit_widths: List[int] = []
+        self._layer_logic_bits: List[int] = []
+        self._layer_animation_bits: List[int] = []
+        self._layer_header_paths: List[Path] = []
+        self._layer_guard_macros: List[str] = []
+        self._selected_layer_index: int = 0
+
+        # Tilesheet texture for preview buttons
+        self._tilesheet_texture_id: int = 0
+        self._tilesheet_tile_w: int = 8
+        self._tilesheet_tile_h: int = 8
+        self._tilesheet_cols: int = 1
+        self._tilesheet_rows: int = 1
+        self._tilesheet_img_w: int = 0
+        self._tilesheet_img_h: int = 0
+
+        # Tileset picker sub-state
+        self._picker_open: bool = False
+        self._picker_target_index: int = -1
+        self._picker_selected_tile: int = -1
+        self._picker_hover_tile: int = -1
+
+        # Callbacks set by EditorApp
+        self.on_ok: Optional[Callable[[TileKindEditorState, Path, str], None]] = None
+
+    # ------------------------------------------------------------------ #
+    # Public API                                                          #
+    # ------------------------------------------------------------------ #
+
+    def open(
+            self,
+            layer_names: List[str],
+            layer_enums: List[CEnum],
+            layer_bit_widths: List[int],
+            layer_logic_bits: List[int],
+            layer_animation_bits: List[int],
+            layer_header_paths: List[Path],
+            layer_guard_macros: List[str],
+            tilesheet_texture_id: int = 0,
+            tilesheet_tile_w: int = 8,
+            tilesheet_tile_h: int = 8,
+            tilesheet_cols: int = 1,
+            tilesheet_rows: int = 1,
+            tilesheet_img_w: int = 0,
+            tilesheet_img_h: int = 0,
+    ) -> None:
+        """Open the editor for the first available layer."""
+        self.is_open = True
+        self._layer_names = list(layer_names)
+        self._layer_enums = list(layer_enums)
+        self._layer_bit_widths = list(layer_bit_widths)
+        self._layer_logic_bits = list(layer_logic_bits)
+        self._layer_animation_bits = list(layer_animation_bits)
+        self._layer_header_paths = list(layer_header_paths)
+        self._layer_guard_macros = list(layer_guard_macros)
+
+        self._tilesheet_texture_id = tilesheet_texture_id
+        self._tilesheet_tile_w = tilesheet_tile_w
+        self._tilesheet_tile_h = tilesheet_tile_h
+        self._tilesheet_cols = tilesheet_cols
+        self._tilesheet_rows = tilesheet_rows
+        self._tilesheet_img_w = tilesheet_img_w
+        self._tilesheet_img_h = tilesheet_img_h
+
+        self._picker_open = False
+        self._picker_target_index = -1
+        self._picker_selected_tile = -1
+        self._picker_hover_tile = -1
+
+        self._selected_layer_index = 0
+        self._load_layer(0)
+
+    def close(self) -> None:
+        self.is_open = False
+        self._state = None
+        self._picker_open = False
+
+    def draw(self) -> None:
+        """Draw the Kind Editor window (call every frame)."""
+        if not self.is_open:
+            return
+
+        imgui.set_next_window_size(900, 520, imgui.FIRST_USE_EVER)
+        flags = imgui.WINDOW_NO_SAVED_SETTINGS
+        expanded, opened = imgui.begin(
+            "Tile Kind Editor##kind_ed", True, flags)
+
+        if not opened:
+            self.is_open = False
+            imgui.end()
+            return
+
+        # Layer selector dropdown
+        if self._layer_names:
+            changed, new_idx = imgui.combo(
+                "Layer##ke_layer", self._selected_layer_index,
+                self._layer_names)
+            if changed and new_idx != self._selected_layer_index:
+                self._selected_layer_index = new_idx
+                self._load_layer(new_idx)
+
+        if self._state is None:
+            imgui.text("No layer data loaded.")
+            if imgui.button("Cancel##ke_cancel", width=100):
+                self.is_open = False
+            imgui.end()
+            return
+
+        imgui.separator()
+
+        avail = imgui.get_content_region_available()
+        table_height = avail.y - 40  # room for OK/Cancel
+
+        # Three tables side by side
+        col_width = avail.x / 3.0 - 6
+
+        # --- Table 1: Tile Kinds ---
+        imgui.begin_child("##ke_kinds", col_width, table_height,
+                          border=True)
+        self._draw_tile_kinds_table()
+        imgui.end_child()
+
+        imgui.same_line()
+
+        # --- Table 2: Logical Tiles ---
+        imgui.begin_child("##ke_logic", col_width, table_height,
+                          border=True)
+        self._draw_logical_tiles_table()
+        imgui.end_child()
+
+        imgui.same_line()
+
+        # --- Table 3: Animation Tiles ---
+        imgui.begin_child("##ke_anim", col_width, table_height,
+                          border=True)
+        self._draw_animation_tiles_table()
+        imgui.end_child()
+
+        # --- Bottom buttons ---
+        if imgui.button("OK##ke_ok", width=100):
+            self._commit()
+            self.is_open = False
+            imgui.end()
+            return
+
+        imgui.same_line()
+        if imgui.button("Cancel##ke_cancel", width=100):
+            self.is_open = False
+            imgui.end()
+            return
+
+        imgui.end()
+
+        # Tileset picker overlay (drawn outside the main window)
+        if self._picker_open:
+            self._draw_tileset_picker()
+
+    # ------------------------------------------------------------------ #
+    # Layer loading                                                       #
+    # ------------------------------------------------------------------ #
+
+    def _load_layer(self, index: int) -> None:
+        """Load a layer's enum into the editing state."""
+        if index < 0 or index >= len(self._layer_enums):
+            self._state = None
+            return
+
+        enum = self._layer_enums[index]
+        header_path = self._layer_header_paths[index]
+        tilesheet_map = load_tilesheet_mapping(header_path)
+
+        self._state = create_editor_state_from_enum(
+            enum=enum,
+            layer_name=self._layer_names[index],
+            render_bit_width=self._layer_bit_widths[index],
+            logic_bits=self._layer_logic_bits[index],
+            animation_bits=self._layer_animation_bits[index],
+            tilesheet_map=tilesheet_map,
+        )
+        self._header_path = header_path
+        self._guard_macro = self._layer_guard_macros[index]
+
+    # ------------------------------------------------------------------ #
+    # Table 1: Tile Kinds                                                 #
+    # ------------------------------------------------------------------ #
+
+    def _draw_tile_kinds_table(self) -> None:
+        state = self._state
+        assert state is not None
+
+        imgui.text(f"Tile Kinds - {state.layer_name}")
+        imgui.separator()
+
+        # Filter
+        changed, state.kind_filter = imgui.input_text(
+            "##ke_kf", state.kind_filter, 128)
+
+        imgui.begin_child("##ke_kind_list", 0, -30, border=False)
+
+        remove_idx: Optional[int] = None
+        filt = state.kind_filter.lower()
+
+        for i, tk in enumerate(state.tile_kinds):
+            if filt and filt not in tk.name.lower():
+                continue
+
+            imgui.push_id(f"tk_{i}")
+
+            # Tilesheet preview button
+            self._draw_tile_preview_button(i, tk)
+            imgui.same_line()
+
+            # Editable name
+            imgui.push_item_width(
+                imgui.get_content_region_available_width() - 30)
+            ch, new_name = imgui.input_text(
+                "##name", tk.name, 128)
+            if ch:
+                tk.name = new_name
+            imgui.pop_item_width()
+
+            imgui.same_line()
+            if imgui.small_button("X##del"):
+                remove_idx = i
+
+            imgui.pop_id()
+
+        imgui.end_child()
+
+        if remove_idx is not None:
+            state.remove_tile_kind(remove_idx)
+
+        # Add button
+        can_add = state.can_add_tile_kind
+        if not can_add:
+            imgui.push_style_var(imgui.STYLE_ALPHA, 0.5)
+        if imgui.button("+##ke_add_kind",
+                        width=imgui.get_content_region_available_width()):
+            if can_add:
+                state.add_tile_kind()
+        if not can_add:
+            imgui.pop_style_var()
+
+    def _draw_tile_preview_button(
+            self, index: int, tk: TileKindEntry) -> None:
+        """Draw a small button showing the assigned tilesheet tile."""
+        btn_size = 24
+        tile_idx = tk.tilesheet_tile_index
+
+        if (tile_idx >= 0
+                and self._tilesheet_texture_id != 0
+                and self._tilesheet_cols > 0):
+            # Compute UV coords
+            col = tile_idx % self._tilesheet_cols
+            row = tile_idx // self._tilesheet_cols
+            u0 = col * self._tilesheet_tile_w / max(
+                1, self._tilesheet_img_w)
+            v0 = row * self._tilesheet_tile_h / max(
+                1, self._tilesheet_img_h)
+            u1 = u0 + self._tilesheet_tile_w / max(
+                1, self._tilesheet_img_w)
+            v1 = v0 + self._tilesheet_tile_h / max(
+                1, self._tilesheet_img_h)
+            if imgui.image_button(
+                    self._tilesheet_texture_id,
+                    btn_size, btn_size,
+                    uv0=(u0, v0), uv1=(u1, v1)):
+                self._open_picker(index, tile_idx)
+        else:
+            if imgui.button(f"[?]##prev_{index}",
+                            width=btn_size, height=btn_size):
+                self._open_picker(index, tile_idx)
+
+    # ------------------------------------------------------------------ #
+    # Table 2: Logical Tiles                                              #
+    # ------------------------------------------------------------------ #
+
+    def _draw_logical_tiles_table(self) -> None:
+        state = self._state
+        assert state is not None
+
+        disabled = state.logic_bits == 0
+        header = ("Logical Tiles (disabled)"
+                  if disabled else "Logical Tiles")
+        imgui.text(header)
+        imgui.separator()
+
+        # Filter
+        changed, state.logic_filter = imgui.input_text(
+            "##ke_lf", state.logic_filter, 128)
+
+        imgui.begin_child("##ke_logic_list", 0, -30, border=False)
+
+        kind_names = [tk.name for tk in state.tile_kinds]
+        filt = state.logic_filter.lower()
+        remove_idx: Optional[int] = None
+
+        for i, lt in enumerate(state.logical_tiles):
+            if filt and filt not in lt.tile_kind_name.lower():
+                continue
+
+            imgui.push_id(f"lt_{i}")
+
+            # Dropdown selecting from tile kinds
+            current = -1
+            for ki, kn in enumerate(kind_names):
+                if kn == lt.tile_kind_name:
+                    current = ki
+                    break
+            if current < 0:
+                current = 0
+
+            imgui.push_item_width(
+                imgui.get_content_region_available_width() - 30)
+            ch, new_sel = imgui.combo("##sel", current, kind_names)
+            if ch and 0 <= new_sel < len(kind_names):
+                lt.tile_kind_name = kind_names[new_sel]
+            imgui.pop_item_width()
+
+            imgui.same_line()
+            if imgui.small_button("X##ldel"):
+                remove_idx = i
+
+            imgui.pop_id()
+
+        imgui.end_child()
+
+        if remove_idx is not None:
+            state.remove_logical_tile(remove_idx)
+
+        can_add = state.can_add_logical_tile
+        if not can_add:
+            imgui.push_style_var(imgui.STYLE_ALPHA, 0.5)
+        if imgui.button("+##ke_add_logic",
+                        width=imgui.get_content_region_available_width()):
+            if can_add:
+                state.add_logical_tile()
+        if not can_add:
+            imgui.pop_style_var()
+
+    # ------------------------------------------------------------------ #
+    # Table 3: Animation Tiles                                            #
+    # ------------------------------------------------------------------ #
+
+    def _draw_animation_tiles_table(self) -> None:
+        state = self._state
+        assert state is not None
+
+        disabled = state.animation_bits == 0
+        header = ("Animation Tiles (disabled)"
+                  if disabled else "Animation Tiles")
+        imgui.text(header)
+        imgui.separator()
+
+        # Filter
+        changed, state.animation_filter = imgui.input_text(
+            "##ke_af", state.animation_filter, 128)
+
+        imgui.begin_child("##ke_anim_list", 0, -30, border=False)
+
+        kind_names = [tk.name for tk in state.tile_kinds]
+        filt = state.animation_filter.lower()
+        remove_idx: Optional[int] = None
+
+        for i, at in enumerate(state.animation_tiles):
+            if filt and filt not in at.tile_kind_name.lower():
+                continue
+
+            imgui.push_id(f"at_{i}")
+
+            current = -1
+            for ki, kn in enumerate(kind_names):
+                if kn == at.tile_kind_name:
+                    current = ki
+                    break
+            if current < 0:
+                current = 0
+
+            imgui.push_item_width(
+                imgui.get_content_region_available_width() - 30)
+            ch, new_sel = imgui.combo("##sel", current, kind_names)
+            if ch and 0 <= new_sel < len(kind_names):
+                at.tile_kind_name = kind_names[new_sel]
+            imgui.pop_item_width()
+
+            imgui.same_line()
+            if imgui.small_button("X##adel"):
+                remove_idx = i
+
+            imgui.pop_id()
+
+        imgui.end_child()
+
+        if remove_idx is not None:
+            state.remove_animation_tile(remove_idx)
+
+        can_add = state.can_add_animation_tile
+        if not can_add:
+            imgui.push_style_var(imgui.STYLE_ALPHA, 0.5)
+        if imgui.button("+##ke_add_anim",
+                        width=imgui.get_content_region_available_width()):
+            if can_add:
+                state.add_animation_tile()
+        if not can_add:
+            imgui.pop_style_var()
+
+    # ------------------------------------------------------------------ #
+    # Tileset Picker                                                      #
+    # ------------------------------------------------------------------ #
+
+    def _open_picker(self, kind_index: int, current_tile: int) -> None:
+        self._picker_open = True
+        self._picker_target_index = kind_index
+        self._picker_selected_tile = current_tile
+        self._picker_hover_tile = -1
+
+    def _draw_tileset_picker(self) -> None:
+        """Draw the tileset picker overlay sub-window."""
+        imgui.set_next_window_size(420, 440, imgui.FIRST_USE_EVER)
+        flags = imgui.WINDOW_NO_SAVED_SETTINGS
+        expanded, opened = imgui.begin(
+            "Tileset Picker##ts_picker", True, flags)
+
+        if not opened:
+            self._picker_open = False
+            imgui.end()
+            return
+
+        if self._tilesheet_texture_id == 0:
+            imgui.text("No tilesheet loaded.")
+            if imgui.button("Cancel##pk_cancel", width=100):
+                self._picker_open = False
+            imgui.end()
+            return
+
+        zoom = 2
+        cell_w = self._tilesheet_tile_w * zoom
+        cell_h = self._tilesheet_tile_h * zoom
+        cols = self._tilesheet_cols
+        rows = self._tilesheet_rows
+        total_tiles = cols * rows
+
+        imgui.text(
+            f"Select a tile (current: {self._picker_selected_tile})")
+        imgui.separator()
+
+        imgui.begin_child("##pk_grid", 0, -40, border=True)
+
+        draw_list = imgui.get_window_draw_list()
+        win_pos = imgui.get_cursor_screen_pos()
+        mouse = imgui.get_mouse_position()
+
+        self._picker_hover_tile = -1
+
+        for idx in range(total_tiles):
+            col = idx % cols
+            row = idx // cols
+
+            x0 = win_pos.x + col * cell_w
+            y0 = win_pos.y + row * cell_h
+            x1 = x0 + cell_w
+            y1 = y0 + cell_h
+
+            # UV
+            u0 = col * self._tilesheet_tile_w / max(
+                1, self._tilesheet_img_w)
+            v0 = row * self._tilesheet_tile_h / max(
+                1, self._tilesheet_img_h)
+            u1 = u0 + self._tilesheet_tile_w / max(
+                1, self._tilesheet_img_w)
+            v1 = v0 + self._tilesheet_tile_h / max(
+                1, self._tilesheet_img_h)
+
+            draw_list.add_image(
+                self._tilesheet_texture_id,
+                (x0, y0), (x1, y1),
+                uv_min=(u0, v0), uv_max=(u1, v1))
+
+            hovered = (x0 <= mouse.x < x1 and y0 <= mouse.y < y1)
+            if hovered:
+                self._picker_hover_tile = idx
+                draw_list.add_rect(
+                    x0, y0, x1, y1,
+                    imgui.get_color_u32_rgba(1.0, 1.0, 0.0, 1.0), 0, 0, 2)
+                if imgui.is_mouse_clicked(0):
+                    self._picker_selected_tile = idx
+
+            if idx == self._picker_selected_tile:
+                draw_list.add_rect(
+                    x0, y0, x1, y1,
+                    imgui.get_color_u32_rgba(1.0, 1.0, 1.0, 1.0), 0, 0, 2)
+
+        # Set dummy to reserve scroll space
+        total_h = rows * cell_h
+        imgui.dummy(cols * cell_w, total_h)
+
+        imgui.end_child()
+
+        imgui.text(f"Selected: {self._picker_selected_tile}")
+        imgui.same_line()
+
+        if imgui.button("OK##pk_ok", width=80):
+            self._apply_picker_selection()
+            self._picker_open = False
+
+        imgui.same_line()
+        if imgui.button("Cancel##pk_cancel2", width=80):
+            self._picker_open = False
+
+        imgui.end()
+
+    def _apply_picker_selection(self) -> None:
+        """Apply the picker's selected tile to the target tile kind."""
+        if (self._state is not None
+                and 0 <= self._picker_target_index
+                < len(self._state.tile_kinds)):
+            self._state.tile_kinds[
+                self._picker_target_index
+            ].tilesheet_tile_index = self._picker_selected_tile
+
+    # ------------------------------------------------------------------ #
+    # Commit                                                              #
+    # ------------------------------------------------------------------ #
+
+    def _commit(self) -> None:
+        """Write changes to disk and invoke the on_ok callback."""
+        if self._state is None or self._header_path is None:
+            return
+
+        # Write the _kind.h header
+        write_tile_kind_header(
+            self._header_path, self._state, self._guard_macro)
+
+        # Save tilesheet mapping JSON
+        mapping = get_tilesheet_map_from_state(self._state)
+        save_tilesheet_mapping(self._header_path, mapping)
+
+        if self.on_ok:
+            self.on_ok(
+                self._state, self._header_path, self._guard_macro)
 
 
 class _LayerEditEntry:

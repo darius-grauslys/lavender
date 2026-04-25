@@ -49,6 +49,7 @@ from core.c_enum import (
     parse_c_enum_from_file, find_enum_by_name, CEnum,
     write_tile_layer_header,
 )
+from core.tile_kind_editor import TileKindEditorState
 from core.world_directory import list_worlds, ensure_world_dir, world_root
 from core.editor_project_config import (
     EditorProjectConfig,
@@ -64,7 +65,7 @@ from core.editor_project_config import (
 from core.tilesheet import Tilesheet, load_tilesheet
 from core.tilesheet_manager import TilesheetManager
 from core.tilesheet_viewer import TilesheetViewer
-from core.file_hud import FileHUD, LayerEditorWindow
+from core.file_hud import FileHUD, LayerEditorWindow, KindEditorWindow
 from core.layer_manager import LayerManager, LayerEntry
 from ui.message_hud import MessageHUD
 
@@ -119,6 +120,7 @@ class EditorApp:
         self._tilesheet_manager = TilesheetManager()
         self._tilesheet_viewer = TilesheetViewer()
         self._layer_editor_window = LayerEditorWindow()
+        self._kind_editor_window = KindEditorWindow()
         self._layer_manager = LayerManager()
         self._should_exit: bool = False
 
@@ -230,6 +232,9 @@ class EditorApp:
 
         # Wire layer editor callback
         self._layer_editor_window.on_ok = self._on_layer_editor_ok
+
+        # Wire kind editor callback
+        self._kind_editor_window.on_ok = self._on_kind_editor_ok
 
         # Initialize modes — inject movement so tools can register
         # keybind callbacks that drive the viewport.
@@ -542,6 +547,7 @@ class EditorApp:
         self._message_hud.draw(w, h)
 
         # Sub-windows
+        self._kind_editor_window.draw()
         self._tilesheet_viewer.draw(
             self._tilesheet_manager,
             self._project_dir,
@@ -999,7 +1005,87 @@ class EditorApp:
             tilesheet_paths=ts_paths)
 
     def _open_kind_editor(self) -> None:
-        pass
+        """Open the tile kind editor sub-window."""
+        if not self._tile_info or not self._tile_enums:
+            self._message_hud.error(
+                "Cannot open Kind Editor: no tile layers or "
+                "enums loaded. Ensure tile.h is valid and "
+                "tile enums are found.")
+            return
+
+        layer_names: List[str] = []
+        layer_enums: List[CEnum] = []
+        layer_bit_widths: List[int] = []
+        layer_logic_bits: List[int] = []
+        layer_animation_bits: List[int] = []
+        layer_header_paths: List[Path] = []
+        layer_guard_macros: List[str] = []
+
+        for i, lf in enumerate(self._tile_info.layer_fields):
+            if i >= len(self._tile_enums):
+                break
+            enum = self._tile_enums[i]
+            layout = (self._tile_info.layer_layouts[i]
+                      if i < len(self._tile_info.layer_layouts)
+                      else None)
+
+            layer_names.append(lf.field_name)
+            layer_enums.append(enum)
+            layer_bit_widths.append(lf.bit_width)
+            layer_logic_bits.append(
+                layout.logic_bits if layout else 0)
+            layer_animation_bits.append(
+                layout.animation_bits if layout else 0)
+
+            # Resolve header path: project first, then engine
+            kind_filename = lf.enum_type_name.lower() + ".h"
+            project_path = (
+                self._project_dir / "include" / "types"
+                / "implemented" / "world" / kind_filename)
+            if project_path.exists():
+                layer_header_paths.append(project_path)
+            else:
+                engine_path = (
+                    self._engine_dir / "core" / "include"
+                    / "types" / "implemented" / "world"
+                    / kind_filename)
+                layer_header_paths.append(engine_path)
+
+            guard = "DEFINE_" + lf.enum_type_name.upper()
+            layer_guard_macros.append(guard)
+
+        # Tilesheet info for preview buttons
+        ts_tex_id = self._tilesheet_texture_id
+        ts_tile_w = 8
+        ts_tile_h = 8
+        ts_cols = 1
+        ts_rows = 1
+        ts_img_w = 0
+        ts_img_h = 0
+        if self._tilesheet:
+            ts_tile_w = self._tilesheet.tile_width
+            ts_tile_h = self._tilesheet.tile_height
+            ts_img_w = self._tilesheet.width
+            ts_img_h = self._tilesheet.height
+            ts_cols = self._tilesheet.columns
+            ts_rows = self._tilesheet.rows
+
+        self._kind_editor_window.open(
+            layer_names=layer_names,
+            layer_enums=layer_enums,
+            layer_bit_widths=layer_bit_widths,
+            layer_logic_bits=layer_logic_bits,
+            layer_animation_bits=layer_animation_bits,
+            layer_header_paths=layer_header_paths,
+            layer_guard_macros=layer_guard_macros,
+            tilesheet_texture_id=ts_tex_id,
+            tilesheet_tile_w=ts_tile_w,
+            tilesheet_tile_h=ts_tile_h,
+            tilesheet_cols=ts_cols,
+            tilesheet_rows=ts_rows,
+            tilesheet_img_w=ts_img_w,
+            tilesheet_img_h=ts_img_h,
+        )
 
     def _upload_entry_texture(self, entry) -> None:
         """Upload GL texture for a TilesheetEntry."""
@@ -1032,6 +1118,17 @@ class EditorApp:
             self._message_hud.error(
                 f"Failed to upload tilesheet texture: {e}")
             entry.gl_texture_id = 0
+
+    def _on_kind_editor_ok(
+            self,
+            state: 'TileKindEditorState',
+            header_path: Path,
+            guard_macro: str) -> None:
+        """Handle Kind Editor OK — reload affected enum."""
+        self._message_hud.info(
+            f"Kind Editor: wrote {header_path.name} "
+            f"({len(state.tile_kinds)} entries).")
+        self._reload_tile_enums()
 
     def _save_all(self) -> None:
         """Flush all pending .tmp files to disk (Ctrl+S)."""
