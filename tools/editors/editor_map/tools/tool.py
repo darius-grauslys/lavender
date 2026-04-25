@@ -3,6 +3,19 @@ Base class for all editor tools.
 
 Tools handle workspace interaction (click, drag, etc.)
 and can override keybinds when active.
+
+When implementing a new Tool subclass, you MUST also create
+corresponding unit tests in:
+    tools/editors/editor_map/tests/tools/test_<tool_module>.py
+
+Tests should cover at minimum:
+- Construction (with and without optional dependencies like movement)
+- ``_build_keybinds()`` returns the expected KeyCombo→callback mapping
+- ``on_activate()`` pushes overrides onto the keybind manager
+- ``on_deactivate()`` pops overrides from the keybind manager
+- Any tool-specific behaviour (selection, drawing, prompts, etc.)
+
+See existing tests under ``tests/tools/`` for reference patterns.
 """
 
 from __future__ import annotations
