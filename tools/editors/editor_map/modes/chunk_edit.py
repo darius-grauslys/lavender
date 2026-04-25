@@ -822,6 +822,47 @@ class TileRectTool(Tool):
                 self._objects.set_tile(
                     cx, cy, z, lx, ly, 0, tile_bytes)
 
+    def draw_overlay(
+            self,
+            workspace,
+            draw_list=None,
+            movement=None,
+            window_pos=None,
+            window_size=None) -> None:
+        """Draw a preview rectangle while dragging."""
+        if not self._is_dragging or draw_list is None or movement is None:
+            return
+        rect = self.drag_rect
+        if rect is None or window_pos is None or window_size is None:
+            return
+
+        x0, y0, x1, y1 = rect
+        # Convert world-tile corners to screen coordinates
+        sx0, sy0 = movement.tile_to_screen(
+            x0, y0,
+            window_pos[0], window_pos[1],
+            window_size[0], window_size[1])
+        # x1+1, y1+1 because the rect is inclusive of the last tile
+        sx1, sy1 = movement.tile_to_screen(
+            x1 + 1, y1 + 1,
+            window_pos[0], window_pos[1],
+            window_size[0], window_size[1])
+
+        # Semi-transparent fill
+        fill_col = imgui.get_color_u32_rgba(0.3, 0.6, 1.0, 0.25)
+        draw_list.add_rect_filled(sx0, sy0, sx1, sy1, fill_col)
+
+        # Outline
+        outline_col = imgui.get_color_u32_rgba(0.3, 0.6, 1.0, 0.9)
+        draw_list.add_rect(
+            sx0, sy0, sx1, sy1, outline_col, thickness=2.0)
+
+        # Dimensions label
+        w_tiles = x1 - x0 + 1
+        h_tiles = y1 - y0 + 1
+        label = f"{w_tiles}x{h_tiles}"
+        draw_list.add_text(sx0 + 2, sy0 - 16, outline_col, label)
+
     def draw_properties(self) -> None:
         if not self._tile_enums:
             imgui.text("No tile types loaded.")

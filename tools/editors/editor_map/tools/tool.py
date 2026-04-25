@@ -74,6 +74,20 @@ class Tool:
         """Draw tool-specific properties in the Tool Properties panel."""
         pass
 
-    def draw_overlay(self, workspace) -> None:
-        """Draw tool-specific overlays on the workspace."""
+    def draw_overlay(
+            self,
+            workspace,
+            draw_list=None,
+            movement=None,
+            window_pos=None,
+            window_size=None) -> None:
+        """Draw tool-specific overlays on the workspace.
+
+        Args:
+            workspace: The workspace object (may be None).
+            draw_list: imgui draw list for the workspace window.
+            movement: WorkspaceMovement for coordinate conversion.
+            window_pos: (x, y) top-left of workspace window.
+            window_size: (w, h) of workspace window.
+        """
         pass

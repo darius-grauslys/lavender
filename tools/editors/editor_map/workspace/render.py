@@ -22,7 +22,7 @@ Tile rendering strategy:
 from __future__ import annotations
 
 import math
-from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Tuple
 
 import imgui
 
@@ -343,7 +343,8 @@ class WorkspaceRenderer:
                                 draw_list, tile_int,
                                 num_layers, layer_bit_info,
                                 layer_ts_info, none_col,
-                                px, py, px2, py2)
+                                px, py, px2, py2,
+                                render_order)
                         else:
                             # Fallback: use first byte as value
                             value = tile_data[0] if tile_data else 0
@@ -380,20 +381,25 @@ class WorkspaceRenderer:
             layer_ts_info: List[Tuple[bool, float, float, int, int]],
             none_col: int,
             px: float, py: float,
-            px2: float, py2: float) -> None:
+            px2: float, py2: float,
+            render_order: Optional[List[int]] = None) -> None:
         """Render all layers for a single tile position.
 
         Each layer samples from its own tilesheet (via layer_ts_info).
-        Layers are drawn bottom-to-top (index 0 first).
-        Value 0 on the base layer draws a dark rectangle;
-        value 0 on upper layers is skipped (transparent).
+        Layers are drawn in *render_order* (lowest-enum-valued layer
+        first) so that higher-valued layers composite on top.
+        Value 0 on the first rendered layer draws a dark rectangle;
+        value 0 on subsequent layers is skipped (transparent).
         """
-        for layer_idx in range(num_layers):
+        if render_order is None:
+            render_order = list(range(num_layers))
+        for draw_idx, layer_idx in enumerate(render_order):
             bit_offset, mask = layer_bit_info[layer_idx]
             tile_value = (tile_int >> bit_offset) & mask
 
             if tile_value == 0:
-                if layer_idx == 0:
+                # First layer in render order draws the "none" bg
+                if draw_idx == 0:
                     draw_list.add_rect_filled(
                         px, py, px2, py2, none_col)
                 continue

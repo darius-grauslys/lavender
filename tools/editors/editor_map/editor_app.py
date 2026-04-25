@@ -61,7 +61,6 @@ from core.editor_project_config import (
     save_world_editor_config,
 )
 from core.tilesheet import Tilesheet, load_tilesheet
-from core.tilesheet_browser import browse_and_set_tilesheet, clear_tilesheet
 from core.tilesheet_manager import TilesheetManager
 from core.tilesheet_viewer import TilesheetViewer
 from core.file_hud import FileHUD, LayerEditorWindow
@@ -111,7 +110,6 @@ class EditorApp:
         self._active_world: Optional[str] = None
         self._active_world_config: Optional[WorldEditorConfig] = None
         self._new_world_name: str = ""
-        self._new_tilesheet_path: str = ""
         self._delete_confirm_name: str = ""
         self._delete_target: Optional[str] = None
 
@@ -302,8 +300,6 @@ class EditorApp:
             self._active_world = self._build_config.last_world
             self._active_world_config = load_world_editor_config(
                 self._project_dir, self._active_world)
-            self._new_tilesheet_path = (
-                self._active_world_config.tilesheet_path)
             self._movement.go_to(
                 self._active_world_config.workspace_x,
                 self._active_world_config.workspace_y,
@@ -327,9 +323,13 @@ class EditorApp:
                 f"Restored last world: {self._active_world}")
 
     def _load_tilesheet(self) -> None:
-        """Load the tilesheet from the active world's editor config."""
+        """Load the primary tilesheet from the active world's config.
+
+        The primary tilesheet is determined by:
+        1. The first layer's tilesheet_path (from layer manager), or
+        2. The legacy ``tilesheet.path`` field in the world config.
+        """
         if not self._active_world_config:
-            # No world selected — check if there's a legacy project config
             if (self._editor_project_config
                     and self._editor_project_config.tilesheet_path):
                 self._message_hud.warning(
@@ -342,8 +342,19 @@ class EditorApp:
             self._tilesheet_rendering_enabled = False
             return
 
+        # Prefer the first layer's tilesheet if available
+        primary_path = self._active_world_config.tilesheet_path
+        if self._layer_manager.count > 0:
+            first_layer = self._layer_manager.get(0)
+            if first_layer and first_layer.tilesheet_path:
+                primary_path = first_layer.tilesheet_path
+        # Update the config so resolve works
+        saved_path = self._active_world_config.tilesheet_path
+        self._active_world_config.tilesheet_path = primary_path
         resolved = self._active_world_config.resolve_tilesheet(
             self._project_dir)
+        # Restore to avoid unintended side-effects on save
+        self._active_world_config.tilesheet_path = saved_path
         if resolved:
             self._tilesheet = load_tilesheet(resolved)
             if self._tilesheet:
@@ -664,8 +675,6 @@ class EditorApp:
                 self._active_world = world_name
                 self._active_world_config = load_world_editor_config(
                     self._project_dir, world_name)
-                self._new_tilesheet_path = (
-                    self._active_world_config.tilesheet_path)
                 self._movement.go_to(
                     self._active_world_config.workspace_x,
                     self._active_world_config.workspace_y,
@@ -715,7 +724,6 @@ class EditorApp:
                     if self._active_world == self._delete_target:
                         self._active_world = None
                         self._active_world_config = None
-                        self._new_tilesheet_path = ""
                     self._message_hud.info(
                         f"Deleted world: {self._delete_target}")
                 self._delete_target = None
@@ -746,74 +754,6 @@ class EditorApp:
                     self._message_hud.info(
                         f"Created world: {self._new_world_name.strip()}")
                     self._new_world_name = ""
-
-        # Per-world tilesheet path (below new-world controls)
-        imgui.separator()
-        imgui.text("Tilesheet:")
-        has_world = self._active_world is not None
-        if not has_world:
-            imgui.push_style_var(imgui.STYLE_ALPHA, 0.5)
-            imgui.input_text(
-                "##ts_path", "(no world selected)", 256,
-                imgui.INPUT_TEXT_READ_ONLY)
-            imgui.button("Browse...##ts_browse")
-            imgui.same_line()
-            imgui.button("Clear##ts_clear")
-            imgui.pop_style_var()
-        else:
-            display_path = (
-                self._new_tilesheet_path
-                if self._new_tilesheet_path
-                else "(none)")
-            imgui.input_text(
-                "##ts_path", display_path, 256,
-                imgui.INPUT_TEXT_READ_ONLY)
-            if imgui.button("Browse...##ts_browse"):
-                rel_path, tilesheet = browse_and_set_tilesheet(
-                    self._project_dir,
-                    self._active_world,
-                    self._message_hud)
-                if rel_path is not None:
-                    self._new_tilesheet_path = rel_path
-                    self._active_world_config = load_world_editor_config(
-                        self._project_dir, self._active_world)
-                    self._tilesheet = tilesheet
-                    self._tilesheet_rendering_enabled = tilesheet is not None
-                    if self._tilesheet:
-                        self._upload_tilesheet_texture()
-                        if self._renderer:
-                            self._renderer.set_tilesheet(
-                                self._tilesheet,
-                                self._tilesheet_texture_id)
-                    else:
-                        # Clear old texture if load failed
-                        if self._tilesheet_texture_id != 0:
-                            gl.glDeleteTextures(
-                                1, [self._tilesheet_texture_id])
-                            self._tilesheet_texture_id = 0
-                    # Sync tilesheet list in config
-                    self._sync_tilesheets_from_config()
-                    # Update chunk edit mode with new tilesheet
-                    self._update_chunk_mode_tilesheet()
-                    self._update_renderer_layer_tilesheets()
-            imgui.same_line()
-            if imgui.button("Clear##ts_clear"):
-                clear_tilesheet(
-                    self._project_dir,
-                    self._active_world,
-                    self._message_hud)
-                self._new_tilesheet_path = ""
-                self._active_world_config = load_world_editor_config(
-                    self._project_dir, self._active_world)
-                self._tilesheet = None
-                self._tilesheet_rendering_enabled = False
-                if self._tilesheet_texture_id != 0:
-                    gl.glDeleteTextures(
-                        1, [self._tilesheet_texture_id])
-                    self._tilesheet_texture_id = 0
-                self._sync_tilesheets_from_config()
-                self._update_chunk_mode_tilesheet()
-                self._update_renderer_layer_tilesheets()
 
         imgui.end()
 
@@ -951,9 +891,21 @@ class EditorApp:
                 (ws_w, ws_h),
                 tile_byte_size=tile_byte_size)
 
-        # Draw mode-specific content
+        # Draw tool overlays (e.g. TileRect drag preview)
         mode = self._modes[self._active_mode_index]
+        tool = mode.active_tool
+        if tool:
+            tool.draw_overlay(
+                workspace=None,
+                draw_list=draw_list,
+                movement=self._movement,
+                window_pos=(ws_ox, ws_oy),
+                window_size=(ws_w, ws_h))
+
+        # Draw mode-specific content
         mode.draw_workspace(None)
+
+        # Route tool overlays are drawn above (before mode content).
 
         # Coordinate overlay: show hovered tile position
         hover_tile_text = ""
@@ -998,7 +950,6 @@ class EditorApp:
                 text_x, text_y, fg_col, hover_tile_text)
 
         # Route workspace clicks and drags to the active tool
-        mode = self._modes[self._active_mode_index]
         tool = mode.active_tool
         if imgui.is_window_hovered():
             mouse = imgui.get_mouse_position()
@@ -1062,7 +1013,13 @@ class EditorApp:
         self._show_kind_editor = True
 
     def _draw_kind_editor_standalone(self) -> None:
-        """Draw the tile kind editor when opened from Edit menu."""
+        """Draw the tile kind editor when opened from Edit menu.
+
+        Delegates to the TileDrawTool's editor sub-window.  When
+        the user closes the sub-window (OK or Cancel) we also
+        clear our flag so the menu item becomes a fresh open next
+        time.
+        """
         chunk_mode = self._modes[1] if len(self._modes) > 1 else None
         if chunk_mode is None:
             self._show_kind_editor = False
@@ -1071,10 +1028,16 @@ class EditorApp:
         if tile_draw is None:
             self._show_kind_editor = False
             return
+        # Ensure the editor sub-window is open
         if not tile_draw._show_editor:
             tile_draw._open_editor()
+        # If it still couldn't open (no enums), bail
         if not tile_draw._show_editor:
             self._show_kind_editor = False
+            return
+        # Draw the sub-window; it will set _show_editor=False on
+        # OK/Cancel which we detect next frame.
+        tile_draw._draw_editor_window()
 
     def _upload_entry_texture(self, entry) -> None:
         """Upload GL texture for a TilesheetEntry."""
@@ -1117,13 +1080,23 @@ class EditorApp:
         self._save_workspace_position()
 
     def _save_workspace_position(self) -> None:
-        """Save current workspace position to the active world config
-        and build config."""
+        """Save current workspace position, layer config, and tilesheet
+        list to the active world config and build config."""
         vp = self._movement.viewport
         if self._active_world and self._active_world_config:
             self._active_world_config.workspace_x = vp.center_x
             self._active_world_config.workspace_y = vp.center_y
             self._active_world_config.workspace_z = vp.center_z
+            # Persist layer-to-tilesheet associations
+            self._active_world_config.layers = \
+                self._layer_manager.to_list()
+            all_ts = self._layer_manager.get_unique_tilesheet_paths()
+            for p in self._tilesheet_manager.all_paths():
+                if p and p not in all_ts:
+                    all_ts.append(p)
+            self._active_world_config.tilesheets = all_ts
+            if all_ts and not self._active_world_config.tilesheet_path:
+                self._active_world_config.tilesheet_path = all_ts[0]
             save_world_editor_config(
                 self._project_dir, self._active_world,
                 self._active_world_config, self._platform)
@@ -1278,13 +1251,24 @@ class EditorApp:
         # Update layer manager
         self._layer_manager.set_layers(new_layers)
 
-        # Save to world config
+        # Save to world config — persist layer list and all
+        # referenced tilesheet paths so they survive reload.
         if self._active_world and self._active_world_config:
             self._active_world_config.layers = \
                 self._layer_manager.to_list()
-            # Collect all unique tilesheet paths
+            # Collect all unique tilesheet paths from layers
             all_ts = self._layer_manager.get_unique_tilesheet_paths()
+            # Also keep any tilesheets already in the manager that
+            # aren't referenced by a layer (user may have loaded
+            # extras via the tilesheet viewer).
+            for p in self._tilesheet_manager.all_paths():
+                if p and p not in all_ts:
+                    all_ts.append(p)
             self._active_world_config.tilesheets = all_ts
+            # Update the legacy single-tilesheet field to the
+            # first layer's tilesheet (if any) for backward compat.
+            if all_ts:
+                self._active_world_config.tilesheet_path = all_ts[0]
             save_world_editor_config(
                 self._project_dir, self._active_world,
                 self._active_world_config, self._platform)
