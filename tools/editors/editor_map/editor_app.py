@@ -200,6 +200,15 @@ class EditorApp:
             platform=self._platform,
             max_tmp_chunks=max_tmp,
             message_hud=self._message_hud)
+        # Wire objects into chunk edit mode for tile drawing
+        chunk_mode = self._modes[1]
+        if hasattr(chunk_mode, 'set_objects'):
+            chunk_mode.set_objects(self._objects)
+        tile_byte_size = (
+            self._tile_info.size_in_bytes if self._tile_info else 1)
+        if hasattr(chunk_mode, 'set_tile_byte_size'):
+            chunk_mode.set_tile_byte_size(tile_byte_size)
+
         self._renderer = WorkspaceRenderer(self._config)
         if self._tilesheet:
             self._renderer.set_tilesheet(self._tilesheet)
@@ -228,6 +237,7 @@ class EditorApp:
                 self._tile_info.layer_layouts)
         chunk_mode.set_project_dir(self._project_dir)
         chunk_mode.set_on_enum_updated(self._reload_tile_enums)
+        # Will be set after objects are created
         if self._tilesheet:
             chunk_mode.set_active_tilesheet(self._tilesheet)
             chunk_mode.set_tilesheet_texture_id(
@@ -265,6 +275,10 @@ class EditorApp:
             self._objects.set_world(
                 self._project_dir, self._active_world,
                 self._platform)
+            # Wire objects into chunk edit mode
+            chunk_mode_restore = self._modes[1]
+            if hasattr(chunk_mode_restore, 'set_objects'):
+                chunk_mode_restore.set_objects(self._objects)
             self._load_tilesheet()
             if self._tilesheet and self._renderer:
                 self._renderer.set_tilesheet(self._tilesheet)
@@ -412,6 +426,7 @@ class EditorApp:
         base = {
             KeyCombo(glfw.KEY_M, Modifier.CTRL): self._toggle_message_hud,
             KeyCombo(glfw.KEY_H, Modifier.CTRL): self._print_keybind_help,
+            KeyCombo(glfw.KEY_S, Modifier.CTRL): self._save_all,
             KeyCombo(glfw.KEY_G, Modifier.CTRL): lambda: self._switch_mode(0),
             KeyCombo(glfw.KEY_K, Modifier.CTRL): lambda: self._switch_mode(1),
             KeyCombo(glfw.KEY_E, Modifier.CTRL): lambda: self._switch_mode(2),
@@ -601,6 +616,10 @@ class EditorApp:
                 self._objects.set_world(
                     self._project_dir, world_name,
                     self._platform)
+                # Re-wire objects into chunk edit mode
+                chunk_mode = self._modes[1]
+                if hasattr(chunk_mode, 'set_objects'):
+                    chunk_mode.set_objects(self._objects)
                 if self._build_config:
                     self._build_config.last_world = world_name
                     save_build_config(
@@ -897,13 +916,28 @@ class EditorApp:
             draw_list.add_text(
                 text_x, text_y, fg_col, hover_tile_text)
 
-        # Workspace input (scroll, arrow keys, zoom) is handled
-        # entirely through the keybind manager — see
-        # _process_keybinds() which translates raw input into
-        # virtual key combos and fires them through the stack.
+        # Route workspace clicks to the active tool
+        if imgui.is_window_hovered() and imgui.is_mouse_clicked(0):
+            mouse = imgui.get_mouse_position()
+            tile_x, tile_y = self._movement.screen_to_tile(
+                mouse.x, mouse.y, ws_ox, ws_oy, ws_w, ws_h)
+            tile_z = self._movement.viewport.center_z
+            mode = self._modes[self._active_mode_index]
+            tool = mode.active_tool
+            if tool:
+                tool.on_workspace_click(
+                    float(tile_x), float(tile_y), tile_z)
 
         imgui.end()
 
+
+    def _save_all(self) -> None:
+        """Flush all pending .tmp files to disk (Ctrl+S)."""
+        if self._objects:
+            count = self._objects.flush_all_tmp()
+            self._message_hud.info(
+                f"Save: {count} chunk(s) written to disk.")
+        self._save_workspace_position()
 
     def _save_workspace_position(self) -> None:
         """Save current workspace position to the active world config

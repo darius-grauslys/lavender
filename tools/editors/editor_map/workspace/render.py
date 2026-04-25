@@ -146,7 +146,7 @@ class WorkspaceRenderer:
                 cx = start_cx + cx_off
                 cy = start_cy + cy_off
 
-                chunk = objects.get_chunk(cx, cy, vp.center_z)
+                chunk = objects.get_or_create_chunk(cx, cy, vp.center_z)
 
                 # Screen position of this chunk's top-left
                 sx = ox + cx_off * cw * ts
@@ -178,7 +178,15 @@ class WorkspaceRenderer:
                                     mask = (1 << bit_w) - 1
                                     tile_value = (tile_int >> bit_off) & mask
 
-                                    if layer_idx > 0 and tile_value == 0:
+                                    # Value 0 is Tile_Kind__None — render
+                                    # as empty (dark background) for all
+                                    # layers, not as tilesheet tile 0.
+                                    if tile_value == 0:
+                                        if layer_idx == 0:
+                                            draw_list.add_rect_filled(
+                                                px, py, px + ts, py + ts,
+                                                imgui.get_color_u32_rgba(
+                                                    0.15, 0.15, 0.15, 1.0))
                                         continue
 
                                     tile_row = tile_value // tiles_per_row
@@ -196,10 +204,17 @@ class WorkspaceRenderer:
                                         uv_b=(u1, v1))
                             else:
                                 value = tile_data[0] if tile_data else 0
-                                color = _color_for_value(value)
-                                draw_list.add_rect_filled(
-                                    px, py, px + ts, py + ts,
-                                    imgui.get_color_u32_rgba(*color))
+                                if value == 0:
+                                    # Tile_Kind__None — dark empty
+                                    draw_list.add_rect_filled(
+                                        px, py, px + ts, py + ts,
+                                        imgui.get_color_u32_rgba(
+                                            0.15, 0.15, 0.15, 1.0))
+                                else:
+                                    color = _color_for_value(value)
+                                    draw_list.add_rect_filled(
+                                        px, py, px + ts, py + ts,
+                                        imgui.get_color_u32_rgba(*color))
 
                 # Chunk border
                 draw_list.add_rect(

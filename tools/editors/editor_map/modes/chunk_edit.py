@@ -103,7 +103,9 @@ class TileDrawTool(Tool):
     # Fixed width for the X (delete) button
     _DELETE_BTN_WIDTH = 24.0
 
-    def __init__(self):
+    def __init__(self, objects=None, tile_byte_size: int = 1):
+        self._objects = objects
+        self._tile_byte_size = tile_byte_size
         self._tile_enums: List[CEnum] = []
         self._layer_fields: List[TileLayerField] = []
         self._layer_layouts: List[TileLayerLayout] = []
@@ -135,6 +137,50 @@ class TileDrawTool(Tool):
     def set_on_enum_updated(self, callback: Callable) -> None:
         """Set callback invoked after enum is written to disk."""
         self._on_enum_updated = callback
+
+    def set_objects(self, objects) -> None:
+        """Inject the workspace objects store."""
+        self._objects = objects
+
+    def set_tile_byte_size(self, size: int) -> None:
+        """Set sizeof(Tile) for the project."""
+        self._tile_byte_size = size
+
+    def on_workspace_click(
+            self, world_x: float, world_y: float, world_z: int) -> None:
+        """Draw the selected tile at the clicked world position."""
+        if self._objects is None:
+            return
+        cw = 8  # Will be overridden by mode
+        ch = 8
+        if hasattr(self, '_chunk_w'):
+            cw = self._chunk_w
+        if hasattr(self, '_chunk_h'):
+            ch = self._chunk_h
+
+        import math
+        tile_x = int(math.floor(world_x))
+        tile_y = int(math.floor(world_y))
+
+        # Chunk coordinates
+        cx = tile_x // cw if tile_x >= 0 else -(-tile_x // cw) - (1 if tile_x % cw else 0)
+        cy = tile_y // ch if tile_y >= 0 else -(-tile_y // ch) - (1 if tile_y % ch else 0)
+
+        # Local tile within chunk
+        lx = tile_x - cx * cw
+        ly = tile_y - cy * ch
+
+        # Build tile bytes from selected value
+        val = self._selected_tile_value
+        tile_bytes = val.to_bytes(self._tile_byte_size, byteorder='little')
+
+        # Ensure chunk exists
+        chunk = self._objects.get_or_create_chunk(cx, cy, world_z)
+        if chunk is None:
+            return
+
+        self._objects.set_tile(
+            cx, cy, world_z, lx, ly, 0, tile_bytes)
 
     def set_active_tilesheet(self, tilesheet: Optional[Tilesheet]) -> None:
         """Set the active tilesheet for the tileset picker."""
@@ -599,9 +645,13 @@ class ChunkEditMode(EditorMode):
             chunk_h: int = 8):
         super().__init__(keybind_manager)
         self._movement = movement
+        self._chunk_w = chunk_w
+        self._chunk_h = chunk_h
         self._tile_select = TileSelectTool(movement)
         self._chunk_pan = ChunkPanTool(movement, chunk_w, chunk_h)
         self._tile_draw = TileDrawTool()
+        self._tile_draw._chunk_w = chunk_w
+        self._tile_draw._chunk_h = chunk_h
         self._tools = [
             self._tile_select,
             self._chunk_pan,
@@ -613,6 +663,14 @@ class ChunkEditMode(EditorMode):
         self._movement = movement
         self._tile_select.set_movement(movement)
         self._chunk_pan.set_movement(movement)
+
+    def set_objects(self, objects) -> None:
+        """Inject workspace objects into the tile draw tool."""
+        self._tile_draw.set_objects(objects)
+
+    def set_tile_byte_size(self, size: int) -> None:
+        """Set sizeof(Tile) for the tile draw tool."""
+        self._tile_draw.set_tile_byte_size(size)
 
     def set_active_tilesheet(self, tilesheet: Optional[Tilesheet]) -> None:
         """Set the active tilesheet for the tile draw tool's picker."""

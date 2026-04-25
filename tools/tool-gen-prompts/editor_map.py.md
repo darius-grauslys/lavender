@@ -169,6 +169,33 @@ Editor_Mode class.
 
 Above the Workspace, is a tab selection of editor modes.
 
+### Ctrl+S — Save All
+
+Ctrl+S flushes all pending .tmp chunk files to their
+permanent locations in the world directory, provided
+the checksum passes. The workspace position is also
+saved to the world and build configs.
+
+### Empty Chunk Creation
+
+When the workspace viewport moves to a region where no
+chunk file exists on disk, the editor creates an empty
+chunk (all tiles set to value 0, i.e. `Tile_Kind__None`)
+in memory and makes it publicly accessible. This ensures
+the workspace always has renderable data for the visible
+area.
+
+Empty chunks are NOT written to disk until a tile is
+modified within them (at which point the normal .tmp →
+flush pipeline applies).
+
+### Tile_Kind__None Rendering
+
+Tile value 0 (`Tile_Kind__None`) is rendered as a dark
+empty rectangle (RGB 0.15, 0.15, 0.15), NOT as tilesheet
+tile index 0. This applies to all tile layers. For
+non-base layers, value 0 is simply skipped (transparent).
+
 ### Selection Tool:
 
 For each editor mode, the 1st tool is always 
@@ -704,6 +731,9 @@ region width.
 
 The Messages HUD is collapsable, clicking on a window title button
 on the HUD will minimize the Messages HUD to just the title.
+
+Ctrl+S will save all pending chunk modifications to disk.
+See "Ctrl+S — Save All" above.
 
 Ctrl+M will toggle the collapsed state of the Message HUD.
 
