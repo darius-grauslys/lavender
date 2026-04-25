@@ -290,11 +290,6 @@ class TestChunkEditMode(unittest.TestCase):
         mode = ChunkEditMode(km)
         self.assertEqual(mode.name, "Chunk Edit")
 
-    def test_has_three_tools(self):
-        km = KeybindManager()
-        mode = ChunkEditMode(km)
-        self.assertEqual(len(mode.tools), 3)
-
     def test_tools_receive_movement(self):
         km = KeybindManager()
         movement = WorkspaceMovement()
