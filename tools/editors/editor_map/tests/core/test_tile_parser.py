@@ -2,7 +2,7 @@
 
 import pytest
 
-from tools.editors.editor_map.core.tile_parser import (
+from core.tile_parser import (
     TileInfo, TileLayerField, parse_tile_header,
 )
 

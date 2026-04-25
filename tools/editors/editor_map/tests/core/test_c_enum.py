@@ -3,7 +3,22 @@
 import pytest
 from pathlib import Path
 
-from tools.editors.editor_map.core.c_enum import (
+from core.c_enum import (
+    CEnum, CEnumMember, parse_c_enum, find_enum_by_name,
+    parse_c_enum_from_file,
+)
+
+import sys
+from pathlib import Path
+
+# Allow running tests from the editor_map directory or the repo root
+_editor_map_dir = Path(__file__).resolve().parents[2]
+_repo_root = _editor_map_dir.parents[2]
+for _p in (_repo_root, _editor_map_dir):
+    if str(_p) not in sys.path:
+        sys.path.insert(0, str(_p))
+
+from core.c_enum import (  # noqa: E402
     CEnum, CEnumMember, parse_c_enum, find_enum_by_name,
     parse_c_enum_from_file,
 )

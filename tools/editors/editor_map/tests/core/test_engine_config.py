@@ -3,7 +3,7 @@
 import pytest
 from pathlib import Path
 
-from tools.editors.editor_map.core.engine_config import (
+from core.engine_config import (
     EngineConfig, load_engine_config, _evaluate_expr, _parse_defines,
 )
 
