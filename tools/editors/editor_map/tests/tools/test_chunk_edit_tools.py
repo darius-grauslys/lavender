@@ -144,11 +144,12 @@ class TestTileDrawToolChunkUpdate(unittest.TestCase):
         from core.engine_config import EngineConfig
         from workspace.objects import WorkspaceObjects, ChunkData
 
-        config = EngineConfig()
-        config.chunk_width = chunk_w
-        config.chunk_height = chunk_h
-        config.chunk_depth = chunk_d
-        config.tile_size = tile_size
+        config = EngineConfig(constants={
+            'CHUNK__WIDTH': chunk_w,
+            'CHUNK__HEIGHT': chunk_h,
+            'CHUNK__DEPTH': chunk_d,
+            'CHUNK__QUANTITY_OF__TILES': chunk_w * chunk_h * chunk_d,
+        })
 
         objects = WorkspaceObjects(config)
         total_tiles = chunk_w * chunk_h * chunk_d
