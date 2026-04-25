@@ -9,6 +9,7 @@ Uses Dear ImGui via pyimgui.
 
 from __future__ import annotations
 
+import math
 import sys
 from pathlib import Path
 from typing import List, Optional
@@ -700,20 +701,80 @@ class EditorApp:
         )
         imgui.begin("##workspace", flags=flags)
 
+        # Workspace screen-space bounds
+        win_pos = imgui.get_window_position()
+        ws_ox, ws_oy = win_pos.x, win_pos.y
+
+        # Draw chunk grid lines
+        draw_list = imgui.get_window_draw_list()
+        chunk_w = self._config.chunk_width if self._config else 8
+        chunk_h = self._config.chunk_height if self._config else 8
+        (first_vx, vstep,
+         first_hy, hstep,
+         _gl, _gt) = self._movement.get_chunk_grid_params(
+            ws_ox, ws_oy, ws_w, ws_h, chunk_w, chunk_h)
+
+        grid_col = imgui.get_color_u32_rgba(0.3, 0.3, 0.3, 0.4)
+        if vstep > 0:
+            x = first_vx
+            while x <= ws_ox + ws_w:
+                if x >= ws_ox:
+                    draw_list.add_line(
+                        x, ws_oy, x, ws_oy + ws_h, grid_col)
+                x += vstep
+        if hstep > 0:
+            y = first_hy
+            while y <= ws_oy + ws_h:
+                if y >= ws_oy:
+                    draw_list.add_line(
+                        ws_ox, y, ws_ox + ws_w, y, grid_col)
+                y += hstep
+
         # Draw mode-specific content
         mode = self._modes[self._active_mode_index]
         mode.draw_workspace(None)
 
         # Draw the tile grid if renderer is available
         if self._renderer and self._objects:
-            win_pos = imgui.get_window_position()
             tile_size = self._tile_info.size_in_bytes if self._tile_info else 1
             self._renderer.draw(
                 self._objects,
                 self._movement,
-                (win_pos.x, win_pos.y),
+                (ws_ox, ws_oy),
                 (ws_w, ws_h),
                 tile_size)
+
+        # Coordinate overlay: show hovered tile position
+        hover_tile_text = ""
+        if imgui.is_window_hovered():
+            mouse = imgui.get_mouse_position()
+            tile_x, tile_y = self._movement.screen_to_tile(
+                mouse.x, mouse.y, ws_ox, ws_oy, ws_w, ws_h)
+            # Chunk coordinates
+            cx = math.floor(tile_x / chunk_w)
+            cy = math.floor(tile_y / chunk_h)
+            # Local tile within chunk
+            lx = tile_x - cx * chunk_w
+            ly = tile_y - cy * chunk_h
+            hover_tile_text = (
+                f"Tile: ({tile_x}, {tile_y})  "
+                f"Chunk: ({cx}, {cy})  "
+                f"Local: ({lx}, {ly})")
+
+        if hover_tile_text:
+            # Draw overlay text with dark background for readability
+            text_x = ws_ox + 8
+            text_y = ws_oy + 4
+            text_size = imgui.calc_text_size(hover_tile_text)
+            bg_col = imgui.get_color_u32_rgba(0.0, 0.0, 0.0, 0.7)
+            fg_col = imgui.get_color_u32_rgba(1.0, 1.0, 1.0, 1.0)
+            draw_list.add_rect_filled(
+                text_x - 2, text_y - 1,
+                text_x + text_size.x + 4,
+                text_y + text_size.y + 2,
+                bg_col, 3.0)
+            draw_list.add_text(
+                text_x, text_y, fg_col, hover_tile_text)
 
         # Handle workspace input
         if imgui.is_window_hovered():
