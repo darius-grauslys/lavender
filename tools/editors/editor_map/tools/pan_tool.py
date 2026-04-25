@@ -4,7 +4,7 @@ Base panning tool (spec section 1.1 — Panning Tool).
 
 from __future__ import annotations
 
-from .tool import Tool
+from tools.tool import Tool
 
 
 class PanTool(Tool):

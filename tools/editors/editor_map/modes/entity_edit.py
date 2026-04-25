@@ -6,10 +6,10 @@ Activation shortcut: Ctrl+E
 
 from __future__ import annotations
 
-from ..modes.editor_mode import EditorMode
-from ..tools.select_tool import SelectTool
-from ..tools.pan_tool import PanTool
-from ..tools.tool import Tool
+from modes.editor_mode import EditorMode
+from tools.select_tool import SelectTool
+from tools.pan_tool import PanTool
+from tools.tool import Tool
 
 import imgui
 

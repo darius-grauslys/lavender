@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Any, List, Optional
 
-from .tool import Tool
+from tools.tool import Tool
 
 
 class SelectTool(Tool):

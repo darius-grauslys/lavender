@@ -18,24 +18,30 @@ from imgui.integrations.glfw import GlfwRenderer
 import glfw
 import OpenGL.GL as gl
 
-from .keybinds.keybind import KeyCombo, Modifier
-from .keybinds.keybind_manager import KeybindManager
-from .modes.editor_mode import EditorMode
-from .modes.global_space_view import GlobalSpaceViewMode
-from .modes.chunk_edit import ChunkEditMode
-from .modes.entity_edit import EntityEditMode
-from .modes.inventory_edit import InventoryEditMode
-from .workspace.movement import WorkspaceMovement
-from .workspace.objects import WorkspaceObjects
-from .workspace.render import WorkspaceRenderer
-from .core.engine_config import EngineConfig, load_engine_config
-from .core.tile_parser import parse_tile_header_from_file, TileInfo
-from .core.c_enum import parse_c_enum_from_file, find_enum_by_name, CEnum
-from .core.world_directory import list_worlds, ensure_world_dir, world_root
+# Ensure editor_map package root is on sys.path
+_editor_map_dir = str(Path(__file__).resolve().parent)
+if _editor_map_dir not in sys.path:
+    sys.path.insert(0, _editor_map_dir)
+# Ensure tools/ is on sys.path for editor_ui_modules
+_tools_dir = str(Path(__file__).resolve().parents[2])
+if _tools_dir not in sys.path:
+    sys.path.insert(0, _tools_dir)
 
-# Reuse the shared message HUD
-sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-from editor_ui_modules.message_hud import MessageHUD  # noqa: E402
+from keybinds.keybind import KeyCombo, Modifier
+from keybinds.keybind_manager import KeybindManager
+from modes.editor_mode import EditorMode
+from modes.global_space_view import GlobalSpaceViewMode
+from modes.chunk_edit import ChunkEditMode
+from modes.entity_edit import EntityEditMode
+from modes.inventory_edit import InventoryEditMode
+from workspace.movement import WorkspaceMovement
+from workspace.objects import WorkspaceObjects
+from workspace.render import WorkspaceRenderer
+from core.engine_config import EngineConfig, load_engine_config
+from core.tile_parser import parse_tile_header_from_file, TileInfo
+from core.c_enum import parse_c_enum_from_file, find_enum_by_name, CEnum
+from core.world_directory import list_worlds, ensure_world_dir, world_root
+from editor_ui_modules.message_hud import MessageHUD
 
 VERSION = "0.1.0"
 

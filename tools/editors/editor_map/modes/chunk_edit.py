@@ -6,11 +6,11 @@ Activation shortcut: Ctrl+K
 
 from __future__ import annotations
 
-from ..modes.editor_mode import EditorMode
-from ..tools.select_tool import SelectTool
-from ..tools.pan_tool import PanTool
-from ..tools.tool import Tool
-from ..core.c_enum import CEnum
+from modes.editor_mode import EditorMode
+from tools.select_tool import SelectTool
+from tools.pan_tool import PanTool
+from tools.tool import Tool
+from core.c_enum import CEnum
 
 import imgui
 from typing import List, Optional

@@ -13,7 +13,7 @@ from __future__ import annotations
 from collections import defaultdict
 from typing import Dict, List, Set
 
-from .keybind import KeyCombo, KeybindCallback
+from keybinds.keybind import KeyCombo, KeybindCallback
 
 
 class KeybindManager:

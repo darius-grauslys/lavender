@@ -12,10 +12,10 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
 import imgui
 
 if TYPE_CHECKING:
-    from ..core.engine_config import EngineConfig
-    from ..core.c_enum import CEnum
-    from .objects import WorkspaceObjects
-    from .movement import WorkspaceMovement
+    from core.engine_config import EngineConfig
+    from core.c_enum import CEnum
+    from workspace.objects import WorkspaceObjects
+    from workspace.movement import WorkspaceMovement
 
 
 # Simple color palette for tile kinds (hash-based)

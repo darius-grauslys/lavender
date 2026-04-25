@@ -12,7 +12,7 @@ import threading
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple
 
-from ..core.engine_config import EngineConfig
+from core.engine_config import EngineConfig
 
 
 @dataclass

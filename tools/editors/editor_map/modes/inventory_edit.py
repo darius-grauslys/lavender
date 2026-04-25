@@ -6,7 +6,7 @@ Activation shortcut: Ctrl+I
 
 from __future__ import annotations
 
-from ..modes.editor_mode import EditorMode
+from modes.editor_mode import EditorMode
 
 import imgui
 

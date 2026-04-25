@@ -14,8 +14,8 @@ import tempfile
 from pathlib import Path
 from typing import Optional
 
-from .engine_config import EngineConfig
-from .world_directory import (
+from core.engine_config import EngineConfig
+from core.world_directory import (
     chunk_tile_path,
     chunk_entity_path,
     chunk_inventory_path,

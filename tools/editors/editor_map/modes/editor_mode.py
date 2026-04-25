@@ -10,8 +10,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, List, Optional
 
 if TYPE_CHECKING:
-    from tools.editors.editor_map.keybinds.keybind_manager import KeybindManager
-    from tools.editors.editor_map.tools.tool import Tool
+    from keybinds.keybind_manager import KeybindManager
+    from tools.tool import Tool
 
 
 class EditorMode:
