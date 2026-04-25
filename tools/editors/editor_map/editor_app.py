@@ -325,34 +325,23 @@ class EditorApp:
 
         The primary tilesheet is determined by:
         1. The first layer's tilesheet_path (from layer manager), or
-        2. The legacy ``tilesheet.path`` field in the world config.
+        2. The first entry in the world config's tilesheets list.
         """
         if not self._active_world_config:
-            if (self._editor_project_config
-                    and self._editor_project_config.tilesheet_path):
-                self._message_hud.warning(
-                    "No world selected. Tilesheet is configured "
-                    "per-world. Select a world to load its tilesheet.")
-            else:
-                self._message_hud.warning(
-                    "No tilesheet configured. "
-                    "Select a world and set its tilesheet path.")
+            self._message_hud.warning(
+                "No tilesheet configured. "
+                "Select a world and set its tilesheet path.")
             self._tilesheet_rendering_enabled = False
             return
 
         # Prefer the first layer's tilesheet if available
-        primary_path = self._active_world_config.tilesheet_path
+        primary_path = self._active_world_config.primary_tilesheet_path
         if self._layer_manager.count > 0:
             first_layer = self._layer_manager.get(0)
             if first_layer and first_layer.tilesheet_path:
                 primary_path = first_layer.tilesheet_path
-        # Update the config so resolve works
-        saved_path = self._active_world_config.tilesheet_path
-        self._active_world_config.tilesheet_path = primary_path
         resolved = self._active_world_config.resolve_tilesheet(
-            self._project_dir)
-        # Restore to avoid unintended side-effects on save
-        self._active_world_config.tilesheet_path = saved_path
+            self._project_dir, primary_path)
         if resolved:
             self._tilesheet = load_tilesheet(resolved)
             if self._tilesheet:
@@ -368,7 +357,7 @@ class EditorApp:
                     f"Failed to load tilesheet image at '{resolved}'. "
                     f"Ensure PIL/Pillow or pypng is installed.")
         else:
-            path_str = self._active_world_config.tilesheet_path
+            path_str = primary_path
             if path_str:
                 self._message_hud.error(
                     f"Tilesheet not found at "
@@ -995,11 +984,6 @@ class EditorApp:
     def _open_layer_editor(self) -> None:
         """Open the layer editor sub-window."""
         ts_paths = self._tilesheet_manager.all_paths()
-        # Also include the legacy single tilesheet if not already listed
-        if (self._active_world_config
-                and self._active_world_config.tilesheet_path
-                and self._active_world_config.tilesheet_path not in ts_paths):
-            ts_paths.insert(0, self._active_world_config.tilesheet_path)
         self._layer_editor_window.open(
             layer_manager=self._layer_manager,
             tilesheet_paths=ts_paths)
@@ -1155,8 +1139,6 @@ class EditorApp:
                 if p and p not in all_ts:
                     all_ts.append(p)
             self._active_world_config.tilesheets = all_ts
-            if all_ts and not self._active_world_config.tilesheet_path:
-                self._active_world_config.tilesheet_path = all_ts[0]
             save_world_editor_config(
                 self._project_dir, self._active_world,
                 self._active_world_config, self._platform)
@@ -1182,9 +1164,8 @@ class EditorApp:
                           if i < len(self._tile_info.layer_layouts)
                           else TileLayerLayout())
                 ts_path = ""
-                if (self._active_world_config
-                        and self._active_world_config.tilesheet_path):
-                    ts_path = self._active_world_config.tilesheet_path
+                if self._active_world_config:
+                    ts_path = self._active_world_config.primary_tilesheet_path
                 self._layer_manager.add(LayerEntry(
                     layer_name=f"Tile_Layer__{i}",
                     enum_type_name=lf.enum_type_name,
@@ -1199,10 +1180,6 @@ class EditorApp:
         if not self._active_world_config:
             return
         paths = list(self._active_world_config.tilesheets)
-        # Also include the legacy single tilesheet path
-        if (self._active_world_config.tilesheet_path
-                and self._active_world_config.tilesheet_path not in paths):
-            paths.insert(0, self._active_world_config.tilesheet_path)
         # Include paths referenced by layers
         for entry in self._layer_manager.layers:
             if entry.tilesheet_path and entry.tilesheet_path not in paths:
@@ -1352,10 +1329,6 @@ class EditorApp:
                 if p and p not in all_ts:
                     all_ts.append(p)
             self._active_world_config.tilesheets = all_ts
-            # Update the legacy single-tilesheet field to the
-            # first layer's tilesheet (if any) for backward compat.
-            if all_ts:
-                self._active_world_config.tilesheet_path = all_ts[0]
             save_world_editor_config(
                 self._project_dir, self._active_world,
                 self._active_world_config, self._platform)

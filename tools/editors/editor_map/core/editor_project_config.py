@@ -40,9 +40,6 @@ DEFAULT_PROJECT_CONFIG = {
 }
 
 DEFAULT_WORLD_CONFIG = {
-    "tilesheet": {
-        "path": ""
-    },
     "tilesheets": [],
     "layers": [],
     "workspace_position": {
@@ -82,42 +79,34 @@ class EditorProjectConfig:
     version: int = 1
     max_tmp_chunks: int = 1024
 
-    @property
-    def tilesheet_path(self) -> str:
-        """
-        Deprecated: tilesheet is now per-world (WorldEditorConfig).
-        Kept for backward compatibility so callers that still
-        reference ``config.tilesheet_path`` get an empty string
-        instead of an AttributeError.
-        """
-        return ""
-
-    def resolve_tilesheet(self, project_dir: Path) -> Optional[Path]:
-        """
-        Deprecated: tilesheet is now per-world.
-        Kept for backward compatibility; always returns None.
-        """
-        return None
 
 
 @dataclass
 class WorldEditorConfig:
     """Parsed per-world editor configuration."""
-    tilesheet_path: str = ""
     tilesheets: list = field(default_factory=list)
     layers: list = field(default_factory=list)
     workspace_x: int = 0
     workspace_y: int = 0
     workspace_z: int = 0
 
-    def resolve_tilesheet(self, project_dir: Path) -> Optional[Path]:
+    @property
+    def primary_tilesheet_path(self) -> str:
+        """Return the first tilesheet path, or '' if none."""
+        if self.tilesheets:
+            return self.tilesheets[0]
+        return ""
+
+    def resolve_tilesheet(self, project_dir: Path, path: str = "") -> Optional[Path]:
         """
-        Resolve the tilesheet path relative to the project directory.
+        Resolve a tilesheet path relative to the project directory.
+        If *path* is empty, uses the primary tilesheet.
         Returns the Path if it exists and is a .png file, else None.
         """
-        if not self.tilesheet_path:
+        ts_path = path or self.primary_tilesheet_path
+        if not ts_path:
             return None
-        resolved = project_dir / self.tilesheet_path
+        resolved = project_dir / ts_path
         if resolved.exists() and resolved.suffix.lower() == '.png':
             return resolved
         return None
@@ -251,14 +240,16 @@ def load_world_editor_config(
     except (json.JSONDecodeError, OSError):
         return WorldEditorConfig()
 
-    tilesheet_path = ""
-    tilesheet = data.get("tilesheet", {})
-    if isinstance(tilesheet, dict):
-        tilesheet_path = tilesheet.get("path", "")
-
     tilesheets_data = data.get("tilesheets", [])
     if not isinstance(tilesheets_data, list):
         tilesheets_data = []
+
+    # Migrate legacy "tilesheet.path" into tilesheets list
+    legacy_tilesheet = data.get("tilesheet", {})
+    if isinstance(legacy_tilesheet, dict):
+        legacy_path = legacy_tilesheet.get("path", "")
+        if legacy_path and legacy_path not in tilesheets_data:
+            tilesheets_data.insert(0, legacy_path)
 
     layers_data = data.get("layers", [])
     if not isinstance(layers_data, list):
@@ -266,7 +257,6 @@ def load_world_editor_config(
 
     ws = data.get("workspace_position", {})
     return WorldEditorConfig(
-        tilesheet_path=tilesheet_path,
         tilesheets=tilesheets_data,
         layers=layers_data,
         workspace_x=ws.get("x", 0),
@@ -285,9 +275,6 @@ def save_world_editor_config(
     cfg_path.parent.mkdir(parents=True, exist_ok=True)
 
     data = {
-        "tilesheet": {
-            "path": config.tilesheet_path
-        },
         "tilesheets": config.tilesheets,
         "layers": config.layers,
         "workspace_position": {

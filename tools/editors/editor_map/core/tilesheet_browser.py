@@ -136,7 +136,8 @@ def browse_and_set_tilesheet(
 
     # Save to per-world config
     config = load_world_editor_config(project_dir, world_name)
-    config.tilesheet_path = rel_path
+    if rel_path not in config.tilesheets:
+        config.tilesheets.append(rel_path)
     save_world_editor_config(project_dir, world_name, config)
 
     # Load the tilesheet
@@ -175,11 +176,11 @@ def clear_tilesheet(
         return
 
     config = load_world_editor_config(project_dir, world_name)
-    config.tilesheet_path = ""
+    config.tilesheets.clear()
     save_world_editor_config(project_dir, world_name, config)
 
     if message_hud:
-        message_hud.info("Tilesheet cleared.")
+        message_hud.info("All tilesheets cleared.")
 
 
 def load_tilesheet_for_world(
@@ -201,27 +202,28 @@ def load_tilesheet_for_world(
         loaded_tilesheet is None if not configured or load failed.
     """
     config = load_world_editor_config(project_dir, world_name)
-    if not config.tilesheet_path:
+    ts_path = config.primary_tilesheet_path
+    if not ts_path:
         return "", None
 
-    resolved = config.resolve_tilesheet(project_dir)
+    resolved = config.resolve_tilesheet(project_dir, ts_path)
     if resolved is None:
         if message_hud:
             message_hud.error(
                 f"Tilesheet not found or invalid: "
-                f"{config.tilesheet_path}")
-        return config.tilesheet_path, None
+                f"{ts_path}")
+        return ts_path, None
 
     tilesheet = load_tilesheet(resolved)
     if tilesheet is None:
         if message_hud:
             message_hud.error(
-                f"Failed to load tilesheet: {config.tilesheet_path}")
-        return config.tilesheet_path, None
+                f"Failed to load tilesheet: {ts_path}")
+        return ts_path, None
 
     if message_hud:
         message_hud.info(
-            f"Loaded tilesheet: {config.tilesheet_path} "
+            f"Loaded tilesheet: {ts_path} "
             f"({tilesheet.total_tiles} tiles)")
 
-    return config.tilesheet_path, tilesheet
+    return ts_path, tilesheet
