@@ -999,15 +999,7 @@ class EditorApp:
             tilesheet_paths=ts_paths)
 
     def _open_kind_editor(self) -> None:
-        """Open the tile kind editor.
-
-        Kind headers are now generated automatically when the
-        Layer Editor is committed (OK).  This callback informs
-        the user accordingly.
-        """
-        self._message_hud.info(
-            "Tile kind headers are generated automatically "
-            "when the Layer Editor is committed (OK).")
+        pass
 
     def _upload_entry_texture(self, entry) -> None:
         """Upload GL texture for a TilesheetEntry."""
