@@ -34,32 +34,26 @@ def _open_png_file_dialog(
     Returns the selected absolute path as a string, or None
     if the user cancelled or an error occurred.
 
-    Uses tkinter.filedialog which is available in the Python
-    standard library on most platforms.
+    Uses portable_file_dialogs from imgui_bundle for native
+    OS file dialogs.
     """
     try:
-        import tkinter as tk
-        from tkinter import filedialog
+        from imgui_bundle import portable_file_dialogs as pfd
 
-        root = tk.Tk()
-        root.withdraw()
-        root.attributes("-topmost", True)
+        selection = pfd.open_file(
+            "Select Tilesheet PNG",
+            "",
+            ["PNG images", "*.png", "All files", "*.*"],
+        ).result()
 
-        filepath = filedialog.askopenfilename(
-            title="Select Tilesheet PNG",
-            filetypes=[("PNG images", "*.png"), ("All files", "*.*")],
-        )
-
-        root.destroy()
-
-        if not filepath:
+        if not selection:
             return None
-        return filepath
+        return selection[0]
     except ImportError:
         if message_hud:
             message_hud.error(
                 "Failed to open file dialog: "
-                "tkinter is not available.")
+                "imgui_bundle.portable_file_dialogs is not available.")
         return None
     except Exception as e:
         if message_hud:
