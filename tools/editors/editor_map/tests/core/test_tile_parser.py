@@ -3,7 +3,7 @@
 import pytest
 
 from core.tile_parser import (
-    TileInfo, TileLayerField, parse_tile_header,
+    TileInfo, TileLayerField, TileParseError, parse_tile_header,
 )
 
 TEMPLATE_TILE_H = """\
@@ -118,14 +118,17 @@ class TestParseSingleLayerTile:
 
 
 class TestParseMinimalTile:
-    def test_no_array_returns_none(self):
-        info = parse_tile_header(MINIMAL_TILE_H)
-        assert info is None
+    def test_no_array_returns_error(self):
+        result = parse_tile_header(MINIMAL_TILE_H)
+        assert isinstance(result, TileParseError)
+        assert "array_of__tile_data__u8" in result.message
 
 
 class TestEdgeCases:
     def test_empty_source(self):
-        assert parse_tile_header('') is None
+        result = parse_tile_header('')
+        assert isinstance(result, TileParseError)
 
     def test_no_tile_struct(self):
-        assert parse_tile_header('#define FOO 1') is None
+        result = parse_tile_header('#define FOO 1')
+        assert isinstance(result, TileParseError)
