@@ -734,16 +734,6 @@ class EditorApp:
         mode = self._modes[self._active_mode_index]
         mode.draw_workspace(None)
 
-        # Draw the tile grid if renderer is available
-        if self._renderer and self._objects:
-            tile_size = self._tile_info.size_in_bytes if self._tile_info else 1
-            self._renderer.draw(
-                self._objects,
-                self._movement,
-                (ws_ox, ws_oy),
-                (ws_w, ws_h),
-                tile_size)
-
         # Coordinate overlay: show hovered tile position
         hover_tile_text = ""
         if imgui.is_window_hovered():
