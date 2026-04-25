@@ -346,3 +346,23 @@ types dynamically from the `GEN-RENDER-BEGIN` block in the project's
 `tile.h`. Only `Tile_Kind` is guaranteed by the engine as the default
 layer. Implementation begun: `c_enum.py`, `engine_config.py`,
 `tile_parser.py` with full test suites.
+
+**Revision 6 note:** Full editor implementation completed:
+- Keybind system (`keybinds/keybind.py`, `keybind_manager.py`) with
+  stack-based override per spec 4.4
+- World directory port (`core/world_directory.py`) replicating
+  `world_directory.c` quad-tree descent
+- Message HUD extended with SYSTEM level
+- Editor mode framework (`modes/editor_mode.py`) with 4 modes:
+  Global_Space View, Chunk Edit, Entity Edit, Inventory (placeholder)
+- Tool framework (`tools/tool.py`, `select_tool.py`, `pan_tool.py`)
+  with per-mode concrete tools
+- Workspace modules: `movement.py` (viewport), `objects.py`
+  (thread-safe object store with Y-inverted tile indexing),
+  `render.py` (Dear ImGui tile grid renderer)
+- Serialization module (`core/serialization.py`) with .tmp+checksum
+  write pattern
+- Main editor app (`editor_app.py`) tying everything together
+- `__main__.py` entry point
+- Full test suites for keybinds, world_directory, movement, objects,
+  serialization

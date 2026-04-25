@@ -12,6 +12,7 @@ import imgui
 class MsgLevel(Enum):
     INFO = auto()
     ERROR = auto()
+    SYSTEM = auto()
 
 
 @dataclass
@@ -38,6 +39,10 @@ class MessageHUD:
 
     def error(self, text: str) -> None:
         self._append(Message(MsgLevel.ERROR, text))
+        self._collapsed = False
+
+    def system(self, text: str) -> None:
+        self._append(Message(MsgLevel.SYSTEM, text))
         self._collapsed = False
 
     def clear(self) -> None:
@@ -93,6 +98,8 @@ class MessageHUD:
                     )
                     imgui.text_colored(msg.text, 1.0, 1.0, 1.0)
                     imgui.pop_style_color()
+                elif msg.level == MsgLevel.SYSTEM:
+                    imgui.text_colored(msg.text, 0.4, 0.8, 1.0)
                 else:
                     imgui.text(msg.text)
 
