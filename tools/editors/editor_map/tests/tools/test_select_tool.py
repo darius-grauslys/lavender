@@ -99,8 +99,9 @@ class TestSelectToolActivation(unittest.TestCase):
         self.assertEqual(len(km._callee_override_stack), 0)
         tool.on_activate(km)
         self.assertTrue(tool._is_active)
-        # Tool base pushes once (empty), SelectTool pushes once
-        self.assertEqual(len(km._callee_override_stack), 2)
+        # Base Tool._get_tool_keybinds() returns {} (falsy) so base
+        # class skips its push.  SelectTool.on_activate pushes once.
+        self.assertEqual(len(km._callee_override_stack), 1)
 
     def test_deactivate_pops_overrides(self):
         km = KeybindManager()
