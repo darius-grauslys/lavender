@@ -4,8 +4,9 @@ Base panning tool (spec section 1.1 — Panning Tool).
 Default keybind overrides when active:
 - Scroll wheel (no modifier): vertical panning
 - Shift + Scroll wheel: horizontal panning
-- Alt + Scroll wheel: zoom in/out
+- Alt+Shift + Scroll wheel: zoom in/out
 - Arrow keys: move by 1 tile
+- Ctrl+Up / Ctrl+Down: move along Z axis
 """
 
 from __future__ import annotations
@@ -72,6 +73,9 @@ class PanTool(Tool):
             KeyCombo(_KEY_DOWN, Modifier.NONE): m.make_pan_tile_down(),
             KeyCombo(_KEY_LEFT, Modifier.NONE): m.make_pan_tile_left(),
             KeyCombo(_KEY_RIGHT, Modifier.NONE): m.make_pan_tile_right(),
+            # Ctrl+Up / Ctrl+Down — Z axis movement
+            KeyCombo(_KEY_UP, Modifier.CTRL): m.make_move_z_up(),
+            KeyCombo(_KEY_DOWN, Modifier.CTRL): m.make_move_z_down(),
             # Scroll wheel — vertical pan
             KeyCombo(VIRTUAL_KEY_SCROLL_UP, Modifier.NONE):
                 m.make_scroll_up(),
@@ -82,10 +86,10 @@ class PanTool(Tool):
                 m.make_scroll_left(),
             KeyCombo(VIRTUAL_KEY_SCROLL_DOWN, Modifier.SHIFT):
                 m.make_scroll_right(),
-            # Alt + scroll — zoom
-            KeyCombo(VIRTUAL_KEY_ZOOM_IN, Modifier.ALT):
+            # Alt+Shift + scroll — zoom
+            KeyCombo(VIRTUAL_KEY_ZOOM_IN, Modifier.ALT_SHIFT):
                 m.make_zoom_in(),
-            KeyCombo(VIRTUAL_KEY_ZOOM_OUT, Modifier.ALT):
+            KeyCombo(VIRTUAL_KEY_ZOOM_OUT, Modifier.ALT_SHIFT):
                 m.make_zoom_out(),
         }
         return binds

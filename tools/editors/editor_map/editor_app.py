@@ -467,15 +467,20 @@ class EditorApp:
         # dispatched as virtual key combos so that tools can
         # override scroll behaviour via the keybind stack.
         if io.mouse_wheel != 0 and not io.want_capture_mouse:
-            if mods & Modifier.ALT:
-                # Alt + scroll → zoom
+            has_alt = bool(mods & Modifier.ALT)
+            has_shift = bool(mods & Modifier.SHIFT)
+
+            if has_alt and has_shift:
+                # Alt+Shift + scroll → zoom
                 if io.mouse_wheel > 0:
                     self._keybind_manager.fire(
-                        KeyCombo(VIRTUAL_KEY_ZOOM_IN, Modifier.ALT))
+                        KeyCombo(VIRTUAL_KEY_ZOOM_IN,
+                                 Modifier.ALT | Modifier.SHIFT))
                 else:
                     self._keybind_manager.fire(
-                        KeyCombo(VIRTUAL_KEY_ZOOM_OUT, Modifier.ALT))
-            elif mods & Modifier.SHIFT:
+                        KeyCombo(VIRTUAL_KEY_ZOOM_OUT,
+                                 Modifier.ALT | Modifier.SHIFT))
+            elif has_shift:
                 # Shift + scroll → horizontal pan
                 if io.mouse_wheel > 0:
                     self._keybind_manager.fire(
@@ -794,16 +799,26 @@ class EditorApp:
             mouse = imgui.get_mouse_position()
             tile_x, tile_y = self._movement.screen_to_tile(
                 mouse.x, mouse.y, ws_ox, ws_oy, ws_w, ws_h)
+            tile_z = self._movement.viewport.center_z
             # Chunk coordinates
             cx = math.floor(tile_x / ws_chunk_w)
             cy = math.floor(tile_y / ws_chunk_h)
             # Local tile within chunk
             lx = tile_x - cx * ws_chunk_w
             ly = tile_y - cy * ws_chunk_h
-            hover_tile_text = (
-                f"Tile: ({tile_x}, {tile_y})  "
-                f"Chunk: ({cx}, {cy})  "
-                f"Local: ({lx}, {ly})")
+            # Show Z axis only when chunk depth > 1 (3D voxel world)
+            chunk_depth = self._config.chunk_depth if self._config else 1
+            if chunk_depth > 1:
+                hover_tile_text = (
+                    f"Tile: ({tile_x}, {tile_y}, {tile_z})  "
+                    f"Chunk: ({cx}, {cy})  "
+                    f"Local: ({lx}, {ly})  "
+                    f"Z: {tile_z}")
+            else:
+                hover_tile_text = (
+                    f"Tile: ({tile_x}, {tile_y})  "
+                    f"Chunk: ({cx}, {cy})  "
+                    f"Local: ({lx}, {ly})")
 
         if hover_tile_text:
             # Draw overlay text with dark background for readability

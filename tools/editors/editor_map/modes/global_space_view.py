@@ -11,9 +11,10 @@ Tool keybind behaviour:
 - Global_Space Pan:
     Arrow keys → move by 1 tile
     Shift+Arrow keys → move by 1 global space
+    Ctrl+Up / Ctrl+Down → move along Z axis
     Scroll wheel → vertical pan
     Shift+Scroll → horizontal pan
-    Alt+Scroll → zoom
+    Alt+Shift+Scroll → zoom
 """
 
 from __future__ import annotations

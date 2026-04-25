@@ -8,9 +8,10 @@ Default keybind overrides when active:
 - Ctrl+C: copy selection
 - Ctrl+V: paste selection
 - Arrow keys: move selection by 1 tile
+- Ctrl+Up / Ctrl+Down: move along Z axis
 - Scroll wheel (no modifier): vertical pan
 - Shift + Scroll wheel: horizontal pan
-- Alt + Scroll wheel: zoom in/out
+- Alt+Shift + Scroll wheel: zoom in/out
 """
 
 from __future__ import annotations
@@ -79,6 +80,11 @@ class SelectTool(Tool):
                 m.make_pan_tile_left()
             binds[KeyCombo(_KEY_RIGHT, Modifier.NONE)] = \
                 m.make_pan_tile_right()
+            # Ctrl+Up / Ctrl+Down — Z axis movement
+            binds[KeyCombo(_KEY_UP, Modifier.CTRL)] = \
+                m.make_move_z_up()
+            binds[KeyCombo(_KEY_DOWN, Modifier.CTRL)] = \
+                m.make_move_z_down()
             # Scroll — vertical pan
             binds[KeyCombo(VIRTUAL_KEY_SCROLL_UP, Modifier.NONE)] = \
                 m.make_scroll_up()
@@ -89,10 +95,10 @@ class SelectTool(Tool):
                 m.make_scroll_left()
             binds[KeyCombo(VIRTUAL_KEY_SCROLL_DOWN, Modifier.SHIFT)] = \
                 m.make_scroll_right()
-            # Alt + scroll — zoom
-            binds[KeyCombo(VIRTUAL_KEY_ZOOM_IN, Modifier.ALT)] = \
+            # Alt+Shift + scroll — zoom
+            binds[KeyCombo(VIRTUAL_KEY_ZOOM_IN, Modifier.ALT_SHIFT)] = \
                 m.make_zoom_in()
-            binds[KeyCombo(VIRTUAL_KEY_ZOOM_OUT, Modifier.ALT)] = \
+            binds[KeyCombo(VIRTUAL_KEY_ZOOM_OUT, Modifier.ALT_SHIFT)] = \
                 m.make_zoom_out()
 
         return binds

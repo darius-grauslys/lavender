@@ -3,14 +3,23 @@ Workspace viewport movement (spec section 4.2).
 
 Manages the camera/viewport position in world coordinates.
 
+NOTE: Chunks are 3D voxel volumes (default 8×8×2). Many games
+use CHUNK__DEPTH == 1, making the world effectively 2D. The
+viewport tracks a Z coordinate (center_z) which is meaningful
+only when chunk depth > 1.
+
 Scroll behaviour (spec section 1.1 — Panning Tool):
-- Mouse scroll wheel (no shift): vertical panning
+- Mouse scroll wheel (no modifier): vertical panning
     - Scroll up → pan workspace up
     - Scroll down → pan workspace down
 - Mouse scroll wheel (shift held): horizontal panning
     - Scroll up → pan workspace left
     - Scroll down → pan workspace right
+- Mouse scroll wheel (alt+shift held): zoom
+    - Scroll up → zoom in
+    - Scroll down → zoom out
 - Arrow keys: move by 1 tile in the respective direction
+- Ctrl+Up / Ctrl+Down: move viewport along Z axis
 """
 
 from __future__ import annotations

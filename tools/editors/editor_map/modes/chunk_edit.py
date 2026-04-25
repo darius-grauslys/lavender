@@ -63,6 +63,7 @@ class ChunkPanTool(PanTool):
 
     Arrow keys move by 1 tile (inherited).
     Shift+Arrow keys move by 1 chunk.
+    Ctrl+Up / Ctrl+Down move along Z axis (inherited).
     """
     name = "Chunk Pan"
     icon_label = "CP"

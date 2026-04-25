@@ -17,6 +17,7 @@ class Modifier(IntFlag):
     SHIFT = auto()
     ALT = auto()
     CTRL_SHIFT = CTRL | SHIFT
+    ALT_SHIFT = ALT | SHIFT
 
 
 @dataclass(frozen=True)

@@ -219,12 +219,12 @@ When neither Shift nor Alt is held:
 Scrolling up pans the Workspace up.
 Scrolling down pans the Workspace down.
 
-When Shift is held (and Alt is not):
+When Shift is held (and Alt+Shift is not held):
 
 Scrolling up pans the Workspace left.
 Scrolling down pans the Workspace right.
 
-When Alt is held:
+When Alt+Shift is held:
 
 Scrolling up zooms the Workspace in.
 Scrolling down zooms the Workspace out.
@@ -233,6 +233,15 @@ Scrolling down zooms the Workspace out.
 
 Moves the Workspace by 1 world tile in the respective
 directions of: left, right, up, and down arrows.
+
+#### Z-axis movement
+
+Ctrl+Up moves the Workspace view up on the Z axis.
+Ctrl+Down moves the Workspace view down on the Z axis.
+
+When `CHUNK__DEPTH == 1` (2D world), these bindings are
+still registered but produce no visible effect (the Z
+coordinate remains 0).
 
 ### 1.1.1 Global_Space View
 
@@ -267,10 +276,17 @@ to move the global space selection up and down on
 the Z axis ("in and out of screen") and move the
 Workspace view accordingly see section 2.1.1.
 
+NOTE: This overrides the default Panning Tool Ctrl+Up/Down
+Z-axis movement with Shift+Up/Down for selection-centric
+Z navigation.
+
 ##### 1.1.1.1.2 Global_Space Pan
 
 Shift + Arrow-Keys will move the workspace
 by whole global spaces.
+
+Ctrl+Up and Ctrl+Down move the workspace along the
+Z axis (inherited from the base Panning Tool).
 
 ##### 1.1.1.1.3 Go-To
 
@@ -317,12 +333,19 @@ to move the tile selection up and down on
 the Z axis ("in and out of screen") and move the
 Workspace view accordingly see section 2.1.1.
 
+NOTE: This overrides the default Panning Tool Ctrl+Up/Down
+Z-axis movement with Shift+Up/Down for selection-centric
+Z navigation.
+
 ##### 1.1.2.1.2 Chunk Pan
 
 Arrow-Keys will move workspace by single tiles.
 
 Shift + Arrow-Keys will move the workspace
 by whole chunks.
+
+Ctrl+Up and Ctrl+Down move the workspace along the
+Z axis (inherited from the base Panning Tool).
 
 ##### 1.1.2.1.3 Tile Draw
 
@@ -752,10 +775,13 @@ See `core/include/platform_defaults.h` for `LOCAL_SPACE_MANAGER__WIDTH`,
 `LOCAL_SPACE_MANAGER__HEIGHT`, `LOCAL_SPACE_MANAGER__DEPTH`,
 `GFX_CONTEXT__RENDERING_WIDTH__IN_CHUNKS`, etc.
 
-Note: Z-axis support in `local_space_manager.c` is conditional on
+Note: Chunks are 3D voxel volumes (default 8×8×2). Z-axis support
+in `local_space_manager.c` is conditional on
 `LOCAL_SPACE_MANAGER__DEPTH > 1`. When depth is 1, Z-axis code is
-compiled out. The editor should support Z-axis navigation but
-gracefully handle depth=1 worlds.
+compiled out and the world is effectively 2D. The editor MUST
+support Z-axis navigation when depth > 1, and gracefully disable
+Z-axis controls when depth == 1 (hiding Z from the tile indicator,
+disabling Ctrl+Up/Down, etc.).
 
 # 3. World Serialization Data
 
@@ -804,11 +830,27 @@ Read chunk dimensions from the project's engine_config.h
 project dir). For any constant not overridden there, fall back
 to the defaults in `core/include/platform_defaults.h`.
 
+**IMPORTANT: Chunks are 3D voxel volumes.** The default chunk
+dimensions are 8×8×2 (width × height × depth). However, many
+games built with this engine do NOT use the Z axis, setting
+`CHUNK__DEPTH` to 1 and making the world effectively 2D. When
+depth > 1, the chunk is a 3D voxel volume.
+
+The editor MUST support both cases:
+- When `CHUNK__DEPTH == 1`: Z-axis navigation is disabled or
+  hidden. The workspace tile indicator omits Z. Ctrl+Up/Down
+  (Z movement) is a no-op.
+- When `CHUNK__DEPTH > 1`: Z-axis navigation is fully enabled.
+  The workspace tile indicator shows the current Z level.
+  Ctrl+Up/Down moves the viewport along Z.
+
 Key constants to resolve:
 - `CHUNK__WIDTH` (default: `BIT(3)` = 8)
 - `CHUNK__HEIGHT` (default: `BIT(3)` = 8, NOTE: engine has a
-  macro typo `CHUNK_HEIGHT` vs `CHUNK__HEIGHT`)
-- `CHUNK__DEPTH` (default: `BIT(1)` = 2)
+  macro typo `CHUNK_HEIGHT` vs `CHUNK__HEIGHT` in
+  `platform_defaults.h`)
+- `CHUNK__DEPTH` (default: `BIT(1)` = 2, derived from
+  `CHUNK__DEPTH__BIT_SHIFT` which defaults to 1)
 - `CHUNK__QUANTITY_OF__TILES` (default: WIDTH * HEIGHT * DEPTH)
 
 ### Tile Size
