@@ -151,7 +151,7 @@ class TestTileDrawToolChunkUpdate(unittest.TestCase):
             'CHUNK__QUANTITY_OF__TILES': chunk_w * chunk_h * chunk_d,
         })
 
-        objects = WorkspaceObjects(config)
+        objects = WorkspaceObjects(config, max_tmp_chunks=999999)
         total_tiles = chunk_w * chunk_h * chunk_d
         tile_bytes = bytearray(total_tiles * tile_size)
         chunk = ChunkData(
