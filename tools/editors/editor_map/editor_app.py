@@ -419,7 +419,10 @@ class EditorApp:
         """Check for keybind activations this frame."""
         io = imgui.get_io()
         if io.want_capture_keyboard:
-            return
+            # Still allow Ctrl-modified keybinds (mode switches, etc.)
+            # even when imgui wants keyboard, but skip unmodified keys.
+            if not io.key_ctrl:
+                return
 
         mods = Modifier.NONE
         if io.key_ctrl:
@@ -715,14 +718,27 @@ class EditorApp:
         # Handle workspace input
         if imgui.is_window_hovered():
             io = imgui.get_io()
-            # Scroll to pan
+            # Scroll wheel to pan (uses accumulator for fractional deltas)
             if io.mouse_wheel != 0:
                 if io.key_shift:
-                    self._movement.pan_by_tiles(
-                        int(-io.mouse_wheel), 0)
+                    self._movement.scroll_horizontal(-io.mouse_wheel)
                 else:
-                    self._movement.pan_by_tiles(
-                        0, int(-io.mouse_wheel))
+                    self._movement.scroll_vertical(-io.mouse_wheel)
+
+        # Arrow key panning — check hovered with relaxed flags so
+        # that an active select-drag does not block arrow input.
+        if imgui.is_window_hovered(
+                imgui.HOVERED_ALLOW_WHEN_BLOCKED_BY_ACTIVE_ITEM):
+            io = imgui.get_io()
+            if not io.key_ctrl:
+                if imgui.is_key_pressed(glfw.KEY_UP):
+                    self._movement.pan_by_tiles(0, -1)
+                if imgui.is_key_pressed(glfw.KEY_DOWN):
+                    self._movement.pan_by_tiles(0, 1)
+                if imgui.is_key_pressed(glfw.KEY_LEFT):
+                    self._movement.pan_by_tiles(-1, 0)
+                if imgui.is_key_pressed(glfw.KEY_RIGHT):
+                    self._movement.pan_by_tiles(1, 0)
 
         imgui.end()
 

@@ -24,6 +24,10 @@ DEFAULT_TILE_PX: int = 8
 # How many tiles of movement per unit of scroll-wheel delta.
 SCROLL_SENSITIVITY: float = 1.0
 
+# Epsilon for snapping accumulated scroll to the nearest integer.
+# Prevents floating-point drift from eating a tile step.
+_SCROLL_EPSILON: float = 1e-9
+
 
 @dataclass
 class ViewportState:
@@ -109,6 +113,10 @@ class WorkspaceMovement:
         (e.g. from high-resolution trackpads) are not lost.
         """
         self.viewport._scroll_accum_y += delta * SCROLL_SENSITIVITY
+        # Snap near-integer accumulator to avoid float drift
+        rounded = round(self.viewport._scroll_accum_y)
+        if abs(self.viewport._scroll_accum_y - rounded) < _SCROLL_EPSILON:
+            self.viewport._scroll_accum_y = float(rounded)
         tiles = math.trunc(self.viewport._scroll_accum_y)
         if tiles != 0:
             self.viewport.center_y -= tiles
@@ -126,6 +134,10 @@ class WorkspaceMovement:
         are not lost.
         """
         self.viewport._scroll_accum_x += delta * SCROLL_SENSITIVITY
+        # Snap near-integer accumulator to avoid float drift
+        rounded = round(self.viewport._scroll_accum_x)
+        if abs(self.viewport._scroll_accum_x - rounded) < _SCROLL_EPSILON:
+            self.viewport._scroll_accum_x = float(rounded)
         tiles = math.trunc(self.viewport._scroll_accum_x)
         if tiles != 0:
             self.viewport.center_x -= tiles

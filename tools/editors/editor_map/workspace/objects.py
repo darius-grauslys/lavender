@@ -51,6 +51,7 @@ class WorkspaceObjects:
         self._chunks: Dict[Tuple[int, int, int], ChunkData] = {}
         self._entities: Dict[int, EntityData] = {}
         self._loading_chunks: set = set()
+        self._saving_chunks: set = set()
 
     # -- Public API (main thread) --
 
@@ -128,6 +129,27 @@ class WorkspaceObjects:
         """Return all chunks that have been modified."""
         with self._lock:
             return [c for c in self._chunks.values() if c.is_dirty]
+
+    @property
+    def pending_operations_count(self) -> int:
+        """
+        Number of in-flight async operations (loads + saves).
+
+        Useful for tests that need to wait for all background
+        serialization to complete.
+        """
+        with self._lock:
+            return len(self._loading_chunks) + len(self._saving_chunks)
+
+    def mark_chunk_saving(self, x: int, y: int, z: int) -> None:
+        """Mark a chunk as being saved by a background thread."""
+        with self._lock:
+            self._saving_chunks.add((x, y, z))
+
+    def unmark_chunk_saving(self, x: int, y: int, z: int) -> None:
+        """Clear the saving flag for a chunk."""
+        with self._lock:
+            self._saving_chunks.discard((x, y, z))
 
     # -- Private API (serialization thread) --
     # These methods are ONLY to be called by serialization
