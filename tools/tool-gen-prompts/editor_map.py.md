@@ -233,14 +233,7 @@ Mode activation shortcut: Ctrl+I
 
 #### 1.1.4.1 Tooling
 
-##### 1.1.4.1.1 Tile Select
-
 THIS MODE IS PLACEHOLDER AT THIS TIME.
-
-##### 1.1.4.1.2 Entity Pan
-
-This is the pan tool for the Entity Editor mode.
-It has default functionality as described in section 1.1.
 
 ## 1.2 Tool HUD
 
