@@ -10,12 +10,23 @@ import imgui
 from tools.editor_ui_modules.ui_element_defs import ELEMENT_DEF_BY_TAG, UIElementDef
 
 
+def _find_parent_of(root: ET.Element, target: ET.Element) -> Optional[ET.Element]:
+    """Find the direct parent of *target* in the tree."""
+    for parent in root.iter():
+        for child in parent:
+            if child is target:
+                return parent
+    return None
+
+
 class PropertiesHUD:
     """Draws an attribute editor for the currently selected XML element."""
 
     def __init__(self):
         self.selected_element: Optional[ET.Element] = None
         self._buf: Dict[str, str] = {}  # per-key input buffers
+        self.on_view_parent: Optional[Callable[[ET.Element], None]] = None
+        self.xml_root: Optional[ET.Element] = None
 
     def select(self, elem) -> None:
         if elem is not None and hasattr(elem, "xml_elem"):
@@ -46,6 +57,12 @@ class PropertiesHUD:
             return
 
         imgui.text(f"<{elem.tag}>")
+        if self.xml_root is not None and self.on_view_parent is not None:
+            imgui.same_line()
+            if imgui.small_button("View Parent##vp"):
+                parent = _find_parent_of(self.xml_root, elem)
+                if parent is not None:
+                    self.on_view_parent(parent)
         imgui.separator()
 
         edef = ELEMENT_DEF_BY_TAG.get(elem.tag)

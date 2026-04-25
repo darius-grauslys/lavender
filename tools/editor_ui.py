@@ -150,7 +150,29 @@ class EditorApp:
 
     def on_select_element(self, elem: Optional[ET.Element]) -> None:
         self.properties_hud.select(elem)
+        self.properties_hud.xml_root = self._xml_root
+        self.properties_hud.on_view_parent = self._on_view_parent
         self.ui_hierarchy.selected_xml_elem = elem
+        # Sync work area selection with hierarchy
+        self._sync_work_area_selection(elem)
+
+    def _on_view_parent(self, parent_elem: ET.Element) -> None:
+        """Focus the parent element in both hierarchy and work area."""
+        self.on_select_element(parent_elem)
+
+    def _sync_work_area_selection(self, xml_elem: Optional[ET.Element]) -> None:
+        """Find the ResolvedElement matching xml_elem and select it in work area."""
+        if xml_elem is None:
+            self.work_area.selected_element = None
+            return
+        for resolved in self._elements:
+            re_xml = resolved.xml_elem if hasattr(resolved, 'xml_elem') else resolved
+            if re_xml is xml_elem:
+                self.work_area.selected_element = resolved
+                self.work_area._selection_frame = self.work_area._frame_counter
+                return
+        # Not found — might be a container parent above <ui>
+        self.work_area.selected_element = None
 
     def on_delete_element(self, elem: ET.Element) -> None:
         if self._xml_root is None:
@@ -232,6 +254,22 @@ class EditorApp:
             self.message_hud.info("Redo")
         else:
             self.message_hud.info("Nothing to redo")
+
+    def _print_keybindings(self) -> None:
+        """Print all keybindings to the message HUD."""
+        self.message_hud.info("=== Keybindings ===")
+        self.message_hud.info("Ctrl+S          Save (.xml.tmp -> .xml)")
+        self.message_hud.info("Ctrl+Z          Undo")
+        self.message_hud.info("Ctrl+Shift+Z    Redo")
+        self.message_hud.info("Ctrl+F (hold)   Reveal all element outlines")
+        self.message_hud.info("Ctrl+H          Show this help")
+        self.message_hud.info("Ctrl+Scroll     Zoom in/out")
+        self.message_hud.info("Ctrl+Up/Down    Zoom in/out")
+        self.message_hud.info("Scroll           Pan vertically")
+        self.message_hud.info("Shift+Scroll    Pan horizontally")
+        self.message_hud.info("Arrow Keys      Pan workspace")
+        self.message_hud.info("Right-click     Deselect element")
+        self.message_hud.info("===================")
 
     def save(self) -> None:
         if self._xml_root is not None and self._xml_path is not None:
@@ -486,6 +524,8 @@ class EditorApp:
                 self.undo()
         if ctrl and _is_down(key_s):
             self.save()
+        if ctrl and _is_down(pyglet.window.key.H):
+            self._print_keybindings()
 
         # Arrow key panning — use imgui mapped arrow keys
         pan_speed = 16.0
@@ -636,6 +676,8 @@ class EditorApp:
             | imgui.WINDOW_NO_RESIZE
             | imgui.WINDOW_NO_MOVE
             | imgui.WINDOW_NO_SAVED_SETTINGS
+            | imgui.WINDOW_NO_SCROLLBAR
+            | imgui.WINDOW_NO_SCROLL_WITH_MOUSE
         )
         imgui.begin("##work_area_window", closable=False, flags=flags)
 
@@ -684,10 +726,6 @@ class EditorApp:
                 zoom=self._zoom,
                 tileset_picker=self.tool_hud._tileset_picker,
             )
-            imgui.dummy(
-                int(self.work_w * self._zoom),
-                int(self.work_h * self._zoom),
-            )
         else:
             imgui.text("Open a file from the left panel.")
 
@@ -717,8 +755,8 @@ def main() -> None:
     renderer = PygletRenderer(window)
 
     app = EditorApp()
-    app.message_hud.info("Welcome to the Lavender UI Editor.")
     app._key_state = key_state  # expose to draw_frame
+    app._print_keybindings()
 
     @window.event
     def on_draw():

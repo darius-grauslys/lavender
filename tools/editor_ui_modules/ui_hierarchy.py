@@ -17,6 +17,7 @@ from typing import Callable, Dict, Optional, Set
 import imgui
 
 from tools.editor_ui_modules.ui_element_defs import ELEMENT_DEF_BY_TAG
+from tools.editor_ui_modules.xml_backing import _CONTAINER_TAGS
 
 
 class UIHierarchy:
@@ -26,6 +27,7 @@ class UIHierarchy:
         self.selected_xml_elem: Optional[ET.Element] = None
         self.concealed_elements: Set[int] = set()  # id() of concealed ET.Elements
         self._collapsed: Set[int] = set()  # id() of collapsed ET.Elements
+        self._initialized_concealed: Set[int] = set()  # track which elems got default conceal
 
     def is_concealed(self, xml_elem: ET.Element) -> bool:
         """Check if element or any ancestor is concealed."""
@@ -70,12 +72,17 @@ class UIHierarchy:
         on_add_child: Callable,
         selected_tool_name: str,
     ) -> None:
-        # Repeating containers: show children once
         from tools.editor_ui_modules.xml_backing import _REPEATING_TAGS
 
         for child in node:
             elem_id = id(child)
             tag = child.tag
+
+            # Auto-conceal containers on first encounter
+            if tag in _CONTAINER_TAGS and elem_id not in self._initialized_concealed:
+                self._initialized_concealed.add(elem_id)
+                self.concealed_elements.add(elem_id)
+
             name = child.attrib.get("name", "")
             display = name if name else f"<{tag}>"
             is_concealed = elem_id in self.concealed_elements
