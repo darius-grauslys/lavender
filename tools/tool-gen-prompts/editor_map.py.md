@@ -8,6 +8,131 @@ editor_map.json file in the project's ./assets directory
 has a configuration field bearing the value of the
 described property.
 
+## Engine Source File References
+
+The editor implementation MUST derive its understanding of
+data types, struct layouts, constants, and serialization formats
+from the engine source files listed below. Do NOT hardcode
+values — always read and parse the engine source to determine
+the correct implementation. If the engine source changes, the
+editor should automatically adapt.
+
+### Core Type Definitions
+
+- `core/include/defines.h` — Master definition file for ALL
+  structs, macros, and typedefs. This is the single source of
+  truth for struct layouts including: `Entity`, `Chunk`,
+  `Global_Space`, `Inventory`, `Item_Stack`, `Serialization_Header`,
+  `Serialization_Header__UUID_64`, `Tile_Logic_Record`,
+  `Tile_Logic_Context`, `Chunk_Data`, `Chunk_Flags`, etc.
+
+- `core/include/defines_weak.h` — Forward declarations and
+  weak/fallback definitions for all types. Contains the
+  `#include <types/implemented/...>` pattern that loads
+  project-local type overrides. The pattern is:
+  ```c
+  #include <types/implemented/world/tile_kind.h>
+  #ifndef DEFINE_TILE_KIND
+  // fallback definition
+  #endif
+  ```
+  The editor must understand this pattern: if a project-local
+  header defines the guard macro (e.g., `DEFINE_TILE_KIND`),
+  the project-local definition takes precedence.
+
+### Engine Configuration & Constants
+
+- `core/include/platform_defaults.h` — Defines ALL default
+  constants including chunk dimensions, local space manager
+  dimensions, max entity counts, tile pixel sizes, etc.
+  These are the fallback values when a project does not override.
+
+- `core/include/config/implemented/engine_config.h` — Project-
+  overridable engine constants. Contains commented-out `#define`
+  directives that projects uncomment to override defaults from
+  `platform_defaults.h`. The editor MUST parse the project's
+  copy of this file (at `./include/config/implemented/engine_config.h`
+  relative to the project directory) to detect overridden constants.
+  For `BIT(n)` expressions, evaluate as `1 << n`.
+  Fall back to `platform_defaults.h` defaults for any constant
+  not overridden.
+
+### Tile System
+
+- `core/include/world/chunk.h` — Tile indexing within chunks.
+  Contains `get_p_tile_from__chunk` and `set_tile_of__chunk`.
+  The read-path indexing formula in `get_p_tile_from__chunk`
+  is the authoritative tile index formula for serialized data.
+  NOTE: The Y-axis is inverted in memory. NOTE: `set_tile_of__chunk`
+  uses a DIFFERENT formula that does NOT invert Y — this is a
+  known engine inconsistency; use the `get_p_tile_from__chunk`
+  formula for serialization.
+
+- `examples/template-files/include/types/implemented/world/tile.h` —
+  Reference implementation of a project-local `Tile` struct.
+  Demonstrates the `union` pattern with `GEN-RENDER-BEGIN/END`
+  and `GEN-LAYER-BEGIN/END` markers, and critically the
+  `u8 array_of__tile_data__u8[N]` member which deterministically
+  encodes `sizeof(Tile) == N`.
+
+- `examples/template-files/include/types/implemented/world/tile_kind.h` —
+  Reference implementation of `Tile_Kind` enum with `GEN-LOGIC-BEGIN/END`
+  and `GEN-NO-LOGIC-BEGIN/END` markers.
+
+- `examples/template-files/include/types/implemented/world/tile_cover_kind.h` —
+  Reference implementation of `Tile_Cover_Kind` enum.
+
+- `examples/template-files/include/types/implemented/world/tile_layer.h` —
+  Reference implementation of `Tile_Layer` enum with `GEN-BEGIN/END` markers.
+
+- `core/include/types/implemented/world/tile_kind.h` — Engine default
+  (nearly empty) `Tile_Kind`. Shows the `DEFINE_TILE_KIND` guard pattern.
+
+- `core/include/types/implemented/world/tile_layer.h` — Engine default
+  (nearly empty) `Tile_Layer`. Shows the `DEFINE_TILE_LAYER` guard pattern.
+
+### Entity System
+
+- `core/include/types/implemented/entity/entity_data.h` — Engine default
+  `Entity_Data` struct. Projects override via `DEFINE_ENTITY_DATA`.
+  The editor must parse the project-local version at
+  `./include/types/implemented/entity/entity_data.h`.
+
+- The `Entity` struct in `defines.h` contains:
+  `Serialization_Header` + `Entity_Data` + `Entity_Functions`.
+  `Entity_Functions` contains function pointers that are
+  runtime-only and MUST NOT be serialized.
+
+### World Serialization & Filesystem
+
+- `core/source/world/serialization/world_directory.c` — Authoritative
+  source for world filesystem layout, chunk directory path generation
+  (quad-tree descent), and file naming (`t` for tiles, `e` for entities,
+  `i` for inventories, `h` for world header). The editor MUST replicate
+  this path generation logic exactly in Python, including any quirks.
+  NOTE: `append_base64_value_to__path` contains a potential bug where
+  `_base64_lexicon[value]` is used instead of `_base64_lexicon[b64]` —
+  the editor must replicate the actual behavior.
+
+- `core/source/world/global_space_manager.c` — Global space allocation,
+  reference counting, and lifecycle management. Useful for understanding
+  how global spaces are held/dropped and how UUIDs are generated.
+
+- `core/source/world/local_space_manager.c` — Local space manager
+  initialization and scrolling. Demonstrates the toroidal linked-list
+  structure and Z-axis conditional compilation
+  (`#if LOCAL_SPACE_MANAGER__DEPTH > 1`).
+
+### UUID System
+
+- UUID widths vary by type. Consult `defines.h`:
+  - `Serialization_Header` uses `Identifier__u32` (32-bit) — used by
+    `Entity`, `Inventory`, `Item_Stack`, `UI_Element`.
+  - `Serialization_Header__UUID_64` uses `Identifier__u64` (64-bit) —
+    used by `Global_Space`, `Chunk`, `Collision_Node`.
+  - UUID branding scheme is defined in `defines_weak.h` under
+    `UUID_BRANDING__*` macros.
+
 # 1. UI
 
 ## 1.1 Editor Modes
@@ -231,6 +356,11 @@ new entry.
 
 Mode activation shortcut: Ctrl+I
 
+THIS MODE IS PLACEHOLDER AT THIS TIME.
+Implement as a stub editor mode that displays
+"Container/Inventory Edit — Not yet implemented"
+in the workspace area. Do not implement any tooling.
+
 #### 1.1.4.1 Tooling
 
 THIS MODE IS PLACEHOLDER AT THIS TIME.
@@ -278,11 +408,51 @@ When resizing the Properties HUD, ensure the input is consumed
 and does not propgate to the workspace.
 
 The Properties HUD anchors to the top of the screen and anchors
-its bottom to the top of the Messags HUD.
+its bottom to the top of the Messages HUD.
 
 The fields of properties are updated based on selected object.
 The fields of properties for a selected object are determined
-by section 3.
+by section 3 and derived from the engine source files.
+
+### 1.3.1 Deriving Property Fields
+
+The Properties HUD fields for each object type MUST be derived
+from the engine source, not hardcoded. The agent implementing
+this should consult:
+
+**For Global_Space properties:**
+See the `Global_Space` struct in `core/include/defines.h`.
+Display all non-pointer, non-function fields. Pointer fields
+(e.g., `p_chunk`, `p_collision_node`, `p_generation_process`)
+are runtime-only and should not be displayed.
+
+**For Tile properties:**
+See the project-local `./include/types/implemented/world/tile.h`.
+Parse the `GEN-RENDER-BEGIN` / `GEN-RENDER-END` block to find
+the tile layer enum fields (e.g., `Tile_Kind`, `Tile_Cover_Kind`).
+Each enum field should be an editable dropdown populated from
+the corresponding parsed enum values.
+
+**For Entity properties:**
+See the `Entity` struct in `core/include/defines.h` and the
+project-local `./include/types/implemented/entity/entity_data.h`.
+Display `Serialization_Header` fields as read-only.
+Display `Entity_Data` fields as editable.
+Do NOT display `Entity_Functions` (runtime-only function pointers).
+See `core/include/defines.h` for entity flag definitions
+(`ENTITY_FLAG__*`) to interpret the entity flags bitfield.
+
+**For Inventory properties (placeholder):**
+Not yet implemented. See section 1.1.4.
+
+### 1.3.2 Field Types
+
+Map C types to validated input fields per section 1.7:
+- `u8`, `u16`, `u32`, `u64` → unsigned integer fields
+- `i8`, `i16`, `i32`, `i64` → signed integer fields
+- Enum types → dropdown selection populated from parsed enum
+- Bitfield/flags types → checkboxes for each known flag bit
+- `Identifier__u32` / `Identifier__u64` → read-only unsigned integer
 
 ## 1.4 File Hierarchy HUD
 
@@ -313,6 +483,9 @@ should fail with an ERROR messages to Message HUD indicating
 the project is under defined.
 
 ## 1.5 Message HUD
+
+See `tools/editor_ui_modules/message_hud.py` for the existing
+Message HUD implementation. Extend this with a SYSTEM message level.
 
 When resizing the Messages HUD, ensure the input is consumed
 and does not propgate to the workspace.
@@ -373,16 +546,30 @@ Read only fields are fields which cannot be modified.
 
 ### 2.1.1 Global_Space rendering/management
 
-See core/source/world/global_space_manager.c
+See `core/source/world/global_space_manager.c`
 for implementation suggestions on memory management
-of global spaces.
+of global spaces. Key functions: `allocate_global_space_in__global_space_manager`,
+`hold_global_space_within__global_space_manager`,
+`drop_global_space_within__global_space_manager`.
 
-See core/source/world/local_space_manager.c
+See `core/source/world/local_space_manager.c`
 for implementation suggestions on chunk rendering
 of global spaces (note it is local_space_manager
 because local_space nodes point to global_space
 nodes, and have additional overhead data to associate
 adjacent local_spaces.)
+
+See `core/include/defines.h` for the `Global_Space`, `Local_Space`,
+`Local_Space_Manager`, `Chunk`, and `Chunk_Data` struct definitions.
+
+See `core/include/platform_defaults.h` for `LOCAL_SPACE_MANAGER__WIDTH`,
+`LOCAL_SPACE_MANAGER__HEIGHT`, `LOCAL_SPACE_MANAGER__DEPTH`,
+`GFX_CONTEXT__RENDERING_WIDTH__IN_CHUNKS`, etc.
+
+Note: Z-axis support in `local_space_manager.c` is conditional on
+`LOCAL_SPACE_MANAGER__DEPTH > 1`. When depth is 1, Z-axis code is
+compiled out. The editor should support Z-axis navigation but
+gracefully handle depth=1 worlds.
 
 # 3. World Serialization Data
 
@@ -419,26 +606,134 @@ outside of what is specified in section 4.5.
 NOTE: if the local files are not present generate an ERROR message to
 Message HUD.
 
+## Deriving Serialization Formats from Engine Source
+
+The editor MUST NOT hardcode struct sizes, field offsets, or
+constant values. Instead, derive them from the engine source:
+
+### Chunk Constants
+
+Read chunk dimensions from the project's engine_config.h
+(at `./include/config/implemented/engine_config.h` relative to
+project dir). For any constant not overridden there, fall back
+to the defaults in `core/include/platform_defaults.h`.
+
+Key constants to resolve:
+- `CHUNK__WIDTH` (default: `BIT(3)` = 8)
+- `CHUNK__HEIGHT` (default: `BIT(3)` = 8, NOTE: engine has a
+  macro typo `CHUNK_HEIGHT` vs `CHUNK__HEIGHT`)
+- `CHUNK__DEPTH` (default: `BIT(1)` = 2)
+- `CHUNK__QUANTITY_OF__TILES` (default: WIDTH * HEIGHT * DEPTH)
+
+### Tile Size
+
+Parse the project-local `./include/types/implemented/world/tile.h`.
+Look for the `u8 array_of__tile_data__u8[N]` member inside the
+`Tile` struct union. The array size `N` gives `sizeof(Tile)`.
+See `examples/template-files/include/types/implemented/world/tile.h`
+for the reference pattern.
+
+### Tile Indexing
+
+The authoritative tile index formula is in
+`core/include/world/chunk.h` in the `get_p_tile_from__chunk`
+function. The Y-axis is INVERTED in memory.
+
+### Chunk Binary Layout
+
+From `core/include/defines.h`, the `Chunk` struct is:
+```
+Serialization_Header__UUID_64 (size_of__struct: u32 + uuid: u64)
+Chunk_Flags (u16)
+Tile tiles[CHUNK__QUANTITY_OF__TILES]
+```
+The tile file (`t`) contains the raw tile array only.
+
+### Entity Binary Layout
+
+From `core/include/defines.h`, the serialized portion of
+`Entity` is: `Serialization_Header` (u32 size + u32 uuid) +
+`Entity_Data` (project-local, see entity_data.h).
+`Entity_Functions` contains function pointers and MUST NOT
+be serialized. See `core/include/defines.h` for the
+`ENTITY_FLAG__IS_WITH_HITBOX__SERIALIZATION` and
+`ENTITY_FLAG__IS_WITH_INVENTORY__SERIALIZATION` flags which
+indicate associated components.
+
+### Endianness
+
+The engine targets NDS (ARM7/9, little-endian) and x86/x64
+(little-endian). Assume little-endian for all serialized data.
+
 ## 3.1 Global_Space
 
-No notes.
+See `core/include/defines.h` for the `Global_Space` struct definition.
+See `core/source/world/global_space_manager.c` for allocation, UUID
+generation (`get_uuid_for__global_space`), reference counting, and
+lifecycle management.
+
+Global spaces are not serialized as monolithic blobs. Their components
+(tiles, entities, inventories) are serialized to separate files within
+the chunk directory tree. See `core/source/world/serialization/world_directory.c`
+for the filesystem layout.
 
 ## 3.1.2 Chunk
+
+See `core/include/defines.h` for the `Chunk` and `Chunk_Data` struct
+definitions. The chunk tile file (`t`) contains the raw
+`Tile tiles[CHUNK__QUANTITY_OF__TILES]` array.
+
+See `core/include/world/chunk.h` for tile indexing, chunk flag
+management, and the `get_p_tile_from__chunk` function which defines
+the authoritative tile index formula.
+
+See `core/include/platform_defaults.h` for `CHUNK__WIDTH`,
+`CHUNK__HEIGHT`, `CHUNK__DEPTH`, and `CHUNK__QUANTITY_OF__TILES`.
+These may be overridden by the project's `engine_config.h`.
 
 ### 3.1.2.1 Tile
 
 Pay VERY close attention to the Tile memory footprint
 it is VERY MUCH NOT TRIVIAL.
 
-Look at ./examples/template-files/include/types/implemented/world/tile.h
-Look at ./examples/template-files/include/types/implemented/world/tile_layer.h
-Look at ./examples/template-files/include/types/implemented/world/tile_kind.h
-Look at ./examples/template-files/include/types/implemented/world/tile_cover_kind.h
-Look at ./examples/template-files/source/world/implemented/world/tile_logic_table__cover.c
-Look at ./examples/template-files/source/world/implemented/world/tile_logic_table__ground.c
-Look at ./examples/template-files/source/world/implemented/world/tile_logic_table_registrar.c
+The Tile struct is project-local. The editor must parse the
+project's `./include/types/implemented/world/tile.h` to determine
+the tile layout. The key patterns to look for:
+
+1. `u8 array_of__tile_data__u8[N]` — gives `sizeof(Tile) == N`
+2. `GEN-RENDER-BEGIN` / `GEN-RENDER-END` — contains the tile layer
+   enum fields (e.g., `Tile_Kind`, `Tile_Cover_Kind`) with their
+   bit widths. These are the editable properties in the Properties HUD.
+3. `GEN-LAYER-BEGIN` / `GEN-LAYER-END` — contains the logic and
+   animation sub-fields organized into byte-aligned groups.
+
+Reference files for understanding the patterns:
+- `examples/template-files/include/types/implemented/world/tile.h`
+- `examples/template-files/include/types/implemented/world/tile_layer.h`
+- `examples/template-files/include/types/implemented/world/tile_kind.h`
+- `examples/template-files/include/types/implemented/world/tile_cover_kind.h`
+
+For tile indexing within chunks, see `core/include/world/chunk.h`
+(`get_p_tile_from__chunk`). The Y-axis is inverted in memory.
+
+For tile logic tables (optional, lower priority):
+- `examples/template-files/source/world/implemented/world/tile_logic_table__cover.c`
+- `examples/template-files/source/world/implemented/world/tile_logic_table__ground.c`
+- `examples/template-files/source/world/implemented/world/tile_logic_table_registrar.c`
 
 ## 3.1.3 Entity
+
+See `core/include/defines.h` for the `Entity` struct layout.
+The serialized portion is `Serialization_Header` + `Entity_Data`.
+`Entity_Functions` MUST NOT be serialized (contains function pointers).
+
+See `core/include/types/implemented/entity/entity_data.h` for the
+engine default `Entity_Data`. The project may override this via
+`DEFINE_ENTITY_DATA` in `./include/types/implemented/entity/entity_data.h`.
+
+See `core/include/defines.h` for `ENTITY_FLAG__IS_WITH_HITBOX__SERIALIZATION`
+and `ENTITY_FLAG__IS_WITH_INVENTORY__SERIALIZATION` flags which indicate
+whether the entity has associated hitbox/inventory components.
 
 After the entire Global_Space is loaded
 if the Entity does not have a matching hitbox
@@ -447,11 +742,19 @@ UUID, write an INFO message into the Message HUD:
 
 ## 3.1.4 Inventory
 
-No notes.
+See `core/include/defines.h` for the `Inventory` and `Item_Stack`
+struct definitions. Inventories use 32-bit UUIDs
+(`Serialization_Header`). The UUID encoding scheme for inventory
+containers vs entity inventories is defined by the
+`UUID_BIT_SHIFT__INVENTORY__*` and `UUID_MASK__INVENTORY__*`
+macros in `core/include/defines.h`.
 
 ## 3.1.5 Hitbox
 
-No notes.
+See `core/include/defines.h` for `Hitbox_AABB` and
+`Hitbox_AABB_Manager` struct definitions. Hitboxes use 32-bit
+UUIDs (`Serialization_Header`). The `Hitbox_Context` manages
+multiple hitbox manager instances of different types.
 
 # 4. Software Architecture
 
@@ -567,6 +870,92 @@ The editor should produce an ERROR message, and not load the type.
 If one of the supported editor objects uses a type which type
 that failed to load (not found) the project should be considered
 Under Defined per section 3.
+
+### 4.5.1 C Enum Parsing
+
+Implement a C enum parser that handles the patterns found in the
+engine source. The parser must support:
+
+1. `typedef enum Name { ... } Name;` declarations
+2. Sequential values (auto-incrementing from 0 or from last explicit value)
+3. Explicit value assignments (e.g., `Foo = 5,`)
+4. Alias assignments (e.g., `Foo = Bar,` where Bar is a prior enum member)
+5. `GEN-LOGIC-BEGIN` / `GEN-LOGIC-END` markers
+6. `GEN-NO-LOGIC-BEGIN` / `GEN-NO-LOGIC-END` markers
+7. `GEN-BEGIN` / `GEN-END` markers
+8. Comments (single-line `//` and multi-line `/* */`)
+
+See `core/include/defines_weak.h` for the `#include` + `#ifndef DEFINE_*`
+pattern that determines which header provides the authoritative definition.
+
+See `core/include/types/implemented/world/tile_kind.h` for the engine
+default (nearly empty) enum with `GEN-*` markers.
+
+See `examples/template-files/include/types/implemented/world/tile_kind.h`
+for a populated project-local enum.
+
+NOTE: Enum member names do not always match the enum type name.
+For example, `Tile_Cover_Kind` in
+`examples/template-files/include/types/implemented/world/tile_cover_kind.h`
+uses `Tile_Kind__None`, `Tile_Kind__Logical`, and `Tile_Kind__Unknown`
+as member names despite being a `Tile_Cover_Kind` enum. The parser
+must not assume member name prefixes match the typedef name.
+
+### 4.5.2 Engine Config Parsing
+
+Implement a parser for `engine_config.h` that:
+
+1. Reads the project-local file at
+   `./include/config/implemented/engine_config.h`
+2. Identifies uncommented `#define CONSTANT_NAME value` lines
+3. Evaluates `BIT(n)` expressions as `1 << n`
+4. Evaluates `MASK(n)` expressions as `(1 << n) - 1`
+5. Falls back to defaults from `core/include/platform_defaults.h`
+   for any constant not overridden
+
+See `core/include/config/implemented/engine_config.h` for the
+override pattern (commented-out `#define` directives that projects
+uncomment).
+
+See `core/include/platform_defaults.h` for all default constant
+values and their derivation formulas.
+
+### 4.5.3 Tile Struct Size Extraction
+
+Parse the project-local `./include/types/implemented/world/tile.h`
+to extract `sizeof(Tile)` from the `u8 array_of__tile_data__u8[N]`
+pattern. Also extract tile layer enum fields from the
+`GEN-RENDER-BEGIN` / `GEN-RENDER-END` block.
+
+See `examples/template-files/include/types/implemented/world/tile.h`
+for the reference pattern.
+
+### 4.5.4 Source-Driven Validation
+
+When the editor starts, it should validate its pythonic type
+representations against the engine source files. If the engine
+source has changed in a way that invalidates the editor's
+assumptions, the editor should produce an ERROR message
+describing the mismatch.
+
+The following engine source files should be consulted at
+editor startup to derive or validate implementation:
+
+| Purpose | Engine Source File |
+|---------|-------------------|
+| All struct definitions | `core/include/defines.h` |
+| Forward declarations & type override pattern | `core/include/defines_weak.h` |
+| Default constants | `core/include/platform_defaults.h` |
+| Project constant overrides | `core/include/config/implemented/engine_config.h` |
+| Tile indexing formula | `core/include/world/chunk.h` |
+| World filesystem layout | `core/source/world/serialization/world_directory.c` |
+| Global space management | `core/source/world/global_space_manager.c` |
+| Local space management | `core/source/world/local_space_manager.c` |
+| Entity data (engine default) | `core/include/types/implemented/entity/entity_data.h` |
+| Tile struct (reference) | `examples/template-files/include/types/implemented/world/tile.h` |
+| Tile_Kind (reference) | `examples/template-files/include/types/implemented/world/tile_kind.h` |
+| Tile_Cover_Kind (reference) | `examples/template-files/include/types/implemented/world/tile_cover_kind.h` |
+| Tile_Layer (reference) | `examples/template-files/include/types/implemented/world/tile_layer.h` |
 
 # 6. Testing
 

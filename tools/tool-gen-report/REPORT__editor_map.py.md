@@ -1,7 +1,7 @@
 # editor_map.py Specification Review Report
 
 Generated: 2026-04-25  
-Revision: 3 (after platform_defaults.h, chunk.h, template tile.h, engine_config.h review)
+Revision: 4 (spec updated with engine source file references)
 
 ---
 
@@ -332,3 +332,10 @@ These are NOT equivalent — `set_tile_of__chunk` does NOT invert Y. This is lik
 **Deferrable:** B-1 (Container/Inventory mode — spec says placeholder).
 
 The UI framework, keybind system, enum parser, editor mode architecture, and world directory port can all begin immediately.
+
+**Revision 4 note:** The spec has been updated to embed engine source file
+references throughout. Future agents should derive all type definitions,
+struct layouts, constants, and serialization formats from the referenced
+engine source files rather than relying on hardcoded values in the spec
+or report. If the engine source changes, the editor implementation should
+be updated to match by consulting the referenced files.
