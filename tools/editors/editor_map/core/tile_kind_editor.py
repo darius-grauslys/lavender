@@ -174,8 +174,10 @@ def create_editor_state_from_enum(
     )
 
     for member in enum.members:
-        # Skip None and Unknown sentinel values
+        # Skip None, Unknown, and Logical sentinel values
         if member.name.endswith('__None') or member.name.endswith('__Unknown'):
+            continue
+        if member.name.endswith('__Logical'):
             continue
         # Skip alias members (e.g. Tile_Kind__Logical = Tile_Kind__Water)
         if member.gen_region is None and member.value > 0:
@@ -212,12 +214,20 @@ def write_tile_kind_header(
         state: The edited state to write
         guard_macro: e.g. "DEFINE_TILE_KIND"
     """
+    # Names that must never appear in the GEN for-loops
+    _sentinel_suffixes = ('__None', '__Unknown', '__Logical')
+
+    def _is_sentinel(name: str) -> bool:
+        return any(name.endswith(s) for s in _sentinel_suffixes)
+
     logical_names = {lt.tile_kind_name for lt in state.logical_tiles}
 
     logical_kinds = [
-        tk for tk in state.tile_kinds if tk.name in logical_names]
+        tk for tk in state.tile_kinds
+        if tk.name in logical_names and not _is_sentinel(tk.name)]
     non_logical_kinds = [
-        tk for tk in state.tile_kinds if tk.name not in logical_names]
+        tk for tk in state.tile_kinds
+        if tk.name not in logical_names and not _is_sentinel(tk.name)]
 
     logical_kinds.sort(key=lambda e: e.value)
     non_logical_kinds.sort(key=lambda e: e.value)

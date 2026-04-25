@@ -8,9 +8,12 @@ next tile to the right, wrapping to the next row.
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional, Tuple
+
+logger = logging.getLogger(__name__)
 
 TILE_PX = 8  # Each tile is 8x8 pixels
 
@@ -81,8 +84,12 @@ def load_tilesheet(filepath: Path) -> Optional[Tilesheet]:
             height=height,
             pixels=pixels)
     except ImportError:
-        pass
-    except Exception:
+        logger.warning(
+            "PIL/Pillow not available, trying pypng fallback.")
+    except Exception as e:
+        logger.error(
+            "Failed to load tilesheet with PIL: %s: %s",
+            filepath, e)
         return None
 
     # Fallback: try pypng
@@ -98,8 +105,12 @@ def load_tilesheet(filepath: Path) -> Optional[Tilesheet]:
             height=h,
             pixels=bytes(pixel_data))
     except ImportError:
-        pass
-    except Exception:
-        return None
+        logger.error(
+            "Neither PIL/Pillow nor pypng is available. "
+            "Cannot load tilesheet: %s", filepath)
+    except Exception as e:
+        logger.error(
+            "Failed to load tilesheet with pypng: %s: %s",
+            filepath, e)
 
     return None

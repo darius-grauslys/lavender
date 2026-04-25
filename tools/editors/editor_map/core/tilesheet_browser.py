@@ -27,6 +27,7 @@ if TYPE_CHECKING:
 
 def _open_png_file_dialog(
         message_hud: Optional[MessageHUD] = None,
+        default_directory: Optional[Path] = None,
 ) -> Optional[str]:
     """
     Open a native file browser dialog filtered to .png files.
@@ -40,9 +41,11 @@ def _open_png_file_dialog(
     try:
         from imgui_bundle import portable_file_dialogs as pfd
 
+        start_dir = str(default_directory) if default_directory else ""
+
         selection = pfd.open_file(
             "Select Tilesheet PNG",
-            "",
+            start_dir,
             ["PNG images", "*.png", "All files", "*.*"],
         ).result()
 
@@ -108,7 +111,7 @@ def browse_and_set_tilesheet(
                 "Cannot browse for tilesheet: no world selected.")
         return None, None
 
-    selected = _open_png_file_dialog(message_hud)
+    selected = _open_png_file_dialog(message_hud, project_dir)
     if selected is None:
         return None, None
 

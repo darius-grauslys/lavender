@@ -17,6 +17,7 @@ import imgui
 from imgui.integrations.glfw import GlfwRenderer
 import glfw
 import OpenGL.GL as gl
+import ctypes
 
 # Ensure editor_map package root is on sys.path
 _editor_map_dir = str(Path(__file__).resolve().parent)
@@ -73,6 +74,9 @@ class EditorApp:
         self._editor_project_config: Optional[EditorProjectConfig] = None
         self._tilesheet: Optional[Tilesheet] = None
         self._tilesheet_rendering_enabled: bool = False
+
+        # GL texture for tilesheet
+        self._tilesheet_texture_id: int = 0
 
         # Workspace
         self._movement = WorkspaceMovement()
@@ -189,6 +193,8 @@ class EditorApp:
         chunk_mode.set_on_enum_updated(self._reload_tile_enums)
         if self._tilesheet:
             chunk_mode.set_active_tilesheet(self._tilesheet)
+            chunk_mode.set_tilesheet_texture_id(
+                self._tilesheet_texture_id)
         entity_mode = EntityEditMode(self._keybind_manager)
         inv_mode = InventoryEditMode(self._keybind_manager)
 
@@ -230,10 +236,12 @@ class EditorApp:
                     f"Tilesheet loaded: {resolved} "
                     f"({self._tilesheet.width}x{self._tilesheet.height}, "
                     f"{self._tilesheet.total_tiles} tiles)")
+                self._upload_tilesheet_texture()
             else:
                 self._tilesheet_rendering_enabled = False
                 self._message_hud.error(
-                    f"Failed to load tilesheet image at '{resolved}'.")
+                    f"Failed to load tilesheet image at '{resolved}'. "
+                    f"Ensure PIL/Pillow or pypng is installed.")
         else:
             path_str = self._active_world_config.tilesheet_path
             if path_str:
@@ -246,6 +254,52 @@ class EditorApp:
                     "No tilesheet configured for this world. "
                     "Use the tilesheet path field to set one.")
             self._tilesheet_rendering_enabled = False
+
+    def _upload_tilesheet_texture(self) -> None:
+        """Upload the current tilesheet pixel data to an OpenGL texture."""
+        # Delete old texture if any
+        if self._tilesheet_texture_id != 0:
+            gl.glDeleteTextures(1, [self._tilesheet_texture_id])
+            self._tilesheet_texture_id = 0
+
+        if self._tilesheet is None:
+            return
+
+        ts = self._tilesheet
+        if ts.width <= 0 or ts.height <= 0 or not ts.pixels:
+            self._message_hud.error(
+                "Tilesheet has invalid dimensions or empty pixel data.")
+            return
+
+        try:
+            tex_id = gl.glGenTextures(1)
+            gl.glBindTexture(gl.GL_TEXTURE_2D, tex_id)
+            gl.glTexParameteri(
+                gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER,
+                gl.GL_NEAREST)
+            gl.glTexParameteri(
+                gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER,
+                gl.GL_NEAREST)
+            gl.glTexParameteri(
+                gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_S,
+                gl.GL_CLAMP_TO_EDGE)
+            gl.glTexParameteri(
+                gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_T,
+                gl.GL_CLAMP_TO_EDGE)
+            gl.glTexImage2D(
+                gl.GL_TEXTURE_2D, 0, gl.GL_RGBA,
+                ts.width, ts.height, 0,
+                gl.GL_RGBA, gl.GL_UNSIGNED_BYTE,
+                ts.pixels)
+            gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
+            self._tilesheet_texture_id = int(tex_id)
+            self._message_hud.info(
+                f"Tilesheet GL texture created (id={tex_id}, "
+                f"{ts.width}x{ts.height}).")
+        except Exception as e:
+            self._message_hud.error(
+                f"Failed to create GL texture for tilesheet: {e}")
+            self._tilesheet_texture_id = 0
 
     def _reload_tile_enums(self) -> None:
         """Reload tile enums after editing."""
@@ -518,8 +572,16 @@ class EditorApp:
                         self._project_dir, self._active_world)
                     self._tilesheet = tilesheet
                     self._tilesheet_rendering_enabled = tilesheet is not None
-                    if self._tilesheet and self._renderer:
-                        self._renderer.set_tilesheet(self._tilesheet)
+                    if self._tilesheet:
+                        self._upload_tilesheet_texture()
+                        if self._renderer:
+                            self._renderer.set_tilesheet(self._tilesheet)
+                    else:
+                        # Clear old texture if load failed
+                        if self._tilesheet_texture_id != 0:
+                            gl.glDeleteTextures(
+                                1, [self._tilesheet_texture_id])
+                            self._tilesheet_texture_id = 0
                     # Update chunk edit mode with new tilesheet
                     self._update_chunk_mode_tilesheet()
             imgui.same_line()
@@ -533,6 +595,10 @@ class EditorApp:
                     self._project_dir, self._active_world)
                 self._tilesheet = None
                 self._tilesheet_rendering_enabled = False
+                if self._tilesheet_texture_id != 0:
+                    gl.glDeleteTextures(
+                        1, [self._tilesheet_texture_id])
+                    self._tilesheet_texture_id = 0
                 self._update_chunk_mode_tilesheet()
 
         imgui.end()
@@ -662,11 +728,14 @@ class EditorApp:
 
 
     def _update_chunk_mode_tilesheet(self) -> None:
-        """Push the active tilesheet to the chunk edit mode."""
+        """Push the active tilesheet and GL texture to the chunk edit mode."""
         if len(self._modes) > 1:
             chunk_mode = self._modes[1]
             if hasattr(chunk_mode, 'set_active_tilesheet'):
                 chunk_mode.set_active_tilesheet(self._tilesheet)
+            if hasattr(chunk_mode, 'set_tilesheet_texture_id'):
+                chunk_mode.set_tilesheet_texture_id(
+                    self._tilesheet_texture_id)
 
 
 def _key_name(key: int) -> str:
