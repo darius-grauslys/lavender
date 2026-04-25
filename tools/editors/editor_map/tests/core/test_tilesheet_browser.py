@@ -20,7 +20,6 @@ from core.tilesheet_browser import (
     _validate_png_path,
     browse_and_set_tilesheet,
     clear_tilesheet,
-    load_tilesheet_for_world,
 )
 from core.editor_project_config import (
     WorldEditorConfig,
@@ -195,41 +194,3 @@ class TestClearTilesheet:
             for m in hud._messages)
 
 
-# ── load_tilesheet_for_world ──────────────────────────────────
-
-class TestLoadTilesheetForWorld:
-    def test_no_tilesheet_configured(self, tmp_path):
-        hud = MessageHUD()
-        path, ts = load_tilesheet_for_world(
-            tmp_path, "test_world", hud)
-        assert path == ""
-        assert ts is None
-
-    def test_configured_but_missing_file(self, tmp_path):
-        hud = MessageHUD()
-        cfg = WorldEditorConfig(
-            tilesheets=["assets/missing.png"])
-        save_world_editor_config(tmp_path, "test_world", cfg)
-
-        path, ts = load_tilesheet_for_world(
-            tmp_path, "test_world", hud)
-        assert path == "assets/missing.png"
-        assert ts is None
-        assert any(
-            "not found" in m.text.lower()
-            for m in hud._messages)
-
-    def test_configured_and_present(self, tmp_path):
-        hud = MessageHUD()
-        png_path = tmp_path / "assets" / "sheet.png"
-        _create_fake_png(png_path)
-
-        cfg = WorldEditorConfig(
-            tilesheets=["assets/sheet.png"])
-        save_world_editor_config(tmp_path, "test_world", cfg)
-
-        path, ts = load_tilesheet_for_world(
-            tmp_path, "test_world", hud)
-        assert path == "assets/sheet.png"
-        # ts may be None if neither Pillow nor pypng installed,
-        # but path should always be correct

@@ -15,7 +15,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Optional, Tuple
 
 from core.editor_project_config import (
-    WorldEditorConfig,
     load_world_editor_config,
     save_world_editor_config,
 )
@@ -183,47 +182,3 @@ def clear_tilesheet(
         message_hud.info("All tilesheets cleared.")
 
 
-def load_tilesheet_for_world(
-        project_dir: Path,
-        world_name: str,
-        message_hud: Optional[MessageHUD] = None,
-) -> Tuple[str, Optional[Tilesheet]]:
-    """
-    Load the tilesheet configured for a world.
-
-    Args:
-        project_dir: The project root directory.
-        world_name: The name of the world.
-        message_hud: Optional MessageHUD for logging.
-
-    Returns:
-        A tuple of (tilesheet_path, loaded_tilesheet).
-        tilesheet_path is "" if none configured.
-        loaded_tilesheet is None if not configured or load failed.
-    """
-    config = load_world_editor_config(project_dir, world_name)
-    ts_path = config.primary_tilesheet_path
-    if not ts_path:
-        return "", None
-
-    resolved = config.resolve_tilesheet(project_dir, ts_path)
-    if resolved is None:
-        if message_hud:
-            message_hud.error(
-                f"Tilesheet not found or invalid: "
-                f"{ts_path}")
-        return ts_path, None
-
-    tilesheet = load_tilesheet(resolved)
-    if tilesheet is None:
-        if message_hud:
-            message_hud.error(
-                f"Failed to load tilesheet: {ts_path}")
-        return ts_path, None
-
-    if message_hud:
-        message_hud.info(
-            f"Loaded tilesheet: {ts_path} "
-            f"({tilesheet.total_tiles} tiles)")
-
-    return ts_path, tilesheet

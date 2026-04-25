@@ -27,7 +27,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import List, Optional
+from typing import List
 
 
 EDITOR_CONFIG_RELATIVE_PATH = Path("assets") / "world" / "editor.json"
@@ -90,26 +90,6 @@ class WorldEditorConfig:
     workspace_y: int = 0
     workspace_z: int = 0
 
-    @property
-    def primary_tilesheet_path(self) -> str:
-        """Return the first tilesheet path, or '' if none."""
-        if self.tilesheets:
-            return self.tilesheets[0]
-        return ""
-
-    def resolve_tilesheet(self, project_dir: Path, path: str = "") -> Optional[Path]:
-        """
-        Resolve a tilesheet path relative to the project directory.
-        If *path* is empty, uses the primary tilesheet.
-        Returns the Path if it exists and is a .png file, else None.
-        """
-        ts_path = path or self.primary_tilesheet_path
-        if not ts_path:
-            return None
-        resolved = project_dir / ts_path
-        if resolved.exists() and resolved.suffix.lower() == '.png':
-            return resolved
-        return None
 
 
 def build_config_path(project_dir: Path) -> Path:

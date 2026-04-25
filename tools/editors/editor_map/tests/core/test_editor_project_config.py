@@ -32,50 +32,24 @@ class TestEditorProjectConfig:
 
 
 class TestWorldEditorConfig:
-    def test_resolve_tilesheet_empty_tilesheets(self, tmp_path):
-        config = WorldEditorConfig(tilesheets=[])
-        assert config.resolve_tilesheet(tmp_path) is None
+    def test_tilesheets_default_empty(self):
+        config = WorldEditorConfig()
+        assert config.tilesheets == []
 
-    def test_resolve_tilesheet_missing_file(self, tmp_path):
-        config = WorldEditorConfig(tilesheets=["missing.png"])
-        assert config.resolve_tilesheet(tmp_path) is None
-
-    def test_resolve_tilesheet_existing_png(self, tmp_path):
-        png_path = tmp_path / "sheet.png"
-        png_path.write_bytes(b"\x89PNG")
-        config = WorldEditorConfig(tilesheets=["sheet.png"])
-        assert config.resolve_tilesheet(tmp_path) == png_path
-
-    def test_resolve_tilesheet_non_png_extension(self, tmp_path):
-        jpg_path = tmp_path / "sheet.jpg"
-        jpg_path.write_bytes(b"\xff\xd8")
-        config = WorldEditorConfig(tilesheets=["sheet.jpg"])
-        assert config.resolve_tilesheet(tmp_path) is None
-
-    def test_resolve_tilesheet_nested_path(self, tmp_path):
-        nested = tmp_path / "assets" / "world"
-        nested.mkdir(parents=True)
-        png_path = nested / "tiles.png"
-        png_path.write_bytes(b"\x89PNG")
-        config = WorldEditorConfig(
-            tilesheets=["assets/world/tiles.png"])
-        assert config.resolve_tilesheet(tmp_path) == png_path
-
-    def test_primary_tilesheet_path_empty(self):
-        config = WorldEditorConfig(tilesheets=[])
-        assert config.primary_tilesheet_path == ""
-
-    def test_primary_tilesheet_path_returns_first(self):
+    def test_tilesheets_stores_list(self):
         config = WorldEditorConfig(
             tilesheets=["first.png", "second.png"])
-        assert config.primary_tilesheet_path == "first.png"
+        assert config.tilesheets == ["first.png", "second.png"]
 
-    def test_resolve_tilesheet_explicit_path(self, tmp_path):
-        """resolve_tilesheet with an explicit path argument."""
-        png_path = tmp_path / "other.png"
-        png_path.write_bytes(b"\x89PNG")
-        config = WorldEditorConfig(tilesheets=["first.png"])
-        assert config.resolve_tilesheet(tmp_path, "other.png") == png_path
+    def test_no_primary_tilesheet_path(self):
+        """primary_tilesheet_path was removed."""
+        config = WorldEditorConfig()
+        assert not hasattr(config, 'primary_tilesheet_path')
+
+    def test_no_resolve_tilesheet(self):
+        """resolve_tilesheet was removed."""
+        config = WorldEditorConfig()
+        assert not hasattr(config, 'resolve_tilesheet')
 
 
 class TestLoadEditorProjectConfig:
@@ -146,7 +120,6 @@ class TestLoadWorldEditorConfig:
         (tmp_path / "save" / "test_world").mkdir(parents=True)
         config = load_world_editor_config(tmp_path, "test_world")
         assert config.tilesheets == []
-        assert config.primary_tilesheet_path == ""
         cfg_path = world_config_path(tmp_path, "test_world")
         assert cfg_path.exists()
         data = json.loads(cfg_path.read_text())
@@ -161,7 +134,6 @@ class TestLoadWorldEditorConfig:
         }))
         config = load_world_editor_config(tmp_path, "test_world")
         assert config.tilesheets == ["my/sheet.png"]
-        assert config.primary_tilesheet_path == "my/sheet.png"
 
     def test_migrates_legacy_tilesheet_field(self, tmp_path):
         """Legacy 'tilesheet.path' is migrated into tilesheets list."""
@@ -172,7 +144,6 @@ class TestLoadWorldEditorConfig:
         }))
         config = load_world_editor_config(tmp_path, "test_world")
         assert "my/sheet.png" in config.tilesheets
-        assert config.primary_tilesheet_path == "my/sheet.png"
 
     def test_legacy_tilesheet_not_duplicated(self, tmp_path):
         """Legacy path already in tilesheets list is not duplicated."""
@@ -191,7 +162,6 @@ class TestLoadWorldEditorConfig:
         cfg_path.write_text("{bad json")
         config = load_world_editor_config(tmp_path, "test_world")
         assert config.tilesheets == []
-        assert config.primary_tilesheet_path == ""
 
     def test_handles_missing_tilesheet_key(self, tmp_path):
         cfg_path = world_config_path(tmp_path, "test_world")
@@ -199,12 +169,10 @@ class TestLoadWorldEditorConfig:
         cfg_path.write_text(json.dumps({"other": "data"}))
         config = load_world_editor_config(tmp_path, "test_world")
         assert config.tilesheets == []
-        assert config.primary_tilesheet_path == ""
 
     def test_creates_world_dir_if_missing(self, tmp_path):
         config = load_world_editor_config(tmp_path, "new_world")
         assert config.tilesheets == []
-        assert config.primary_tilesheet_path == ""
         assert (tmp_path / "save" / "new_world" / WORLD_CONFIG_FILENAME).exists()
 
 
@@ -235,7 +203,6 @@ class TestSaveWorldEditorConfig:
         save_world_editor_config(tmp_path, "test_world", original)
         loaded = load_world_editor_config(tmp_path, "test_world")
         assert loaded.tilesheets == original.tilesheets
-        assert loaded.primary_tilesheet_path == "assets/world/tiles.png"
 
     def test_save_does_not_write_legacy_tilesheet_key(self, tmp_path):
         """Saved JSON must not contain the legacy 'tilesheet' key."""

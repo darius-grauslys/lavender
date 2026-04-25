@@ -321,11 +321,12 @@ class EditorApp:
                 f"Restored last world: {self._active_world}")
 
     def _load_tilesheet(self) -> None:
-        """Load the primary tilesheet from the active world's config.
+        """Load all tilesheets from the active world's config.
 
-        The primary tilesheet is determined by:
-        1. The first layer's tilesheet_path (from layer manager), or
-        2. The first entry in the world config's tilesheets list.
+        Populates the TilesheetManager from the config's tilesheets
+        list.  The first successfully loaded tilesheet (or the first
+        layer's tilesheet) becomes the active/fallback tilesheet used
+        by the workspace renderer.
         """
         if not self._active_world_config:
             self._message_hud.warning(
@@ -334,40 +335,48 @@ class EditorApp:
             self._tilesheet_rendering_enabled = False
             return
 
-        # Prefer the first layer's tilesheet if available
-        primary_path = self._active_world_config.primary_tilesheet_path
+        ts_paths = list(self._active_world_config.tilesheets)
+        if not ts_paths:
+            self._message_hud.warning(
+                "No tilesheet configured for this world. "
+                "Use Edit > Tile > Tilesheets to add one.")
+            self._tilesheet_rendering_enabled = False
+            return
+
+        # Sync all tilesheets into the manager
+        self._tilesheet_manager.sync_from_config(
+            self._project_dir, ts_paths)
+
+        # Upload GL textures for newly loaded entries
+        for ts_entry in self._tilesheet_manager.entries:
+            if ts_entry.gl_texture_id == 0 and ts_entry.tilesheet:
+                self._upload_entry_texture(ts_entry)
+
+        # Determine the fallback tilesheet for the workspace renderer:
+        # prefer the first layer's tilesheet, else the first loaded.
+        fallback_path = ""
         if self._layer_manager.count > 0:
             first_layer = self._layer_manager.get(0)
             if first_layer and first_layer.tilesheet_path:
-                primary_path = first_layer.tilesheet_path
-        resolved = self._active_world_config.resolve_tilesheet(
-            self._project_dir, primary_path)
-        if resolved:
-            self._tilesheet = load_tilesheet(resolved)
-            if self._tilesheet:
-                self._tilesheet_rendering_enabled = True
-                self._message_hud.info(
-                    f"Tilesheet loaded: {resolved} "
-                    f"({self._tilesheet.width}x{self._tilesheet.height}, "
-                    f"{self._tilesheet.total_tiles} tiles)")
-                self._upload_tilesheet_texture()
-            else:
-                self._tilesheet_rendering_enabled = False
-                self._message_hud.error(
-                    f"Failed to load tilesheet image at '{resolved}'. "
-                    f"Ensure PIL/Pillow or pypng is installed.")
+                fallback_path = first_layer.tilesheet_path
+        if not fallback_path and self._tilesheet_manager.count > 0:
+            fallback_path = self._tilesheet_manager.all_paths()[0]
+
+        fallback_entry = self._tilesheet_manager.get(fallback_path)
+        if fallback_entry and fallback_entry.tilesheet:
+            self._tilesheet = fallback_entry.tilesheet
+            self._tilesheet_texture_id = fallback_entry.gl_texture_id
+            self._tilesheet_rendering_enabled = True
+            self._message_hud.info(
+                f"Loaded {self._tilesheet_manager.count} tilesheet(s). "
+                f"Active: {fallback_path}")
         else:
-            path_str = primary_path
-            if path_str:
-                self._message_hud.error(
-                    f"Tilesheet not found at "
-                    f"'{self._project_dir / path_str}'. "
-                    f"Tile rendering disabled.")
-            else:
-                self._message_hud.warning(
-                    "No tilesheet configured for this world. "
-                    "Use the tilesheet path field to set one.")
+            self._tilesheet = None
+            self._tilesheet_texture_id = 0
             self._tilesheet_rendering_enabled = False
+            self._message_hud.error(
+                f"Failed to load any tilesheets. "
+                f"Tile rendering disabled.")
 
     def _upload_tilesheet_texture(self) -> None:
         """Upload the current tilesheet pixel data to an OpenGL texture."""
@@ -1164,8 +1173,9 @@ class EditorApp:
                           if i < len(self._tile_info.layer_layouts)
                           else TileLayerLayout())
                 ts_path = ""
-                if self._active_world_config:
-                    ts_path = self._active_world_config.primary_tilesheet_path
+                if (self._active_world_config
+                        and self._active_world_config.tilesheets):
+                    ts_path = self._active_world_config.tilesheets[0]
                 self._layer_manager.add(LayerEntry(
                     layer_name=f"Tile_Layer__{i}",
                     enum_type_name=lf.enum_type_name,
