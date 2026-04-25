@@ -49,6 +49,16 @@ class EditorProjectConfig:
     """Parsed project-level editor configuration."""
     version: int = 1
 
+    @property
+    def tilesheet_path(self) -> str:
+        """
+        Deprecated: tilesheet is now per-world (WorldEditorConfig).
+        Kept for backward compatibility so callers that still
+        reference ``config.tilesheet_path`` get an empty string
+        instead of an AttributeError.
+        """
+        return ""
+
     def resolve_tilesheet(self, project_dir: Path) -> Optional[Path]:
         """
         Deprecated: tilesheet is now per-world.

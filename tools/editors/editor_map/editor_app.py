@@ -41,8 +41,11 @@ from core.c_enum import parse_c_enum_from_file, find_enum_by_name, CEnum
 from core.world_directory import list_worlds, ensure_world_dir, world_root
 from core.editor_project_config import (
     EditorProjectConfig,
+    WorldEditorConfig,
     load_editor_project_config,
     save_editor_project_config,
+    load_world_editor_config,
+    save_world_editor_config,
 )
 from core.tilesheet import Tilesheet, load_tilesheet
 from ui.message_hud import MessageHUD
@@ -82,7 +85,9 @@ class EditorApp:
         # File hierarchy
         self._worlds: List[str] = []
         self._active_world: Optional[str] = None
+        self._active_world_config: Optional[WorldEditorConfig] = None
         self._new_world_name: str = ""
+        self._new_tilesheet_path: str = ""
         self._delete_confirm_name: str = ""
         self._delete_target: Optional[str] = None
 
@@ -203,10 +208,22 @@ class EditorApp:
         self._refresh_worlds()
 
     def _load_tilesheet(self) -> None:
-        """Load the tilesheet from editor project config."""
-        if not self._editor_project_config:
+        """Load the tilesheet from the active world's editor config."""
+        if not self._active_world_config:
+            # No world selected — check if there's a legacy project config
+            if (self._editor_project_config
+                    and self._editor_project_config.tilesheet_path):
+                self._message_hud.warning(
+                    "No world selected. Tilesheet is configured "
+                    "per-world. Select a world to load its tilesheet.")
+            else:
+                self._message_hud.warning(
+                    "No tilesheet configured. "
+                    "Select a world and set its tilesheet path.")
+            self._tilesheet_rendering_enabled = False
             return
-        resolved = self._editor_project_config.resolve_tilesheet(
+
+        resolved = self._active_world_config.resolve_tilesheet(
             self._project_dir)
         if resolved:
             self._tilesheet = load_tilesheet(resolved)
@@ -221,7 +238,7 @@ class EditorApp:
                 self._message_hud.error(
                     f"Failed to load tilesheet image at '{resolved}'.")
         else:
-            path_str = self._editor_project_config.tilesheet_path
+            path_str = self._active_world_config.tilesheet_path
             if path_str:
                 self._message_hud.error(
                     f"Tilesheet not found at "
@@ -229,8 +246,8 @@ class EditorApp:
                     f"Tile rendering disabled.")
             else:
                 self._message_hud.warning(
-                    "No tilesheet configured. "
-                    "Use the tilesheet browser to add one.")
+                    "No tilesheet configured for this world. "
+                    "Use the tilesheet path field to set one.")
             self._tilesheet_rendering_enabled = False
 
     def _reload_tile_enums(self) -> None:
@@ -413,7 +430,14 @@ class EditorApp:
             selected = (world_name == self._active_world)
             if imgui.selectable(world_name, selected)[0]:
                 self._active_world = world_name
+                self._active_world_config = load_world_editor_config(
+                    self._project_dir, world_name)
+                self._new_tilesheet_path = (
+                    self._active_world_config.tilesheet_path)
                 self._message_hud.info(f"Selected world: {world_name}")
+                self._load_tilesheet()
+                if self._tilesheet and self._renderer:
+                    self._renderer.set_tilesheet(self._tilesheet)
             imgui.same_line(imgui.get_window_width() - 30)
             if imgui.small_button(f"X##{world_name}"):
                 self._delete_target = world_name
@@ -434,33 +458,14 @@ class EditorApp:
                     self._refresh_worlds()
                     if self._active_world == self._delete_target:
                         self._active_world = None
+                        self._active_world_config = None
+                        self._new_tilesheet_path = ""
                     self._message_hud.info(
                         f"Deleted world: {self._delete_target}")
                 self._delete_target = None
             imgui.same_line()
             if imgui.button("Cancel##del"):
                 self._delete_target = None
-
-        # Tilesheet browser
-        imgui.separator()
-        imgui.text("Tilesheet:")
-        ts_display = (
-            self._editor_project_config.tilesheet_path
-            if self._editor_project_config
-            and self._editor_project_config.tilesheet_path
-            else "ADD TILESHEET")
-        imgui.push_style_color(
-            imgui.COLOR_FRAME_BACKGROUND, 0.2, 0.2, 0.2, 1.0)
-        imgui.input_text(
-            "##ts_path", ts_display, 256,
-            imgui.INPUT_TEXT_READ_ONLY)
-        imgui.pop_style_color()
-        imgui.same_line()
-        if imgui.button("Browse...##ts_browse"):
-            self._show_tilesheet_browser = True
-            self._browser_current_dir = self._project_dir
-            self._browser_selected_file = None
-            self._refresh_browser_entries()
 
         # Add new world
         imgui.separator()
@@ -483,6 +488,37 @@ class EditorApp:
                     self._message_hud.info(
                         f"Created world: {self._new_world_name.strip()}")
                     self._new_world_name = ""
+
+        # Per-world tilesheet path (below new-world controls)
+        imgui.separator()
+        imgui.text("Tilesheet:")
+        has_world = self._active_world is not None
+        if not has_world:
+            imgui.push_style_var(imgui.STYLE_ALPHA, 0.5)
+            imgui.input_text(
+                "##ts_path", "(no world selected)", 256,
+                imgui.INPUT_TEXT_READ_ONLY)
+            imgui.pop_style_var()
+        else:
+            changed, self._new_tilesheet_path = imgui.input_text(
+                "##ts_path", self._new_tilesheet_path, 256)
+            imgui.same_line()
+            if imgui.button("Set##ts_set"):
+                self._active_world_config.tilesheet_path = (
+                    self._new_tilesheet_path)
+                save_world_editor_config(
+                    self._project_dir,
+                    self._active_world,
+                    self._active_world_config)
+                self._load_tilesheet()
+                if self._tilesheet and self._renderer:
+                    self._renderer.set_tilesheet(self._tilesheet)
+            imgui.same_line()
+            if imgui.button("Browse...##ts_browse"):
+                self._show_tilesheet_browser = True
+                self._browser_current_dir = self._project_dir
+                self._browser_selected_file = None
+                self._refresh_browser_entries()
 
         imgui.end()
 
@@ -682,12 +718,20 @@ class EditorApp:
                     self._project_dir)
             except ValueError:
                 rel_path = self._browser_selected_file
-            self._editor_project_config.tilesheet_path = str(rel_path)
-            save_editor_project_config(
-                self._project_dir, self._editor_project_config)
-            self._load_tilesheet()
-            if self._tilesheet and self._renderer:
-                self._renderer.set_tilesheet(self._tilesheet)
+            if self._active_world and self._active_world_config:
+                self._active_world_config.tilesheet_path = str(rel_path)
+                self._new_tilesheet_path = str(rel_path)
+                save_world_editor_config(
+                    self._project_dir,
+                    self._active_world,
+                    self._active_world_config)
+                self._load_tilesheet()
+                if self._tilesheet and self._renderer:
+                    self._renderer.set_tilesheet(self._tilesheet)
+            else:
+                self._message_hud.error(
+                    "No world selected. Select a world first "
+                    "to assign a tilesheet.")
             self._show_tilesheet_browser = False
         if not can_ok:
             imgui.pop_style_var()

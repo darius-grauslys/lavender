@@ -27,6 +27,15 @@ class TestEditorProjectConfig:
         config = EditorProjectConfig()
         assert config.version == 1
 
+    def test_tilesheet_path_backward_compat(self):
+        """EditorProjectConfig.tilesheet_path must exist for backward
+        compatibility with code that still reads it (e.g. editor_app).
+        It should always return an empty string since tilesheet config
+        moved to WorldEditorConfig."""
+        config = EditorProjectConfig()
+        # Must not raise AttributeError
+        assert config.tilesheet_path == ""
+
 
 class TestWorldEditorConfig:
     def test_resolve_tilesheet_empty_path(self, tmp_path):
