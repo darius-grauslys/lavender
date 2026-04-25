@@ -888,7 +888,7 @@ class KindEditorWindow:
             draw_list.add_image(
                 self._tilesheet_texture_id,
                 (x0, y0), (x1, y1),
-                uv_min=(u0, v0), uv_max=(u1, v1))
+                (u0, v0), (u1, v1))
 
             hovered = (x0 <= mouse.x < x1 and y0 <= mouse.y < y1)
             if hovered:
