@@ -253,11 +253,6 @@ class EditorApp:
                 self._tile_info.layer_layouts)
         chunk_mode.set_project_dir(self._project_dir)
         chunk_mode.set_on_enum_updated(self._reload_tile_enums)
-        # Will be set after objects are created
-        if self._tilesheet:
-            chunk_mode.set_active_tilesheet(self._tilesheet)
-            chunk_mode.set_tilesheet_texture_id(
-                self._tilesheet_texture_id)
         entity_mode = EntityEditMode(
             self._keybind_manager, movement=self._movement)
         inv_mode = InventoryEditMode(
@@ -1013,12 +1008,11 @@ class EditorApp:
         self._show_kind_editor = True
 
     def _draw_kind_editor_standalone(self) -> None:
-        """Draw the tile kind editor when opened from Edit menu.
+        """Engage the tile kind editor state when opened from Edit menu.
 
-        Delegates to the TileDrawTool's editor sub-window.  When
-        the user closes the sub-window (OK or Cancel) we also
-        clear our flag so the menu item becomes a fresh open next
-        time.
+        Opens the TileDrawTool's editor state.  Rendering of the
+        editor window has been removed — this only ensures the
+        state is initialised so that external UI can consume it.
         """
         chunk_mode = self._modes[1] if len(self._modes) > 1 else None
         if chunk_mode is None:
@@ -1028,16 +1022,13 @@ class EditorApp:
         if tile_draw is None:
             self._show_kind_editor = False
             return
-        # Ensure the editor sub-window is open
+        # Ensure the editor state is initialised
         if not tile_draw._show_editor:
             tile_draw._open_editor()
         # If it still couldn't open (no enums), bail
         if not tile_draw._show_editor:
             self._show_kind_editor = False
             return
-        # Draw the sub-window; it will set _show_editor=False on
-        # OK/Cancel which we detect next frame.
-        tile_draw._draw_editor_window()
 
     def _upload_entry_texture(self, entry) -> None:
         """Upload GL texture for a TilesheetEntry."""
@@ -1291,15 +1282,8 @@ class EditorApp:
         self._update_renderer_layer_tilesheets()
 
     def _update_chunk_mode_tilesheet(self) -> None:
-        """Push the active tilesheet and GL texture to the chunk edit
-        mode and the workspace renderer."""
-        if len(self._modes) > 1:
-            chunk_mode = self._modes[1]
-            if hasattr(chunk_mode, 'set_active_tilesheet'):
-                chunk_mode.set_active_tilesheet(self._tilesheet)
-            if hasattr(chunk_mode, 'set_tilesheet_texture_id'):
-                chunk_mode.set_tilesheet_texture_id(
-                    self._tilesheet_texture_id)
+        """Push the active tilesheet and GL texture to the workspace
+        renderer."""
         if self._renderer:
             self._renderer.set_tilesheet(
                 self._tilesheet, self._tilesheet_texture_id)
