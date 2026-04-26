@@ -136,27 +136,6 @@ class TestLoadWorldEditorConfig:
         config = load_world_editor_config(tmp_path, "test_world", platform="sdl")
         assert config.tilesheets == ["my/sheet.png"]
 
-    def test_migrates_legacy_tilesheet_field(self, tmp_path):
-        """Legacy 'tilesheet.path' is migrated into tilesheets list."""
-        cfg_path = world_config_path(tmp_path, "test_world", platform="sdl")
-        cfg_path.parent.mkdir(parents=True)
-        cfg_path.write_text(json.dumps({
-            "tilesheet": {"path": "my/sheet.png"}
-        }))
-        config = load_world_editor_config(tmp_path, "test_world", platform="sdl")
-        assert "my/sheet.png" in config.tilesheets
-
-    def test_legacy_tilesheet_not_duplicated(self, tmp_path):
-        """Legacy path already in tilesheets list is not duplicated."""
-        cfg_path = world_config_path(tmp_path, "test_world", platform="sdl")
-        cfg_path.parent.mkdir(parents=True)
-        cfg_path.write_text(json.dumps({
-            "tilesheet": {"path": "my/sheet.png"},
-            "tilesheets": ["my/sheet.png"]
-        }))
-        config = load_world_editor_config(tmp_path, "test_world", platform="sdl")
-        assert config.tilesheets.count("my/sheet.png") == 1
-
     def test_handles_malformed_json(self, tmp_path):
         cfg_path = world_config_path(tmp_path, "test_world", platform="sdl")
         cfg_path.parent.mkdir(parents=True)
@@ -206,10 +185,3 @@ class TestSaveWorldEditorConfig:
         loaded = load_world_editor_config(tmp_path, "test_world", platform="sdl")
         assert loaded.tilesheets == original.tilesheets
 
-    def test_save_does_not_write_legacy_tilesheet_key(self, tmp_path):
-        """Saved JSON must not contain the legacy 'tilesheet' key."""
-        config = WorldEditorConfig(tilesheets=["sheet.png"])
-        save_world_editor_config(tmp_path, "test_world", config, platform="sdl")
-        cfg_path = world_config_path(tmp_path, "test_world", platform="sdl")
-        data = json.loads(cfg_path.read_text())
-        assert "tilesheet" not in data

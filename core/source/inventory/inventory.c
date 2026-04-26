@@ -158,6 +158,9 @@ PLATFORM_Read_File_Error deserialize_inventory(
                 p_item_stack);
     }
 
+    p_inventory->quantity_of__item_stacks =
+        quantity_of__serialized_item_stacks;
+
     return error;
 }
 
@@ -468,5 +471,5 @@ bool does_inventory_have_this_many_of__item_kind(
 bool does_inventory_have__available_item_stacks(
         Inventory *p_inventory) {
     return p_inventory->quantity_of__item_stacks
-        >= INVENTORY_ITEM_MAXIMUM_QUANTITY_OF;
+        < INVENTORY_ITEM_MAXIMUM_QUANTITY_OF;
 }

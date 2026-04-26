@@ -199,7 +199,7 @@ def save_editor_project_config(
 def load_world_editor_config(
         project_dir: Path,
         world_name: str,
-        platform: str = "") -> WorldEditorConfig:
+        platform: str) -> WorldEditorConfig:
     """
     Load the per-world editor.json from inside the world folder.
     If the file does not exist, generate it with defaults.
@@ -241,7 +241,7 @@ def save_world_editor_config(
         project_dir: Path,
         world_name: str,
         config: WorldEditorConfig,
-        platform: str = "") -> None:
+        platform: str) -> None:
     """Save the per-world editor config back to its editor.json."""
     cfg_path = world_config_path(project_dir, world_name, platform)
     cfg_path.parent.mkdir(parents=True, exist_ok=True)

@@ -5,7 +5,6 @@
 #include "entity/entity.h"
 #include "platform_defines.h"
 #include "serialization/hashing.h"
-#include "types/implemented/entity_kind.h"
 #include <defines.h>
 #include <debug/debug.h>
 

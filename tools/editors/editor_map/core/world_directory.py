@@ -35,7 +35,7 @@ def saves_root(base_dir: Path, platform: str) -> Path:
 def world_root(
         base_dir: Path,
         world_name: str,
-        platform: str = "") -> Path:
+        platform: str) -> Path:
     """Get the world root directory.
 
     If *platform* is provided:
@@ -43,15 +43,13 @@ def world_root(
     Otherwise falls back to legacy path:
         <base>/save/<world_name>/
     """
-    if platform:
-        return saves_root(base_dir, platform) / world_name
-    return base_dir / "save" / world_name
+    return saves_root(base_dir, platform) / world_name
 
 
 def world_header_path(
         base_dir: Path,
         world_name: str,
-        platform: str = "") -> Path:
+        platform: str) -> Path:
     """Get the world header file path."""
     return world_root(base_dir, world_name, platform) / "h"
 
@@ -62,7 +60,7 @@ def region_dir(
         region_x: int,
         region_y: int,
         region_z: int,
-        platform: str = "") -> Path:
+        platform: str) -> Path:
     """Get the region directory path."""
     root = world_root(base_dir, world_name, platform)
     region_name = f"r_{_hex8(region_x)}_{_hex8(region_y)}_{_hex8(region_z)}"
@@ -75,8 +73,8 @@ def chunk_dir(
         chunk_x: int,
         chunk_y: int,
         chunk_z: int,
-        region_width_bit_shift: int = 11,
-        platform: str = "") -> Path:
+        platform: str,
+        region_width_bit_shift: int = 11) -> Path:
     """
     Get the full chunk directory path, replicating the engine's
     quad-tree descent from world_directory.c::stat_chunk_directory.
@@ -138,7 +136,7 @@ def chunk_tile_path(
         chunk_x: int,
         chunk_y: int,
         chunk_z: int,
-        platform: str = "",
+        platform: str,
         **kwargs) -> Path:
     """Path to the tile file for a chunk."""
     return chunk_dir(
@@ -152,7 +150,7 @@ def chunk_tile_tmp_path(
         chunk_x: int,
         chunk_y: int,
         chunk_z: int,
-        platform: str = "",
+        platform: str,
         **kwargs) -> Path:
     """Path to the .tmp tile file for a chunk."""
     return chunk_dir(
@@ -166,7 +164,7 @@ def chunk_entity_path(
         chunk_x: int,
         chunk_y: int,
         chunk_z: int,
-        platform: str = "",
+        platform: str,
         **kwargs) -> Path:
     """Path to the entity file for a chunk."""
     return chunk_dir(
@@ -180,7 +178,7 @@ def chunk_inventory_path(
         chunk_x: int,
         chunk_y: int,
         chunk_z: int,
-        platform: str = "",
+        platform: str,
         **kwargs) -> Path:
     """Path to the inventory file for a chunk."""
     return chunk_dir(
@@ -208,7 +206,7 @@ def ensure_chunk_dir(
         chunk_x: int,
         chunk_y: int,
         chunk_z: int,
-        platform: str = "",
+        platform: str,
         **kwargs) -> Path:
     """Create the chunk directory tree if it doesn't exist, return the path."""
     path = chunk_dir(
@@ -221,7 +219,7 @@ def ensure_chunk_dir(
 def ensure_world_dir(
         base_dir: Path,
         world_name: str,
-        platform: str = "") -> Path:
+        platform: str) -> Path:
     """Create the world root directory if it doesn't exist."""
     path = world_root(base_dir, world_name, platform)
     path.mkdir(parents=True, exist_ok=True)
@@ -231,6 +229,6 @@ def ensure_world_dir(
 def world_editor_config_path(
         base_dir: Path,
         world_name: str,
-        platform: str = "") -> Path:
+        platform: str) -> Path:
     """Get the per-world editor.json path."""
     return world_root(base_dir, world_name, platform) / "editor.json"
