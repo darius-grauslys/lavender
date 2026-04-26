@@ -152,7 +152,7 @@ class TestBrowseAndSetTilesheet:
         assert "sheet.png" in rel
 
         # Verify config was saved
-        cfg = load_world_editor_config(tmp_path, "test_world")
+        cfg = load_world_editor_config(tmp_path, "test_world", platform="")
         assert rel in cfg.tilesheets
 
     def test_valid_file_saves_forward_slashes(self, tmp_path):
@@ -178,11 +178,11 @@ class TestClearTilesheet:
     def test_clear(self, tmp_path):
         hud = MessageHUD()
         cfg = WorldEditorConfig(tilesheets=["assets/sheet.png"])
-        save_world_editor_config(tmp_path, "test_world", cfg)
+        save_world_editor_config(tmp_path, "test_world", cfg, platform="")
 
-        clear_tilesheet(tmp_path, "test_world", hud)
+        clear_tilesheet(tmp_path, "test_world", hud, platform="")
 
-        cfg = load_world_editor_config(tmp_path, "test_world")
+        cfg = load_world_editor_config(tmp_path, "test_world", platform="")
         assert cfg.tilesheets == []
 
     def test_clear_no_world(self, tmp_path):

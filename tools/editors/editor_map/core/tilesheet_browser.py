@@ -90,6 +90,7 @@ def browse_and_set_tilesheet(
         project_dir: Path,
         world_name: str,
         message_hud: Optional[MessageHUD] = None,
+        platform: str = "",
 ) -> Tuple[Optional[str], Optional[Tilesheet]]:
     """
     Open a file browser, validate the selection, save to config,
@@ -134,10 +135,10 @@ def browse_and_set_tilesheet(
     rel_path = rel_path.replace("\\", "/")
 
     # Save to per-world config
-    config = load_world_editor_config(project_dir, world_name)
+    config = load_world_editor_config(project_dir, world_name, platform=platform)
     if rel_path not in config.tilesheets:
         config.tilesheets.append(rel_path)
-    save_world_editor_config(project_dir, world_name, config)
+    save_world_editor_config(project_dir, world_name, config, platform=platform)
 
     # Load the tilesheet
     tilesheet = load_tilesheet(abs_path)
@@ -159,6 +160,7 @@ def clear_tilesheet(
         project_dir: Path,
         world_name: str,
         message_hud: Optional[MessageHUD] = None,
+        platform: str = "",
 ) -> None:
     """
     Clear the tilesheet path from the per-world config.
@@ -174,9 +176,9 @@ def clear_tilesheet(
                 "Cannot clear tilesheet: no world selected.")
         return
 
-    config = load_world_editor_config(project_dir, world_name)
+    config = load_world_editor_config(project_dir, world_name, platform=platform)
     config.tilesheets.clear()
-    save_world_editor_config(project_dir, world_name, config)
+    save_world_editor_config(project_dir, world_name, config, platform=platform)
 
     if message_hud:
         message_hud.info("All tilesheets cleared.")

@@ -30,12 +30,14 @@ def read_chunk_tiles(
         chunk_y: int,
         chunk_z: int,
         config: EngineConfig,
-        tile_size: int) -> Optional[bytearray]:
+        tile_size: int,
+        platform: str = "") -> Optional[bytearray]:
     """
     Read raw tile data from a chunk's 't' file.
     Returns None if the file doesn't exist.
     """
-    path = chunk_tile_path(base_dir, world_name, chunk_x, chunk_y, chunk_z)
+    path = chunk_tile_path(base_dir, world_name, chunk_x, chunk_y, chunk_z,
+                           platform=platform)
     if not path.exists():
         return None
     data = path.read_bytes()
@@ -51,14 +53,16 @@ def write_chunk_tiles(
         chunk_x: int,
         chunk_y: int,
         chunk_z: int,
-        tile_data: bytes) -> bool:
+        tile_data: bytes,
+        platform: str = "") -> bool:
     """
     Write raw tile data to a chunk's 't' file.
     Uses .tmp + checksum + rename pattern per spec section 4.2.
     Returns True on success.
     """
     chunk_path = ensure_chunk_dir(
-        base_dir, world_name, chunk_x, chunk_y, chunk_z)
+        base_dir, world_name, chunk_x, chunk_y, chunk_z,
+        platform=platform)
     target = chunk_path / "t"
     tmp_path = chunk_path / "t.tmp"
 
@@ -84,9 +88,11 @@ def read_chunk_entities(
         world_name: str,
         chunk_x: int,
         chunk_y: int,
-        chunk_z: int) -> Optional[bytes]:
+        chunk_z: int,
+        platform: str = "") -> Optional[bytes]:
     """Read raw entity data from a chunk's 'e' file."""
-    path = chunk_entity_path(base_dir, world_name, chunk_x, chunk_y, chunk_z)
+    path = chunk_entity_path(base_dir, world_name, chunk_x, chunk_y, chunk_z,
+                             platform=platform)
     if not path.exists():
         return None
     return path.read_bytes()
@@ -98,10 +104,12 @@ def write_chunk_entities(
         chunk_x: int,
         chunk_y: int,
         chunk_z: int,
-        entity_data: bytes) -> bool:
+        entity_data: bytes,
+        platform: str = "") -> bool:
     """Write raw entity data to a chunk's 'e' file."""
     chunk_path = ensure_chunk_dir(
-        base_dir, world_name, chunk_x, chunk_y, chunk_z)
+        base_dir, world_name, chunk_x, chunk_y, chunk_z,
+        platform=platform)
     target = chunk_path / "e"
     tmp_path = chunk_path / "e.tmp"
 

@@ -74,10 +74,10 @@ class TestSyncFromConfigLoadsAll:
 
         # Save a world config with all tilesheet paths
         cfg = WorldEditorConfig(tilesheets=list(ts_paths))
-        save_world_editor_config(tmp_path, "test_world", cfg)
+        save_world_editor_config(tmp_path, "test_world", cfg, platform="sdl")
 
         # Reload to verify persistence
-        loaded_cfg = load_world_editor_config(tmp_path, "test_world")
+        loaded_cfg = load_world_editor_config(tmp_path, "test_world", platform="sdl")
         assert loaded_cfg.tilesheets == ts_paths
 
         # Sync into TilesheetManager

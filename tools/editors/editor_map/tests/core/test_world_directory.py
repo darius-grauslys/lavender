@@ -17,19 +17,19 @@ from core.world_directory import (
 
 class TestWorldRoot:
     def test_basic_path(self):
-        p = world_root(Path("/game"), "test_world")
-        assert p == Path("/game/save/test_world")
+        p = world_root(Path("/game"), "test_world", platform="sdl")
+        assert p == Path("/game/build/sdl/saves/test_world")
 
 
 class TestWorldHeaderPath:
     def test_header_file(self):
-        p = world_header_path(Path("/game"), "w")
-        assert p == Path("/game/save/w/h")
+        p = world_header_path(Path("/game"), "w", platform="sdl")
+        assert p == Path("/game/build/sdl/saves/w/h")
 
 
 class TestChunkDir:
     def test_returns_path_with_quad_tree(self):
-        p = chunk_dir(Path("/g"), "w", 0, 0, 0)
+        p = chunk_dir(Path("/g"), "w", 0, 0, 0, platform="sdl")
         # Should have region dir + 6 quad levels + leaf
         parts = p.parts
         # Find the region dir
@@ -40,22 +40,22 @@ class TestChunkDir:
         assert len(chunk_parts) == 7  # 6 quad + 1 leaf
 
     def test_different_coords_give_different_paths(self):
-        p1 = chunk_dir(Path("/g"), "w", 0, 0, 0)
-        p2 = chunk_dir(Path("/g"), "w", 1, 0, 0)
+        p1 = chunk_dir(Path("/g"), "w", 0, 0, 0, platform="sdl")
+        p2 = chunk_dir(Path("/g"), "w", 1, 0, 0, platform="sdl")
         assert p1 != p2
 
 
 class TestChunkFilePaths:
     def test_tile_path_ends_with_t(self):
-        p = chunk_tile_path(Path("/g"), "w", 0, 0, 0)
+        p = chunk_tile_path(Path("/g"), "w", 0, 0, 0, platform="sdl")
         assert p.name == "t"
 
     def test_entity_path_ends_with_e(self):
-        p = chunk_entity_path(Path("/g"), "w", 0, 0, 0)
+        p = chunk_entity_path(Path("/g"), "w", 0, 0, 0, platform="sdl")
         assert p.name == "e"
 
     def test_inventory_path_ends_with_i(self):
-        p = chunk_inventory_path(Path("/g"), "w", 0, 0, 0)
+        p = chunk_inventory_path(Path("/g"), "w", 0, 0, 0, platform="sdl")
         assert p.name == "i"
 
 
@@ -76,10 +76,10 @@ class TestListWorlds:
 
 class TestEnsureDirs:
     def test_ensure_world_dir(self, tmp_path):
-        p = ensure_world_dir(tmp_path, "test")
+        p = ensure_world_dir(tmp_path, "test", platform="sdl")
         assert p.is_dir()
-        assert p == tmp_path / "save" / "test"
+        assert p == tmp_path / "build" / "sdl" / "saves" / "test"
 
     def test_ensure_chunk_dir(self, tmp_path):
-        p = ensure_chunk_dir(tmp_path, "test", 5, 5, 0)
+        p = ensure_chunk_dir(tmp_path, "test", 5, 5, 0, platform="sdl")
         assert p.is_dir()
