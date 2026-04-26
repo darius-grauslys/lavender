@@ -1047,22 +1047,45 @@ class EditorApp:
             guard = "DEFINE_" + lf.enum_type_name.upper()
             layer_guard_macros.append(guard)
 
-        # Tilesheet info for preview buttons
+        # Build per-layer tilesheet info for preview buttons
         from core.tilesheet import TILE_PX
-        ts_tex_id = self._tilesheet_texture_id
-        ts_tile_w = TILE_PX
-        ts_tile_h = TILE_PX
-        ts_cols = 1
-        ts_rows = 1
-        ts_img_w = 0
-        ts_img_h = 0
-        if self._tilesheet:
-            ts_tile_w = TILE_PX
-            ts_tile_h = TILE_PX
-            ts_img_w = self._tilesheet.width
-            ts_img_h = self._tilesheet.height
-            ts_cols = self._tilesheet.tiles_per_row
-            ts_rows = (self._tilesheet.height // TILE_PX) if TILE_PX > 0 else 1
+        per_layer_tex_ids: List[int] = []
+        per_layer_tile_ws: List[int] = []
+        per_layer_tile_hs: List[int] = []
+        per_layer_cols: List[int] = []
+        per_layer_rows: List[int] = []
+        per_layer_img_ws: List[int] = []
+        per_layer_img_hs: List[int] = []
+
+        for i, lf in enumerate(self._tile_info.layer_fields):
+            if i >= len(layer_names):
+                break
+            # Look up this layer's tilesheet via the layer manager
+            layer_entry = self._layer_manager.get(i)
+            ts_path = layer_entry.tilesheet_path if layer_entry else ""
+            ts_entry = (
+                self._tilesheet_manager.get(ts_path)
+                if ts_path else None)
+
+            if ts_entry and ts_entry.tilesheet and ts_entry.gl_texture_id:
+                ts = ts_entry.tilesheet
+                per_layer_tex_ids.append(ts_entry.gl_texture_id)
+                per_layer_tile_ws.append(TILE_PX)
+                per_layer_tile_hs.append(TILE_PX)
+                per_layer_img_ws.append(ts.width)
+                per_layer_img_hs.append(ts.height)
+                per_layer_cols.append(ts.tiles_per_row)
+                per_layer_rows.append(
+                    (ts.height // TILE_PX) if TILE_PX > 0 else 1)
+            else:
+                # Fallback: no tilesheet for this layer
+                per_layer_tex_ids.append(0)
+                per_layer_tile_ws.append(TILE_PX)
+                per_layer_tile_hs.append(TILE_PX)
+                per_layer_img_ws.append(0)
+                per_layer_img_hs.append(0)
+                per_layer_cols.append(1)
+                per_layer_rows.append(1)
 
         self._kind_editor_window.open(
             layer_names=layer_names,
@@ -1072,13 +1095,13 @@ class EditorApp:
             layer_animation_bits=layer_animation_bits,
             layer_header_paths=layer_header_paths,
             layer_guard_macros=layer_guard_macros,
-            tilesheet_texture_id=ts_tex_id,
-            tilesheet_tile_w=ts_tile_w,
-            tilesheet_tile_h=ts_tile_h,
-            tilesheet_cols=ts_cols,
-            tilesheet_rows=ts_rows,
-            tilesheet_img_w=ts_img_w,
-            tilesheet_img_h=ts_img_h,
+            layer_tilesheet_texture_ids=per_layer_tex_ids,
+            layer_tilesheet_tile_ws=per_layer_tile_ws,
+            layer_tilesheet_tile_hs=per_layer_tile_hs,
+            layer_tilesheet_cols=per_layer_cols,
+            layer_tilesheet_rows=per_layer_rows,
+            layer_tilesheet_img_ws=per_layer_img_ws,
+            layer_tilesheet_img_hs=per_layer_img_hs,
         )
 
     def _upload_entry_texture(self, entry) -> None:
