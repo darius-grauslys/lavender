@@ -297,7 +297,7 @@ class EditorApp:
                 and self._build_config.last_world in self._worlds):
             self._active_world = self._build_config.last_world
             self._active_world_config = load_world_editor_config(
-                self._project_dir, self._active_world)
+                self._project_dir, self._active_world, self._platform)
             self._movement.go_to(
                 self._active_world_config.workspace_x,
                 self._active_world_config.workspace_y,
@@ -587,6 +587,8 @@ class EditorApp:
         # These are generated from the mouse scroll wheel and
         # dispatched as virtual key combos so that tools can
         # override scroll behaviour via the keybind stack.
+        if io.mouse_wheel != 0:
+            print("hit")
         if io.mouse_wheel != 0 and not io.want_capture_mouse:
             has_alt = bool(mods & Modifier.ALT)
             has_shift = bool(mods & Modifier.SHIFT)
