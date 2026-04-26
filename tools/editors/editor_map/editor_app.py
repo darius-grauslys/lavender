@@ -588,8 +588,6 @@ class EditorApp:
         # dispatched as virtual key combos so that tools can
         # override scroll behaviour via the keybind stack.
         if io.mouse_wheel != 0:
-            print("hit")
-        if io.mouse_wheel != 0 and not io.want_capture_mouse:
             has_alt = bool(mods & Modifier.ALT)
             has_shift = bool(mods & Modifier.SHIFT)
 
