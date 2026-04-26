@@ -419,7 +419,16 @@ class KindEditorWindow:
         self._layer_guard_macros: List[str] = []
         self._selected_layer_index: int = 0
 
-        # Tilesheet texture for preview buttons
+        # Per-layer tilesheet info
+        self._layer_tilesheet_texture_ids: List[int] = []
+        self._layer_tilesheet_tile_ws: List[int] = []
+        self._layer_tilesheet_tile_hs: List[int] = []
+        self._layer_tilesheet_cols: List[int] = []
+        self._layer_tilesheet_rows: List[int] = []
+        self._layer_tilesheet_img_ws: List[int] = []
+        self._layer_tilesheet_img_hs: List[int] = []
+
+        # Active tilesheet (set from per-layer lists)
         self._tilesheet_texture_id: int = 0
         self._tilesheet_tile_w: int = 8
         self._tilesheet_tile_h: int = 8
@@ -450,16 +459,17 @@ class KindEditorWindow:
             layer_animation_bits: List[int],
             layer_header_paths: List[Path],
             layer_guard_macros: List[str],
-            tilesheet_texture_id: int = 0,
-            tilesheet_tile_w: int = 8,
-            tilesheet_tile_h: int = 8,
-            tilesheet_cols: int = 1,
-            tilesheet_rows: int = 1,
-            tilesheet_img_w: int = 0,
-            tilesheet_img_h: int = 0,
+            layer_tilesheet_texture_ids: Optional[List[int]] = None,
+            layer_tilesheet_tile_ws: Optional[List[int]] = None,
+            layer_tilesheet_tile_hs: Optional[List[int]] = None,
+            layer_tilesheet_cols: Optional[List[int]] = None,
+            layer_tilesheet_rows: Optional[List[int]] = None,
+            layer_tilesheet_img_ws: Optional[List[int]] = None,
+            layer_tilesheet_img_hs: Optional[List[int]] = None,
     ) -> None:
         """Open the editor for the first available layer."""
         self.is_open = True
+        n = len(layer_names)
         self._layer_names = list(layer_names)
         self._layer_enums = list(layer_enums)
         self._layer_bit_widths = list(layer_bit_widths)
@@ -468,13 +478,27 @@ class KindEditorWindow:
         self._layer_header_paths = list(layer_header_paths)
         self._layer_guard_macros = list(layer_guard_macros)
 
-        self._tilesheet_texture_id = tilesheet_texture_id
-        self._tilesheet_tile_w = tilesheet_tile_w
-        self._tilesheet_tile_h = tilesheet_tile_h
-        self._tilesheet_cols = tilesheet_cols
-        self._tilesheet_rows = tilesheet_rows
-        self._tilesheet_img_w = tilesheet_img_w
-        self._tilesheet_img_h = tilesheet_img_h
+        self._layer_tilesheet_texture_ids = (
+            list(layer_tilesheet_texture_ids) if layer_tilesheet_texture_ids
+            else [0] * n)
+        self._layer_tilesheet_tile_ws = (
+            list(layer_tilesheet_tile_ws) if layer_tilesheet_tile_ws
+            else [8] * n)
+        self._layer_tilesheet_tile_hs = (
+            list(layer_tilesheet_tile_hs) if layer_tilesheet_tile_hs
+            else [8] * n)
+        self._layer_tilesheet_cols = (
+            list(layer_tilesheet_cols) if layer_tilesheet_cols
+            else [1] * n)
+        self._layer_tilesheet_rows = (
+            list(layer_tilesheet_rows) if layer_tilesheet_rows
+            else [1] * n)
+        self._layer_tilesheet_img_ws = (
+            list(layer_tilesheet_img_ws) if layer_tilesheet_img_ws
+            else [0] * n)
+        self._layer_tilesheet_img_hs = (
+            list(layer_tilesheet_img_hs) if layer_tilesheet_img_hs
+            else [0] * n)
 
         self._picker_open = False
         self._picker_target_index = -1
@@ -573,11 +597,32 @@ class KindEditorWindow:
     # Layer loading                                                       #
     # ------------------------------------------------------------------ #
 
+    def _update_tilesheet_for_layer(self, index: int) -> None:
+        """Update active tilesheet fields from the per-layer lists."""
+        if 0 <= index < len(self._layer_tilesheet_texture_ids):
+            self._tilesheet_texture_id = self._layer_tilesheet_texture_ids[index]
+            self._tilesheet_tile_w = self._layer_tilesheet_tile_ws[index]
+            self._tilesheet_tile_h = self._layer_tilesheet_tile_hs[index]
+            self._tilesheet_cols = self._layer_tilesheet_cols[index]
+            self._tilesheet_rows = self._layer_tilesheet_rows[index]
+            self._tilesheet_img_w = self._layer_tilesheet_img_ws[index]
+            self._tilesheet_img_h = self._layer_tilesheet_img_hs[index]
+        else:
+            self._tilesheet_texture_id = 0
+            self._tilesheet_tile_w = 8
+            self._tilesheet_tile_h = 8
+            self._tilesheet_cols = 1
+            self._tilesheet_rows = 1
+            self._tilesheet_img_w = 0
+            self._tilesheet_img_h = 0
+
     def _load_layer(self, index: int) -> None:
         """Load a layer's enum into the editing state."""
         if index < 0 or index >= len(self._layer_enums):
             self._state = None
             return
+
+        self._update_tilesheet_for_layer(index)
 
         enum = self._layer_enums[index]
         header_path = self._layer_header_paths[index]
