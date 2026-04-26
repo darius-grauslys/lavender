@@ -32,7 +32,7 @@ from imgui.integrations.pyglet import PygletProgrammablePipelineRenderer as Pygl
 from OpenGL import GL as gl
 from typing import Tuple
 
-from tools.editor_ui_modules.constants import (
+from tools.editors.editor_ui.editor_ui_modules.constants import (
     ASSET_UI_ROOT,
     DEFAULT_WINDOW_H,
     DEFAULT_WINDOW_W,
@@ -40,14 +40,14 @@ from tools.editor_ui_modules.constants import (
     DEFAULT_WORK_W,
     GRID_PX,
 )
-from tools.editor_ui_modules.file_browser import FileBrowser
-from tools.editor_ui_modules.history import HistoryManager
-from tools.editor_ui_modules.message_hud import MessageHUD
-from tools.editor_ui_modules.properties_hud import PropertiesHUD
-from tools.editor_ui_modules.tool_hud import ToolHUD
-from tools.editor_ui_modules.work_area import WorkArea
-from tools.editor_ui_modules.ui_hierarchy import UIHierarchy
-from tools.editor_ui_modules.xml_backing import (
+from tools.editors.editor_ui.editor_ui_modules.file_browser import FileBrowser
+from tools.editors.editor_ui.editor_ui_modules.history import HistoryManager
+from tools.editors.editor_ui.editor_ui_modules.message_hud import MessageHUD
+from tools.editors.editor_ui.editor_ui_modules.properties_hud import PropertiesHUD
+from tools.editors.editor_ui.editor_ui_modules.tool_hud import ToolHUD
+from tools.editors.editor_ui.editor_ui_modules.work_area import WorkArea
+from tools.editors.editor_ui.editor_ui_modules.ui_hierarchy import UIHierarchy
+from tools.editors.editor_ui.editor_ui_modules.xml_backing import (
     add_element_to_ui,
     add_element_under,
     find_ui_elements,
@@ -229,7 +229,7 @@ class EditorApp:
 
     def _build_ui_span_for_tag(self, tag: str, attribs: Dict[str, str]) -> str:
         """Build a UI_Span string from the active toolset for the given tag."""
-        from tools.editor_ui_modules.ui_element_defs import ELEMENT_DEF_BY_TAG
+        from tools.editors.editor_ui.editor_ui_modules.ui_element_defs import ELEMENT_DEF_BY_TAG
         edef = ELEMENT_DEF_BY_TAG.get(tag)
         if edef is None or not edef.has_ui_span:
             return ""
@@ -250,7 +250,7 @@ class EditorApp:
         """Update UI_Span on all elements from the active toolset."""
         if self._xml_root is None:
             return
-        from tools.editor_ui_modules.ui_element_defs import ELEMENT_DEF_BY_TAG
+        from tools.editors.editor_ui.editor_ui_modules.ui_element_defs import ELEMENT_DEF_BY_TAG
         ui_node = self._xml_root.find("ui")
         if ui_node is None:
             return
@@ -258,7 +258,7 @@ class EditorApp:
         self._elements = find_ui_elements(self._xml_root)
 
     def _update_spans_recursive(self, node: ET.Element) -> None:
-        from tools.editor_ui_modules.ui_element_defs import ELEMENT_DEF_BY_TAG
+        from tools.editors.editor_ui.editor_ui_modules.ui_element_defs import ELEMENT_DEF_BY_TAG
         for child in node:
             edef = ELEMENT_DEF_BY_TAG.get(child.tag)
             if edef is not None and edef.has_ui_span:

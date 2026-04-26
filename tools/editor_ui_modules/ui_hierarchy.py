@@ -16,8 +16,8 @@ from typing import Callable, Dict, Optional, Set
 
 import imgui
 
-from tools.editor_ui_modules.ui_element_defs import ELEMENT_DEF_BY_TAG
-from tools.editor_ui_modules.xml_backing import _CONTAINER_TAGS
+from tools.editors.editor_ui.editor_ui_modules.ui_element_defs import ELEMENT_DEF_BY_TAG
+from tools.editors.editor_ui.editor_ui_modules.xml_backing import _CONTAINER_TAGS
 
 
 class UIHierarchy:
@@ -96,7 +96,7 @@ class UIHierarchy:
         on_add_child: Callable,
         selected_tool_name: str,
     ) -> None:
-        from tools.editor_ui_modules.xml_backing import _REPEATING_TAGS
+        from tools.editors.editor_ui.editor_ui_modules.xml_backing import _REPEATING_TAGS
 
         for child in node:
             elem_id = id(child)

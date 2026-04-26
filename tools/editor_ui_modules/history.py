@@ -6,7 +6,7 @@ import copy
 from dataclasses import dataclass, field
 from typing import Any, Optional
 
-from tools.editor_ui_modules.constants import HISTORY_MAX
+from tools.editors.editor_ui.editor_ui_modules.constants import HISTORY_MAX
 
 
 @dataclass

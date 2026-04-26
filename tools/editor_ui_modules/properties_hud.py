@@ -7,7 +7,7 @@ from typing import Callable, Dict, List, Optional, Tuple
 
 import imgui
 
-from tools.editor_ui_modules.ui_element_defs import ELEMENT_DEF_BY_TAG, UIElementDef
+from tools.editors.editor_ui.editor_ui_modules.ui_element_defs import ELEMENT_DEF_BY_TAG, UIElementDef
 
 # Keys whose values must be integers
 _NUMERIC_KEYS = frozenset({

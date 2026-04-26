@@ -8,7 +8,7 @@ import xml.etree.ElementTree as ET
 from typing import Dict, List, Optional, Tuple
 from xml.dom import minidom
 
-from tools.editor_ui_modules.constants import GRID_PX
+from tools.editors.editor_ui.editor_ui_modules.constants import GRID_PX
 
 
 def _safe_int(value: str, default: int = 0) -> int:

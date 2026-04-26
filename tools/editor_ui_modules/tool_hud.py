@@ -13,7 +13,7 @@ from typing import Dict, List, Optional, Tuple
 
 import imgui
 
-from tools.editor_ui_modules.constants import (
+from tools.editors.editor_ui.editor_ui_modules.constants import (
     ASSET_UI_ROOT,
     GRID_PX,
     TOOLSET_DIR,
@@ -21,7 +21,7 @@ from tools.editor_ui_modules.constants import (
     TOOLSET_SUFFIX,
     TOOLSET_DEFAULT_NAME,
 )
-from tools.editor_ui_modules.ui_element_defs import (
+from tools.editors.editor_ui.editor_ui_modules.ui_element_defs import (
     ALL_ELEMENT_DEFS,
     UIElementDef,
 )

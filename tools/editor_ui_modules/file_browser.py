@@ -7,7 +7,7 @@ from typing import Callable, Optional
 
 import imgui
 
-from tools.editor_ui_modules.constants import ASSET_UI_ROOT
+from tools.editors.editor_ui.editor_ui_modules.constants import ASSET_UI_ROOT
 
 
 class FileBrowser:

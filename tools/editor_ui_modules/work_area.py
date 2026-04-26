@@ -15,7 +15,7 @@ from typing import Callable, Dict, List, Optional, Tuple
 
 import imgui
 
-from tools.editor_ui_modules.constants import (
+from tools.editors.editor_ui.editor_ui_modules.constants import (
     COLOR_DELETE_X,
     COLOR_OUTLINE_FOCUSED,
     COLOR_OUTLINE_REVEAL,
@@ -24,10 +24,10 @@ from tools.editor_ui_modules.constants import (
     OUTLINE_WIDTH,
     X_BUTTON_HEIGHT,
 )
-from tools.editor_ui_modules.span_renderer import build_span_tile_grid
-from tools.editor_ui_modules.ui_element_defs import ELEMENT_DEF_BY_TAG, UIElementDef
-from tools.editor_ui_modules.xml_backing import ResolvedElement
-from tools.editor_ui_modules.xml_backing import (
+from tools.editors.editor_ui.editor_ui_modules.span_renderer import build_span_tile_grid
+from tools.editors.editor_ui.editor_ui_modules.ui_element_defs import ELEMENT_DEF_BY_TAG, UIElementDef
+from tools.editors.editor_ui.editor_ui_modules.xml_backing import ResolvedElement
+from tools.editors.editor_ui.editor_ui_modules.xml_backing import (
     add_element_to_ui,
     elem_rect,
     remove_element,

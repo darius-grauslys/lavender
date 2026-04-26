@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from typing import List, Optional, Tuple
 
-from tools.editor_ui_modules.constants import GRID_PX
+from tools.editors.editor_ui.editor_ui_modules.constants import GRID_PX
 
 # A tile index is just an int referencing an 8×8 cell in the tileset.
 # The tileset is assumed to be a horizontal strip or a grid; we store
