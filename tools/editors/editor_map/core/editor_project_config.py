@@ -100,13 +100,11 @@ def build_config_path(project_dir: Path) -> Path:
 def world_config_path(
         project_dir: Path,
         world_name: str,
-        platform: str = "") -> Path:
+        platform: str) -> Path:
     """Get the path to a world's editor.json."""
-    if platform:
-        from core.world_directory import saves_root
-        return (saves_root(project_dir, platform)
-                / world_name / WORLD_CONFIG_FILENAME)
-    return project_dir / "save" / world_name / WORLD_CONFIG_FILENAME
+    from core.world_directory import saves_root
+    return (saves_root(project_dir, platform)
+            / world_name / WORLD_CONFIG_FILENAME)
 
 
 def load_build_config(project_dir: Path) -> EditorBuildConfig:
@@ -223,13 +221,6 @@ def load_world_editor_config(
     tilesheets_data = data.get("tilesheets", [])
     if not isinstance(tilesheets_data, list):
         tilesheets_data = []
-
-    # Migrate legacy "tilesheet.path" into tilesheets list
-    legacy_tilesheet = data.get("tilesheet", {})
-    if isinstance(legacy_tilesheet, dict):
-        legacy_path = legacy_tilesheet.get("path", "")
-        if legacy_path and legacy_path not in tilesheets_data:
-            tilesheets_data.insert(0, legacy_path)
 
     layers_data = data.get("layers", [])
     if not isinstance(layers_data, list):

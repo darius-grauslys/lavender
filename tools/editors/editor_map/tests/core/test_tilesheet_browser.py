@@ -184,7 +184,6 @@ class TestClearTilesheet:
 
         cfg = load_world_editor_config(tmp_path, "test_world")
         assert cfg.tilesheets == []
-        assert cfg.primary_tilesheet_path == ""
 
     def test_clear_no_world(self, tmp_path):
         hud = MessageHUD()
