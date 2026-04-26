@@ -77,6 +77,8 @@ class WorkspaceRenderer:
         # Per-layer tilesheet mapping: layer_index -> (Tilesheet, gl_tex_id)
         self._layer_tilesheets: Dict[int, Tuple[Tilesheet, int]] = {}
         self._layer_manager: Optional[LayerManager] = None
+        # Per-layer tile value remapping: layer_index -> {enum_value: tile_idx}
+        self._layer_tile_index_maps: Dict[int, Dict[int, int]] = {}
 
     # ------------------------------------------------------------------
     # Configuration
@@ -131,6 +133,26 @@ class WorkspaceRenderer:
             if gl_texture_id == 0:
                 gl_texture_id = self._try_upload_texture(tilesheet)
             self._layer_tilesheets[layer_index] = (tilesheet, gl_texture_id)
+
+    def set_layer_tile_index_map(
+            self,
+            layer_index: int,
+            tile_index_map: Optional[Dict[int, int]]) -> None:
+        """Set the tile-value-to-tilesheet-index mapping for a layer.
+
+        Args:
+            layer_index: The tile layer index.
+            tile_index_map: Mapping of enum integer value to tilesheet
+                tile index.  Pass None to clear (use raw value).
+        """
+        if tile_index_map is None:
+            self._layer_tile_index_maps.pop(layer_index, None)
+        else:
+            self._layer_tile_index_maps[layer_index] = dict(tile_index_map)
+
+    def clear_layer_tile_index_maps(self) -> None:
+        """Remove all per-layer tile index mappings."""
+        self._layer_tile_index_maps.clear()
 
     def clear_layer_tilesheets(self) -> None:
         """Remove all per-layer tilesheet assignments."""
@@ -248,6 +270,8 @@ class WorkspaceRenderer:
         # global tilesheet when no per-layer sheet is assigned.
         # layer_ts_info: list of (use_ts, ts_w, ts_h, tiles_per_row, gl_tex)
         layer_ts_info: List[Tuple[bool, float, float, int, int]] = []
+        # Per-layer tile value remap dicts (may be None for raw pass-through)
+        layer_remap: List[Optional[Dict[int, int]]] = []
 
         # Precompute layer bit extraction info
         num_layers = 0
@@ -282,6 +306,9 @@ class WorkspaceRenderer:
                         lgl))
                 else:
                     layer_ts_info.append((False, 1.0, 1.0, 1, 0))
+
+                layer_remap.append(
+                    self._layer_tile_index_maps.get(li))
 
             # Build render order — use definition order (layer 0
             # is drawn first, highest layer drawn last on top).
@@ -353,7 +380,8 @@ class WorkspaceRenderer:
                                 num_layers, layer_bit_info,
                                 layer_ts_info, none_col,
                                 px, py, px2, py2,
-                                render_order)
+                                render_order,
+                                layer_remap)
                         else:
                             # Fallback: use first byte as value
                             value = tile_data[0] if tile_data else 0
@@ -391,7 +419,9 @@ class WorkspaceRenderer:
             none_col: int,
             px: float, py: float,
             px2: float, py2: float,
-            render_order: Optional[List[int]] = None) -> None:
+            render_order: Optional[List[int]] = None,
+            layer_remap: Optional[List[Optional[Dict[int, int]]]] = None,
+    ) -> None:
         """Render all layers for a single tile position.
 
         Each layer samples from its own tilesheet (via layer_ts_info).
@@ -399,6 +429,11 @@ class WorkspaceRenderer:
         first) so that higher-valued layers composite on top.
         Value 0 on the first rendered layer draws a dark rectangle;
         value 0 on subsequent layers is skipped (transparent).
+
+        If *layer_remap* is provided, each layer's extracted enum
+        value is remapped through the corresponding dict to obtain
+        the actual tilesheet tile index.  When no mapping exists for
+        a value the raw value is used as a fallback.
         """
         if render_order is None:
             render_order = list(range(num_layers))
@@ -424,8 +459,17 @@ class WorkspaceRenderer:
                     imgui.get_color_u32_rgba(*color))
                 continue
 
-            tile_row = tile_value // tiles_per_row
-            tile_col = tile_value % tiles_per_row
+            # Remap enum value → tilesheet tile index if mapping exists
+            remap = (layer_remap[layer_idx]
+                     if layer_remap and layer_idx < len(layer_remap)
+                     else None)
+            if remap is not None:
+                sheet_idx = remap.get(tile_value, tile_value)
+            else:
+                sheet_idx = tile_value
+
+            tile_row = sheet_idx // tiles_per_row
+            tile_col = sheet_idx % tiles_per_row
             u0 = (tile_col * _TILESHEET_TILE_PX) / ts_w
             v0 = (tile_row * _TILESHEET_TILE_PX) / ts_h
             u1 = ((tile_col + 1) * _TILESHEET_TILE_PX) / ts_w

@@ -304,6 +304,28 @@ def save_tilesheet_mapping(
         encoding='utf-8')
 
 
+def build_value_to_tile_index_map(
+        enum: CEnum,
+        name_map: Dict[str, int],
+) -> Dict[int, int]:
+    """Convert a name-based tilesheet mapping to a value-based one.
+
+    Args:
+        enum: The parsed CEnum whose members provide name→value.
+        name_map: Mapping of enum member name → tilesheet tile index
+            (as returned by load_tilesheet_mapping).
+
+    Returns:
+        Dict mapping enum integer value → tilesheet tile index.
+        Entries whose name is not found in the enum are skipped.
+    """
+    result: Dict[int, int] = {}
+    for member in enum.members:
+        if member.name in name_map:
+            result[member.value] = name_map[member.name]
+    return result
+
+
 def load_tilesheet_mapping(filepath: Path) -> Dict[str, int]:
     """
     Load tilesheet tile index mapping from the JSON file

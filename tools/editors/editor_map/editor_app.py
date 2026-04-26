@@ -1141,11 +1141,12 @@ class EditorApp:
             state: 'TileKindEditorState',
             header_path: Path,
             guard_macro: str) -> None:
-        """Handle Kind Editor OK — reload affected enum."""
+        """Handle Kind Editor OK — reload affected enum and mappings."""
         self._message_hud.info(
             f"Kind Editor: wrote {header_path.name} "
             f"({len(state.tile_kinds)} entries).")
         self._reload_tile_enums()
+        self._update_renderer_tile_index_maps()
 
     def _save_all(self) -> None:
         """Flush all pending .tmp files to disk (Ctrl+S)."""
@@ -1237,6 +1238,51 @@ class EditorApp:
             if ts_entry and ts_entry.tilesheet and ts_entry.gl_texture_id:
                 self._renderer.set_layer_tilesheet(
                     i, ts_entry.tilesheet, ts_entry.gl_texture_id)
+        # Also refresh tile index mappings
+        self._update_renderer_tile_index_maps()
+
+    def _update_renderer_tile_index_maps(self) -> None:
+        """Load per-layer tilesheet tile-index mappings and push to renderer.
+
+        For each tile layer, reads the JSON sidecar mapping (enum member
+        name → tilesheet tile index), converts it to an enum-value-based
+        mapping, and sets it on the renderer so that tile values are
+        remapped to the correct tilesheet tile before UV computation.
+        """
+        if not self._renderer:
+            return
+        self._renderer.clear_layer_tile_index_maps()
+        if not self._tile_info:
+            return
+
+        from core.tile_kind_editor import (
+            load_tilesheet_mapping,
+            build_value_to_tile_index_map,
+        )
+
+        for i, lf in enumerate(self._tile_info.layer_fields):
+            if i >= len(self._tile_enums):
+                continue
+            enum = self._tile_enums[i]
+
+            # Resolve header path (same logic as _open_kind_editor)
+            kind_filename = lf.enum_type_name.lower() + ".h"
+            project_path = (
+                self._project_dir / "include" / "types"
+                / "implemented" / "world" / kind_filename)
+            if project_path.exists():
+                header_path = project_path
+            else:
+                header_path = (
+                    self._engine_dir / "core" / "include"
+                    / "types" / "implemented" / "world"
+                    / kind_filename)
+
+            name_map = load_tilesheet_mapping(header_path)
+            if name_map:
+                value_map = build_value_to_tile_index_map(enum, name_map)
+                if value_map:
+                    self._renderer.set_layer_tile_index_map(i, value_map)
 
     def _on_layer_editor_ok(self, entries) -> None:
         """Handle Layer Editor OK — write tile_layer.h, tile.h, update config."""
