@@ -905,6 +905,7 @@ class KindEditorWindow:
 
         imgui.begin_child("##pk_grid", 0, -40, border=True)
 
+        grid_hovered = imgui.is_window_hovered()
         draw_list = imgui.get_window_draw_list()
         win_pos = imgui.get_cursor_screen_pos()
         mouse = imgui.get_mouse_position()
@@ -941,7 +942,7 @@ class KindEditorWindow:
                 draw_list.add_rect(
                     x0, y0, x1, y1,
                     imgui.get_color_u32_rgba(1.0, 1.0, 0.0, 1.0), 0, 0, 2)
-                if imgui.is_mouse_clicked(0):
+                if grid_hovered and imgui.is_mouse_clicked(0):
                     self._picker_selected_tile = idx
 
             if idx == self._picker_selected_tile:
