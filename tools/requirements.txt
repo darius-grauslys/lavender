@@ -1,1 +1,4 @@
 pyglet
+mcp[cli]
+Pillow
+pytest

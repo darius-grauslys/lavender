@@ -463,7 +463,7 @@ def _generate_tile_h(all_specs, ordered_names, placements, total_bytes):
             field_name = "the_kind_of__tile"
         else:
             type_name = f"Tile_{pascal}_Kind"
-            field_name = f"tike_kind_of__tile__{_to_lower(name)}"
+            field_name = f"tile_kind_of__tile__{_to_lower(name)}"
         render_lines.append(
             f"            {type_name} {field_name} : {spec.total_bits};")
     text = _set_region(text,
@@ -479,6 +479,10 @@ def _generate_tile_h(all_specs, ordered_names, placements, total_bytes):
         prev_byte = byte_idx
         if field_name == "__padding":
             layer_lines.append(f"            u8 : {field_bits};")
+        elif field_name == "remainder":
+            layer_lines.append(
+                f"            u8 tile_layer_{p_layer_idx}"
+                f"__{field_name} : {field_bits};")
         else:
             layer_lines.append(
                 f"            u8 tile_layer_{p_layer_idx}"

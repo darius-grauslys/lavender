@@ -3,7 +3,8 @@
 import pytest
 
 from core.tile_parser import (
-    TileInfo, TileLayerField, TileParseError, parse_tile_header,
+    TileInfo, TileLayerField, TileLayerLayout, TileParseError,
+    parse_tile_header,
 )
 
 TEMPLATE_TILE_H = """\
@@ -23,7 +24,7 @@ typedef struct Tile_t {
         struct {
             // GEN-RENDER-BEGIN
             Tile_Kind the_kind_of__tile : 10;
-            Tile_Cover_Kind tike_kind_of__tile__cover : 10;
+            Tile_Cover_Kind tile_kind_of__tile__cover : 10;
             // GEN-RENDER-END
         };
         struct {
@@ -132,3 +133,57 @@ class TestEdgeCases:
     def test_no_tile_struct(self):
         result = parse_tile_header('#define FOO 1')
         assert isinstance(result, TileParseError)
+
+
+class TestParseLayerLayouts:
+    """Verify _extract_layer_layouts correctly parses GEN-LAYER sub-fields.
+
+    The TEMPLATE_TILE_H fixture encodes:
+      layer 0: logic=4, animation=4, remainder=2
+      layer 1: logic=6, animation=4, remainder=2
+    """
+
+    def test_layout_count_matches_layer_field_count(self):
+        info = parse_tile_header(TEMPLATE_TILE_H)
+        assert not isinstance(info, TileParseError)
+        assert len(info.layer_layouts) == len(info.layer_fields)
+
+    def test_layer_0_logic_bits(self):
+        info = parse_tile_header(TEMPLATE_TILE_H)
+        assert not isinstance(info, TileParseError)
+        assert info.layer_layouts[0].logic_bits == 4
+
+    def test_layer_0_animation_bits(self):
+        info = parse_tile_header(TEMPLATE_TILE_H)
+        assert not isinstance(info, TileParseError)
+        assert info.layer_layouts[0].animation_bits == 4
+
+    def test_layer_0_remainder_bits(self):
+        info = parse_tile_header(TEMPLATE_TILE_H)
+        assert not isinstance(info, TileParseError)
+        assert info.layer_layouts[0].remainder_bits == 2
+
+    def test_layer_1_logic_bits(self):
+        info = parse_tile_header(TEMPLATE_TILE_H)
+        assert not isinstance(info, TileParseError)
+        assert info.layer_layouts[1].logic_bits == 6
+
+    def test_layer_1_animation_bits(self):
+        info = parse_tile_header(TEMPLATE_TILE_H)
+        assert not isinstance(info, TileParseError)
+        assert info.layer_layouts[1].animation_bits == 4
+
+    def test_layer_1_remainder_bits(self):
+        info = parse_tile_header(TEMPLATE_TILE_H)
+        assert not isinstance(info, TileParseError)
+        assert info.layer_layouts[1].remainder_bits == 2
+
+    def test_layout_returns_defaults_when_gen_layer_absent(self):
+        """Without a GEN-LAYER block, layouts default to remainder=8."""
+        result = parse_tile_header(SINGLE_LAYER_TILE_H)
+        assert not isinstance(result, TileParseError)
+        assert len(result.layer_layouts) == 1
+        layout = result.layer_layouts[0]
+        assert layout.logic_bits == 0
+        assert layout.animation_bits == 0
+        assert layout.remainder_bits == 8

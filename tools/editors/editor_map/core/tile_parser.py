@@ -228,12 +228,33 @@ def _extract_layer_layouts(
     return layouts
 
 
+def _layer_enum_to_include_path(enum_type_name: str, layer_index: int) -> str:
+    """Derive the include path for a layer's enum type header.
+
+    The first layer (index 0) always maps to
+    ``types/implemented/world/tile_kind.h``.
+
+    For subsequent layers, the enum type name is lowercased to produce
+    the filename: e.g. ``Tile_Cover_Kind`` -> ``tile_cover_kind`` ->
+    ``types/implemented/world/tile_cover_kind.h``.
+    """
+    if layer_index == 0:
+        return 'types/implemented/world/tile_kind.h'
+    filename = enum_type_name.lower()
+    return f'types/implemented/world/{filename}.h'
+
+
 def write_tile_header(
         filepath: Path,
         layer_fields: List[TileLayerField],
         layer_layouts: List[TileLayerLayout],
 ) -> None:
     """Write a tile.h file from layer fields and layouts.
+
+    Generates output that matches the canonical template structure,
+    including proper include guard, ``defines_weak.h`` include,
+    GEN-INCLUDE block, anonymous padding bits in the GEN-LAYER struct,
+    and the GEN-END marker.
 
     Computes sizeof(Tile) from the total bits across all layers,
     rounded up to the nearest byte.
@@ -246,15 +267,78 @@ def write_tile_header(
     total_bits = sum(lf.bit_width for lf in layer_fields)
     size_in_bytes = max(1, (total_bits + 7) // 8)
 
+    # --- build GEN-LAYER lines with anonymous padding ---
+    layer_lines: List[str] = []
+    prev_byte = -1
+    current_byte = 0
+    bits_used = 0
+
+    def _flush_sub_field(
+            layer_idx: int, fname: str, fbits: int) -> None:
+        nonlocal current_byte, bits_used, prev_byte
+        remaining = 8 - bits_used
+        if fbits > remaining:
+            if bits_used > 0:
+                # emit padding to fill the current byte
+                if current_byte != prev_byte and prev_byte != -1:
+                    layer_lines.append('')
+                prev_byte = current_byte
+                layer_lines.append(
+                    f'            u8 : {remaining};')
+                current_byte += 1
+                bits_used = 0
+        if current_byte != prev_byte and prev_byte != -1:
+            layer_lines.append('')
+        prev_byte = current_byte
+        if fname == 'remainder':
+            layer_lines.append(
+                f'            u8 tile_layer_{layer_idx}__{fname} '
+                f': {fbits};')
+        else:
+            layer_lines.append(
+                f'            u8 tile_layer_{layer_idx}__field__{fname} '
+                f': {fbits};')
+        bits_used += fbits
+        if bits_used == 8:
+            current_byte += 1
+            bits_used = 0
+
+    for i, layout in enumerate(layer_layouts):
+        if layout.logic_bits > 0:
+            _flush_sub_field(i, 'logic', layout.logic_bits)
+        if layout.animation_bits > 0:
+            _flush_sub_field(i, 'animation', layout.animation_bits)
+        if layout.remainder_bits > 0:
+            _flush_sub_field(i, 'remainder', layout.remainder_bits)
+
+    # emit trailing padding if the last byte is partially filled
+    if bits_used > 0:
+        layer_lines.append(
+            f'            u8 : {8 - bits_used};')
+
+    # --- assemble the full file ---
     lines = [
-        '#ifndef DEFINE_TILE',
-        '#define DEFINE_TILE',
+        '#ifndef IMPL_TILE_H',
+        '#define IMPL_TILE_H',
         '',
-        'typedef struct Tile_t {',
-        '    union {',
-        '        struct {',
-        '            // GEN-RENDER-BEGIN',
+        '#include "defines_weak.h"',
+        '',
+        '// GEN-INCLUDE-BEGIN',
     ]
+
+    for idx, lf in enumerate(layer_fields):
+        lines.append(
+            f'#include "{_layer_enum_to_include_path(lf.enum_type_name, idx)}"')
+
+    lines.append('// GEN-INCLUDE-END')
+    lines.append('')
+    lines.append('#define DEFINE_TILE')
+    lines.append('')
+    lines.append('typedef struct Tile_t {')
+    lines.append('    union {')
+    lines.append('        struct {')
+    lines.append('            // NOTE: The full bit fields are exposed in the first struct')
+    lines.append('            // GEN-RENDER-BEGIN')
 
     for lf in layer_fields:
         lines.append(
@@ -266,24 +350,14 @@ def write_tile_header(
     lines.append('        struct {')
     lines.append('            // GEN-LAYER-BEGIN')
 
-    for i, layout in enumerate(layer_layouts):
-        if layout.logic_bits > 0:
-            lines.append(
-                f'            u8 tile_layer_{i}__field__logic '
-                f': {layout.logic_bits};')
-        if layout.animation_bits > 0:
-            lines.append(
-                f'            u8 tile_layer_{i}__field__animation '
-                f': {layout.animation_bits};')
-        lines.append(
-            f'            u8 tile_layer_{i}__remainder '
-            f': {layout.remainder_bits};')
+    lines.extend(layer_lines)
 
     lines.append('            // GEN-LAYER-END')
     lines.append('        };')
     lines.append(
         f'        u8 array_of__tile_data__u8[{size_in_bytes}];')
     lines.append('    };')
+    lines.append('    // GEN-END')
     lines.append('} Tile;')
     lines.append('')
     lines.append('#endif')

@@ -14,3 +14,19 @@ find $LAVENDER_DIR/core -iname *implemented* -type d -exec sh -c "echo \$(dirnam
 
 cp $LAVENDER_DIR/examples/Makefiles/* $DIR/
 cp -r $LAVENDER_DIR/core/assets $DIR/
+
+cat > "$DIR/opencode.json" << EOF
+{
+  "\$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "filesystem": {
+      "type": "local",
+      "enabled": true,
+      "command": [
+        "sh", "-c",
+        "npx -y @modelcontextprotocol/server-filesystem \"\$LAVENDER_DIR\" \"$DIR\""
+      ]
+    }
+  }
+}
+EOF
