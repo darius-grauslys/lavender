@@ -164,7 +164,8 @@ void generate_ui_span_in__ui_tile_map(
         Index__u32 index_y__u32) {
     for (Index__u32 index_y_of__ui_tile_span__u32 = 0;
             index_y_of__ui_tile_span__u32 
-            < height_of__ui_tile_span__u32;
+            < height_of__ui_tile_span__u32
+            * p_ui_tile_span->size_of__ui_tile_in__8x8_tiles__u8;
             index_y_of__ui_tile_span__u32++) {
         u32 y = 
             get_height_of__p_ui_tile_map__wrapper(
@@ -179,7 +180,8 @@ void generate_ui_span_in__ui_tile_map(
         }
         for (Index__u32 index_x_of__ui_tile_span__u32 = 0;
                 index_x_of__ui_tile_span__u32
-                < width_of__ui_tile_span__u32;
+                < width_of__ui_tile_span__u32
+                * p_ui_tile_span->size_of__ui_tile_in__8x8_tiles__u8;
                 index_x_of__ui_tile_span__u32++) {
             u32 x = 
                 index_x__u32

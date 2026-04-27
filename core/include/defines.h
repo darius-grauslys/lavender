@@ -1498,7 +1498,7 @@ typedef u16 UI_Tile_Flags;
 typedef u16 UI_Tile_Raw;
 
 typedef struct UI_Tile_t {
-    UI_Tile_Kind the_kind_of__ui_tile   :10;
+    UI_Tile_Kind the_kind_of__ui_tile   :UI_TILE_KIND__BIT_COUNT;
     UI_Tile_Flags ui_tile_flags         :UI_TILE__QUANTITY_OF__FLAGS;
 } UI_Tile;
 
@@ -1526,6 +1526,7 @@ typedef struct UI_Tile_Span_t {
         };
     };
     UI_Tile ui_tile__fill;
+    u8 size_of__ui_tile_in__8x8_tiles__u8;
 } UI_Tile_Span;
 
 // TODO: remove

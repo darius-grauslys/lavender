@@ -14,9 +14,9 @@ static inline
 UI_Tile_Raw get_ui_tile_raw_from__ui_tile(
         const UI_Tile *p_ui_tile) {
     return 
-        (p_ui_tile->the_kind_of__ui_tile & MASK(10))
+        (p_ui_tile->the_kind_of__ui_tile & MASK(UI_TILE_KIND__BIT_COUNT))
 #ifndef UI_TILE__IS_NOT__SAVING_FLAGS_TO__RAW
-        | ((p_ui_tile->ui_tile_flags & MASK(6)) << 10)
+        | ((p_ui_tile->ui_tile_flags & MASK(6)) << UI_TILE_KIND__BIT_COUNT)
 #endif
         ;
 }

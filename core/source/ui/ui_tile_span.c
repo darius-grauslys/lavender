@@ -22,6 +22,7 @@ void initialize_ui_tile_span_as__empty(
     }
     initialize_ui_tile_as__empty(
             &p_ui_tile_span->ui_tile__fill);
+    p_ui_tile_span->size_of__ui_tile_in__8x8_tiles__u8 = 1;
 }
 
 void initialize_ui_tile_span(
@@ -47,6 +48,21 @@ void initialize_ui_tile_span(
     }
     p_ui_tile_span->ui_tile__fill =
         ui_tile__fill;
+    p_ui_tile_span->size_of__ui_tile_in__8x8_tiles__u8 = 1;
+}
+
+void initialize_ui_tile_span__with_ui_tile_size(
+        UI_Tile_Span *p_ui_tile_span,
+        UI_Tile ui_tile__corners[4],
+        UI_Tile ui_tile__edges[4],
+        UI_Tile ui_tile__fill,
+        Quantity__u8 size_of__ui_tile_in__8x8_tiles__u8) {
+    initialize_ui_tile_span(
+            p_ui_tile_span, 
+            ui_tile__corners, 
+            ui_tile__edges, 
+            ui_tile__fill);
+    p_ui_tile_span->size_of__ui_tile_in__8x8_tiles__u8 = size_of__ui_tile_in__8x8_tiles__u8;
 }
 
 const UI_Tile *get_ui_tile_of__ui_tile_span(
@@ -61,6 +77,7 @@ const UI_Tile *get_ui_tile_of__ui_tile_span(
     bool is_on_right_edge =
         index_x_of__ui_tile_span__u32 ==
         width_of__ui_tile_span__u32
+        * p_ui_tile_span->size_of__ui_tile_in__8x8_tiles__u8
         - 1
         ;
 
@@ -71,6 +88,7 @@ const UI_Tile *get_ui_tile_of__ui_tile_span(
     bool is_on_top_edge =
         index_y_of__ui_tile_span__u32 ==
         height_of__ui_tile_span__u32
+        * p_ui_tile_span->size_of__ui_tile_in__8x8_tiles__u8
         - 1
         ;
 
