@@ -166,7 +166,25 @@ TEST_FUNCTION(get_ui_tile_raw_from__ui_tile__packs_kind_in_lower_bits) {
             (UI_Tile_Kind)7,
             0);
     UI_Tile_Raw raw = get_ui_tile_raw_from__ui_tile(&ui_tile);
-    munit_assert_uint16(raw & 0x3FF, ==, 7);
+    munit_assert_uint16(raw & MASK(UI_TILE_KIND__BIT_COUNT), ==, 7);
+    return MUNIT_OK;
+}
+
+///
+/// @spec    docs/specs/core/ui/ui_tile.h.spec.md
+/// @section 5.4.2 Conversion
+///
+TEST_FUNCTION(get_ui_tile_raw_from__ui_tile__packs_flags_above_kind_bits) {
+    UI_Tile ui_tile;
+    initialize_ui_tile(
+            &ui_tile,
+            (UI_Tile_Kind)0,
+            UI_TILE_FLAG__FLIPPED_VERTICAL);
+    UI_Tile_Raw raw = get_ui_tile_raw_from__ui_tile(&ui_tile);
+    munit_assert_uint16(
+            raw >> UI_TILE_KIND__BIT_COUNT,
+            ==,
+            UI_TILE_FLAG__FLIPPED_VERTICAL);
     return MUNIT_OK;
 }
 
@@ -203,5 +221,6 @@ DEFINE_SUITE(ui_tile,
     INCLUDE_TEST__STATELESS(set_ui_tile_as__scaling_vertically__sets_flag),
     INCLUDE_TEST__STATELESS(set_ui_tile_as__not_scaling_vertically__clears_flag),
     INCLUDE_TEST__STATELESS(get_ui_tile_raw_from__ui_tile__packs_kind_in_lower_bits),
+    INCLUDE_TEST__STATELESS(get_ui_tile_raw_from__ui_tile__packs_flags_above_kind_bits),
     INCLUDE_TEST__STATELESS(flag_mutations__preserve_other_flags),
     END_TESTS)
