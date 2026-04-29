@@ -5,7 +5,7 @@
 #include "defines.h"
 #include "defines_weak.h"
 #include "game.h"
-#include "types/implemented/hitbox_kind.h"
+#include "types/implemented/collisions/hitbox_kind.h"
 
 void register_game_action__hitbox_for__server(
         Game_Action_Logic_Table *p_game_action_logic_table);

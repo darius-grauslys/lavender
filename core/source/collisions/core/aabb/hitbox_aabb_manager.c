@@ -9,8 +9,6 @@
 #include "numerics.h"
 #include "serialization/hashing.h"
 #include "serialization/serialization_header.h"
-#include "types/implemented/hitbox_kind.h"
-#include "types/implemented/hitbox_manager_type.h"
 #include "vectors.h"
 #include "world/chunk_vectors.h"
 #include "world/global_space.h"

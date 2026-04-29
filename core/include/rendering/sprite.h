@@ -5,8 +5,6 @@
 #include "platform.h"
 #include "rendering/texture.h"
 #include "serialization/serialization_header.h"
-#include "types/implemented/sprite_animation_group_kind.h"
-#include "types/implemented/sprite_animation_kind.h"
 #include <defines.h>
 
 void m_sprite_animation_handler__default(

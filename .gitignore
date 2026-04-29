@@ -9,4 +9,4 @@ build_podman.sh
 core.*
 .aider*
 aider_notes/*
-*__pycache__/*
+*__pycache__*

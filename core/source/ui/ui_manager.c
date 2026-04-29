@@ -9,7 +9,6 @@
 #include "rendering/graphics_window.h"
 #include "serialization/hashing.h"
 #include "serialization/serialization_header.h"
-#include "types/implemented/graphics_window_kind.h"
 #include "ui/ui_tile_map.h"
 #include "world/world.h"
 #include <ui/ui_element.h>

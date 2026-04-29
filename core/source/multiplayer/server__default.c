@@ -10,7 +10,7 @@
 #include "multiplayer/tcp_socket_manager.h"
 #include "platform.h"
 #include "platform_defaults.h"
-#include "game_action/types/core/tcp/ga_type__tcp__connect_begin.h"
+#include "types/core/game_action/tcp/ga_type__tcp__connect_begin.h"
 
 void handle_pending_connection(
         Game *p_game,

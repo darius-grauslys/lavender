@@ -11,7 +11,7 @@
 #include "world/global_space.h"
 #include "world/global_space_manager.h"
 #include "world/serialization/world_directory.h"
-#include "game_action/types/core/global_space/ga_type__global_space__store.h"
+#include "types/core/game_action/global_space/ga_type__global_space__store.h"
 
 void m_process__game_action__global_space__store(
         Process *p_this_process,

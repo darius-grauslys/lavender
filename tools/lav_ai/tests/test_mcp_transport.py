@@ -1,7 +1,7 @@
 """test_mcp_transport.py — Verify the FastMCP server's tool registry.
 
 Directly inspects the FastMCP instance's internal tool manager to confirm:
-  - Exactly 14 tools are registered (10 scripts, 14 tools total).
+  - Exactly 28 tools are registered (13 scripts, 28 tools total).
   - Each expected tool name is present.
   - Every tool has a non-empty description.
 """
@@ -33,11 +33,25 @@ EXPECTED_TOOL_NAMES = {
     "gen_tile_layer_make_default",
     "gen_entity",
     "gen_ui_tile_kind",
-    "mod_png",
+    "read_png_meta",
+    "read_png",
+    "mod_png_set",
+    "mod_png_swap",
+    "mod_png_copy",
+    "mod_png_resize",
+    "mod_png_condense",
     "gen_aliased_texture",
+    "query_tools_list",
+    "query_tools_search",
+    "query_tools_describe",
+    "query_agents_list",
+    "query_agents_show",
+    "query_agents_search_prompts",
+    "query_agents_search_permissions",
+    "query_agents_verify_clean",
 }
 
-EXPECTED_TOOL_COUNT = 14
+EXPECTED_TOOL_COUNT = 28
 
 
 # ---------------------------------------------------------------------------

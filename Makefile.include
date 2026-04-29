@@ -10,7 +10,10 @@ export OFILES := $(SPRITE_FILES:.png=.o) \
 	$(SHARED_SPRITE_FILES) \
 	$(OFILES_GAME) $(OFILES_CORE) $(OFILES_PLATFORM)
 
-export CFLAGS := -march=$(shell uname -m | sed "s/_/-/")
+# Base CFLAGS for all platforms. Sub-directory Makefiles (e.g. nds/)
+# may append platform-specific flags with +=, but must NEVER shadow
+# with := as that would discard these base flags.
+export CFLAGS := -Wall -Wextra -O2 -march=$(shell uname -m | sed "s/_/-/")
 
 export INCLUDES := $(INCLUDE_GAME) $(INCLUDE_CORE) $(INCLUDE_PLATFORM)
 export LIBS		:= $(PLATFORM_LIBS)

@@ -2,7 +2,6 @@
 
 #include <game_action/implemented/game_action_registrar.c>
 #include <game_action/game_action_logic_table.h>
-#include <types/implemented/game_action_kind.h>
 
 TEST_FUNCTION(game_action_registrar__register_offline__populates_hitbox) {
     Game_Action_Logic_Table table;

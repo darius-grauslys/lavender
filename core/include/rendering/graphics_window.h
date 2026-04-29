@@ -9,8 +9,6 @@
 #include "rendering/sprite_manager.h"
 #include "serialization/identifiers.h"
 #include "serialization/serialization_header.h"
-#include "types/implemented/graphics_window_kind.h"
-#include "types/implemented/hitbox_manager_type.h"
 #include "ui/ui_context.h"
 #include "vectors.h"
 #include "collisions/hitbox_context.h"

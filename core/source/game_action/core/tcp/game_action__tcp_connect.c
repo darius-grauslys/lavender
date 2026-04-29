@@ -15,7 +15,7 @@
 #include "process/game_action_process.h"
 #include "process/process.h"
 #include "world/local_space_manager.h"
-#include "game_action/types/core/tcp/ga_type__tcp__connect.h"
+#include "types/core/game_action/tcp/ga_type__tcp__connect.h"
 
 enum _TCP_Connection_State {
     _TCP_Connection_State__Allocate_Client = 0,

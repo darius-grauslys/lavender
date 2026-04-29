@@ -9,8 +9,7 @@
 #include "game_action/game_action_logic_entry.h"
 #include "game_action/game_action_logic_table.h"
 #include "process/process.h"
-#include "types/implemented/game_action_kind.h"
-#include "game_action/types/core/entity/ga_type__entity__payload.h"
+#include "types/core/game_action/entity/ga_type__entity__payload.h"
 
 void m_process__game_action__entity__spawn__inbound_client(
         Process *p_this_process,

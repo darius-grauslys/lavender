@@ -8,8 +8,6 @@
 #include "serialization/serialization_header.h"
 #include "serialization/serialized_field.h"
 #include "timer.h"
-#include "types/implemented/entity_functions.h"
-#include "types/implemented/entity_kind.h"
 #include <entity/entity_manager.h>
 #include <entity/entity.h>
 #include <debug/debug.h>

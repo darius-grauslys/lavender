@@ -15,7 +15,6 @@
 #include "serialization/identifiers.h"
 #include "serialization/serialization_header.h"
 #include "sort/heap_sort__opaque.h"
-#include "types/implemented/sprite_animation_kind.h"
 
 void initialize_sprite_manager(
         Sprite_Manager *p_sprite_manager) {

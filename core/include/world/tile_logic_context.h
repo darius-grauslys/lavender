@@ -6,6 +6,7 @@
 #include "types/implemented/world/tile_layer.h"
 #include "world/tile.h"
 #include "world/tile_logic_table.h"
+#include "world/tile_logic_record.h"
 
 void initialize_tile_logic_context(
         Tile_Logic_Context *p_tile_logic_context);

@@ -1,12 +1,10 @@
 #include "world/chunk_generator_table.h"
 #include "defines_weak.h"
 #include "platform_defines.h"
-#include "types/implemented/chunk_generator_kind.h"
-#include "types/implemented/tile_kind.h"
 #include "world/chunk.h"
 #include "world/global_space.h"
-#include "world/implemented/chunk_generator_registrar.h"
 #include "defines.h"
+#include "world/implemented/chunk_generator_registrar.h"
 
 static void _m_chunk_generator__default(
         Process *p_this_process,

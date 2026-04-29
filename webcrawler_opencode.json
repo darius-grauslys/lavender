@@ -1,0 +1,34 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+
+  "_comment": "Web crawler agent template. Copy this into a project's opencode.json 'agent' block to add web research capability via a hidden subagent. This keeps web access isolated from code-modifying agents — the crawler fetches and summarizes, the planner/orchestrator consumes the summary.",
+
+  "agent": {
+    "crawler-web": {
+      "description": "Fetches and analyzes web content. Returns concise structured findings to the parent agent.",
+      "mode": "subagent",
+      "hidden": true,
+      "model": "REPLACE_WITH_YOUR_CHEAP_MODEL",
+      "permission": {
+        "read": "deny",
+        "edit": "deny",
+        "bash": "deny",
+        "glob": "deny",
+        "grep": "deny",
+        "todowrite": "deny",
+        "question": "deny",
+        "webfetch": "allow",
+        "websearch": "allow",
+        "task": "deny"
+      },
+      "prompt": "You are a web research agent. Your job is to fetch web pages and return concise, structured findings to the agent that dispatched you.\n\n## Rules\n1. You can ONLY fetch web content. You cannot read, edit, or execute any local files.\n2. Return concise structured findings — bullet points, tables, or short paragraphs.\n3. Do NOT return raw HTML or full page dumps. Summarize and extract only what was requested.\n4. If a URL fails or returns irrelevant content, say so and suggest alternatives.\n5. For documentation lookups, extract the specific section requested — do not dump entire pages.\n6. For API references, return function signatures, parameter types, and brief descriptions.\n7. For Lavender-specific knowledge, consult available memory tooling before fetching external resources.\n\n## Output Format\n### Source\n[URL fetched]\n\n### Findings\n- [Concise bullet points of relevant information]\n- [Include code snippets only if specifically requested]\n\n### Relevance\n[1-2 sentences on how this relates to the original query]"
+    }
+  },
+
+  "_usage_notes": {
+    "integration": "Merge the 'agent' block above into your project's opencode.json. Then add 'crawler-web': 'allow' to your planner or orchestrator agent's permission.task section.",
+    "model": "Replace REPLACE_WITH_YOUR_CHEAP_MODEL with a fast, inexpensive model ID (e.g., 'openrouter/moonshotai/kimi-k2.6', 'anthropic/claude-haiku-4-20250514').",
+    "isolation": "The crawler has webfetch+websearch only. No file access, no bash, no editing. This is intentional — it cannot leak project data or modify files.",
+    "invocation": "The parent agent invokes this via the Task tool. The crawler returns a single message with findings. Users can also @crawler-web directly."
+  }
+}

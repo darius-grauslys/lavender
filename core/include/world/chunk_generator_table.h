@@ -2,7 +2,6 @@
 #define CHUNK_GENERATOR_TABLE_H
 
 #include "defines.h"
-#include "types/implemented/chunk_generator_kind.h"
 
 void initialize_chunk_generator_table(
         Chunk_Generator_Table *p_chunk_generator_table);

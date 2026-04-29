@@ -1,7 +1,6 @@
 #include "world/tile_logic_table.h"
 #include "defines.h"
 #include "defines_weak.h"
-#include "types/implemented/tile_kind.h"
 #include "world/tile.h"
 
 void initialize_tile_logic_table(

@@ -49,6 +49,7 @@ class ToolSpanConfig:
         span_1x1_index: int = 0,
         span_9_indices: Optional[List[int]] = None,
         span_states: Optional[Dict[str, List[int]]] = None,
+        size_of__ui_tile: int = 1,
     ):
         self.supports_1x1 = supports_1x1
         self.supports_nxn = supports_nxn
@@ -56,6 +57,8 @@ class ToolSpanConfig:
         self.span_9_indices = span_9_indices if span_9_indices is not None else [0] * 9
         # Multi-state spans (for toggleable widgets: "off", "on")
         self.span_states: Dict[str, List[int]] = span_states if span_states is not None else {}
+        # Size (in 8x8 tiles) of each NxN UI tile referenced by span indices
+        self.size_of__ui_tile: int = size_of__ui_tile
 
     def to_dict(self) -> dict:
         return {
@@ -64,6 +67,7 @@ class ToolSpanConfig:
             "span_1x1_index": self.span_1x1_index,
             "span_9_indices": list(self.span_9_indices),
             "span_states": {k: list(v) for k, v in self.span_states.items()},
+            "size_of__ui_tile": self.size_of__ui_tile,
         }
 
     @classmethod
@@ -74,21 +78,40 @@ class ToolSpanConfig:
             span_1x1_index=d.get("span_1x1_index", 0),
             span_9_indices=d.get("span_9_indices", [0] * 9),
             span_states=d.get("span_states", {}),
+            size_of__ui_tile=d.get("size_of__ui_tile", 1),
         )
 
     def build_ui_span_string(self) -> str:
         """Build the UI_Span attribute value from all states.
 
-        Format: "TL,T,TR,L,M,R,BL,B,BR" for single state,
-        "TL,T,TR,L,M,R,BL,B,BR; TL,T,TR,L,M,R,BL,B,BR" for multi-state.
+        New format: "<size_of__ui_tile>;<TL,T,TR,L,M,R,BL,B,BR>"
+
+        The first ';'-delimited segment is always the ``size_of__ui_tile``
+        integer (no commas).  Each subsequent segment contains 9 comma-
+        separated tile indices for one state.
+
+        Examples:
+            Single state  -> "1;0,1,2,3,4,5,6,7,8"
+            Multi-state   -> "1;0,1,2,3,4,5,6,7,8;10,11,12,13,14,15,16,17,18"
         """
         parts = [",".join(str(i) for i in self.span_9_indices)]
         for state_name in sorted(self.span_states.keys()):
             parts.append(",".join(str(i) for i in self.span_states[state_name]))
-        return "; ".join(parts)
+        return str(self.size_of__ui_tile) + ";" + ";".join(parts)
 
     def build_ui_span_string_1x1(self) -> str:
-        """Build UI_Span for a 1x1 element (all 9 slots same index)."""
+        """Build UI_Span for a 1x1 element (all 9 slots same index).
+
+        New format: "<size_of__ui_tile>;<idx,...,idx>"
+
+        The first ';'-delimited segment is always the ``size_of__ui_tile``
+        integer (no commas).  Each subsequent segment repeats the same tile
+        index 9 times for one state.
+
+        Examples:
+            Single state  -> "1;5,5,5,5,5,5,5,5,5"
+            Multi-state   -> "1;5,5,5,5,5,5,5,5,5;10,10,10,10,10,10,10,10,10"
+        """
         idx = self.span_1x1_index
         single = ",".join([str(idx)] * 9)
         parts = [single]
@@ -96,7 +119,7 @@ class ToolSpanConfig:
             # For 1x1, use the first index of each state
             si = self.span_states[state_name][0] if self.span_states[state_name] else idx
             parts.append(",".join([str(si)] * 9))
-        return "; ".join(parts)
+        return str(self.size_of__ui_tile) + ";" + ";".join(parts)
 
 
 class Toolset:

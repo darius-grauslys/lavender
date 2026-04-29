@@ -3,7 +3,6 @@
 #include "defines_weak.h"
 #include "platform_defines.h"
 #include "serialization/serialization_header.h"
-#include "types/implemented/scene_kind.h"
 #include <scene/scene.h>
 #include <scene/scene_manager.h>
 

@@ -19,7 +19,7 @@ typedef struct Tile_t {
             // NOTE: The full bit fields are exposed in the first struct
             // GEN-RENDER-BEGIN
             Tile_Kind the_kind_of__tile : 10;
-            Tile_Cover_Kind tike_kind_of__tile__cover : 10;
+            Tile_Cover_Kind tile_kind_of__tile__cover : 10;
             // GEN-RENDER-END
         };
         struct {

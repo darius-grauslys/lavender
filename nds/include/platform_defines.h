@@ -1,6 +1,8 @@
 #ifndef PLATFORM_DEFINES_H
 #define PLATFORM_DEFINES_H
 
+#define PLATFORM__NDS
+
 #include "defines_weak.h"
 
 #ifndef PLATFORM__IO

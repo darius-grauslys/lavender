@@ -9,21 +9,19 @@
 #include "collisions/core/aabb/hitbox_aabb_manager.h"
 #include "collisions/core/aabb/hitbox_aabb.h"
 #include "process/process.h"
-#include "types/implemented/game_action_kind.h"
-#include "types/implemented/hitbox_kind.h"
 #include "vectors.h"
 #include "world/chunk_vectors.h"
 #include "world/global_space.h"
 #include "world/global_space_manager.h"
 #include "world/world.h"
-#include "game_action/types/core/collisions/ga_types__collisions.h"
-#include "game_action/types/core/collisions/aabb/ga_types__aabb.h"
-
-#include "game_action/types/core/collisions/aabb/ga_type__collisions__aabb__update__pos_vec_i32.h"
-#include "game_action/types/core/collisions/aabb/ga_type__collisions__aabb__update__pos_vec_i32F4.h"
-#include "game_action/types/core/collisions/aabb/ga_type__collisions__aabb__update__acc_i16.h"
-#include "game_action/types/core/collisions/aabb/ga_type__collisions__aabb__update__acc_i16F4.h"
-#include "game_action/types/core/collisions/aabb/ga_type__collisions__aabb__update__acc_i16F8.h"
+#include "types/core/game_action/collisions/ga_types__collisions.h"
+#include "types/core/game_action/collisions/aabb/ga_types__aabb.h"
+                                 
+#include "types/core/game_action/collisions/aabb/ga_type__collisions__aabb__update__pos_vec_i32.h"
+#include "types/core/game_action/collisions/aabb/ga_type__collisions__aabb__update__pos_vec_i32F4.h"
+#include "types/core/game_action/collisions/aabb/ga_type__collisions__aabb__update__acc_i16.h"
+#include "types/core/game_action/collisions/aabb/ga_type__collisions__aabb__update__acc_i16F4.h"
+#include "types/core/game_action/collisions/aabb/ga_type__collisions__aabb__update__acc_i16F8.h"
 
 void m_process__game_action__hitbox(
         Process *p_this_process,

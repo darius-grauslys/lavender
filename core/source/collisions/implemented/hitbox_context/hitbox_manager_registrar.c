@@ -3,7 +3,6 @@
 #include "collisions/core/aabb/hitbox_aabb_manager.h"
 #include "debug/debug.h"
 #include "defines.h"
-#include "types/implemented/hitbox_manager_type.h"
 
 void register_hitbox_managers(Hitbox_Context *p_hitbox_context) {
     debug_warning("Be sure to register the correct hitbox managers for your project.");

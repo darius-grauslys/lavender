@@ -11,10 +11,8 @@
 #include "process/game_action_process.h"
 #include "process/process.h"
 #include "process/tcp_game_action_process.h"
-#include "types/implemented/entity_data.h"
-#include "types/implemented/game_action_kind.h"
 #include "world/world.h"
-#include "game_action/types/core/entity/ga_type__entity__payload.h"
+#include "types/core/game_action/entity/ga_type__entity__payload.h"
 
 void m_process__game_action__entity__get__inbound_server(
         Process *p_this_process,

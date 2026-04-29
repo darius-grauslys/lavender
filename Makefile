@@ -12,7 +12,7 @@
 # "!="	-	Shell assignment. This will treat the RValue is a shell command and run it.
 # 			The output then becomes the RValue.
 
-.PHONY: test clean
+.PHONY: test clean check-file compile_commands
 
 export BASE_DIR := $(LAVENDER_DIR)
 
@@ -28,12 +28,6 @@ endif
 export BUILD=$(GAME_DIR)/build/$(PLATFORM)
 ifeq ($(GAME),)
 	export GAME=$(basename $(notdir $(GAME_DIR)))
-endif
-
-GENERATE_COMPILE_COMMANDS := 1
-ifeq ($(GENERATE_COMPILE_COMMANDS),1)
-    export ADD_COMPILE_COMMAND := $(BASE_DIR)/generate_compile_commands
-else
 endif
 
 ifeq ($(PLATFORM),)
@@ -53,9 +47,31 @@ default:
 	@echo "-DNLOG		-	disable logging, keep debug safety checks."
 else
 default:
-	$(SILENT)make -f $(LAVENDER_DIR)/Makefile.build $(BUILD)
-	$(SILENT)stat $(BUILD)/compile_commands.json && ln -sf $(BUILD)/compile_commands.json ./compile_commands.json
+	$(SILENT)bear --output ./compile_commands.json --force-preload \
+		-- make -f $(LAVENDER_DIR)/Makefile.build $(BUILD)
 endif
+
+# compile_commands: Generate compile_commands.json without a full build.
+# Uses bear with make -n (dry-run) via --force-wrapper mode.
+# Requires PLATFORM to be set.
+compile_commands:
+ifndef PLATFORM
+	$(error Usage: make compile_commands -e PLATFORM=sdl)
+endif
+	$(SILENT)bear --output ./compile_commands.json --force-wrapper \
+		-- make -f $(LAVENDER_DIR)/Makefile.build $(BUILD)
+
+# check-file: Spot-build a single module with -fsyntax-only for validation.
+# Accepts absolute paths or paths relative to CWD.
+# Usage: make check-file FILE=core/source/rendering/graphics_window.c -e PLATFORM=sdl
+check-file:
+ifndef FILE
+	$(error Usage: make check-file FILE=path/to/file.c -e PLATFORM=sdl)
+endif
+ifndef PLATFORM
+	$(error check-file requires PLATFORM. Usage: make check-file FILE=path/to/file.c -e PLATFORM=sdl)
+endif
+	$(SILENT)make -f $(LAVENDER_DIR)/Makefile.build check-file FILE=$(FILE)
 
 test:
 	$(SILENT)if [ $(GAME_DIR) != $(LAVENDER_DIR) ]; then \
@@ -64,21 +80,20 @@ test:
 	@sh -c "cd ./tests && ./update.sh $(PLATFORM)"
 	$(SILENT)if [ -z "${PLATFORM}" ]; then \
 		mkdir -p ./build \
-		&& make -C $(GAME_DIR)/tests \
-		-f $(LAVENDER_DIR)/tests/Makefile \
-		-e BUILD=$(GAME_DIR)/build/test_core\
-			DIR_CORE=$(LAVENDER_DIR)/core; \
-		stat $(GAME_DIR)/build/test_core/compile_commands.json \
-		&& ln -sf $(GAME_DIR)/build/test_core/compile_commands.json $(GAME_DIR)/compile_commands.json; \
-	else \
-		mkdir -p ./build && make \
-			-C $(GAME_DIR)/tests \
+		&& bear --output $(GAME_DIR)/compile_commands.json --force-preload \
+			-- make -C $(GAME_DIR)/tests \
 			-f $(LAVENDER_DIR)/tests/Makefile \
-			-e BUILD=$(GAME_DIR)/build/test_$(PLATFORM) \
-				DIR_CORE=$(LAVENDER_DIR)/core \
-				PLATFORM=$(PLATFORM); \
-		stat $(GAME_DIR)/build/test_$(PLATFORM)/compile_commands.json \
-		&& ln -sf $(GAME_DIR)/build/test_core/compile_commands.json $(GAME_DIR)/compile_commands.json; \
+			-e BUILD=$(GAME_DIR)/build/test_core\
+				DIR_CORE=$(LAVENDER_DIR)/core; \
+	else \
+		mkdir -p ./build \
+		&& bear --output $(GAME_DIR)/compile_commands.json --force-preload \
+			-- make \
+				-C $(GAME_DIR)/tests \
+				-f $(LAVENDER_DIR)/tests/Makefile \
+				-e BUILD=$(GAME_DIR)/build/test_$(PLATFORM) \
+					DIR_CORE=$(LAVENDER_DIR)/core \
+					PLATFORM=$(PLATFORM); \
 	fi
 
 clean:
@@ -86,4 +101,3 @@ clean:
 	@if [ -e "./build" ]; then \
 		rm -r ./build ; \
 	fi
-

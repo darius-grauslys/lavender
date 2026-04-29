@@ -3,7 +3,6 @@
 
 #include "defines.h"
 #include "defines_weak.h"
-#include "types/implemented/graphics_window_kind.h"
 
 void initialize_ui_context(UI_Context *p_ui_context);
 

@@ -12,7 +12,7 @@
 #include "serialization/serialization_header.h"
 #include "game_action/core/tcp/game_action__tcp_connect.h"
 #include "game_action/core/tcp/game_action__tcp_begin_connect.h"
-#include "game_action/types/core/tcp/ga_type__tcp__connect_begin.h"
+#include "types/core/game_action/tcp/ga_type__tcp__connect_begin.h"
 
 void m_process__game_action__tcp_connect__begin(
         Process *p_this_process,

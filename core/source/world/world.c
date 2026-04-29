@@ -27,7 +27,7 @@
 #include <game.h>
 #include <entity/entity_manager.h>
 #include "serialization/serialized_field.h"
-#include "world/tile_logic_table.h"
+#include "world/tile_logic_context.h"
 
 #include <entity/entity.h>
 #include <debug/debug.h>
@@ -71,8 +71,8 @@ void initialize_world(
             get_p_inventory_manager_from__world(p_world));
     initialize_item_manager(
             get_p_item_manager_from__world(p_world));
-    initialize_tile_logic_table(
-            get_p_tile_logic_table_from__world(p_world));
+    initialize_tile_logic_context(
+            get_p_tile_logic_context_from__world(p_world));
     register_core_items_into__item_manager(
             get_p_item_manager_from__game(p_game));
 

@@ -4,8 +4,6 @@
 #include "defines.h"
 #include "defines_weak.h"
 #include "rendering/sprite.h"
-#include "types/implemented/sprite_animation_group_kind.h"
-#include "types/implemented/sprite_animation_kind.h"
 
 void initialize_sprite_manager(
         Sprite_Manager *p_sprite_manager);

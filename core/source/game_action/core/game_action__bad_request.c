@@ -8,7 +8,7 @@
 #include "game_action/game_action_manager.h"
 #include "process/game_action_process.h"
 #include "serialization/serialization_header.h"
-#include "game_action/types/core/ga_type__bad_request.h"
+#include "types/core/game_action/ga_type__bad_request.h"
 
 void m_process__game_action__bad_request__inbound(
         Process *p_this_process,

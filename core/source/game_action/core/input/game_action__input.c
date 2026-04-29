@@ -8,9 +8,8 @@
 #include "game_action/game_action_logic_entry.h"
 #include "game_action/game_action_logic_table.h"
 #include "process/process.h"
-#include "types/implemented/game_action_kind.h"
 #include <string.h>
-#include "game_action/types/core/input/ga_type__input.h"
+#include "types/core/game_action/input/ga_type__input.h"
 
 void m_process__game_action__input__inbound_server(
         Process *p_this_process,

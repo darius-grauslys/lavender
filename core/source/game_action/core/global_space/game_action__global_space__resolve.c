@@ -9,14 +9,13 @@
 #include "process/game_action_process.h"
 #include "process/process.h"
 #include "serialization/serialization_header.h"
-#include "types/implemented/tile_kind.h"
 #include "world/chunk_generator_table.h"
 #include "world/chunk_pool.h"
 #include "world/global_space.h"
 #include "world/global_space_manager.h"
 #include "world/serialization/world_directory.h"
 #include "world/world.h"
-#include "game_action/types/core/global_space/ga_type__global_space__resolve.h"
+#include "types/core/game_action/global_space/ga_type__global_space__resolve.h"
 
 void m_process__dispose_handler__game_action__global_space__resolve(
         Process *p_this_process,

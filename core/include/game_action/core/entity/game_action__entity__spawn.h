@@ -4,7 +4,6 @@
 #include "defines.h"
 #include "game.h"
 #include "game_action/game_action.h"
-#include "types/implemented/entity_kind.h"
 #include "vectors.h"
 
 void register_game_action__entity__spawn_for__server(

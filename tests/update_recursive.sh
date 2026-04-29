@@ -37,9 +37,10 @@ mkdir -p $main_suite_dir__source
 
 # the name of the test_suite dedicated for
 # the entire directory
+# PROJECT_NAME is exported from update.sh (e.g. LAVENDER, ANCIENTS_GAME)
 if [ "$search_suffix" == "" ]; then
-    main_suite_name="${tree_name}_ANCIENTS_GAME"
-    main_suite_name__full="MAIN_TEST_SUITE__${tree_name}_ANCIENTS_GAME"
+    main_suite_name="${tree_name}_${PROJECT_NAME}"
+    main_suite_name__full="MAIN_TEST_SUITE__${tree_name}_${PROJECT_NAME}"
 else
     main_suite_name=$(realpath --relative-to=$search_base_dir $search_base_dir/$search_suffix | sed "s/\//_/g")
     main_suite_name="${tree_name}_${main_suite_name~~}"

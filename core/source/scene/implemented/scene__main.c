@@ -3,6 +3,11 @@
 #include "scene/scene.h"
 #include "scene/scene_manager.h"
 #include "game.h"
+// GEN-INCLUDE-BEGIN
+// GEN-INCLUDE-END
+
+// GEN-FORWARD-BEGIN
+// GEN-FORWARD-END
 
 void m_load_scene_as__main_handler(
         Scene *p_this_scene,
@@ -44,3 +49,6 @@ void register_scene__main(Scene_Manager *p_scene_manager) {
             m_enter_scene_as__main_handler, 
             m_unload_scene_as__main_handler);
 }
+
+// GEN-UI-MANAGEMENT-BEGIN
+// GEN-UI-MANAGEMENT-END

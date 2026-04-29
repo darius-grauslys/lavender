@@ -5,7 +5,6 @@
 #include "defines_weak.h"
 #include "game_action/game_action.h"
 #include "game_action/game_action_logic_entry.h"
-#include "types/implemented/game_action_kind.h"
 
 static inline
 Game_Action_Logic_Entry *get_p_game_action_logic_entry_by__game_action_kind(

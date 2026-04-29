@@ -16,7 +16,6 @@
 #include "rendering/opengl/gl_viewport.h"
 #include "rendering/opengl/glad/glad.h"
 #include "rendering/sprite.h"
-#include "types/implemented/graphics_window_kind.h"
 #include "vectors.h"
 #include <rendering/opengl/gl_sprite.h>
 #include <rendering/opengl/gl_gfx_sub_context.h>

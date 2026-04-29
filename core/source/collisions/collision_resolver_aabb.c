@@ -9,8 +9,6 @@
 #include "game_action/core/hitbox/game_action__hitbox.h"
 #include "numerics.h"
 #include "platform_defines.h"
-#include "types/implemented/game_action_kind.h"
-#include "types/implemented/hitbox_kind.h"
 #include "vectors.h"
 #include "world/chunk.h"
 #include "world/chunk_vectors.h"
@@ -19,6 +17,7 @@
 #include "world/tile.h"
 #include "world/tile_vectors.h"
 #include "world/tile_logic_table.h"
+#include "world/tile_logic_context.h"
 #include "world/world.h"
 #include "raycast/ray.h"
 
@@ -371,12 +370,12 @@ void poll_hitbox_aabb_for__tile_collision(
                 if (!p_tile)
                     continue;
                 if (!poll__is_tile__without_ground(
-                            get_p_tile_logic_table_from__world(
+                            get_p_tile_logic_context_from__world(
                                 get_p_world_from__game(p_game)), 
                             p_tile)) {
                     z_ground_tile__i32F4 +=
                         poll__tile_height(
-                                get_p_tile_logic_table_from__world(
+                                get_p_tile_logic_context_from__world(
                                     get_p_world_from__game(p_game)), 
                                 p_tile);
                     dispatch_game_action__hitbox(
@@ -410,7 +409,7 @@ landed_on_ground:;
             p_local_space_manager, 
             get_position_3i32F4_of__hitbox_aabb(p_hitbox_aabb));
     if (!poll__is_tile__without_ground(
-                get_p_tile_logic_table_from__world(
+                get_p_tile_logic_context_from__world(
                     get_p_world_from__game(p_game)),
                 p_tile)
             && (p_hitbox_aabb->position__3i32F4.z__i32F4
@@ -437,13 +436,11 @@ landed_on_ground:;
                 p_local_space_manager, 
                 forward_position__3i32F4);
 
-        get_tile_logic_record_for__this_tile(
-                get_p_tile_logic_table_from__world(
-                    get_p_world_from__game(p_game)), 
-                &tile_logic_record, 
-                p_tile);
-        if (!is_tile_logic_record__unpassable(&tile_logic_record)
-                && !is_tile_logic_record__without_ground(&tile_logic_record)) {
+        Tile_Logic_Context *p_tile_logic_context =
+            get_p_tile_logic_context_from__world(
+                    get_p_world_from__game(p_game));
+        if (!poll__is_tile__unpassable(p_tile_logic_context, p_tile)
+                && !poll__is_tile__without_ground(p_tile_logic_context, p_tile)) {
             dispatch_game_action__hitbox(
                     p_game, 
                     GET_UUID_P(p_hitbox_aabb), 
@@ -502,7 +499,7 @@ landed_on_ground:;
         // TODO: rename unpassable to something else,
         // as this is just polling for touch-tile logic.
         if (poll__is_tile__unpassable(
-                    get_p_tile_logic_table_from__world(
+                    get_p_tile_logic_context_from__world(
                         get_p_world_from__game(p_game)), 
                     p_tile)) {
             f_hitbox_aabb_tile_touch_handler(

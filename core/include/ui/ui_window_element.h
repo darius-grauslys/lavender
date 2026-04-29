@@ -3,7 +3,6 @@
 
 #include "defines.h"
 #include "defines_weak.h"
-#include "types/implemented/graphics_window_kind.h"
 
 void initialize_ui_element_as__window_element_and__open_window(
         UI_Element *p_ui_window_element,

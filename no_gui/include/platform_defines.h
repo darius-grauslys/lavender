@@ -1,6 +1,8 @@
 #ifndef PLATFORM_DEFINES_H
 #define PLATFORM_DEFINES_H
 
+#define PLATFORM__NO_GUI
+
 #ifndef MAX_LENGTH_OF__IO_PATH
 #define MAX_LENGTH_OF__IO_PATH 1024
 #endif

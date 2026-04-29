@@ -1,11 +1,6 @@
 .PHONY: GAME_SETUP
 
-$(OFILES_GAME:.c=.o):
-	@mkdir -p $(BUILD)/$$(dirname $@)
-	@$(CC) $(CFLAGS) $(LIBS) $(INCLUDE) $(FLAGS) \
-		-o $(BUILD)/$@ -c $(SOURCE_GAME)/$(@:.o=.c) 
-	@$(ADD_COMPILE_COMMAND) add $(CC) "$(CFLAGS) $(LIBS) $(INCLUDE) $(FLAGS) \
-		-o $(BUILD)/$@ -c $(SOURCE_GAME)/$(@:.o=.c)" $(BUILD)/$@
+vpath %.c $(SOURCE_GAME)
 
 GAME_SETUP:
 	cp -r $(GAME_DIR)/assets $(BUILD)

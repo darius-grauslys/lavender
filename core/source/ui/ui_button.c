@@ -1,7 +1,6 @@
 #include "debug/debug.h"
 #include "defines.h"
 #include "defines_weak.h"
-#include "types/implemented/graphics_window_kind.h"
 #include "ui/ui_element.h"
 #include <ui/ui_button.h>
 

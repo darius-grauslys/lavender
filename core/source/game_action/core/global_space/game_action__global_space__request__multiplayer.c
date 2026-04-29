@@ -24,7 +24,7 @@
 #include "world/global_space_manager.h"
 #include "world/global_space.h"
 #include "process/game_action_process.h"
-#include "game_action/types/core/global_space/ga_type__global_space__request.h"
+#include "types/core/game_action/global_space/ga_type__global_space__request.h"
 
 void m_process__game_action__global_space__request__outbound_server(
         Process *p_this_process,

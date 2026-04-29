@@ -341,19 +341,147 @@ def _allocate_hitbox(state, xml_element, name=None, rect=None):
     return rect
 
 
-def _set_tile_span(state, xml_element):
+def parse_ui_span(raw: str):
+    """Parse a UI_Span attribute string into (size, indices).
+
+    Format: ``"SIZE;TL,T,TR,L,M,R,BL,B,BR"``
+
+    *   First ``;``-delimited segment (no commas) → ``size_of__ui_tile``
+        (``1`` = 8×8 px, ``2`` = 16×16 px).
+    *   Subsequent segments → 9 comma-separated tile-kind indices per
+        state.  Only the **first** state is returned; multi-state toggle
+        behaviour is deferred.
+
+    Returns ``(size, [9 ints])`` on success, or ``None`` when the
+    attribute is absent / malformed.
+    """
+    if not raw:
+        return None
+    segments = raw.split(";")
+    first = segments[0].strip()
+    if "," not in first:
+        size = int(first)
+        tile_seg = segments[1].strip() if len(segments) > 1 else ""
+    else:
+        size = 1
+        tile_seg = first
+    indices = [int(v.strip()) for v in tile_seg.split(",")]
+    if len(indices) != 9:
+        return None
+    return (size, indices)
+
+
+def _emit_tile_span_from_indices(state, name, size, indices):
+    """Emit C code to initialize a UI_Tile_Span from parsed UI_Span indices.
+
+    Generates declarations for the span, its corners/edges/fill tiles,
+    ``initialize_ui_tile`` calls for each of the 9 tiles, the span
+    initializer (choosing ``initialize_ui_tile_span__with_ui_tile_size``
+    when *size* > 1), and the final
+    ``set_ui_tile_span_of__ui_element`` registration call.
+
+    Index mapping (editor row-major 3×3 → C struct)::
+
+        [0]=TL → corners[0]   [1]=T  → edges[0]   [2]=TR → corners[1]
+        [3]=L  → edges[3]     [4]=M  → fill        [5]=R  → edges[1]
+        [6]=BL → corners[2]   [7]=B  → edges[2]    [8]=BR → corners[3]
+    """
     w = state.writer
-    name = state.ctx.p_ui_element
-    span_var = f"ui_tile_span__{name}"
+    span_var  = f"ui_tile_span__{name}"
+    corners_var = f"corners__{name}"
+    edges_var   = f"edges__{name}"
+    fill_var    = f"fill__{name}"
+
+    # Declare locals
     w.stmt(f"UI_Tile_Span {span_var}")
-    w.write_call(
-        xml_str(xml_element, "span", "MISSING_FUNCTION_IN_XML"),
-        [f"&{span_var}"],
-    )
-    w.write_call(
-        "set_ui_tile_span_of__ui_element",
-        [name, f"&{span_var}"],
-    )
+    w.stmt(f"UI_Tile {corners_var}[4]")
+    w.stmt(f"UI_Tile {edges_var}[4]")
+    w.stmt(f"UI_Tile {fill_var}")
+
+    # Map editor indices to C struct positions
+    # corners[4]: TL=idx[0], TR=idx[2], BL=idx[6], BR=idx[8]
+    corner_map = [(0, 0), (1, 2), (2, 6), (3, 8)]
+    for c_idx, ed_idx in corner_map:
+        w.write_call("initialize_ui_tile", [
+            f"&{corners_var}[{c_idx}]",
+            f"(UI_Tile_Kind){indices[ed_idx]}",
+            "UI_TILE_FLAGS__NONE",
+        ])
+
+    # edges[4]: T=idx[1], R=idx[5], B=idx[7], L=idx[3]
+    edge_map = [(0, 1), (1, 5), (2, 7), (3, 3)]
+    for e_idx, ed_idx in edge_map:
+        w.write_call("initialize_ui_tile", [
+            f"&{edges_var}[{e_idx}]",
+            f"(UI_Tile_Kind){indices[ed_idx]}",
+            "UI_TILE_FLAGS__NONE",
+        ])
+
+    # fill = idx[4]
+    w.write_call("initialize_ui_tile", [
+        f"&{fill_var}",
+        f"(UI_Tile_Kind){indices[4]}",
+        "UI_TILE_FLAGS__NONE",
+    ])
+
+    # Initialize the span struct
+    if size > 1:
+        w.write_call("initialize_ui_tile_span__with_ui_tile_size", [
+            f"&{span_var}", corners_var, edges_var, fill_var, str(size),
+        ])
+    else:
+        w.write_call("initialize_ui_tile_span", [
+            f"&{span_var}", corners_var, edges_var, fill_var,
+        ])
+
+    # Register on the element
+    w.write_call("set_ui_tile_span_of__ui_element", [
+        name, f"&{span_var}",
+    ])
+
+
+def _set_tile_span(state, xml_element):
+    """Initialize a UI_Tile_Span for a UI element.
+
+    Supports two modes:
+
+    **New mode** (``UI_Span`` attribute present):
+        Data-driven.  The attribute value encodes the tile size and 9
+        tile-kind indices produced by the visual UI editor.  Format::
+
+            "SIZE;TL,T,TR,L,M,R,BL,B,BR"
+
+        Generates explicit ``initialize_ui_tile`` / ``initialize_ui_tile_span``
+        calls inline.
+
+    **Legacy mode** (``span`` attribute present):
+        Delegate pattern.  The attribute value is a C function name that
+        is called with a ``UI_Tile_Span*`` pointer.  The user must have
+        defined this function elsewhere in their game code.
+
+    If neither attribute is present the function is a no-op.
+    """
+    name = state.ctx.p_ui_element
+
+    # --- New mode: data-driven UI_Span ---
+    raw_ui_span = xml_str(xml_element, "UI_Span", "")
+    parsed = parse_ui_span(raw_ui_span)
+    if parsed is not None:
+        size, indices = parsed
+        _emit_tile_span_from_indices(state, name, size, indices)
+        return
+
+    # --- Legacy mode: delegate to a named C function ---
+    legacy_func = xml_str(xml_element, "span", "")
+    if legacy_func:
+        w = state.writer
+        span_var = f"ui_tile_span__{name}"
+        w.stmt(f"UI_Tile_Span {span_var}")
+        w.write_call(legacy_func, [f"&{span_var}"])
+        w.write_call(
+            "set_ui_tile_span_of__ui_element",
+            [name, f"&{span_var}"],
+        )
 
 
 def _set_texture(state, xml_element, name=None):
@@ -565,6 +693,7 @@ def handle_background(xml_element, state: GeneratorState) -> None:
     args = [state.ctx.p_ui_element] + state.get_rect_spec_args(rect)
     args.append(xml_str(xml_element, "p_gfx_window", "0"))
     w.write_call(sig, args)
+    _set_tile_span(state, xml_element)
 
 
 def handle_button(xml_element, state: GeneratorState) -> None:
@@ -579,6 +708,7 @@ def handle_button(xml_element, state: GeneratorState) -> None:
         xml_str(xml_element, "is_toggled", "false"),
     ]
     w.write_call(sig, args)
+    _set_tile_span(state, xml_element)
     _set_text(state, xml_element)
     _allocate_hitbox(state, xml_element)
 
@@ -600,6 +730,7 @@ def handle_window_element(xml_element, state: GeneratorState) -> None:
         f"get_vector__3i32({ox},{oy},{oz})",
     ]
     w.write_call(sig, args)
+    _set_tile_span(state, xml_element)
     _set_text(state, xml_element)
     _allocate_hitbox(state, xml_element)
 
@@ -655,6 +786,7 @@ def handle_draggable(xml_element, state: GeneratorState) -> None:
                     "m_ui_draggable__dragged_handler__default"),
         ],
     )
+    _set_tile_span(state, xml_element)
 
 
 def handle_drop_zone(xml_element, state: GeneratorState) -> None:
@@ -670,6 +802,7 @@ def handle_drop_zone(xml_element, state: GeneratorState) -> None:
                     "m_ui_drop_zone__receive_drop_handler__default"),
         ],
     )
+    _set_tile_span(state, xml_element)
 
 
 def handle_code(xml_element, state: GeneratorState) -> None:

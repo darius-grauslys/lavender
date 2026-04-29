@@ -10,8 +10,6 @@
 #include <rendering/sprite_context.h>
 #include <defines.h>
 #include "timer.h"
-#include "types/implemented/sprite_animation_group_kind.h"
-#include "types/implemented/sprite_animation_kind.h"
 #include "world/world.h"
 
 void poll_sprite_animation_loop(

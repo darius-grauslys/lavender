@@ -308,12 +308,20 @@ class WorkArea:
                 per_elem_9 = None
                 if elem_span_str:
                     try:
-                        # Multi-span: take first span (before ";")
-                        first_span = elem_span_str.split(";")[0].strip()
-                        parts = [int(p.strip()) for p in first_span.split(",")]
+                        segments = elem_span_str.split(";")
+                        # First segment with no commas is the size prefix (new format)
+                        first = segments[0].strip()
+                        if "," not in first:
+                            # New format: size;tiles;tiles...
+                            # size_of__ui_tile = int(first)  # informational for now
+                            tile_seg = segments[1].strip() if len(segments) > 1 else ""
+                        else:
+                            # Legacy format: tiles;tiles...
+                            tile_seg = first
+                        parts = [int(p.strip()) for p in tile_seg.split(",")]
                         if len(parts) == 9:
                             per_elem_9 = parts
-                    except ValueError:
+                    except (ValueError, IndexError):
                         pass
 
                 span_cfg = span_configs.get(elem_tag)

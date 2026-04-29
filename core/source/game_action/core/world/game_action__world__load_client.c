@@ -14,13 +14,12 @@
 #include "process/game_action_process.h"
 #include "process/process.h"
 #include "process/process_manager.h"
-#include "types/implemented/game_action_kind.h"
 #include "vectors.h"
 #include "world/chunk_vectors.h"
 #include "world/local_space_manager.h"
 #include "world/serialization/world_directory.h"
 #include "world/world.h"
-#include "game_action/types/core/world/load/ga_type__world__load__client.h"
+#include "types/core/game_action/world/load/ga_type__world__load__client.h"
 
 void m_process__game_action__world__load_client__inbound(
         Process *p_this_process,

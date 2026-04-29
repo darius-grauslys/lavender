@@ -8,7 +8,7 @@
 #include "process/process.h"
 #include "process/process_manager.h"
 #include "process/game_action_process.h"
-#include "game_action/types/core/tcp/ga_type__tcp__connect_delivery.h"
+#include "types/core/game_action/tcp/ga_type__tcp__connect_delivery.h"
 
 void m_process__game_action__tcp_delivery__inbound(
         Process *p_this_process,

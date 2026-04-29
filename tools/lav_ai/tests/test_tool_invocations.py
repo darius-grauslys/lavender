@@ -29,7 +29,21 @@ from lav_ai.lav_ai_app import (
     gen_ui_code,
     gen_ui_create,
     gen_ui_tile_kind,
-    mod_png,
+    mod_png_condense,
+    mod_png_copy,
+    mod_png_resize,
+    mod_png_set,
+    mod_png_swap,
+    query_agents_list,
+    query_agents_search_permissions,
+    query_agents_search_prompts,
+    query_agents_show,
+    query_agents_verify_clean,
+    query_tools_describe,
+    query_tools_list,
+    query_tools_search,
+    read_png,
+    read_png_meta,
 )
 
 
@@ -799,132 +813,622 @@ class TestGenUiTileKind:
 # mod_png
 # ---------------------------------------------------------------------------
 
-class TestModPng:
+# ---------------------------------------------------------------------------
+# Shared helpers for mod_png / read_png test classes
+# ---------------------------------------------------------------------------
+
+_MOD_PNG_SCRIPT = str(PROJECT_ROOT / "tools" / "mod_png.py")
+
+
+def _extract_op_json(cmd):
+    """Extract and parse the JSON --op argument from a command list."""
+    import json as _json
+    op_idx = cmd.index("--op") + 1
+    return _json.loads(cmd[op_idx])
+
+
+# ---------------------------------------------------------------------------
+# TestReadPngMeta
+# ---------------------------------------------------------------------------
+
+class TestReadPngMeta:
+    def test_basic_command(self):
+        proc = _make_completed_process(
+            stdout="format=RGBA size=64x64\nbase64=iVBORw0KGgo=\n")
+        with _patch_run(proc) as mock_run:
+            result = read_png_meta(path="sprite.png")
+        cmd = mock_run.call_args[0][0]
+        assert _MOD_PNG_SCRIPT in cmd
+        assert "--path" in cmd
+        assert "sprite.png" in cmd
+        assert "--tile-size" not in cmd
+        assert "--op" not in cmd
+        assert "base64=" in result
+
+    def test_returns_format_and_base64(self):
+        proc = _make_completed_process(
+            stdout="format=RGBA size=32x32\nbase64=AAAA\n")
+        with _patch_run(proc):
+            result = read_png_meta(path="test.png")
+        assert "format=RGBA" in result
+        assert "size=32x32" in result
+        assert "base64=AAAA" in result
+
+    def test_no_cwd(self):
+        proc = _make_completed_process(
+            stdout="format=RGBA size=8x8\nbase64=X\n")
+        with _patch_run(proc) as mock_run:
+            read_png_meta(path="sprite.png")
+        assert "cwd" not in mock_run.call_args.kwargs
+
+    def test_error_prefix_on_nonzero_exit(self):
+        proc = _make_completed_process(returncode=1, stderr="not found\n")
+        with _patch_run(proc):
+            result = read_png_meta(path="missing.png")
+        assert result.startswith("ERROR (exit 1):")
+
+
+# ---------------------------------------------------------------------------
+# TestReadPng
+# ---------------------------------------------------------------------------
+
+class TestReadPng:
     def test_basic_command(self):
         proc = _make_completed_process()
         with _patch_run(proc) as mock_run:
-            mod_png("16x16", "sprite.png", "set", "pixel", "x:0,y:0",
-                    value="255,0,0,255", value_type="pixel")
+            read_png(path="sprite.png", tile_size="16x16",
+                     type="pixel", areas="x:0,y:0,width:32,height:32")
         cmd = mock_run.call_args[0][0]
-        assert str(PROJECT_ROOT / "tools" / "mod_png.py") in cmd
-        assert "--tile-size" in cmd
-        assert "16x16" in cmd
+        assert _MOD_PNG_SCRIPT in cmd
         assert "--path" in cmd
-        assert "sprite.png" in cmd
+        assert "--tile-size" in cmd
         assert "--op" in cmd
+        op = _extract_op_json(cmd)
+        assert op["op"] == "read"
+        assert op["type"] == "pixel"
 
-    def test_op_json_constructed_from_flat_args(self):
+    def test_no_value_in_json(self):
         proc = _make_completed_process()
         with _patch_run(proc) as mock_run:
-            mod_png("16x16", "sprite.png", "set", "pixel", "x:0,y:0",
-                    value="255,0,0,255", value_type="pixel")
-        cmd = mock_run.call_args[0][0]
-        import json
-        op_idx = cmd.index("--op") + 1
-        op_obj = json.loads(cmd[op_idx])
-        assert op_obj["op"] == "set"
-        assert op_obj["type"] == "pixel"
-        assert op_obj["areas"] == [{"x": 0, "y": 0}]
-        assert op_obj["value"] == "255,0,0,255"
-        assert op_obj["value-type"] == "pixel"
+            read_png(path="sprite.png", tile_size="16x16",
+                     type="pixel", areas="x:0,y:0,width:32,height:32")
+        op = _extract_op_json(mock_run.call_args[0][0])
+        assert "value" not in op
+        assert "value-type" not in op
 
-    def test_areas_parsing_multiple(self):
+    def test_output_omitted_by_default(self):
         proc = _make_completed_process()
         with _patch_run(proc) as mock_run:
-            mod_png("16x16", "sprite.png", "swap", "pixel",
-                    "x:0,y:0,width:8,height:8;x:8,y:0,width:8,height:8")
-        cmd = mock_run.call_args[0][0]
-        import json
-        op_idx = cmd.index("--op") + 1
-        op_obj = json.loads(cmd[op_idx])
-        assert len(op_obj["areas"]) == 2
-        assert op_obj["areas"][0] == {"x": 0, "y": 0, "width": 8, "height": 8}
-        assert op_obj["areas"][1] == {"x": 8, "y": 0, "width": 8, "height": 8}
+            read_png(path="sprite.png", tile_size="16x16",
+                     type="pixel", areas="x:0,y:0,width:32,height:32")
+        assert "--output" not in mock_run.call_args[0][0]
 
-    def test_value_omitted_when_empty(self):
+    def test_output_arg_added_when_provided(self):
         proc = _make_completed_process()
         with _patch_run(proc) as mock_run:
-            mod_png("16x16", "sprite.png", "read", "pixel", "x:0,y:0,width:32,height:32")
+            read_png(path="sprite.png", tile_size="16x16",
+                     type="pixel", areas="x:0,y:0,width:32,height:32",
+                     output="/tmp/read_out.png")
         cmd = mock_run.call_args[0][0]
-        import json
-        op_idx = cmd.index("--op") + 1
-        op_obj = json.loads(cmd[op_idx])
-        assert "value" not in op_obj
-        assert "value-type" not in op_obj
+        assert "--output" in cmd
+        assert "/tmp/read_out.png" in cmd
 
     def test_no_cwd(self):
         proc = _make_completed_process()
         with _patch_run(proc) as mock_run:
-            mod_png("16x16", "sprite.png", "set", "pixel", "x:0,y:0",
-                    value="0,0,0,255", value_type="pixel")
+            read_png(path="sprite.png", tile_size="16x16",
+                     type="pixel", areas="x:0,y:0")
+        assert "cwd" not in mock_run.call_args.kwargs
+
+    def test_tile_coordinate_mode(self):
+        proc = _make_completed_process()
+        with _patch_run(proc) as mock_run:
+            read_png(path="tiles.png", tile_size="32x32",
+                     type="tile", areas="x:1,y:2")
+        cmd = mock_run.call_args[0][0]
+        assert "32x32" in cmd
+        op = _extract_op_json(cmd)
+        assert op["type"] == "tile"
+        assert op["areas"] == [{"x": 1, "y": 2}]
+
+
+# ---------------------------------------------------------------------------
+# TestModPngSet
+# ---------------------------------------------------------------------------
+
+class TestModPngSet:
+    def test_basic_command(self):
+        proc = _make_completed_process()
+        with _patch_run(proc) as mock_run:
+            mod_png_set(path="sprite.png", tile_size="16x16",
+                        type="pixel", areas="x:0,y:0",
+                        value="255,0,0,255", value_type="pixel")
+        cmd = mock_run.call_args[0][0]
+        assert _MOD_PNG_SCRIPT in cmd
+        assert "--tile-size" in cmd
+        assert "--path" in cmd
+        assert "--op" in cmd
+
+    def test_op_json_constructed(self):
+        proc = _make_completed_process()
+        with _patch_run(proc) as mock_run:
+            mod_png_set(path="sprite.png", tile_size="16x16",
+                        type="pixel", areas="x:0,y:0",
+                        value="255,0,0,255", value_type="pixel")
+        op = _extract_op_json(mock_run.call_args[0][0])
+        assert op["op"] == "set"
+        assert op["type"] == "pixel"
+        assert op["areas"] == [{"x": 0, "y": 0}]
+        assert op["value"] == "255,0,0,255"
+        assert op["value-type"] == "pixel"
+
+    def test_no_cwd(self):
+        proc = _make_completed_process()
+        with _patch_run(proc) as mock_run:
+            mod_png_set(path="sprite.png", tile_size="16x16",
+                        type="pixel", areas="x:0,y:0",
+                        value="0,0,0,255", value_type="pixel")
         assert "cwd" not in mock_run.call_args.kwargs
 
     def test_returns_stdout_on_success(self):
         proc = _make_completed_process(stdout="Saved: sprite.png\n")
         with _patch_run(proc):
-            result = mod_png("16x16", "sprite.png", "set", "pixel", "x:0,y:0",
-                             value="0,0,0,255", value_type="pixel")
+            result = mod_png_set(path="sprite.png", tile_size="16x16",
+                                 type="pixel", areas="x:0,y:0",
+                                 value="0,0,0,255", value_type="pixel")
         assert "Saved" in result
 
     def test_error_prefix_on_nonzero_exit(self):
         proc = _make_completed_process(returncode=1, stderr="boom\n")
         with _patch_run(proc):
-            result = mod_png("16x16", "sprite.png", "set", "pixel", "x:0,y:0",
-                             value="0,0,0,255", value_type="pixel")
+            result = mod_png_set(path="sprite.png", tile_size="16x16",
+                                 type="pixel", areas="x:0,y:0",
+                                 value="0,0,0,255", value_type="pixel")
         assert result.startswith("ERROR (exit 1):")
 
-    def test_all_required_args_present(self):
+    def test_output_not_in_cmd_by_default(self):
+        """mod_png_set does not accept an output parameter; it modifies in place."""
         proc = _make_completed_process()
         with _patch_run(proc) as mock_run:
-            mod_png("32x32", "tiles/ground.png", "read", "tile", "x:1,y:2")
+            mod_png_set(path="sprite.png", tile_size="16x16",
+                        type="pixel", areas="x:0,y:0",
+                        value="0,0,0,255", value_type="pixel")
+        assert "--output" not in mock_run.call_args[0][0]
+
+
+# ---------------------------------------------------------------------------
+# TestModPngSwap
+# ---------------------------------------------------------------------------
+
+class TestModPngSwap:
+    def test_basic_command(self):
+        proc = _make_completed_process()
+        with _patch_run(proc) as mock_run:
+            mod_png_swap(path="sprite.png", tile_size="16x16",
+                         type="pixel",
+                         areas="x:0,y:0,width:8,height:8;x:8,y:0,width:8,height:8")
         cmd = mock_run.call_args[0][0]
-        assert "--tile-size" in cmd
-        assert "32x32" in cmd
-        assert "--path" in cmd
-        assert "tiles/ground.png" in cmd
+        assert _MOD_PNG_SCRIPT in cmd
         assert "--op" in cmd
 
-    def test_resize_op(self):
+    def test_two_areas_parsed(self):
+        proc = _make_completed_process()
+        with _patch_run(proc) as mock_run:
+            mod_png_swap(path="sprite.png", tile_size="16x16",
+                         type="pixel",
+                         areas="x:0,y:0,width:8,height:8;x:8,y:0,width:8,height:8")
+        op = _extract_op_json(mock_run.call_args[0][0])
+        assert op["op"] == "swap"
+        assert len(op["areas"]) == 2
+        assert op["areas"][0] == {"x": 0, "y": 0, "width": 8, "height": 8}
+        assert op["areas"][1] == {"x": 8, "y": 0, "width": 8, "height": 8}
+
+    def test_no_value_in_json(self):
+        proc = _make_completed_process()
+        with _patch_run(proc) as mock_run:
+            mod_png_swap(path="sprite.png", tile_size="16x16",
+                         type="pixel",
+                         areas="x:0,y:0;x:1,y:0")
+        op = _extract_op_json(mock_run.call_args[0][0])
+        assert "value" not in op
+        assert "value-type" not in op
+
+    def test_no_cwd(self):
+        proc = _make_completed_process()
+        with _patch_run(proc) as mock_run:
+            mod_png_swap(path="sprite.png", tile_size="16x16",
+                         type="pixel", areas="x:0,y:0;x:1,y:0")
+        assert "cwd" not in mock_run.call_args.kwargs
+
+
+# ---------------------------------------------------------------------------
+# TestModPngCopy
+# ---------------------------------------------------------------------------
+
+class TestModPngCopy:
+    def test_basic_command(self):
+        proc = _make_completed_process()
+        with _patch_run(proc) as mock_run:
+            mod_png_copy(path="sprite.png", tile_size="16x16",
+                         type="pixel",
+                         areas="x:0,y:0,width:2,height:2;x:4,y:0,width:2,height:2")
+        cmd = mock_run.call_args[0][0]
+        assert _MOD_PNG_SCRIPT in cmd
+        assert "--op" in cmd
+
+    def test_op_is_copy(self):
+        proc = _make_completed_process()
+        with _patch_run(proc) as mock_run:
+            mod_png_copy(path="sprite.png", tile_size="16x16",
+                         type="tile",
+                         areas="x:0,y:0;x:2,y:0;x:4,y:0")
+        op = _extract_op_json(mock_run.call_args[0][0])
+        assert op["op"] == "copy"
+        assert len(op["areas"]) == 3
+
+    def test_no_value_in_json(self):
+        proc = _make_completed_process()
+        with _patch_run(proc) as mock_run:
+            mod_png_copy(path="sprite.png", tile_size="16x16",
+                         type="pixel", areas="x:0,y:0;x:1,y:0")
+        op = _extract_op_json(mock_run.call_args[0][0])
+        assert "value" not in op
+        assert "value-type" not in op
+
+    def test_no_cwd(self):
+        proc = _make_completed_process()
+        with _patch_run(proc) as mock_run:
+            mod_png_copy(path="sprite.png", tile_size="16x16",
+                         type="pixel", areas="x:0,y:0;x:1,y:0")
+        assert "cwd" not in mock_run.call_args.kwargs
+
+
+# ---------------------------------------------------------------------------
+# TestModPngResize
+# ---------------------------------------------------------------------------
+
+class TestModPngResize:
+    def test_basic_command(self):
         proc = _make_completed_process(stdout="Saved: test.png\n")
         with _patch_run(proc) as mock_run:
-            result = mod_png("16x16", "test.png", "resize", "pixel",
-                             "x:0,y:0,width:128,height:128",
-                             value="0,0,0,0", value_type="pixel")
+            result = mod_png_resize(path="test.png", tile_size="16x16",
+                                    areas="x:0,y:0,width:128,height:128",
+                                    value="0,0,0,0")
         cmd = mock_run.call_args[0][0]
-        assert str(PROJECT_ROOT / "tools" / "mod_png.py") in cmd
+        assert _MOD_PNG_SCRIPT in cmd
         assert "--op" in cmd
-        import json
-        op_idx = cmd.index("--op") + 1
-        op_obj = json.loads(cmd[op_idx])
-        assert op_obj["op"] == "resize"
-        assert op_obj["areas"] == [{"x": 0, "y": 0, "width": 128, "height": 128}]
+        op = _extract_op_json(cmd)
+        assert op["op"] == "resize"
+        assert op["areas"] == [{"x": 0, "y": 0, "width": 128, "height": 128}]
         assert "Saved" in result
 
-    def test_output_not_in_cmd_by_default(self):
+    def test_always_pixel_type(self):
+        """resize always passes type='pixel' and value-type='pixel'."""
         proc = _make_completed_process()
         with _patch_run(proc) as mock_run:
-            mod_png("16x16", "sprite.png", "set", "pixel", "x:0,y:0",
-                    value="0,0,0,255", value_type="pixel")
-        cmd = mock_run.call_args[0][0]
-        assert "--output" not in cmd
+            mod_png_resize(path="test.png", tile_size="16x16",
+                           areas="x:0,y:0,width:64,height:64",
+                           value="0,0,0,0")
+        op = _extract_op_json(mock_run.call_args[0][0])
+        assert op["type"] == "pixel"
+        assert op["value-type"] == "pixel"
+        assert op["value"] == "0,0,0,0"
+
+    def test_output_omitted_by_default(self):
+        proc = _make_completed_process()
+        with _patch_run(proc) as mock_run:
+            mod_png_resize(path="test.png", tile_size="16x16",
+                           areas="x:0,y:0,width:64,height:64",
+                           value="0,0,0,0")
+        assert "--output" not in mock_run.call_args[0][0]
 
     def test_output_arg_added_when_provided(self):
         proc = _make_completed_process()
         with _patch_run(proc) as mock_run:
-            mod_png("16x16", "sprite.png", "set", "pixel", "x:0,y:0",
-                    value="0,0,0,255", value_type="pixel", output="/tmp/result.png")
+            mod_png_resize(path="test.png", tile_size="16x16",
+                           areas="x:0,y:0,width:64,height:64",
+                           value="0,0,0,0", output="/tmp/resized.png")
         cmd = mock_run.call_args[0][0]
         assert "--output" in cmd
-        assert "/tmp/result.png" in cmd
+        assert "/tmp/resized.png" in cmd
 
-    def test_output_with_read_op(self):
+    def test_no_cwd(self):
         proc = _make_completed_process()
         with _patch_run(proc) as mock_run:
-            mod_png("16x16", "sprite.png", "read", "pixel",
-                    "x:0,y:0,width:32,height:32", output="/tmp/read_out.png")
+            mod_png_resize(path="test.png", tile_size="16x16",
+                           areas="x:0,y:0,width:64,height:64",
+                           value="0,0,0,0")
+        assert "cwd" not in mock_run.call_args.kwargs
+
+
+# ---------------------------------------------------------------------------
+# TestModPngCondense
+# ---------------------------------------------------------------------------
+
+class TestModPngCondense:
+    def test_basic_command(self):
+        proc = _make_completed_process(stdout="64x64\n")
+        with _patch_run(proc) as mock_run:
+            result = mod_png_condense(path="tiles.png", tile_size="16x16",
+                                      areas="x:0,y:0,width:8,height:8",
+                                      value="0,0,0,0",
+                                      output="tiles_condensed.png")
         cmd = mock_run.call_args[0][0]
+        assert _MOD_PNG_SCRIPT in cmd
+        assert "--op" in cmd
         assert "--output" in cmd
-        assert "/tmp/read_out.png" in cmd
+        assert "tiles_condensed.png" in cmd
+        assert "64x64" in result
+
+    def test_always_tile_type_and_pixel_value_type(self):
+        """condense always passes type='tile' and value-type='pixel'."""
+        proc = _make_completed_process()
+        with _patch_run(proc) as mock_run:
+            mod_png_condense(path="tiles.png", tile_size="16x16",
+                             areas="x:0,y:0,width:4,height:4",
+                             value="0,0,0,0", output="out.png")
+        op = _extract_op_json(mock_run.call_args[0][0])
+        assert op["op"] == "condense"
+        assert op["type"] == "tile"
+        assert op["value-type"] == "pixel"
+        assert op["value"] == "0,0,0,0"
+
+    def test_output_is_required(self):
+        """condense requires an output path — verify it always appears in cmd."""
+        proc = _make_completed_process()
+        with _patch_run(proc) as mock_run:
+            mod_png_condense(path="tiles.png", tile_size="16x16",
+                             areas="x:0,y:0,width:4,height:4",
+                             value="0,0,0,0", output="condensed.png")
+        assert "--output" in mock_run.call_args[0][0]
+
+    def test_no_cwd(self):
+        proc = _make_completed_process()
+        with _patch_run(proc) as mock_run:
+            mod_png_condense(path="tiles.png", tile_size="16x16",
+                             areas="x:0,y:0,width:4,height:4",
+                             value="0,0,0,0", output="out.png")
+        assert "cwd" not in mock_run.call_args.kwargs
+
+
+# ---------------------------------------------------------------------------
+# Query tools helpers
+# ---------------------------------------------------------------------------
+
+_QUERY_TOOLS_SCRIPT = str(PROJECT_ROOT / "tools" / "lav_query_tools.py")
+_QUERY_AGENTS_SCRIPT = str(PROJECT_ROOT / "tools" / "lav_query_agents.py")
+
+
+# ---------------------------------------------------------------------------
+# TestQueryToolsList
+# ---------------------------------------------------------------------------
+
+class TestQueryToolsList:
+    def test_basic_command(self):
+        proc = _make_completed_process(stdout="gen_entity\ngen_png\n")
+        with _patch_run(proc) as mock_run:
+            result = query_tools_list()
+        cmd = mock_run.call_args[0][0]
+        assert _QUERY_TOOLS_SCRIPT in cmd
+        assert "list" in cmd
+        assert "gen_entity" in result
+
+    def test_no_cwd(self):
+        proc = _make_completed_process()
+        with _patch_run(proc) as mock_run:
+            query_tools_list()
+        assert "cwd" not in mock_run.call_args.kwargs
+
+    def test_error_prefix_on_nonzero_exit(self):
+        proc = _make_completed_process(returncode=1, stderr="fail\n")
+        with _patch_run(proc):
+            result = query_tools_list()
+        assert result.startswith("ERROR (exit 1):")
+
+
+# ---------------------------------------------------------------------------
+# TestQueryToolsSearch
+# ---------------------------------------------------------------------------
+
+class TestQueryToolsSearch:
+    def test_basic_command(self):
+        proc = _make_completed_process(stdout="mod_png_set\nmod_png_swap\n")
+        with _patch_run(proc) as mock_run:
+            result = query_tools_search(pattern="mod_png")
+        cmd = mock_run.call_args[0][0]
+        assert _QUERY_TOOLS_SCRIPT in cmd
+        assert "search" in cmd
+        assert "--pattern" in cmd
+        assert "mod_png" in cmd
+        assert "mod_png_set" in result
+
+    def test_no_cwd(self):
+        proc = _make_completed_process()
+        with _patch_run(proc) as mock_run:
+            query_tools_search(pattern="test")
+        assert "cwd" not in mock_run.call_args.kwargs
+
+
+# ---------------------------------------------------------------------------
+# TestQueryToolsDescribe
+# ---------------------------------------------------------------------------
+
+class TestQueryToolsDescribe:
+    def test_basic_command(self):
+        proc = _make_completed_process(stdout="name: gen_entity\n")
+        with _patch_run(proc) as mock_run:
+            result = query_tools_describe(name="gen_entity")
+        cmd = mock_run.call_args[0][0]
+        assert _QUERY_TOOLS_SCRIPT in cmd
+        assert "describe" in cmd
+        assert "--name" in cmd
+        assert "gen_entity" in cmd
+        assert "gen_entity" in result
+
+    def test_no_cwd(self):
+        proc = _make_completed_process()
+        with _patch_run(proc) as mock_run:
+            query_tools_describe(name="gen_entity")
+        assert "cwd" not in mock_run.call_args.kwargs
+
+
+# ---------------------------------------------------------------------------
+# TestQueryAgentsList
+# ---------------------------------------------------------------------------
+
+class TestQueryAgentsList:
+    def test_basic_command(self):
+        proc = _make_completed_process(stdout="planner\ncoder\n")
+        with _patch_run(proc) as mock_run:
+            result = query_agents_list()
+        cmd = mock_run.call_args[0][0]
+        assert _QUERY_AGENTS_SCRIPT in cmd
+        assert "list" in cmd
+        assert "planner" in result
+
+    def test_no_cwd(self):
+        proc = _make_completed_process()
+        with _patch_run(proc) as mock_run:
+            query_agents_list()
+        assert "cwd" not in mock_run.call_args.kwargs
+
+
+# ---------------------------------------------------------------------------
+# TestQueryAgentsShow
+# ---------------------------------------------------------------------------
+
+class TestQueryAgentsShow:
+    def test_basic_command(self):
+        proc = _make_completed_process(stdout="name: planner\n")
+        with _patch_run(proc) as mock_run:
+            result = query_agents_show(agent="planner")
+        cmd = mock_run.call_args[0][0]
+        assert _QUERY_AGENTS_SCRIPT in cmd
+        assert "show" in cmd
+        assert "--agent" in cmd
+        assert "planner" in cmd
+
+    def test_no_cwd(self):
+        proc = _make_completed_process()
+        with _patch_run(proc) as mock_run:
+            query_agents_show(agent="planner")
+        assert "cwd" not in mock_run.call_args.kwargs
+
+
+# ---------------------------------------------------------------------------
+# TestQueryAgentsSearchPrompts
+# ---------------------------------------------------------------------------
+
+class TestQueryAgentsSearchPrompts:
+    def test_basic_command(self):
+        proc = _make_completed_process(stdout="planner: 2 match(es)\n")
+        with _patch_run(proc) as mock_run:
+            result = query_agents_search_prompts(pattern="gen_entity")
+        cmd = mock_run.call_args[0][0]
+        assert _QUERY_AGENTS_SCRIPT in cmd
+        assert "search-prompts" in cmd
+        assert "--pattern" in cmd
+        assert "gen_entity" in cmd
+
+    def test_agent_filter_omitted_by_default(self):
+        proc = _make_completed_process()
+        with _patch_run(proc) as mock_run:
+            query_agents_search_prompts(pattern="test")
+        assert "--agent" not in mock_run.call_args[0][0]
+
+    def test_agent_filter_added_when_provided(self):
+        proc = _make_completed_process()
+        with _patch_run(proc) as mock_run:
+            query_agents_search_prompts(pattern="test", agent="planner")
+        cmd = mock_run.call_args[0][0]
+        assert "--agent" in cmd
+        assert "planner" in cmd
+
+    def test_no_cwd(self):
+        proc = _make_completed_process()
+        with _patch_run(proc) as mock_run:
+            query_agents_search_prompts(pattern="test")
+        assert "cwd" not in mock_run.call_args.kwargs
+
+
+# ---------------------------------------------------------------------------
+# TestQueryAgentsSearchPermissions
+# ---------------------------------------------------------------------------
+
+class TestQueryAgentsSearchPermissions:
+    def test_basic_command(self):
+        proc = _make_completed_process(
+            stdout="  spritesheet-animator: lavender-tools_gen_png = allow\n")
+        with _patch_run(proc) as mock_run:
+            result = query_agents_search_permissions(pattern="gen_png")
+        cmd = mock_run.call_args[0][0]
+        assert _QUERY_AGENTS_SCRIPT in cmd
+        assert "search-permissions" in cmd
+        assert "--pattern" in cmd
+
+    def test_agent_filter_omitted_by_default(self):
+        proc = _make_completed_process()
+        with _patch_run(proc) as mock_run:
+            query_agents_search_permissions(pattern="allow")
+        assert "--agent" not in mock_run.call_args[0][0]
+
+    def test_agent_filter_added_when_provided(self):
+        proc = _make_completed_process()
+        with _patch_run(proc) as mock_run:
+            query_agents_search_permissions(pattern="allow", agent="coder")
+        cmd = mock_run.call_args[0][0]
+        assert "--agent" in cmd
+        assert "coder" in cmd
+
+    def test_no_cwd(self):
+        proc = _make_completed_process()
+        with _patch_run(proc) as mock_run:
+            query_agents_search_permissions(pattern="test")
+        assert "cwd" not in mock_run.call_args.kwargs
+
+
+# ---------------------------------------------------------------------------
+# TestQueryAgentsVerifyClean
+# ---------------------------------------------------------------------------
+
+class TestQueryAgentsVerifyClean:
+    def test_basic_command(self):
+        proc = _make_completed_process(stdout="planner: clean\ncoder: clean\n")
+        with _patch_run(proc) as mock_run:
+            result = query_agents_verify_clean(pattern="old_tool")
+        cmd = mock_run.call_args[0][0]
+        assert _QUERY_AGENTS_SCRIPT in cmd
+        assert "verify-clean" in cmd
+        assert "--pattern" in cmd
+        assert "old_tool" in cmd
+        assert "clean" in result
+
+    def test_agent_filter_omitted_by_default(self):
+        proc = _make_completed_process()
+        with _patch_run(proc) as mock_run:
+            query_agents_verify_clean(pattern="test")
+        assert "--agent" not in mock_run.call_args[0][0]
+
+    def test_agent_filter_added_when_provided(self):
+        proc = _make_completed_process()
+        with _patch_run(proc) as mock_run:
+            query_agents_verify_clean(pattern="test", agent="planner")
+        cmd = mock_run.call_args[0][0]
+        assert "--agent" in cmd
+        assert "planner" in cmd
+
+    def test_no_cwd(self):
+        proc = _make_completed_process()
+        with _patch_run(proc) as mock_run:
+            query_agents_verify_clean(pattern="test")
+        assert "cwd" not in mock_run.call_args.kwargs
+
+    def test_error_on_stale_refs(self):
+        proc = _make_completed_process(returncode=1,
+                                        stderr="WARNING: planner has 1 stale\n")
+        with _patch_run(proc):
+            result = query_agents_verify_clean(pattern="old_name")
+        assert result.startswith("ERROR (exit 1):")
 
 
 # ---------------------------------------------------------------------------

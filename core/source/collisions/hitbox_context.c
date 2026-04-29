@@ -6,7 +6,6 @@
 #include "defines_weak.h"
 #include "serialization/hashing.h"
 #include "serialization/serialization_header.h"
-#include "types/implemented/hitbox_manager_type.h"
 
 void initialize_hitbox_context(Hitbox_Context *p_hitbox_context) {
     initialize_serialization_header__contiguous_array(

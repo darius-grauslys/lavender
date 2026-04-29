@@ -11,7 +11,6 @@
 #include "serialization/hashing.h"
 #include "serialization/identifiers.h"
 #include "serialization/serialization_header.h"
-#include "types/implemented/graphics_window_kind.h"
 #include "ui/ui_manager.h"
 #include "ui/ui_window_record.h"
 #include <string.h>

@@ -21,15 +21,20 @@ export base_dir=$(realpath "${GAME_DIR}")
 export core_dir=$(realpath "${LAVENDER_DIR}/core/source")
 export platform_dir=$(realpath "${LAVENDER_DIR}/${PLATFORM}/source")
 
+# Derive a UPPER_SNAKE_CASE project name from GAME_DIR basename.
+# CamelCase boundaries get underscores: AncientsGame -> ANCIENTS_GAME
+# When building from the engine dir, Lavender -> LAVENDER
+export PROJECT_NAME=$(basename "${GAME_DIR}" | sed 's/\([a-z]\)\([A-Z]\)/\1_\2/g' | tr '[:lower:]' '[:upper:]')
+
 gen_main() {
     find $2 -iname test_suite_main.c -exec sed -i "s/#include <main.c>//" {} \;
     output="$2/main.c"
-    printf "#include <MAIN_TEST_SUITE__CORE_ANCIENTS_GAME.h>
+    printf "#include <MAIN_TEST_SUITE__CORE_${PROJECT_NAME}.h>
 
 int main(int argc, char* argv[MUNIT_ARRAY_PARAM(argc + 1)]) {
     MunitSuite test_suite;
 
-    include_test_suite__CORE_ANCIENTS_GAME(&test_suite);
+    include_test_suite__CORE_${PROJECT_NAME}(&test_suite);
 
     return munit_suite_main(&test_suite, (void*) \"µnit\", argc, argv);
 }\n" > $output

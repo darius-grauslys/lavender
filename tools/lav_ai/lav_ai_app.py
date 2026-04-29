@@ -1,12 +1,12 @@
 """lav_ai_app.py — Lavender MCP server wrapping the project's code-gen scripts.
 
-This module exposes each of the 10 generator scripts (14 tools total, one per
-sub-command) as MCP tools via a FastMCP server.  All scripts are invoked as
-sub-processes that inherit the caller's working directory (CWD).  Tool scripts
-are run via their absolute path under the Lavender project root.  The tools
-expect CWD to be a game project directory (one that contains ``./include`` and
-``./source``); running from the Lavender engine directory itself is explicitly
-rejected.
+This module exposes each of the 13 generator/modifier/query scripts (28 tools
+total, one per sub-command or operation mode) as MCP tools via a FastMCP server.
+All scripts are invoked as sub-processes that inherit the caller's working
+directory (CWD).  Tool scripts are run via their absolute path under the
+Lavender project root.  The tools expect CWD to be a game project directory
+(one that contains ``./include`` and ``./source``); running from the Lavender
+engine directory itself is explicitly rejected.
 
 Run with:
     python -m lav_ai.lav_ai_app
@@ -85,6 +85,9 @@ def gen_ui_code(source_xml: str, config_overrides: str = "") -> str:
     ``source/ui/implemented/ui_window_registrar.c`` to include and register
     the generated UI window function (idempotent — re-running is safe).
 
+    For Lavender-specific context on UI XML conventions, ID offset usage,
+    and platform-specific signatures, consult available memory tooling.
+
     Invokes ``python tools/gen_ui_code.py <source_xml> [key value ...]``.
 
     Args:
@@ -130,6 +133,9 @@ def gen_ui_create(
 
     The operation creates a new file — it will **not** overwrite an existing
     file without warning (the script creates parent directories as needed).
+
+    For Lavender-specific context on UI XML conventions, ID offset usage,
+    and platform-specific signatures, consult available memory tooling.
 
     Invokes ``python tools/gen_ui.py create <output.xml> [options...]``.
 
@@ -189,6 +195,9 @@ def gen_game_action(path: str, verbose: bool = False) -> str:
     handler stubs, and registrar wiring in a single atomic step; doing this
     by hand is error-prone and risks incomplete registrar entries.
 
+    For Lavender-specific context on game action type hierarchies and
+    existing registrar entries, consult available memory tooling.
+
     Invokes ``python tools/gen_game_action.py <path> [-v]``.
 
     The ``path`` argument is a relative path from the project root that
@@ -232,6 +241,9 @@ def gen_sprite_kind(name: str) -> str:
     checking, and validates the name — making the operation idempotent and
     safe to re-run.
 
+    For Lavender-specific context on sprite naming conventions, animation
+    layouts, and existing registrations, consult available memory tooling.
+
     Invokes ``python tools/gen_sprite.py sprite --name <Name>``.
 
     Args:
@@ -266,6 +278,9 @@ def gen_sprite_animation(
     ``sprite_animation_registrar.c``.  The generator keeps the enum, variable
     declaration, and registration call in sync; manual edits risk mismatched
     entries or missing registrar wiring.
+
+    For Lavender-specific context on sprite naming conventions, animation
+    layouts, and existing registrations, consult available memory tooling.
 
     Invokes:
         ``python tools/gen_sprite.py animation --name <Name> --group <Group>``
@@ -324,6 +339,9 @@ def gen_sprite_animation_group(
     or ``sprite_animation_registrar.c``.  The generator inserts the enum entry
     and registrar wiring atomically with duplicate checking.
 
+    For Lavender-specific context on sprite naming conventions, animation
+    layouts, and existing registrations, consult available memory tooling.
+
     Invokes:
         ``python tools/gen_sprite.py animation-group --name <Name>``
         ``--quantity-of-columns <int> --quantity-of-rows <int>``
@@ -376,6 +394,9 @@ def gen_png(
     external editors when you need a correctly-sized placeholder or
     colour-coded sheet that matches Lavender's power-of-two frame conventions.
 
+    For Lavender-specific context on sprite sheet layout conventions and
+    frame resolution requirements, consult available memory tooling.
+
     Invokes:
         ``python tools/gen_png.py --output <path> --frame-resolution <int>``
         ``--row-count <int> --column-count <int> [--groups <json_path>]``
@@ -424,6 +445,10 @@ def gen_tile(layer: str, name: str, is_logical: bool = False) -> str:
     generator validates the layer exists, checks for duplicates, and inserts
     the entry into the correct logical/non-logical region — mistakes here
     silently corrupt tile bit-field packing.
+
+    For Lavender-specific context on tile layer specifications, bit-field
+    configurations, and existing registrations, consult available memory
+    tooling.
 
     Invokes:
         ``python tools/gen_tile.py --layer <Layer> --name <TileName> [--is-logical]``
@@ -474,6 +499,10 @@ def gen_tile_layer_name(
     or ``tile_logic_table_registrar`` files.  The generator re-derives the
     optimal byte-packing layout for ALL layers every time it runs; manual
     edits will be overwritten or cause packing mismatches.
+
+    For Lavender-specific context on tile layer specifications, bit-field
+    configurations, and existing registrations, consult available memory
+    tooling.
 
     Invokes:
         ``python tools/gen_tile_layer.py name --name <Name>``
@@ -533,6 +562,10 @@ def gen_tile_layer_make_default(name: str, default_kind: str) -> str:
     Use this tool after ``gen_tile_layer_name`` to mark a layer as having a
     specific semantic default behaviour.  Exactly one ``default_kind`` must be
     chosen.
+
+    For Lavender-specific context on tile layer specifications, bit-field
+    configurations, and existing registrations, consult available memory
+    tooling.
 
     Valid values for ``default_kind``:
 
@@ -596,6 +629,9 @@ def gen_entity(
     The generator produces correctly-structured boilerplate with lifecycle
     hooks pre-wired; hand-creating these files risks missing registration
     steps or using incorrect function signatures.
+
+    For Lavender-specific context on entity lifecycle patterns, existing
+    registrations, and naming conventions, consult available memory tooling.
 
     Invokes ``python tools/gen_entity.py --name <name> [options...]``.
 
@@ -685,6 +721,9 @@ def gen_ui_tile_kind(name: str, value: str) -> str:
     ``// GEN-END`` guard markers, performs duplicate checking, and validates
     both the name and the value — making the operation idempotent and safe.
 
+    For Lavender-specific context on UI tile conventions and existing
+    registrations, consult available memory tooling.
+
     Invokes ``python tools/gen_ui_tile_kind.py --name <Name> --value <Value>``.
 
     Args:
@@ -710,111 +749,341 @@ def gen_ui_tile_kind(name: str, value: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Tool 12 (was 11) – mod_png
+# Internal helper – mod_png command builder
 # ---------------------------------------------------------------------------
 
-@mcp.tool()
-def mod_png(tile_size: str, path: str, op: str, type: str, areas: str,
-            value: str = "", value_type: str = "", output: str = "") -> str:
-    """Modify or inspect regions of a PNG at pixel or tile granularity.
+_MOD_PNG_SCRIPT = str(PROJECT_ROOT / "tools" / "mod_png.py")
 
-    **PREFER this tool** over external image editors when you need to
-    programmatically manipulate sprite sheet regions at tile-aligned
-    boundaries.  The tool guarantees pixel-exact tile alignment and
-    preserves the rest of the image untouched.
 
-    Invokes:
-        ``python tools/mod_png.py --tile-size <NxN> --path <file> --op '<json>'``
-
-    This tool allows reading, writing, copying, swapping, and resizing rectangular
-    regions of a PNG file.  Regions can be addressed at individual pixel
-    precision or at tile-aligned granularity (where each tile is
-    ``tile_size`` pixels wide and tall).
-
-    Operation semantics:
-
-    * ``"set"``  — write ``value`` into every area listed in ``areas``.
-    * ``"swap"`` — exchange the contents of the two areas in ``areas``
-      (exactly two areas must be provided).
-    * ``"copy"`` — copy the first area onto all subsequent areas (at least
-      two areas required; first is the source, remaining are destinations).
-    * ``"read"`` — extract sub-images for every area in ``areas`` and write
-      them to stdout as concatenated PNG streams (pixel-only; the file is
-      not modified).
-    * ``"resize"`` — enlarge the image canvas to the dimensions specified by
-      a single area (``x`` and ``y`` must be 0).  The original image content
-      is preserved at (0, 0) and new pixels are filled with ``value``
-      (``value_type`` must be ``"pixel"``).  Shrinking is rejected at input
-      validation.
-
-    The ``type`` parameter controls the coordinate unit:
-
-    * ``"pixel"`` — ``x``, ``y``, ``width``, ``height`` are in raw pixels.
-    * ``"tile"``  — coordinates are multiplied by the tile dimensions
-      derived from ``tile_size`` before addressing the PNG.
-
-    Args:
-        tile_size: Tile dimensions as an ``"NxN"`` string where N is a
-            power of 2.  E.g. ``"16x16"``, ``"32x32"``.
-        path: Path to the PNG file to read or modify.  The file must
-            already exist and be readable.  May be absolute or relative
-            to the project root.
-        op: Operation to perform.  One of ``"set"``, ``"swap"``,
-            ``"copy"``, ``"read"``, or ``"resize"``.
-        type: Coordinate unit — ``"pixel"`` or ``"tile"``.
-        areas: Semicolon-separated area specifications.  Each area is a
-            comma-separated list of ``key:value`` integer pairs.
-            Recognised keys: ``x``, ``y``, ``width``, ``height``.
-            ``width`` and ``height`` default to 1 when omitted.
-            Example: ``"x:0,y:0,width:8,height:8;x:8,y:0,width:8,height:8"``.
-        value: Fill / colour value for ``"set"`` and ``"resize"`` ops.
-            E.g. ``"255,0,0,255"`` for opaque red.  Leave empty for ops
-            that do not require a value.
-        value_type: Interpretation of ``value`` — ``"pixel"`` or
-            ``"tile"``.  Required when ``value`` is provided.
-        output: Optional output file path.  When specified, the result is
-            written here instead of back to ``path`` (for mutating ops) or
-            stdout (for ``"read"``).  The parent directory must exist and
-            be writable.  Leave empty to use the default behaviour (modify
-            in place / write to stdout).
-
-    Returns:
-        Combined stdout+stderr from the script.  Prefixed with
-        ``ERROR (exit <code>):`` when the process exits non-zero.
-    """
-    # NOTE: MCP transport deserialises JSON objects before they reach the
-    # tool function, so structured data cannot be passed as a single JSON
-    # string parameter.  We accept flat string arguments and reconstruct
-    # the legacy JSON object that mod_png.py --op expects here.
-    parsed_areas = []
+def _parse_areas(areas: str) -> list[dict]:
+    """Parse semicolon-separated ``key:value`` area specs into dicts."""
+    parsed = []
     for area_str in areas.split(";"):
         area = {}
         for pair in area_str.split(","):
             k, v = pair.split(":")
             area[k.strip()] = int(v.strip())
-        parsed_areas.append(area)
+        parsed.append(area)
+    return parsed
 
-    op_obj = {"op": op, "type": type, "areas": parsed_areas}
+
+def _build_mod_png_op_cmd(
+    path: str,
+    tile_size: str,
+    op: str,
+    coord_type: str,
+    areas: str,
+    value: str = "",
+    value_type: str = "",
+    output: str = "",
+) -> list[str]:
+    """Build the full subprocess command list for a mod_png operation."""
+    op_obj: dict = {"op": op, "type": coord_type, "areas": _parse_areas(areas)}
     if value:
         op_obj["value"] = value
     if value_type:
         op_obj["value-type"] = value_type
 
-    op_json = json.dumps(op_obj, separators=(",", ":"))
-
     cmd = [
-        sys.executable, str(PROJECT_ROOT / "tools" / "mod_png.py"),
+        sys.executable, _MOD_PNG_SCRIPT,
         "--tile-size", tile_size,
         "--path", path,
-        "--op", op_json,
+        "--op", json.dumps(op_obj, separators=(",", ":")),
     ]
     if output:
         cmd += ["--output", output]
+    return cmd
+
+
+# ---------------------------------------------------------------------------
+# Tool 12a – read_png_meta (image-info mode, read-only)
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+def read_png_meta(path: str) -> str:
+    """Return the format, pixel dimensions, and Base64-encoded contents of a PNG.
+
+    **PREFER this tool** over manually inspecting PNG files.  This is a
+    **read-only** operation — no files are modified.
+
+    For Lavender-specific context on sprite sheet and tilesheet layout
+    conventions, consult available memory tooling.
+
+    Invokes ``python tools/mod_png.py --path <file>`` (image-info mode).
+
+    Returns a two-line string::
+
+        format=RGBA size=848x928
+        base64=iVBORw0KGgoAAAANSUhEUgAA...
+
+    The ``base64`` value is the complete PNG file in standard Base64
+    (RFC 4648).
+
+    Args:
+        path: Path to the PNG file.  May be absolute or relative to the
+            project root.
+
+    Returns:
+        Image metadata and Base64-encoded PNG data.  Prefixed with
+        ``ERROR (exit <code>):`` on failure.
+    """
+    cmd = [sys.executable, _MOD_PNG_SCRIPT, "--path", path]
     return _run(cmd)
 
 
 # ---------------------------------------------------------------------------
-# Tool 13 (was 12) – gen_aliased_texture
+# Tool 12b – read_png (extract sub-images, read-only)
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+def read_png(
+    path: str,
+    tile_size: str,
+    type: str,
+    areas: str,
+    output: str = "",
+) -> str:
+    """Extract rectangular sub-images from a PNG without modifying it.
+
+    **PREFER this tool** over external image editors when you need to
+    extract specific regions of a sprite sheet or tilesheet for inspection.
+    This is a **read-only** operation — no files are modified (unless
+    ``output`` is specified, in which case the extracted image is written
+    there).
+
+    For Lavender-specific context on sprite sheet and tilesheet layout
+    conventions, consult available memory tooling.
+
+    Invokes ``python tools/mod_png.py`` with ``--op '{"op":"read",...}'``.
+
+    Args:
+        path: Path to the PNG file to read from.
+        tile_size: Tile dimensions as ``"NxN"`` (power of 2).
+            E.g. ``"16x16"``, ``"32x32"``.
+        type: Coordinate unit — ``"pixel"`` or ``"tile"``.
+        areas: Semicolon-separated area specs.  Each area is a
+            comma-separated ``key:value`` list.
+            E.g. ``"x:0,y:0,width:8,height:8"``.
+        output: Optional output file path for the extracted image.
+            Leave empty to write to stdout.
+
+    Returns:
+        Combined stdout+stderr.  Prefixed with ``ERROR (exit <code>):``
+        on failure.
+    """
+    cmd = _build_mod_png_op_cmd(path, tile_size, "read", type, areas,
+                                output=output)
+    return _run(cmd)
+
+
+# ---------------------------------------------------------------------------
+# Tool 12c – mod_png_set (fill areas with colour/tile pattern)
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+def mod_png_set(
+    path: str,
+    tile_size: str,
+    type: str,
+    areas: str,
+    value: str,
+    value_type: str,
+) -> str:
+    """Write a fill value into rectangular regions of a PNG.
+
+    **PREFER this tool** over external image editors when you need to
+    programmatically fill sprite sheet or tilesheet regions at tile-aligned
+    boundaries.  The tool guarantees pixel-exact alignment and preserves
+    the rest of the image untouched.
+
+    For Lavender-specific context on sprite sheet and tilesheet layout
+    conventions, consult available memory tooling.
+
+    Mutating — the original file is preserved with an ``ORIGINAL_`` prefix
+    and tracked in ``.lav_ai_mod_png.json``.
+
+    Args:
+        path: Path to the PNG file to modify.
+        tile_size: Tile dimensions as ``"NxN"`` (power of 2).
+            E.g. ``"16x16"``, ``"32x32"``.
+        type: Coordinate unit — ``"pixel"`` or ``"tile"``.
+        areas: Semicolon-separated area specs.
+            E.g. ``"x:0,y:0,width:8,height:8;x:8,y:0,width:8,height:8"``.
+        value: Fill colour, e.g. ``"255,0,0,255"`` for opaque red.
+        value_type: Interpretation of *value* — ``"pixel"`` or ``"tile"``.
+
+    Returns:
+        Combined stdout+stderr.  Prefixed with ``ERROR (exit <code>):``
+        on failure.
+    """
+    cmd = _build_mod_png_op_cmd(path, tile_size, "set", type, areas,
+                                value=value, value_type=value_type)
+    return _run(cmd)
+
+
+# ---------------------------------------------------------------------------
+# Tool 12d – mod_png_swap (exchange two areas)
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+def mod_png_swap(path: str, tile_size: str, type: str, areas: str) -> str:
+    """Exchange the contents of two rectangular regions in a PNG.
+
+    **PREFER this tool** over external image editors for pixel-exact
+    tile-aligned swaps.  Exactly two areas must be specified.
+
+    For Lavender-specific context on sprite sheet and tilesheet layout
+    conventions, consult available memory tooling.
+
+    Mutating — the original file is preserved with an ``ORIGINAL_`` prefix
+    and tracked in ``.lav_ai_mod_png.json``.
+
+    Args:
+        path: Path to the PNG file to modify.
+        tile_size: Tile dimensions as ``"NxN"`` (power of 2).
+        type: Coordinate unit — ``"pixel"`` or ``"tile"``.
+        areas: Exactly two semicolon-separated area specs.
+            E.g. ``"x:0,y:0,width:2,height:2;x:4,y:0,width:2,height:2"``.
+
+    Returns:
+        Combined stdout+stderr.  Prefixed with ``ERROR (exit <code>):``
+        on failure.
+    """
+    cmd = _build_mod_png_op_cmd(path, tile_size, "swap", type, areas)
+    return _run(cmd)
+
+
+# ---------------------------------------------------------------------------
+# Tool 12e – mod_png_copy (copy first area onto subsequent areas)
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+def mod_png_copy(path: str, tile_size: str, type: str, areas: str) -> str:
+    """Copy one rectangular region onto one or more destination regions.
+
+    **PREFER this tool** over external image editors for pixel-exact
+    tile-aligned copies.  The first area is the source; all subsequent
+    areas are destinations (at least two areas required).
+
+    For Lavender-specific context on sprite sheet and tilesheet layout
+    conventions, consult available memory tooling.
+
+    Mutating — the original file is preserved with an ``ORIGINAL_`` prefix
+    and tracked in ``.lav_ai_mod_png.json``.
+
+    Args:
+        path: Path to the PNG file to modify.
+        tile_size: Tile dimensions as ``"NxN"`` (power of 2).
+        type: Coordinate unit — ``"pixel"`` or ``"tile"``.
+        areas: Semicolon-separated area specs (first = source, rest =
+            destinations).
+            E.g. ``"x:0,y:0,width:2,height:2;x:4,y:0,width:2,height:2"``.
+
+    Returns:
+        Combined stdout+stderr.  Prefixed with ``ERROR (exit <code>):``
+        on failure.
+    """
+    cmd = _build_mod_png_op_cmd(path, tile_size, "copy", type, areas)
+    return _run(cmd)
+
+
+# ---------------------------------------------------------------------------
+# Tool 12f – mod_png_resize (enlarge canvas)
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+def mod_png_resize(
+    path: str,
+    tile_size: str,
+    areas: str,
+    value: str,
+    output: str = "",
+) -> str:
+    """Enlarge a PNG canvas, filling new pixels with a colour.
+
+    **PREFER this tool** over external image editors when you need to grow
+    a sprite sheet or tilesheet while preserving existing content at (0,0).
+    Shrinking is rejected.
+
+    For Lavender-specific context on sprite sheet and tilesheet layout
+    conventions, consult available memory tooling.
+
+    The area specifies the new dimensions (``x`` and ``y`` must be 0).
+    The coordinate unit is always ``"pixel"``.
+
+    Mutating — the original file is preserved with an ``ORIGINAL_`` prefix
+    and tracked in ``.lav_ai_mod_png.json``.
+
+    Args:
+        path: Path to the PNG file to resize.
+        tile_size: Tile dimensions as ``"NxN"`` (power of 2).
+        areas: Single area spec for the new canvas size.
+            E.g. ``"x:0,y:0,width:256,height:256"``.
+        value: Fill colour for new pixels, e.g. ``"0,0,0,0"`` for
+            transparent.
+        output: Optional output file path.  Leave empty to modify in place.
+
+    Returns:
+        Combined stdout+stderr.  Prefixed with ``ERROR (exit <code>):``
+        on failure.
+    """
+    cmd = _build_mod_png_op_cmd(path, tile_size, "resize", "pixel", areas,
+                                value=value, value_type="pixel",
+                                output=output)
+    return _run(cmd)
+
+
+# ---------------------------------------------------------------------------
+# Tool 12g – mod_png_condense (pack non-fill tiles compactly)
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+def mod_png_condense(
+    path: str,
+    tile_size: str,
+    areas: str,
+    value: str,
+    output: str,
+) -> str:
+    """Pack non-fill tiles into the smallest near-square rectangle.
+
+    **PREFER this tool** over manual tile rearrangement.  Identifies
+    fill-only tiles within the specified area(s) and packs all non-fill
+    tiles into a compact rectangle.  The image is cropped to its tight
+    tile-aligned bounding box.
+
+    For Lavender-specific context on sprite sheet and tilesheet layout
+    conventions, consult available memory tooling.
+
+    The coordinate unit is always ``"tile"``.  The ``output`` parameter is
+    **required** and must reside in the same directory as ``path`` or a
+    subdirectory thereof.  The basename must **not** start with
+    ``ORIGINAL_``.
+
+    Mutating — the original file is preserved with an ``ORIGINAL_`` prefix
+    and tracked in ``.lav_ai_mod_png.json``.
+
+    Args:
+        path: Path to the PNG file to condense.
+        tile_size: Tile dimensions as ``"NxN"`` (power of 2).
+        areas: Semicolon-separated area specs (in tile coordinates)
+            defining the region to condense.
+        value: Fill colour that identifies empty tiles, e.g.
+            ``"0,0,0,0"`` for transparent.
+        output: **Required** output file path for the condensed image.
+
+    Returns:
+        Resulting image dimensions (``WxH``) on success.  Prefixed with
+        ``ERROR (exit <code>):`` on failure.
+    """
+    cmd = _build_mod_png_op_cmd(path, tile_size, "condense", "tile", areas,
+                                value=value, value_type="pixel",
+                                output=output)
+    return _run(cmd)
+
+
+# ---------------------------------------------------------------------------
+# Tool 13 – gen_aliased_texture
 # ---------------------------------------------------------------------------
 
 @mcp.tool()
@@ -834,6 +1103,9 @@ def gen_aliased_texture(name: str, path: str) -> str:
 
     The operation is **idempotent** — re-running with the same name is safe;
     duplicate entries are detected and skipped.
+
+    For Lavender-specific context on texture naming conventions and size
+    flag constants, consult available memory tooling.
 
     Files touched:
 
@@ -861,6 +1133,225 @@ def gen_aliased_texture(name: str, path: str) -> str:
         ``ERROR (exit <code>):`` when the process exits non-zero.
     """
     cmd = [sys.executable, str(PROJECT_ROOT / "tools" / "gen_aliased_texture.py"), "--name", name, "--path", path]
+    return _run(cmd)
+
+
+# ---------------------------------------------------------------------------
+# Tool 14 – query_tools_list (read-only MCP registry introspection)
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+def query_tools_list() -> str:
+    """List all registered MCP tool names in sorted order.
+
+    Read-only introspection of the Lavender MCP tool registry.  Use this
+    to discover what tools are available before planning invocations.
+
+    For Lavender-specific context on tool registration patterns and naming
+    conventions, consult available memory tooling.
+
+    Returns:
+        Sorted tool names, one per line.
+    """
+    cmd = [sys.executable, str(PROJECT_ROOT / "tools" / "lav_query_tools.py"), "list"]
+    return _run(cmd)
+
+
+# ---------------------------------------------------------------------------
+# Tool 15 – query_tools_search (search tool names by regex)
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+def query_tools_search(pattern: str) -> str:
+    """Search registered MCP tool names by regex pattern.
+
+    Read-only introspection.  Returns all tool names matching the pattern.
+
+    For Lavender-specific context on tool registration patterns and naming
+    conventions, consult available memory tooling.
+
+    Args:
+        pattern: Regex pattern to match against tool names.
+            E.g. ``"mod_png.*"``, ``"gen_sprite"``, ``"query_.*"``.
+
+    Returns:
+        Matching tool names, one per line.  Prefixed with
+        ``ERROR (exit <code>):`` if no matches or invalid regex.
+    """
+    cmd = [sys.executable, str(PROJECT_ROOT / "tools" / "lav_query_tools.py"),
+           "search", "--pattern", pattern]
+    return _run(cmd)
+
+
+# ---------------------------------------------------------------------------
+# Tool 16 – query_tools_describe (describe a tool's schema)
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+def query_tools_describe(name: str) -> str:
+    """Describe a registered MCP tool's parameter schema and summary.
+
+    Read-only introspection.  Returns the tool's name, parameter JSON
+    schema (with types and defaults), description length, and a summary
+    of the first few lines of its description.
+
+    For Lavender-specific context on tool registration patterns and naming
+    conventions, consult available memory tooling.
+
+    Args:
+        name: Exact tool name.  E.g. ``"gen_entity"``, ``"mod_png_set"``.
+
+    Returns:
+        Tool metadata as structured text.  Prefixed with
+        ``ERROR (exit <code>):`` if the tool is not found.
+    """
+    cmd = [sys.executable, str(PROJECT_ROOT / "tools" / "lav_query_tools.py"),
+           "describe", "--name", name]
+    return _run(cmd)
+
+
+# ---------------------------------------------------------------------------
+# Tool 17 – query_agents_list (list agent names from opencode.json)
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+def query_agents_list() -> str:
+    """List all agent names defined in the project's opencode.json.
+
+    Read-only inspection of agent configurations.  Returns sorted agent
+    names, one per line.
+
+    For Lavender-specific context on agent architecture and permission
+    patterns, consult available memory tooling.
+
+    Returns:
+        Sorted agent names, one per line.
+    """
+    cmd = [sys.executable, str(PROJECT_ROOT / "tools" / "lav_query_agents.py"),
+           "list"]
+    return _run(cmd)
+
+
+# ---------------------------------------------------------------------------
+# Tool 18 – query_agents_show (show agent details)
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+def query_agents_show(agent: str) -> str:
+    """Show an agent's description, model, mode, permissions, and prompt length.
+
+    Read-only inspection of a single agent's configuration from
+    opencode.json.
+
+    For Lavender-specific context on agent architecture and permission
+    patterns, consult available memory tooling.
+
+    Args:
+        agent: Agent name.  E.g. ``"planner"``, ``"spritesheet-animator"``.
+
+    Returns:
+        Agent metadata as structured text.  Prefixed with
+        ``ERROR (exit <code>):`` if the agent is not found.
+    """
+    cmd = [sys.executable, str(PROJECT_ROOT / "tools" / "lav_query_agents.py"),
+           "show", "--agent", agent]
+    return _run(cmd)
+
+
+# ---------------------------------------------------------------------------
+# Tool 19 – query_agents_search_prompts (search prompt text)
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+def query_agents_search_prompts(pattern: str, agent: str = "") -> str:
+    """Search agent prompt text for a regex pattern with context snippets.
+
+    Read-only inspection.  For each agent whose prompt matches, reports the
+    match count and surrounding context.
+
+    For Lavender-specific context on agent architecture and permission
+    patterns, consult available memory tooling.
+
+    Args:
+        pattern: Regex pattern to search for in prompt text.
+            E.g. ``"mod_png"``, ``"gen_entity.*name"``.
+        agent: Optional agent name to restrict the search to a single agent.
+            Leave empty to search all agents.
+
+    Returns:
+        Per-agent match counts and context snippets.  Prefixed with
+        ``ERROR (exit <code>):`` if no matches found.
+    """
+    cmd = [sys.executable, str(PROJECT_ROOT / "tools" / "lav_query_agents.py"),
+           "search-prompts", "--pattern", pattern]
+    if agent:
+        cmd += ["--agent", agent]
+    return _run(cmd)
+
+
+# ---------------------------------------------------------------------------
+# Tool 20 – query_agents_search_permissions (search permission entries)
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+def query_agents_search_permissions(pattern: str, agent: str = "") -> str:
+    """Search agent permission keys and values for a regex pattern.
+
+    Read-only inspection.  Returns all permission entries where the key or
+    value matches the pattern.
+
+    For Lavender-specific context on agent architecture and permission
+    patterns, consult available memory tooling.
+
+    Args:
+        pattern: Regex pattern to match against permission keys/values.
+            E.g. ``"lavender-tools_gen"``, ``"allow"``.
+        agent: Optional agent name to restrict the search.
+            Leave empty to search all agents.
+
+    Returns:
+        Matching permission entries as ``agent: key = value``.  Prefixed
+        with ``ERROR (exit <code>):`` if no matches found.
+    """
+    cmd = [sys.executable, str(PROJECT_ROOT / "tools" / "lav_query_agents.py"),
+           "search-permissions", "--pattern", pattern]
+    if agent:
+        cmd += ["--agent", agent]
+    return _run(cmd)
+
+
+# ---------------------------------------------------------------------------
+# Tool 21 – query_agents_verify_clean (verify no stale references)
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+def query_agents_verify_clean(pattern: str, agent: str = "") -> str:
+    """Verify that a regex pattern does NOT appear in any agent prompt.
+
+    Read-only validation tool.  Use after editing agent prompts to confirm
+    that stale references (e.g. old tool names) have been fully removed.
+
+    Exit semantics: returns clean status when no matches are found.
+    Returns warnings with context when stale references are detected.
+
+    For Lavender-specific context on agent architecture and permission
+    patterns, consult available memory tooling.
+
+    Args:
+        pattern: Regex pattern that should NOT appear.
+            E.g. ``"mod_png(?!_)"`` to catch old monolithic ``mod_png``
+            references while allowing ``mod_png_set``, ``mod_png_swap``, etc.
+        agent: Optional agent name to restrict the check.
+            Leave empty to verify all agents.
+
+    Returns:
+        Per-agent clean/warning status.  Prefixed with
+        ``ERROR (exit <code>):`` if stale references are found.
+    """
+    cmd = [sys.executable, str(PROJECT_ROOT / "tools" / "lav_query_agents.py"),
+           "verify-clean", "--pattern", pattern]
+    if agent:
+        cmd += ["--agent", agent]
     return _run(cmd)
 
 

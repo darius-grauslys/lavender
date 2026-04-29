@@ -4,8 +4,11 @@
 
 #---------------------------------------------------------------------------------
 # options for code generation
+# Note: Test builds do not go through the root Makefile.include, so CFLAGS
+# must be defined here. Keep these in sync with the base flags in
+# Makefile.include. Platform sub-Makefiles may append via +=.
 #---------------------------------------------------------------------------------
-CFLAGS := -Wall -O2
+CFLAGS := -Wall -Wextra -O2
 
 CFLAGS    += $(INCLUDE)
 
@@ -130,11 +133,7 @@ export LIBPATHS := $(foreach dir,$(LIBDIRS),-L$(dir)/lib)
 #---------------------------------------------------------------------------------
 $(BUILD):
 	@[ -d $@ ] || mkdir -p $@
-	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile \
-		 | grep -wE 'cc|gcc|g\+\+' \
-		 | grep -w '\-c' \
-		 | jq -nR '[inputs|{directory:"$(BUILD)", command:., file: match(" [^ ]+$$").string[1:]}]' \
-		 > $(BUILD)/compile_commands.json
+	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
 
 #---------------------------------------------------------------------------------
 else
@@ -143,31 +142,25 @@ else
 # main targets
 #---------------------------------------------------------------------------------
 
+# vpath directives tell Make where to find test source files.
+vpath %.c $(SOURCE_TEST_CORE)
+ifneq ($(PLATFORM),)
+vpath %.c $(SOURCE_TEST_PLATFORM)
+endif
+ifneq ($(LAVENDER_DIR),$(GAME_DIR))
+vpath %.c $(SOURCE_TEST_GAME)
+endif
+
 $(OUTPUT): $(OFILES)
 	$(SILENT)$(LD) $(LDFLAGS) $(FLAGS_LINKER) $(OFILES) $(LIBPATHS) $(LIBS) -o $@
-	@$(ADD_COMPILE_COMMAND) end
 
-#---------------------------------------------------------------------------------
-$(CFILES_TEST_CORE:.c=.o) : $(foreach file,$(CFILES),$(GAME_DIR)/tests/core/source/$(file))
+# Unified pattern rule for test .c -> .o compilation.
+# -MMD -MP generate .d dependency files for incremental rebuilds.
+%.o: %.c
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) $(INCLUDE) $(FLAGS) -c $(GAME_DIR)/tests/core/source/$(basename $@).c -o $@
-	@$(ADD_COMPILE_COMMAND) add $(CC) "$(CFLAGS) $(LIBS) $(INCLUDE) $(FLAGS) \
-		-o $(BUILD)/$@ -c $(SOURCE_CORE)/$(@:.o=.c)" $(BUILD)/$@
-ifneq ($(PLATFORM),)
-$(CFILES_TEST_PLATFORM:.c=.o) : $(foreach file,$(CFILES),$(GAME_DIR)/tests/$(PLATFORM)/source/$(file))
-	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) $(INCLUDE) $(FLAGS) -c $(GAME_DIR)/tests/$(PLATFORM)/source/$(basename $@).c -o $@
-	@$(ADD_COMPILE_COMMAND) add $(CC) "$(CFLAGS) $(LIBS) $(INCLUDE) $(FLAGS) \
-		-o $(BUILD)/$@ -c $(SOURCE_PLATFORM)/$(@:.o=.c)" $(BUILD)/$@
-endif
-$(CFILES_TEST_GAME:.c=.o) : $(foreach file,$(CFILES),$(GAME_DIR)/tests/$(shell basename $(GAME_DIR))/source/$(file))
-	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) $(INCLUDE) $(FLAGS) -c $(GAME_DIR)/tests/$(shell basename $(GAME_DIR))/source/$(basename $@).c -o $@
-	@$(ADD_COMPILE_COMMAND) add $(CC) "$(CFLAGS) $(LIBS) $(INCLUDE) $(FLAGS) \
-		-o $(BUILD)/$@ -c $(shell basename $(GAME_DIR))/source/$(@:.o=.c)" $(BUILD)/$@
-#---------------------------------------------------------------------------------
+	$(CC) $(CFLAGS) $(FLAGS) -MMD -MP -MF $*.d -c $< -o $@
 
--include $(DEPSDIR)/*.d
+-include $(OFILES:.o=.d)
 
 #---------------------------------------------------------------------------------------
 endif
