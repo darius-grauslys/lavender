@@ -45,6 +45,11 @@ from lavender_tools.lav_ai.lav_ai_app import (
     query_tools_search,
     read_png,
     read_png_meta,
+    clangd_definition,
+    clangd_references,
+    clangd_symbols,
+    clangd_workspace_symbol,
+    clangd_hover,
 )
 
 
@@ -1814,3 +1819,117 @@ class TestGenLavProject:
         with _patch_run(proc) as mock_run:
             gen_lav_project("sdl")
         assert mock_run.call_args[1].get("cwd") is None
+
+
+# ===========================================================================
+# clangd tools (Tools 27-31)
+# ===========================================================================
+
+def _mock_clangd_session():
+    """Create a mock ClangdSession for testing clangd tool wrappers."""
+    session = MagicMock()
+    session.ensure_ready.return_value = None
+    return session
+
+
+def _patch_clangd_session(session):
+    """Patch the module-level _clangd_session in lav_ai_app."""
+    return patch("lavender_tools.lav_ai.lav_ai_app._clangd_session", session)
+
+
+class TestClangdDefinition:
+    def test_returns_result_from_find_definition(self):
+        session = _mock_clangd_session()
+        with _patch_clangd_session(session), \
+             patch("lavender_tools.clang_tools.find_definition",
+                   return_value="/some/file.c:10:5") as mock_fn:
+            result = clangd_definition("test.c", 1, 1)
+        assert result == "/some/file.c:10:5"
+        mock_fn.assert_called_once_with(session, "test.c", 1, 1)
+
+    def test_no_session_returns_error(self):
+        with _patch_clangd_session(None), \
+             patch("lavender_tools.lav_ai.lav_ai_app._get_clangd_session",
+                   return_value=None):
+            result = clangd_definition("test.c", 1, 1)
+        assert "ERROR" in result
+        assert "clangd not configured" in result
+
+    def test_exception_returns_error(self):
+        session = _mock_clangd_session()
+        session.ensure_ready.side_effect = RuntimeError("clangd crashed")
+        with _patch_clangd_session(session):
+            result = clangd_definition("test.c", 1, 1)
+        assert result.startswith("ERROR:")
+
+
+class TestClangdReferences:
+    def test_returns_result_from_find_references(self):
+        session = _mock_clangd_session()
+        with _patch_clangd_session(session), \
+             patch("lavender_tools.clang_tools.find_references",
+                   return_value="a.c:1:1\nb.c:2:1") as mock_fn:
+            result = clangd_references("test.c", 5, 3)
+        assert result == "a.c:1:1\nb.c:2:1"
+        mock_fn.assert_called_once_with(session, "test.c", 5, 3)
+
+    def test_no_session_returns_error(self):
+        with _patch_clangd_session(None), \
+             patch("lavender_tools.lav_ai.lav_ai_app._get_clangd_session",
+                   return_value=None):
+            result = clangd_references("test.c", 1, 1)
+        assert "ERROR" in result
+
+
+class TestClangdSymbols:
+    def test_returns_result_from_get_symbols(self):
+        session = _mock_clangd_session()
+        with _patch_clangd_session(session), \
+             patch("lavender_tools.clang_tools.get_symbols",
+                   return_value="Function main test.c:1:1") as mock_fn:
+            result = clangd_symbols("test.c")
+        assert result == "Function main test.c:1:1"
+        mock_fn.assert_called_once_with(session, "test.c")
+
+    def test_no_session_returns_error(self):
+        with _patch_clangd_session(None), \
+             patch("lavender_tools.lav_ai.lav_ai_app._get_clangd_session",
+                   return_value=None):
+            result = clangd_symbols("test.c")
+        assert "ERROR" in result
+
+
+class TestClangdWorkspaceSymbol:
+    def test_returns_result_from_search(self):
+        session = _mock_clangd_session()
+        with _patch_clangd_session(session), \
+             patch("lavender_tools.clang_tools.search_workspace_symbols",
+                   return_value="Function foo bar.c:10:1") as mock_fn:
+            result = clangd_workspace_symbol("foo")
+        assert result == "Function foo bar.c:10:1"
+        mock_fn.assert_called_once_with(session, "foo")
+
+    def test_no_session_returns_error(self):
+        with _patch_clangd_session(None), \
+             patch("lavender_tools.lav_ai.lav_ai_app._get_clangd_session",
+                   return_value=None):
+            result = clangd_workspace_symbol("foo")
+        assert "ERROR" in result
+
+
+class TestClangdHover:
+    def test_returns_result_from_get_hover(self):
+        session = _mock_clangd_session()
+        with _patch_clangd_session(session), \
+             patch("lavender_tools.clang_tools.get_hover_info",
+                   return_value="void foo(int x)") as mock_fn:
+            result = clangd_hover("test.c", 3, 5)
+        assert result == "void foo(int x)"
+        mock_fn.assert_called_once_with(session, "test.c", 3, 5)
+
+    def test_no_session_returns_error(self):
+        with _patch_clangd_session(None), \
+             patch("lavender_tools.lav_ai.lav_ai_app._get_clangd_session",
+                   return_value=None):
+            result = clangd_hover("test.c", 1, 1)
+        assert "ERROR" in result

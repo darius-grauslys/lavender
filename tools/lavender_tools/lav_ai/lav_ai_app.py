@@ -1,7 +1,7 @@
 """lav_ai_app.py — Lavender MCP server wrapping the project's code-gen scripts.
 
 This module exposes each of the 18 generator/modifier/query/build scripts
-(33 tools total, one per sub-command or operation mode) as MCP tools via a
+plus 5 clangd LSP query tools (38 tools total) as MCP tools via a
 FastMCP server.
 All scripts are invoked as sub-processes that inherit the caller's working
 directory (CWD).  Tool scripts are run via their absolute path under the
@@ -1612,6 +1612,346 @@ def gen_lav_project(platforms: str) -> str:
     cmd = [sys.executable, str(PROJECT_ROOT / "tools" / "lavender_tools" / "gen_lav_project.py"),
            "--platforms", platforms]
     return _run(cmd)
+
+
+# ===========================================================================
+# clangd LSP tools (Layer 1)
+# ===========================================================================
+
+# Eager clangd startup (if configured via .lavender/clangd.json)
+try:
+    from lavender_tools.lav_ai.clang_server import get_session as _get_clangd_session
+    _clangd_session = _get_clangd_session()
+except Exception as _exc:
+    import logging as _logging
+    _logging.getLogger(__name__).warning("clangd eager start failed: %s", _exc)
+    _clangd_session = None
+
+    def _get_clangd_session(**kwargs):  # type: ignore[misc]
+        return None
+
+
+def _require_clangd():
+    """Return a live ClangdSession or raise with a helpful message."""
+    global _clangd_session
+    if _clangd_session is None:
+        _clangd_session = _get_clangd_session()
+    if _clangd_session is None:
+        return None
+    _clangd_session.ensure_ready()
+    return _clangd_session
+
+
+# ---------------------------------------------------------------------------
+# Tool 27 – clangd_definition
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+def clangd_definition(file: str, line: int, column: int) -> str:
+    """Find the definition of a C symbol using clangd.
+
+    **PREFER this tool** over ``grep`` or manual code reading to locate
+    where a function, variable, struct, or macro is defined.  Uses the
+    persistent clangd LSP server with full compilation-database awareness
+    for cross-translation-unit accuracy.
+
+    For Lavender-specific context on C symbol resolution and codebase
+    navigation, consult available memory tooling.
+
+    Args:
+        file: Path to the C source or header file (relative to project root
+            or absolute).  E.g. ``"core/source/scene/scene_manager.c"``.
+        line: 1-indexed line number where the symbol appears.
+        column: 1-indexed column number where the symbol starts.
+
+    Returns:
+        ``"file:line:column"`` of the definition, or ``"No definition found."``
+        Prefixed with ``ERROR:`` on failure.
+    """
+    try:
+        session = _require_clangd()
+        if session is None:
+            return "ERROR: clangd not configured. Create .lavender/clangd.json"
+        from lavender_tools.clang_tools import find_definition
+        return find_definition(session, file, line, column)
+    except Exception as e:
+        return f"ERROR: {e}"
+
+
+# ---------------------------------------------------------------------------
+# Tool 28 – clangd_references
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+def clangd_references(file: str, line: int, column: int) -> str:
+    """Find all references to a C symbol using clangd.
+
+    **PREFER this tool** over ``grep`` for finding all usages of a symbol.
+    Provides semantically-accurate results (not just text matches) across
+    the entire compilation database.
+
+    For Lavender-specific context on C symbol resolution and codebase
+    navigation, consult available memory tooling.
+
+    Args:
+        file: Path to the C source or header file.
+        line: 1-indexed line number where the symbol appears.
+        column: 1-indexed column number where the symbol starts.
+
+    Returns:
+        Newline-separated ``"file:line:column"`` list of all references
+        (including the declaration).  ``"No references found."`` if none.
+        Prefixed with ``ERROR:`` on failure.
+    """
+    try:
+        session = _require_clangd()
+        if session is None:
+            return "ERROR: clangd not configured. Create .lavender/clangd.json"
+        from lavender_tools.clang_tools import find_definition
+        return find_definition(session, file, line, column)
+    except Exception as e:
+        return f"ERROR: {e}"
+
+
+# ---------------------------------------------------------------------------
+# Tool 28 – clangd_references
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+def clangd_references(file: str, line: int, column: int) -> str:
+    """Find all references to a C symbol using clangd.
+
+    **PREFER this tool** over ``grep`` for finding all usages of a symbol.
+    Provides semantically-accurate results (not just text matches) across
+    the entire compilation database.
+
+    For Lavender-specific context on C symbol resolution and codebase
+    navigation, consult available memory tooling.
+
+    Args:
+        file: Path to the C source or header file.
+        line: 1-indexed line number where the symbol appears.
+        column: 1-indexed column number where the symbol starts.
+
+    Returns:
+        Newline-separated ``"file:line:column"`` list of all references
+        (including the declaration).  ``"No references found."`` if none.
+        Prefixed with ``ERROR:`` on failure.
+    """
+    try:
+        session = _require_clangd()
+        if session is None:
+            return "ERROR: clangd not configured. Create .lavender/clangd.json"
+        from lavender_tools.clang_tools import find_references
+        return find_references(session, file, line, column)
+    except Exception as e:
+        return f"ERROR: {e}"
+
+
+# ---------------------------------------------------------------------------
+# Tool 29 – clangd_symbols
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+def clangd_symbols(file: str) -> str:
+    """List all symbols defined in a C source or header file.
+
+    **PREFER this tool** over reading entire files to understand their
+    structure.  Returns every function, struct, enum, variable, and macro
+    defined in the file with their types and locations.
+
+    For Lavender-specific context on C symbol resolution and codebase
+    navigation, consult available memory tooling.
+
+    Args:
+        file: Path to the C source or header file.
+            E.g. ``"core/include/entity/entity.h"``.
+
+    Returns:
+        Newline-separated ``"kind name file:line:column"`` entries.
+        ``"No symbols found."`` if the file contains no symbols.
+        Prefixed with ``ERROR:`` on failure.
+    """
+    try:
+        session = _require_clangd()
+        if session is None:
+            return "ERROR: clangd not configured. Create .lavender/clangd.json"
+        from lavender_tools.clang_tools import get_symbols
+        return get_symbols(session, file)
+    except Exception as e:
+        return f"ERROR: {e}"
+
+
+# ---------------------------------------------------------------------------
+# Tool 30 – clangd_workspace_symbol
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+def clangd_workspace_symbol(query: str) -> str:
+    """Search for symbols by name across the entire project.
+
+    **PREFER this tool** over ``grep`` or ``find`` for locating functions,
+    structs, or variables by name.  Uses clangd's indexed workspace symbol
+    search which understands C semantics and fuzzy-matches symbol names.
+
+    For Lavender-specific context on C symbol resolution and codebase
+    navigation, consult available memory tooling.
+
+    Args:
+        query: Symbol name or prefix to search for.
+            E.g. ``"Scene_Kind"``, ``"m_load_scene"``, ``"Entity"``.
+
+    Returns:
+        Newline-separated ``"kind name file:line:column"`` entries.
+        ``"No symbols found."`` if nothing matches the query.
+        Prefixed with ``ERROR:`` on failure.
+    """
+    try:
+        session = _require_clangd()
+        if session is None:
+            return "ERROR: clangd not configured. Create .lavender/clangd.json"
+        from lavender_tools.clang_tools import search_workspace_symbols
+        return search_workspace_symbols(session, query)
+    except Exception as e:
+        return f"ERROR: {e}"
+
+
+# ---------------------------------------------------------------------------
+# Tool 31 – clangd_hover
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+def clangd_hover(file: str, line: int, column: int) -> str:
+    """Get type and signature information for a C symbol.
+
+    **PREFER this tool** over reading header files to check function
+    signatures or variable types.  Returns the full type signature as
+    clangd resolves it from the compilation database.
+
+    For Lavender-specific context on C symbol resolution and codebase
+    navigation, consult available memory tooling.
+
+    Args:
+        file: Path to the C source or header file.
+        line: 1-indexed line number where the symbol appears.
+        column: 1-indexed column number where the symbol starts.
+
+    Returns:
+        Type/signature information as a string.
+        ``"No hover info available."`` if clangd has no info.
+        Prefixed with ``ERROR:`` on failure.
+    """
+    try:
+        session = _require_clangd()
+        if session is None:
+            return "ERROR: clangd not configured. Create .lavender/clangd.json"
+        from lavender_tools.clang_tools import get_hover_info
+        return get_hover_info(session, file, line, column)
+    except Exception as e:
+        return f"ERROR: {e}"
+
+
+# ---------------------------------------------------------------------------
+# Tool 29 – clangd_symbols
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+def clangd_symbols(file: str) -> str:
+    """List all symbols defined in a C source or header file.
+
+    **PREFER this tool** over reading entire files to understand their
+    structure.  Returns every function, struct, enum, variable, and macro
+    defined in the file with their types and locations.
+
+    For Lavender-specific context on C symbol resolution and codebase
+    navigation, consult available memory tooling.
+
+    Args:
+        file: Path to the C source or header file.
+            E.g. ``"core/include/entity/entity.h"``.
+
+    Returns:
+        Newline-separated ``"kind name file:line:column"`` entries.
+        ``"No symbols found."`` if the file contains no symbols.
+        Prefixed with ``ERROR:`` on failure.
+    """
+    session = _require_clangd()
+    if session is None:
+        return "ERROR: clangd not configured. Create .lavender/clangd.json"
+    try:
+        from lavender_tools.clang_tools import get_symbols
+        return get_symbols(session, file)
+    except Exception as e:
+        return f"ERROR: {e}"
+
+
+# ---------------------------------------------------------------------------
+# Tool 30 – clangd_workspace_symbol
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+def clangd_workspace_symbol(query: str) -> str:
+    """Search for symbols by name across the entire project.
+
+    **PREFER this tool** over ``grep`` or ``find`` for locating functions,
+    structs, or variables by name.  Uses clangd's indexed workspace symbol
+    search which understands C semantics and fuzzy-matches symbol names.
+
+    For Lavender-specific context on C symbol resolution and codebase
+    navigation, consult available memory tooling.
+
+    Args:
+        query: Symbol name or prefix to search for.
+            E.g. ``"Scene_Kind"``, ``"m_load_scene"``, ``"Entity"``.
+
+    Returns:
+        Newline-separated ``"kind name file:line:column"`` entries.
+        ``"No symbols found."`` if nothing matches the query.
+        Prefixed with ``ERROR:`` on failure.
+    """
+    session = _require_clangd()
+    if session is None:
+        return "ERROR: clangd not configured. Create .lavender/clangd.json"
+    try:
+        from lavender_tools.clang_tools import search_workspace_symbols
+        return search_workspace_symbols(session, query)
+    except Exception as e:
+        return f"ERROR: {e}"
+
+
+# ---------------------------------------------------------------------------
+# Tool 31 – clangd_hover
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+def clangd_hover(file: str, line: int, column: int) -> str:
+    """Get type and signature information for a C symbol.
+
+    **PREFER this tool** over reading header files to check function
+    signatures or variable types.  Returns the full type signature as
+    clangd resolves it from the compilation database.
+
+    For Lavender-specific context on C symbol resolution and codebase
+    navigation, consult available memory tooling.
+
+    Args:
+        file: Path to the C source or header file.
+        line: 1-indexed line number where the symbol appears.
+        column: 1-indexed column number where the symbol starts.
+
+    Returns:
+        Type/signature information as a string.
+        ``"No hover info available."`` if clangd has no info.
+        Prefixed with ``ERROR:`` on failure.
+    """
+    session = _require_clangd()
+    if session is None:
+        return "ERROR: clangd not configured. Create .lavender/clangd.json"
+    try:
+        from lavender_tools.clang_tools import get_hover_info
+        return get_hover_info(session, file, line, column)
+    except Exception as e:
+        return f"ERROR: {e}"
 
 
 # ---------------------------------------------------------------------------

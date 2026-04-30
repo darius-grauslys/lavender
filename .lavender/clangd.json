@@ -1,0 +1,8 @@
+{
+    "clangd_path": "/usr/lib/llvm/21/bin/clangd",
+    "compile_commands_path": "compile_commands.json",
+    "startup": "eager",
+    "restart_on_failure": true,
+    "initialization_timeout_seconds": 30,
+    "request_timeout_seconds": 10
+}

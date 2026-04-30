@@ -2,3 +2,5 @@ pyglet
 mcp[cli]
 Pillow
 pytest
+pygls>=2.1.1
+clang>=21.1.7
