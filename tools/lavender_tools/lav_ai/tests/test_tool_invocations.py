@@ -7,6 +7,7 @@ CWD).  Return-value handling (success vs non-zero exit) is also tested.
 
 from pathlib import Path
 from unittest.mock import MagicMock, patch
+import json
 
 import pytest
 
@@ -45,6 +46,11 @@ from lavender_tools.lav_ai.lav_ai_app import (
     query_tools_search,
     read_png,
     read_png_meta,
+    scan_ui,
+    scan_entity,
+    scan_scene,
+    scan_textures,
+    scan_game_actions,
     clangd_definition,
     clangd_references,
     clangd_symbols,
@@ -1933,3 +1939,107 @@ class TestClangdHover:
                    return_value=None):
             result = clangd_hover("test.c", 1, 1)
         assert "ERROR" in result
+
+class TestScanUiMcp:
+    def test_returns_json_on_success(self):
+        mock_result = {"tool": "scan_ui", "summary": {"total_checked": 1, "passed": 1, "warnings": 0, "errors": 0}, "results": []}
+        with patch("lavender_tools.scan_ui.run", return_value=mock_result):
+            result = scan_ui()
+        parsed = json.loads(result)
+        assert parsed["tool"] == "scan_ui"
+
+    def test_default_project_root_uses_cwd(self):
+        mock_result = {"tool": "scan_ui", "summary": {}, "results": [], "project_root": "/test"}
+        with patch("lavender_tools.scan_ui.run", return_value=mock_result) as mock_run:
+            scan_ui()
+        call_args = mock_run.call_args[0]
+        assert len(call_args[0]) > 0
+
+    def test_exception_returns_error(self):
+        with patch("lavender_tools.scan_ui.run", side_effect=RuntimeError("boom")):
+            result = scan_ui()
+        assert result.startswith("ERROR:")
+
+
+class TestScanEntityMcp:
+    def test_returns_json_on_success(self):
+        mock_result = {"tool": "scan_entity", "summary": {"total_checked": 1, "passed": 1, "warnings": 0, "errors": 0}, "results": []}
+        with patch("lavender_tools.scan_entity.run", return_value=mock_result):
+            result = scan_entity()
+        parsed = json.loads(result)
+        assert parsed["tool"] == "scan_entity"
+
+    def test_default_project_root_uses_cwd(self):
+        mock_result = {"tool": "scan_entity", "summary": {}, "results": [], "project_root": "/test"}
+        with patch("lavender_tools.scan_entity.run", return_value=mock_result) as mock_run:
+            scan_entity()
+        call_args = mock_run.call_args[0]
+        assert len(call_args[0]) > 0
+
+    def test_exception_returns_error(self):
+        with patch("lavender_tools.scan_entity.run", side_effect=RuntimeError("boom")):
+            result = scan_entity()
+        assert result.startswith("ERROR:")
+
+
+class TestScanSceneMcp:
+    def test_returns_json_on_success(self):
+        mock_result = {"tool": "scan_scene", "summary": {"total_checked": 1, "passed": 1, "warnings": 0, "errors": 0}, "results": []}
+        with patch("lavender_tools.scan_scene.run", return_value=mock_result):
+            result = scan_scene()
+        parsed = json.loads(result)
+        assert parsed["tool"] == "scan_scene"
+
+    def test_default_project_root_uses_cwd(self):
+        mock_result = {"tool": "scan_scene", "summary": {}, "results": [], "project_root": "/test"}
+        with patch("lavender_tools.scan_scene.run", return_value=mock_result) as mock_run:
+            scan_scene()
+        call_args = mock_run.call_args[0]
+        assert len(call_args[0]) > 0
+
+    def test_exception_returns_error(self):
+        with patch("lavender_tools.scan_scene.run", side_effect=RuntimeError("boom")):
+            result = scan_scene()
+        assert result.startswith("ERROR:")
+
+
+class TestScanTexturesMcp:
+    def test_returns_json_on_success(self):
+        mock_result = {"tool": "scan_textures", "summary": {"total_checked": 1, "passed": 1, "warnings": 0, "errors": 0}, "results": []}
+        with patch("lavender_tools.scan_textures.run", return_value=mock_result):
+            result = scan_textures()
+        parsed = json.loads(result)
+        assert parsed["tool"] == "scan_textures"
+
+    def test_default_project_root_uses_cwd(self):
+        mock_result = {"tool": "scan_textures", "summary": {}, "results": [], "project_root": "/test"}
+        with patch("lavender_tools.scan_textures.run", return_value=mock_result) as mock_run:
+            scan_textures()
+        call_args = mock_run.call_args[0]
+        assert len(call_args[0]) > 0
+
+    def test_exception_returns_error(self):
+        with patch("lavender_tools.scan_textures.run", side_effect=RuntimeError("boom")):
+            result = scan_textures()
+        assert result.startswith("ERROR:")
+
+
+class TestScanGameActionsMcp:
+    def test_returns_json_on_success(self):
+        mock_result = {"tool": "scan_game_actions", "summary": {"total_checked": 1, "passed": 1, "warnings": 0, "errors": 0}, "results": []}
+        with patch("lavender_tools.scan_game_actions.run", return_value=mock_result):
+            result = scan_game_actions()
+        parsed = json.loads(result)
+        assert parsed["tool"] == "scan_game_actions"
+
+    def test_default_project_root_uses_cwd(self):
+        mock_result = {"tool": "scan_game_actions", "summary": {}, "results": [], "project_root": "/test"}
+        with patch("lavender_tools.scan_game_actions.run", return_value=mock_result) as mock_run:
+            scan_game_actions()
+        call_args = mock_run.call_args[0]
+        assert len(call_args[0]) > 0
+
+    def test_exception_returns_error(self):
+        with patch("lavender_tools.scan_game_actions.run", side_effect=RuntimeError("boom")):
+            result = scan_game_actions()
+        assert result.startswith("ERROR:")

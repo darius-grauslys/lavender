@@ -1,7 +1,7 @@
 """lav_ai_app.py — Lavender MCP server wrapping the project's code-gen scripts.
 
 This module exposes each of the 18 generator/modifier/query/build scripts
-plus 5 clangd LSP query tools (38 tools total) as MCP tools via a
+plus 5 clangd LSP query tools (43 tools total) as MCP tools via a
 FastMCP server.
 All scripts are invoked as sub-processes that inherit the caller's working
 directory (CWD).  Tool scripts are run via their absolute path under the
@@ -1950,6 +1950,164 @@ def clangd_hover(file: str, line: int, column: int) -> str:
     try:
         from lavender_tools.clang_tools import get_hover_info
         return get_hover_info(session, file, line, column)
+    except Exception as e:
+        return f"ERROR: {e}"
+
+
+
+# ---------------------------------------------------------------------------
+# Tool 32 – scan_ui (UI handler verification)
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+def scan_ui(project_root: str = "") -> str:
+    """Analyze UI XML files and verify C handler references.
+
+    **PREFER this tool** over manually checking whether UI handler
+    function names in XML actually exist as defined C symbols.  Parses
+    all UI XML files, extracts handler references, and uses clangd to
+    verify each one resolves to a real definition.
+
+    For Lavender-specific context on UI handler verification and
+    XML-to-C tracing, consult available memory tooling.
+
+    Args:
+        project_root: Project root directory path.  Defaults to CWD
+            if empty.
+
+    Returns:
+        JSON analysis report with per-check results.
+        Prefixed with ``ERROR:`` on failure.
+    """
+    try:
+        root = project_root or str(Path.cwd())
+        from lavender_tools.scan_ui import run as _scan_ui_run
+        result = _scan_ui_run(root)
+        return json.dumps(result, indent=2)
+    except Exception as e:
+        return f"ERROR: {e}"
+
+# ---------------------------------------------------------------------------
+# Tool 33 – scan_entity (Entity handler verification)
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+def scan_entity(project_root: str = "") -> str:
+    """Verify entity lifecycle handlers exist and are correctly wired.
+
+    **PREFER this tool** over manually checking entity handlers.
+    Parses entity registrations and verifies that all expected
+    update, dispose, enable, and disable handlers actually exist via clangd.
+
+    For Lavender-specific context on entity lifecycle handler verification,
+    consult available memory tooling.
+
+    Args:
+        project_root: Project root directory path.  Defaults to CWD
+            if empty.
+
+    Returns:
+        JSON analysis report with per-check results.
+        Prefixed with ``ERROR:`` on failure.
+    """
+    try:
+        root = project_root or str(Path.cwd())
+        from lavender_tools.scan_entity import run as _scan_entity_run
+        result = _scan_entity_run(root)
+        return json.dumps(result, indent=2)
+    except Exception as e:
+        return f"ERROR: {e}"
+
+# ---------------------------------------------------------------------------
+# Tool 34 – scan_scene (Scene handler verification)
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+def scan_scene(project_root: str = "") -> str:
+    """Verify scene handlers exist and trace scene-to-UI relationships.
+
+    **PREFER this tool** over manually checking scene handlers.
+    Parses scene registrations and verifies that load, enter, and unload
+    handlers exist. Also checks scene transitions and UI window references.
+
+    For Lavender-specific context on scene lifecycle verification,
+    consult available memory tooling.
+
+    Args:
+        project_root: Project root directory path.  Defaults to CWD
+            if empty.
+
+    Returns:
+        JSON analysis report with per-check results.
+        Prefixed with ``ERROR:`` on failure.
+    """
+    try:
+        root = project_root or str(Path.cwd())
+        from lavender_tools.scan_scene import run as _scan_scene_run
+        result = _scan_scene_run(root)
+        return json.dumps(result, indent=2)
+    except Exception as e:
+        return f"ERROR: {e}"
+
+# ---------------------------------------------------------------------------
+# Tool 35 – scan_textures (Texture handler verification)
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+def scan_textures(project_root: str = "") -> str:
+    """Detect orphaned and missing texture registrations.
+
+    **PREFER this tool** over manually searching for unused texture aliases.
+    Uses clangd to cross-reference registered aliases against actual codebase
+    usage and verifies backing PNG files exist.
+
+    For Lavender-specific context on texture registration verification,
+    consult available memory tooling.
+
+    Args:
+        project_root: Project root directory path.  Defaults to CWD
+            if empty.
+
+    Returns:
+        JSON analysis report with per-check results.
+        Prefixed with ``ERROR:`` on failure.
+    """
+    try:
+        root = project_root or str(Path.cwd())
+        from lavender_tools.scan_textures import run as _scan_textures_run
+        result = _scan_textures_run(root)
+        return json.dumps(result, indent=2)
+    except Exception as e:
+        return f"ERROR: {e}"
+
+# ---------------------------------------------------------------------------
+# Tool 36 – scan_game_actions (Game Action handler verification)
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+def scan_game_actions(project_root: str = "") -> str:
+    """Verify game action handlers and registration modes.
+
+    **PREFER this tool** over manually checking game action handlers.
+    Parses game action kinds and verifies that process handlers exist for each,
+    while auditing their offline/client/server registration modes.
+
+    For Lavender-specific context on game action handler verification,
+    consult available memory tooling.
+
+    Args:
+        project_root: Project root directory path.  Defaults to CWD
+            if empty.
+
+    Returns:
+        JSON analysis report with per-check results.
+        Prefixed with ``ERROR:`` on failure.
+    """
+    try:
+        root = project_root or str(Path.cwd())
+        from lavender_tools.scan_game_actions import run as _scan_game_actions_run
+        result = _scan_game_actions_run(root)
+        return json.dumps(result, indent=2)
     except Exception as e:
         return f"ERROR: {e}"
 

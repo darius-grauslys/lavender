@@ -1,7 +1,7 @@
 """test_mcp_transport.py — Verify the FastMCP server's tool registry.
 
 Directly inspects the FastMCP instance's internal tool manager to confirm:
-  - Exactly 38 tools are registered (18 scripts + 5 clangd tools, 38 total).
+  - Exactly 43 tools are registered (23 scripts + 5 clangd tools, 43 total).
   - Each expected tool name is present.
   - Every tool has a non-empty description.
 """
@@ -53,9 +53,14 @@ EXPECTED_TOOL_NAMES = {
     "clangd_symbols",
     "clangd_workspace_symbol",
     "clangd_hover",
+    "scan_ui",
+    "scan_entity",
+    "scan_scene",
+    "scan_textures",
+    "scan_game_actions",
 }
 
-EXPECTED_TOOL_COUNT = 38
+EXPECTED_TOOL_COUNT = 43
 
 
 # ---------------------------------------------------------------------------
