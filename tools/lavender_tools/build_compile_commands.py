@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """build_compile_commands.py — Generate compile_commands.json.
 
-Runs a build via Bear to intercept compiler invocations and produce
-compile_commands.json at the project root.  Includes performance
-metrics by default.
+Delegates to ``make compile_commands`` which handles Bear invocation,
+output paths (``build/<platform>/compile_commands.json``), and symlinking
+the result to the project root.  Includes performance metrics by default.
 
 Usage:
-    python tools/build_compile_commands.py --platform sdl
-    python tools/build_compile_commands.py --platform sdl --flags "-ggdb -w"
-    python tools/build_compile_commands.py --platform sdl --game-dir /path/to/MyGame
+    python tools/lavender_tools/build_compile_commands.py --platform sdl
+    python tools/lavender_tools/build_compile_commands.py --platform sdl --flags "-ggdb -w"
+    python tools/lavender_tools/build_compile_commands.py --platform sdl --game-dir /path/to/MyGame
 """
 
 from __future__ import annotations
@@ -30,7 +30,7 @@ def _get_lavender_dir() -> str:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Generate compile_commands.json via Bear.",
+        description="Generate compile_commands.json via make compile_commands.",
     )
     parser.add_argument(
         "--platform", required=True,
@@ -51,12 +51,15 @@ def main() -> int:
     lavender_dir = _get_lavender_dir()
     nproc = multiprocessing.cpu_count()
 
-    # Determine output location for compile_commands.json
+    # Determine output reporting path (Makefile symlinks here)
     game_dir = os.path.abspath(args.game_dir) if args.game_dir else lavender_dir
     output_json = os.path.join(game_dir, "compile_commands.json")
 
-    make_cmd = [
+    # Delegate to the Makefile's compile_commands target which handles
+    # bear invocation, output path (build/<platform>/), and symlinking.
+    cmd = [
         "make",
+        "compile_commands",
         f"-j{nproc}",
         "-f", os.path.join(lavender_dir, "Makefile"),
         "-e", f"PLATFORM={args.platform}",
@@ -65,15 +68,7 @@ def main() -> int:
     ]
 
     if args.game_dir:
-        make_cmd.extend(["-e", f"GAME_DIR={os.path.abspath(args.game_dir)}"])
-
-    # Wrap with Bear
-    cmd = [
-        "bear",
-        "--output", output_json,
-        "--force-preload",
-        "--",
-    ] + make_cmd
+        cmd.extend(["-e", f"GAME_DIR={os.path.abspath(args.game_dir)}"])
 
     print(f"=== Generating compile_commands.json ({args.platform}, -j{nproc}) ===")
 

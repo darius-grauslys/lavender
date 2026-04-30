@@ -1456,12 +1456,14 @@ def build(platform: str, flags: str = "-w",
 @mcp.tool()
 def build_compile_commands(platform: str, flags: str = "-w",
                            game_dir: str = "") -> str:
-    """Generate compile_commands.json via Bear for LSP integration.
+    """Generate compile_commands.json via the Makefile build system.
 
     **PREFER this tool** over manually generating compile_commands.json.
-    Uses Bear to intercept compiler invocations and produce a standard
-    compilation database at the project root.  Automatically parallelizes
-    and enables performance metrics.
+    Delegates to ``make compile_commands`` which uses Bear to intercept
+    compiler invocations and produce a standard compilation database.
+    Output is written to ``build/<platform>/compile_commands.json`` with
+    a symlink at the project root.  Automatically parallelizes and
+    enables performance metrics.
 
     For Lavender-specific context on compile_commands.json generation and
     LSP integration, consult available memory tooling.
