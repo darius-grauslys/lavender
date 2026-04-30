@@ -23,6 +23,8 @@ import xml.etree.ElementTree as ET
 from collections import deque
 from typing import Dict, List, Optional, Sequence, Tuple
 
+from lavender_tools import tool_manifest
+
 # ---------------------------------------------------------------------------
 # Tiny XML helpers
 # ---------------------------------------------------------------------------
@@ -1024,9 +1026,14 @@ def _write_output(config: Config, state: GeneratorState) -> None:
     ]:
         rel = getattr(config, attr)
         full = os.path.join(config.base_dir, rel)
+        existed = os.path.isfile(full)
         os.makedirs(os.path.dirname(full), exist_ok=True)
         with open(full, "w") as fh:
             fh.write(writer.get_source())
+        if existed:
+            tool_manifest.record_modify(full)
+        else:
+            tool_manifest.record_create(full)
         print(f"  [wrote] {full}")
 
 
@@ -1106,6 +1113,7 @@ def _update_ui_window_registrar(config: Config) -> None:
 
     with open(registrar_path, "w") as fh:
         fh.write("\n".join(lines))
+    tool_manifest.record_modify(registrar_path)
 
     print(f"  [registrar] added {func_name} to {registrar_path}")
 

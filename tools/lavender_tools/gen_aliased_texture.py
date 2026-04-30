@@ -18,6 +18,8 @@ import struct
 import sys
 import zlib
 
+from lavender_tools import tool_manifest
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -75,9 +77,14 @@ def _read(path):
 
 
 def _write(path, content):
+    existed = os.path.isfile(path)
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w") as f:
         f.write(content)
+    if existed:
+        tool_manifest.record_modify(path)
+    else:
+        tool_manifest.record_create(path)
 
 
 def _validate_name(name):

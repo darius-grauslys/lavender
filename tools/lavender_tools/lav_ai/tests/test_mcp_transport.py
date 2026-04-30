@@ -1,20 +1,14 @@
 """test_mcp_transport.py — Verify the FastMCP server's tool registry.
 
 Directly inspects the FastMCP instance's internal tool manager to confirm:
-  - Exactly 28 tools are registered (13 scripts, 28 tools total).
+  - Exactly 33 tools are registered (18 scripts, 33 tools total).
   - Each expected tool name is present.
   - Every tool has a non-empty description.
 """
 
-import sys
-from pathlib import Path
-
 import pytest
 
-# Ensure the tools/ directory is importable.
-sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-
-from lav_ai.lav_ai_app import mcp as lavender_mcp
+from lavender_tools.lav_ai.lav_ai_app import mcp as lavender_mcp
 
 # ---------------------------------------------------------------------------
 # Expected tool names
@@ -49,9 +43,14 @@ EXPECTED_TOOL_NAMES = {
     "query_agents_search_prompts",
     "query_agents_search_permissions",
     "query_agents_verify_clean",
+    "build",
+    "build_compile_commands",
+    "build_spot_check",
+    "gen_scene",
+    "gen_lav_project",
 }
 
-EXPECTED_TOOL_COUNT = 28
+EXPECTED_TOOL_COUNT = 33
 
 
 # ---------------------------------------------------------------------------

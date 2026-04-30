@@ -5,18 +5,19 @@ list is built and that cwd is NOT passed (subprocesses inherit the caller's
 CWD).  Return-value handling (success vs non-zero exit) is also tested.
 """
 
-import sys
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
 
-# Ensure the tools/ directory is importable so ``lav_ai`` is a top-level pkg.
-sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-
-from lav_ai.lav_ai_app import (
+from lavender_tools.lav_ai.lav_ai_app import (
     PROJECT_ROOT,
+    build,
+    build_compile_commands,
+    build_spot_check,
     gen_aliased_texture,
+    gen_lav_project,
+    gen_scene,
     gen_entity,
     gen_game_action,
     gen_png,
@@ -69,8 +70,8 @@ def _patch_run(return_value):
     Most tests only care about command construction, not the guard.  Tests
     for the guard itself override the CWD mock explicitly.
     """
-    run_patch = patch("lav_ai.lav_ai_app.subprocess.run", return_value=return_value)
-    cwd_patch = patch("lav_ai.lav_ai_app.Path.cwd", return_value=_FAKE_GAME_DIR)
+    run_patch = patch("lavender_tools.lav_ai.lav_ai_app.subprocess.run", return_value=return_value)
+    cwd_patch = patch("lavender_tools.lav_ai.lav_ai_app.Path.cwd", return_value=_FAKE_GAME_DIR)
 
     class _CombinedContext:
         """Context manager that stacks both patches and returns the *run* mock."""
@@ -97,7 +98,7 @@ class TestGenUiCode:
             result = gen_ui_code("my_ui.xml")
         mock_run.assert_called_once()
         cmd = mock_run.call_args[0][0]
-        assert cmd[1] == str(PROJECT_ROOT / "tools" / "gen_ui_code.py")
+        assert cmd[1] == str(PROJECT_ROOT / "tools" / "lavender_tools" / "gen_ui_code.py")
         assert "my_ui.xml" in cmd
         assert "cwd" not in mock_run.call_args.kwargs
 
@@ -134,7 +135,7 @@ class TestGenUiCreate:
             result = gen_ui_create("my_screen.xml")
         mock_run.assert_called_once()
         cmd = mock_run.call_args[0][0]
-        assert cmd[1] == str(PROJECT_ROOT / "tools" / "gen_ui.py")
+        assert cmd[1] == str(PROJECT_ROOT / "tools" / "lavender_tools" / "gen_ui.py")
         assert "create" in cmd
         assert "my_screen.xml" in cmd
 
@@ -264,7 +265,7 @@ class TestGenGameAction:
         with _patch_run(proc) as mock_run:
             gen_game_action("collisions/aabb/update.h")
         cmd = mock_run.call_args[0][0]
-        assert cmd[1] == str(PROJECT_ROOT / "tools" / "gen_game_action.py")
+        assert cmd[1] == str(PROJECT_ROOT / "tools" / "lavender_tools" / "gen_game_action.py")
         assert "collisions/aabb/update.h" in cmd
         assert "-v" not in cmd
 
@@ -305,7 +306,7 @@ class TestGenSpriteKind:
         with _patch_run(proc) as mock_run:
             gen_sprite_kind("Player")
         cmd = mock_run.call_args[0][0]
-        assert str(PROJECT_ROOT / "tools" / "gen_sprite.py") in cmd
+        assert str(PROJECT_ROOT / "tools" / "lavender_tools" / "gen_sprite.py") in cmd
         assert "sprite" in cmd
         assert "--name" in cmd
         assert "Player" in cmd
@@ -415,7 +416,7 @@ class TestGenPng:
         with _patch_run(proc) as mock_run:
             gen_png("sprites/player.png", 32, 4, 4)
         cmd = mock_run.call_args[0][0]
-        assert str(PROJECT_ROOT / "tools" / "gen_png.py") in cmd
+        assert str(PROJECT_ROOT / "tools" / "lavender_tools" / "gen_png.py") in cmd
         assert "--output" in cmd
         assert "sprites/player.png" in cmd
         assert "--frame-resolution" in cmd
@@ -462,7 +463,7 @@ class TestGenTile:
         with _patch_run(proc) as mock_run:
             gen_tile("Ground", "Grass")
         cmd = mock_run.call_args[0][0]
-        assert str(PROJECT_ROOT / "tools" / "gen_tile.py") in cmd
+        assert str(PROJECT_ROOT / "tools" / "lavender_tools" / "gen_tile.py") in cmd
         assert "--layer" in cmd
         assert "Ground" in cmd
         assert "--name" in cmd
@@ -506,7 +507,7 @@ class TestGenTileLayerName:
         with _patch_run(proc) as mock_run:
             gen_tile_layer_name("Ground", 10, 4, 4)
         cmd = mock_run.call_args[0][0]
-        assert str(PROJECT_ROOT / "tools" / "gen_tile_layer.py") in cmd
+        assert str(PROJECT_ROOT / "tools" / "lavender_tools" / "gen_tile_layer.py") in cmd
         assert "name" in cmd
         assert "--name" in cmd
         assert "Ground" in cmd
@@ -577,7 +578,7 @@ class TestGenEntity:
         with _patch_run(proc) as mock_run:
             gen_entity("Player")
         cmd = mock_run.call_args[0][0]
-        assert str(PROJECT_ROOT / "tools" / "gen_entity.py") in cmd
+        assert str(PROJECT_ROOT / "tools" / "lavender_tools" / "gen_entity.py") in cmd
         assert "--name" in cmd
         assert "Player" in cmd
 
@@ -711,7 +712,7 @@ class TestGenAliasedTexture:
         with _patch_run(proc) as mock_run:
             gen_aliased_texture("ground", "assets/world/ground.png")
         cmd = mock_run.call_args[0][0]
-        assert str(PROJECT_ROOT / "tools" / "gen_aliased_texture.py") in cmd
+        assert str(PROJECT_ROOT / "tools" / "lavender_tools" / "gen_aliased_texture.py") in cmd
         assert "--name" in cmd
         assert "ground" in cmd
         assert "--path" in cmd
@@ -761,7 +762,7 @@ class TestGenUiTileKind:
         with _patch_run(proc) as mock_run:
             gen_ui_tile_kind("Background_Fill", "104")
         cmd = mock_run.call_args[0][0]
-        assert str(PROJECT_ROOT / "tools" / "gen_ui_tile_kind.py") in cmd
+        assert str(PROJECT_ROOT / "tools" / "lavender_tools" / "gen_ui_tile_kind.py") in cmd
         assert "--name" in cmd
         assert "Background_Fill" in cmd
         assert "--value" in cmd
@@ -817,7 +818,7 @@ class TestGenUiTileKind:
 # Shared helpers for mod_png / read_png test classes
 # ---------------------------------------------------------------------------
 
-_MOD_PNG_SCRIPT = str(PROJECT_ROOT / "tools" / "mod_png.py")
+_MOD_PNG_SCRIPT = str(PROJECT_ROOT / "tools" / "lavender_tools" / "mod_png.py")
 
 
 def _extract_op_json(cmd):
@@ -1195,8 +1196,8 @@ class TestModPngCondense:
 # Query tools helpers
 # ---------------------------------------------------------------------------
 
-_QUERY_TOOLS_SCRIPT = str(PROJECT_ROOT / "tools" / "lav_query_tools.py")
-_QUERY_AGENTS_SCRIPT = str(PROJECT_ROOT / "tools" / "lav_query_agents.py")
+_QUERY_TOOLS_SCRIPT = str(PROJECT_ROOT / "tools" / "lavender_tools" / "lav_query_tools.py")
+_QUERY_AGENTS_SCRIPT = str(PROJECT_ROOT / "tools" / "lavender_tools" / "lav_query_agents.py")
 
 
 # ---------------------------------------------------------------------------
@@ -1442,7 +1443,7 @@ class TestLavenderDirGuard:
         """When CWD == PROJECT_ROOT, _run() must return an error without calling subprocess."""
         proc = _make_completed_process()
         with _patch_run(proc) as mock_run, \
-             patch("lav_ai.lav_ai_app.Path.cwd", return_value=PROJECT_ROOT):
+             patch("lavender_tools.lav_ai.lav_ai_app.Path.cwd", return_value=PROJECT_ROOT):
             result = gen_sprite_kind("Test")
         mock_run.assert_not_called()
         assert "ERROR" in result
@@ -1454,7 +1455,7 @@ class TestLavenderDirGuard:
         proc = _make_completed_process(stdout="ok\n")
         fake_game_dir = PROJECT_ROOT / "nonexistent_game_project"
         with _patch_run(proc) as mock_run, \
-             patch("lav_ai.lav_ai_app.Path.cwd", return_value=fake_game_dir):
+             patch("lavender_tools.lav_ai.lav_ai_app.Path.cwd", return_value=fake_game_dir):
             result = gen_sprite_kind("Test")
         mock_run.assert_called_once()
         assert "ok" in result
@@ -1463,6 +1464,353 @@ class TestLavenderDirGuard:
         """The guard error message must include the PROJECT_ROOT path for debugging."""
         proc = _make_completed_process()
         with _patch_run(proc) as mock_run, \
-             patch("lav_ai.lav_ai_app.Path.cwd", return_value=PROJECT_ROOT):
+             patch("lavender_tools.lav_ai.lav_ai_app.Path.cwd", return_value=PROJECT_ROOT):
             result = gen_ui_code("test.xml")
         assert str(PROJECT_ROOT) in result
+
+
+# ---------------------------------------------------------------------------
+# Build tool helper — _run_build has no CWD guard, so we only patch subprocess.
+# ---------------------------------------------------------------------------
+
+def _patch_run_build(return_value):
+    """Patch subprocess.run for build tools (no CWD guard to bypass)."""
+    return patch("lavender_tools.lav_ai.lav_ai_app.subprocess.run", return_value=return_value)
+
+
+# ===========================================================================
+# Tool 22 – build
+# ===========================================================================
+
+class TestBuild:
+    def test_basic_command(self):
+        proc = _make_completed_process()
+        with _patch_run_build(proc) as mock_run:
+            build("sdl")
+        cmd = mock_run.call_args[0][0]
+        assert "tools/lavender_tools/build.py" in cmd[1]
+        assert "--platform" in cmd
+        assert "sdl" in cmd
+
+    def test_flags_passed(self):
+        proc = _make_completed_process()
+        with _patch_run_build(proc) as mock_run:
+            build("sdl", flags="-ggdb -w")
+        cmd = mock_run.call_args[0][0]
+        assert "--flags" in cmd
+        assert "-ggdb -w" in cmd
+
+    def test_clean_flag(self):
+        proc = _make_completed_process()
+        with _patch_run_build(proc) as mock_run:
+            build("sdl", clean=True)
+        cmd = mock_run.call_args[0][0]
+        assert "--clean" in cmd
+
+    def test_clean_flag_absent_by_default(self):
+        proc = _make_completed_process()
+        with _patch_run_build(proc) as mock_run:
+            build("sdl")
+        cmd = mock_run.call_args[0][0]
+        assert "--clean" not in cmd
+
+    def test_game_dir_passed(self):
+        proc = _make_completed_process()
+        with _patch_run_build(proc) as mock_run:
+            build("sdl", game_dir="/tmp/TestGame")
+        cmd = mock_run.call_args[0][0]
+        assert "--game-dir" in cmd
+        assert "/tmp/TestGame" in cmd
+
+    def test_game_dir_absent_by_default(self):
+        proc = _make_completed_process()
+        with _patch_run_build(proc) as mock_run:
+            build("sdl")
+        cmd = mock_run.call_args[0][0]
+        assert "--game-dir" not in cmd
+
+    def test_returns_stdout_on_success(self):
+        proc = _make_completed_process(stdout="Build complete\n")
+        with _patch_run_build(proc):
+            result = build("sdl")
+        assert "Build complete" in result
+
+    def test_error_prefix_on_nonzero_exit(self):
+        proc = _make_completed_process(stdout="", stderr="error msg\n", returncode=2)
+        with _patch_run_build(proc):
+            result = build("sdl")
+        assert result.startswith("ERROR (exit 2):")
+
+    def test_no_cwd_guard(self):
+        """Build tools must work from the engine directory — no CWD guard."""
+        proc = _make_completed_process(stdout="ok\n")
+        with _patch_run_build(proc) as mock_run:
+            result = build("sdl")
+        mock_run.assert_called_once()
+        assert "ok" in result
+
+
+# ===========================================================================
+# Tool 23 – build_compile_commands
+# ===========================================================================
+
+class TestBuildCompileCommands:
+    def test_basic_command(self):
+        proc = _make_completed_process()
+        with _patch_run_build(proc) as mock_run:
+            build_compile_commands("sdl")
+        cmd = mock_run.call_args[0][0]
+        assert "tools/lavender_tools/build_compile_commands.py" in cmd[1]
+        assert "--platform" in cmd
+        assert "sdl" in cmd
+
+    def test_flags_passed(self):
+        proc = _make_completed_process()
+        with _patch_run_build(proc) as mock_run:
+            build_compile_commands("sdl", flags="-ggdb -w")
+        cmd = mock_run.call_args[0][0]
+        assert "--flags" in cmd
+        assert "-ggdb -w" in cmd
+
+    def test_game_dir_passed(self):
+        proc = _make_completed_process()
+        with _patch_run_build(proc) as mock_run:
+            build_compile_commands("sdl", game_dir="/tmp/TestGame")
+        cmd = mock_run.call_args[0][0]
+        assert "--game-dir" in cmd
+        assert "/tmp/TestGame" in cmd
+
+    def test_game_dir_absent_by_default(self):
+        proc = _make_completed_process()
+        with _patch_run_build(proc) as mock_run:
+            build_compile_commands("sdl")
+        cmd = mock_run.call_args[0][0]
+        assert "--game-dir" not in cmd
+
+    def test_returns_stdout_on_success(self):
+        proc = _make_completed_process(stdout="compile_commands.json written\n")
+        with _patch_run_build(proc):
+            result = build_compile_commands("sdl")
+        assert "compile_commands" in result
+
+    def test_error_prefix_on_nonzero_exit(self):
+        proc = _make_completed_process(stdout="", stderr="fail\n", returncode=1)
+        with _patch_run_build(proc):
+            result = build_compile_commands("sdl")
+        assert result.startswith("ERROR (exit 1):")
+
+
+# ===========================================================================
+# Tool 24 – build_spot_check
+# ===========================================================================
+
+class TestBuildSpotCheck:
+    def test_basic_command(self):
+        proc = _make_completed_process()
+        with _patch_run_build(proc) as mock_run:
+            build_spot_check("sdl", "core/source/input/input.c")
+        cmd = mock_run.call_args[0][0]
+        assert "tools/lavender_tools/build_spot_check.py" in cmd[1]
+        assert "--platform" in cmd
+        assert "sdl" in cmd
+        assert "--file" in cmd
+        assert "core/source/input/input.c" in cmd
+
+    def test_flags_passed(self):
+        proc = _make_completed_process()
+        with _patch_run_build(proc) as mock_run:
+            build_spot_check("sdl", "test.c", flags="-ggdb")
+        cmd = mock_run.call_args[0][0]
+        assert "--flags" in cmd
+        assert "-ggdb" in cmd
+
+    def test_game_dir_passed(self):
+        proc = _make_completed_process()
+        with _patch_run_build(proc) as mock_run:
+            build_spot_check("sdl", "source/scene.c", game_dir="/tmp/TestGame")
+        cmd = mock_run.call_args[0][0]
+        assert "--game-dir" in cmd
+        assert "/tmp/TestGame" in cmd
+
+    def test_game_dir_absent_by_default(self):
+        proc = _make_completed_process()
+        with _patch_run_build(proc) as mock_run:
+            build_spot_check("sdl", "test.c")
+        cmd = mock_run.call_args[0][0]
+        assert "--game-dir" not in cmd
+
+    def test_returns_empty_on_success(self):
+        proc = _make_completed_process(stdout="", stderr="")
+        with _patch_run_build(proc):
+            result = build_spot_check("sdl", "test.c")
+        assert result == ""
+
+    def test_error_prefix_on_nonzero_exit(self):
+        proc = _make_completed_process(
+            stdout="", stderr="test.c:4:10: error: undeclared\n", returncode=1)
+        with _patch_run_build(proc):
+            result = build_spot_check("sdl", "test.c")
+        assert result.startswith("ERROR (exit 1):")
+        assert "undeclared" in result
+
+    def test_absolute_path_accepted(self):
+        proc = _make_completed_process()
+        with _patch_run_build(proc) as mock_run:
+            build_spot_check("sdl", "/abs/path/to/file.c")
+        cmd = mock_run.call_args[0][0]
+        assert "/abs/path/to/file.c" in cmd
+
+
+# ===========================================================================
+# Tool 25 – gen_scene
+# ===========================================================================
+
+class TestGenScene:
+    def test_basic_command(self):
+        proc = _make_completed_process()
+        with _patch_run(proc) as mock_run:
+            gen_scene("Main_Menu")
+        cmd = mock_run.call_args[0][0]
+        assert "tools/lavender_tools/gen_scene.py" in cmd[1]
+        assert "--name" in cmd
+        assert "Main_Menu" in cmd
+
+    def test_ui_xml_omitted_by_default(self):
+        proc = _make_completed_process()
+        with _patch_run(proc) as mock_run:
+            gen_scene("World")
+        cmd = mock_run.call_args[0][0]
+        assert "--ui-xml" not in cmd
+
+    def test_ui_xml_passed_when_provided(self):
+        proc = _make_completed_process()
+        with _patch_run(proc) as mock_run:
+            gen_scene("World", ui_xml="assets/ui/xml/sdl/game/ui__world.xml")
+        cmd = mock_run.call_args[0][0]
+        assert "--ui-xml" in cmd
+        assert "assets/ui/xml/sdl/game/ui__world.xml" in cmd
+
+    def test_returns_stdout_on_success(self):
+        proc = _make_completed_process(stdout="Scene 'World' generated successfully.\n")
+        with _patch_run(proc):
+            result = gen_scene("World")
+        assert "generated successfully" in result
+
+    def test_error_prefix_on_nonzero_exit(self):
+        proc = _make_completed_process(stdout="", stderr="Error: bad name\n", returncode=1)
+        with _patch_run(proc):
+            result = gen_scene("123bad")
+        assert result.startswith("ERROR (exit 1):")
+
+    def test_no_cwd(self):
+        proc = _make_completed_process()
+        with _patch_run(proc) as mock_run:
+            gen_scene("Test")
+        assert mock_run.call_args[1].get("cwd") is None
+
+
+# ===========================================================================
+# Platform gate guard tests
+# ===========================================================================
+
+class TestPlatformGateGuard:
+    """Test _validate_platform via the build() tool function."""
+
+    @staticmethod
+    def _mock_lavender_config(config_json: str | None):
+        """Create a mock Path.cwd() that simulates .lavender/lavender.json.
+
+        When *config_json* is a string, the config file "exists" and returns
+        that content.  When None, the config file does not exist.
+        """
+        config_file_mock = MagicMock(
+            exists=MagicMock(return_value=config_json is not None),
+        )
+        if config_json is not None:
+            config_file_mock.read_text = MagicMock(return_value=config_json)
+        # CWD / ".lavender" / "lavender.json"
+        dotlavender_mock = MagicMock()
+        dotlavender_mock.__truediv__ = MagicMock(return_value=config_file_mock)
+        cwd_mock = MagicMock()
+        cwd_mock.__truediv__ = MagicMock(return_value=dotlavender_mock)
+        return cwd_mock
+
+    def test_allowed_platform_proceeds(self):
+        """When .lavender/lavender.json allows 'sdl', build('sdl') should proceed."""
+        proc = _make_completed_process(stdout="ok\n")
+        cwd_mock = self._mock_lavender_config('{"platforms": ["sdl"]}')
+        with _patch_run_build(proc) as mock_run, \
+             patch("lavender_tools.lav_ai.lav_ai_app.Path.cwd", return_value=cwd_mock):
+            result = build("sdl")
+        mock_run.assert_called_once()
+        assert "ok" in result
+
+    def test_disallowed_platform_blocked(self):
+        """When .lavender/lavender.json allows only 'sdl', build('nds') should return error."""
+        proc = _make_completed_process(stdout="ok\n")
+        cwd_mock = self._mock_lavender_config('{"platforms": ["sdl"]}')
+        with _patch_run_build(proc) as mock_run, \
+             patch("lavender_tools.lav_ai.lav_ai_app.Path.cwd", return_value=cwd_mock):
+            result = build("nds")
+        mock_run.assert_not_called()
+        assert "ERROR" in result
+        assert "nds" in result
+        assert "platforms whitelist" in result
+
+    def test_no_config_file_allows_all(self):
+        """When .lavender/lavender.json doesn't exist, all platforms are allowed."""
+        proc = _make_completed_process(stdout="ok\n")
+        cwd_mock = self._mock_lavender_config(None)
+        with _patch_run_build(proc) as mock_run, \
+             patch("lavender_tools.lav_ai.lav_ai_app.Path.cwd", return_value=cwd_mock):
+            result = build("nds")
+        mock_run.assert_called_once()
+
+    def test_case_insensitive_matching(self):
+        """Platform check should be case-insensitive (SDL vs sdl)."""
+        proc = _make_completed_process(stdout="ok\n")
+        cwd_mock = self._mock_lavender_config('{"platforms": ["sdl"]}')
+        with _patch_run_build(proc) as mock_run, \
+             patch("lavender_tools.lav_ai.lav_ai_app.Path.cwd", return_value=cwd_mock):
+            result = build("SDL")
+        mock_run.assert_called_once()
+
+
+# ===========================================================================
+# Tool 26 – gen_lav_project
+# ===========================================================================
+
+class TestGenLavProject:
+    def test_basic_command(self):
+        proc = _make_completed_process()
+        with _patch_run(proc) as mock_run:
+            gen_lav_project("sdl")
+        cmd = mock_run.call_args[0][0]
+        assert "tools/lavender_tools/gen_lav_project.py" in cmd[1]
+        assert "--platforms" in cmd
+        assert "sdl" in cmd
+
+    def test_multiple_platforms(self):
+        proc = _make_completed_process()
+        with _patch_run(proc) as mock_run:
+            gen_lav_project("sdl,nds")
+        cmd = mock_run.call_args[0][0]
+        assert "sdl,nds" in cmd
+
+    def test_returns_stdout_on_success(self):
+        proc = _make_completed_process(stdout="Project 'MyGame' initialized successfully.\n")
+        with _patch_run(proc):
+            result = gen_lav_project("sdl")
+        assert "initialized successfully" in result
+
+    def test_error_prefix_on_nonzero_exit(self):
+        proc = _make_completed_process(stdout="", stderr="Error: already initialized\n", returncode=1)
+        with _patch_run(proc):
+            result = gen_lav_project("sdl")
+        assert result.startswith("ERROR (exit 1):")
+
+    def test_no_cwd(self):
+        proc = _make_completed_process()
+        with _patch_run(proc) as mock_run:
+            gen_lav_project("sdl")
+        assert mock_run.call_args[1].get("cwd") is None

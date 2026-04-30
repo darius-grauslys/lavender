@@ -19,6 +19,8 @@ import sys
 import xml.etree.ElementTree as ET
 from typing import List, Tuple
 
+from lavender_tools import tool_manifest
+
 
 # ---------------------------------------------------------------------------
 # Core Lavender includes & signatures for XML scaffolding
@@ -258,6 +260,7 @@ def create_xml(cli_args: List[str]) -> None:
     os.makedirs(os.path.dirname(os.path.abspath(opts.output)), exist_ok=True)
     ET.indent(tree, space="  ")
     tree.write(opts.output, encoding="utf-8", xml_declaration=True)
+    tool_manifest.record_create(opts.output)
 
     print(f"Created: {opts.output}")
     print(f"  source_name:          {source_name}")

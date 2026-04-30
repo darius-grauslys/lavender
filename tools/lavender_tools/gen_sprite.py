@@ -8,9 +8,11 @@ Run from the root of a Lavender *project* directory (the one that contains
 """
 
 import argparse
+import os
 import re
 import sys
-import os
+
+from lavender_tools import tool_manifest
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -36,8 +38,13 @@ def read_file(path: str) -> str:
 
 
 def write_file(path: str, content: str) -> None:
+    existed = os.path.isfile(path)
     with open(path, 'w') as f:
         f.write(content)
+    if existed:
+        tool_manifest.record_modify(path)
+    else:
+        tool_manifest.record_create(path)
 
 
 def insert_between_markers(text: str,

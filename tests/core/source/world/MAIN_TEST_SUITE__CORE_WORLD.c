@@ -1,6 +1,6 @@
 #include <world/MAIN_TEST_SUITE__CORE_WORLD.h>
 
-INCLUDE_SUB_SUITES(CORE_WORLD, 17,
+INCLUDE_SUB_SUITES(CORE_WORLD, 18,
 INCLUDE_SUITE(camera),
 INCLUDE_SUITE(region),
 INCLUDE_SUITE(tile),
@@ -8,6 +8,7 @@ INCLUDE_SUITE(chunk_generator_table),
 INCLUDE_SUITE(chunk),
 INCLUDE_SUITE(world),
 INCLUDE_SUITE(global_space),
+INCLUDE_SUITE(tile_logic_context),
 INCLUDE_SUITE(chunk_pool),
 INCLUDE_SUITE(local_space_manager),
 INCLUDE_SUITE(local_space),

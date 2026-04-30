@@ -5,6 +5,7 @@
 #include "test_suite_world_chunk.h"
 #include "test_suite_world_world.h"
 #include "test_suite_world_global_space.h"
+#include "test_suite_world_tile_logic_context.h"
 #include "test_suite_world_chunk_pool.h"
 #include "test_suite_world_local_space_manager.h"
 #include "test_suite_world_local_space.h"

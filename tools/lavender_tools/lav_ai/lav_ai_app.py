@@ -1,7 +1,8 @@
 """lav_ai_app.py — Lavender MCP server wrapping the project's code-gen scripts.
 
-This module exposes each of the 13 generator/modifier/query scripts (28 tools
-total, one per sub-command or operation mode) as MCP tools via a FastMCP server.
+This module exposes each of the 18 generator/modifier/query/build scripts
+(33 tools total, one per sub-command or operation mode) as MCP tools via a
+FastMCP server.
 All scripts are invoked as sub-processes that inherit the caller's working
 directory (CWD).  Tool scripts are run via their absolute path under the
 Lavender project root.  The tools expect CWD to be a game project directory
@@ -9,9 +10,9 @@ Lavender project root.  The tools expect CWD to be a game project directory
 engine directory itself is explicitly rejected.
 
 Run with:
-    python -m lav_ai.lav_ai_app
+    python -m lavender_tools.lav_ai.lav_ai_app
 or:
-    python tools/lav_ai/lav_ai_app.py
+    python tools/lavender_tools/lav_ai/lav_ai_app.py
 """
 
 from __future__ import annotations
@@ -24,10 +25,10 @@ from pathlib import Path
 from mcp.server.fastmcp import FastMCP
 
 # ---------------------------------------------------------------------------
-# Project root – two levels up from this file:
-#   lav_ai_app.py  →  lav_ai/  →  tools/  →  <project root>
+# Project root – three levels up from this file:
+#   lav_ai_app.py  →  lav_ai/  →  lavender_tools/  →  tools/  →  <project root>
 # ---------------------------------------------------------------------------
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
 mcp = FastMCP("lavender-tools",
               warn_on_duplicate_tools=True)
@@ -68,6 +69,55 @@ def _run(cmd: list[str]) -> str:
     return output
 
 
+def _run_build(cmd: list[str]) -> str:
+    """Run a build command, capturing stdout+stderr.
+
+    Unlike ``_run()``, this does NOT refuse to run from the Lavender engine
+    directory — build tools legitimately operate on the engine itself.
+
+    On non-zero exit code the return value is prefixed with
+    ``ERROR (exit <code>):\\n``.
+    """
+    result = subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+    )
+    output = result.stdout + result.stderr
+    if result.returncode != 0:
+        return f"ERROR (exit {result.returncode}):\n{output}"
+    return output
+
+
+def _read_lavender_config() -> dict | None:
+    """Read .lavender/lavender.json from CWD.  Returns parsed dict or None if not found."""
+    config_path = Path.cwd() / ".lavender" / "lavender.json"
+    if not config_path.exists():
+        return None
+    try:
+        return json.loads(config_path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return None
+
+
+def _validate_platform(platform: str) -> str | None:
+    """Validate *platform* against the ``.lavender/lavender.json`` whitelist.
+
+    Returns ``None`` if valid (or no config file exists).
+    Returns an error string if the platform is not allowed.
+    """
+    config = _read_lavender_config()
+    if config is None:
+        return None  # No .lavender/ config = no restriction
+    allowed = config.get("platforms", [])
+    if not allowed:
+        return None  # Empty platforms list = no restriction
+    if platform.lower() not in [p.lower() for p in allowed]:
+        return (f"ERROR: Platform '{platform}' is not in .lavender/lavender.json "
+                f"platforms whitelist: {allowed}")
+    return None
+
+
 # ---------------------------------------------------------------------------
 # Tool 1 – gen_ui_code
 # ---------------------------------------------------------------------------
@@ -101,7 +151,7 @@ def gen_ui_code(source_xml: str, config_overrides: str = "") -> str:
         Combined stdout+stderr from the generator.  Prefixed with
         ``ERROR (exit <code>):`` when the process exits non-zero.
     """
-    cmd = [sys.executable, str(PROJECT_ROOT / "tools" / "gen_ui_code.py"), source_xml]
+    cmd = [sys.executable, str(PROJECT_ROOT / "tools" / "lavender_tools" / "gen_ui_code.py"), source_xml]
     if config_overrides:
         cmd += config_overrides.split()
     return _run(cmd)
@@ -163,7 +213,10 @@ def gen_ui_create(
         Combined stdout+stderr from the generator.  Prefixed with
         ``ERROR (exit <code>):`` when the process exits non-zero.
     """
-    cmd = [sys.executable, str(PROJECT_ROOT / "tools" / "gen_ui.py"), "create", output]
+    err = _validate_platform(platform)
+    if err:
+        return err
+    cmd = [sys.executable, str(PROJECT_ROOT / "tools" / "lavender_tools" / "gen_ui.py"), "create", output]
     if sub_dir != "ui/implemented/generated/game/":
         cmd += ["--sub-dir", sub_dir]
     if source_name:
@@ -220,7 +273,7 @@ def gen_game_action(path: str, verbose: bool = False) -> str:
         Combined stdout+stderr.  Prefixed with ``ERROR (exit <code>):`` on
         failure.
     """
-    cmd = [sys.executable, str(PROJECT_ROOT / "tools" / "gen_game_action.py"), path]
+    cmd = [sys.executable, str(PROJECT_ROOT / "tools" / "lavender_tools" / "gen_game_action.py"), path]
     if verbose:
         cmd.append("-v")
     return _run(cmd)
@@ -255,7 +308,7 @@ def gen_sprite_kind(name: str) -> str:
         Combined stdout+stderr.  Prefixed with ``ERROR (exit <code>):`` on
         failure.
     """
-    cmd = [sys.executable, str(PROJECT_ROOT / "tools" / "gen_sprite.py"), "sprite", "--name", name]
+    cmd = [sys.executable, str(PROJECT_ROOT / "tools" / "lavender_tools" / "gen_sprite.py"), "sprite", "--name", name]
     return _run(cmd)
 
 
@@ -311,7 +364,7 @@ def gen_sprite_animation(
         failure.
     """
     cmd = [
-        sys.executable, str(PROJECT_ROOT / "tools" / "gen_sprite.py"), "animation",
+        sys.executable, str(PROJECT_ROOT / "tools" / "lavender_tools" / "gen_sprite.py"), "animation",
         "--name", name,
         "--group", group,
         "--init-frame", str(init_frame),
@@ -367,7 +420,7 @@ def gen_sprite_animation_group(
         failure.
     """
     cmd = [
-        sys.executable, str(PROJECT_ROOT / "tools" / "gen_sprite.py"), "animation-group",
+        sys.executable, str(PROJECT_ROOT / "tools" / "lavender_tools" / "gen_sprite.py"), "animation-group",
         "--name", name,
         "--quantity-of-columns", str(quantity_of_columns),
         "--quantity-of-rows", str(quantity_of_rows),
@@ -422,7 +475,7 @@ def gen_png(
         failure.
     """
     cmd = [
-        sys.executable, str(PROJECT_ROOT / "tools" / "gen_png.py"),
+        sys.executable, str(PROJECT_ROOT / "tools" / "lavender_tools" / "gen_png.py"),
         "--output", output,
         "--frame-resolution", str(frame_resolution),
         "--row-count", str(row_count),
@@ -473,7 +526,7 @@ def gen_tile(layer: str, name: str, is_logical: bool = False) -> str:
         failure.
     """
     cmd = [
-        sys.executable, str(PROJECT_ROOT / "tools" / "gen_tile.py"),
+        sys.executable, str(PROJECT_ROOT / "tools" / "lavender_tools" / "gen_tile.py"),
         "--layer", layer,
         "--name", name,
     ]
@@ -532,7 +585,7 @@ def gen_tile_layer_name(
         failure.
     """
     cmd = [
-        sys.executable, str(PROJECT_ROOT / "tools" / "gen_tile_layer.py"), "name",
+        sys.executable, str(PROJECT_ROOT / "tools" / "lavender_tools" / "gen_tile_layer.py"), "name",
         "--name", name,
         "--bit-field", str(bit_field),
         "--logic-sub-bit-field", str(logic_sub_bit_field),
@@ -594,7 +647,7 @@ def gen_tile_layer_make_default(name: str, default_kind: str) -> str:
             f"Must be one of: {valid}"
         )
     cmd = [
-        sys.executable, str(PROJECT_ROOT / "tools" / "gen_tile_layer.py"), "make-default",
+        sys.executable, str(PROJECT_ROOT / "tools" / "lavender_tools" / "gen_tile_layer.py"), "make-default",
         "--name", name,
         f"--{default_kind}",
     ]
@@ -672,7 +725,7 @@ def gen_entity(
         Combined stdout+stderr.  Prefixed with ``ERROR (exit <code>):`` on
         failure.
     """
-    cmd = [sys.executable, str(PROJECT_ROOT / "tools" / "gen_entity.py"), "--name", name]
+    cmd = [sys.executable, str(PROJECT_ROOT / "tools" / "lavender_tools" / "gen_entity.py"), "--name", name]
 
     if output:
         cmd += ["--output", output]
@@ -741,7 +794,7 @@ def gen_ui_tile_kind(name: str, value: str) -> str:
         failure.
     """
     cmd = [
-        sys.executable, str(PROJECT_ROOT / "tools" / "gen_ui_tile_kind.py"),
+        sys.executable, str(PROJECT_ROOT / "tools" / "lavender_tools" / "gen_ui_tile_kind.py"),
         "--name", name,
         "--value", value,
     ]
@@ -752,7 +805,7 @@ def gen_ui_tile_kind(name: str, value: str) -> str:
 # Internal helper – mod_png command builder
 # ---------------------------------------------------------------------------
 
-_MOD_PNG_SCRIPT = str(PROJECT_ROOT / "tools" / "mod_png.py")
+_MOD_PNG_SCRIPT = str(PROJECT_ROOT / "tools" / "lavender_tools" / "mod_png.py")
 
 
 def _parse_areas(areas: str) -> list[dict]:
@@ -1132,7 +1185,7 @@ def gen_aliased_texture(name: str, path: str) -> str:
         Combined stdout+stderr from the script.  Prefixed with
         ``ERROR (exit <code>):`` when the process exits non-zero.
     """
-    cmd = [sys.executable, str(PROJECT_ROOT / "tools" / "gen_aliased_texture.py"), "--name", name, "--path", path]
+    cmd = [sys.executable, str(PROJECT_ROOT / "tools" / "lavender_tools" / "gen_aliased_texture.py"), "--name", name, "--path", path]
     return _run(cmd)
 
 
@@ -1153,7 +1206,7 @@ def query_tools_list() -> str:
     Returns:
         Sorted tool names, one per line.
     """
-    cmd = [sys.executable, str(PROJECT_ROOT / "tools" / "lav_query_tools.py"), "list"]
+    cmd = [sys.executable, str(PROJECT_ROOT / "tools" / "lavender_tools" / "lav_query_tools.py"), "list"]
     return _run(cmd)
 
 
@@ -1178,7 +1231,7 @@ def query_tools_search(pattern: str) -> str:
         Matching tool names, one per line.  Prefixed with
         ``ERROR (exit <code>):`` if no matches or invalid regex.
     """
-    cmd = [sys.executable, str(PROJECT_ROOT / "tools" / "lav_query_tools.py"),
+    cmd = [sys.executable, str(PROJECT_ROOT / "tools" / "lavender_tools" / "lav_query_tools.py"),
            "search", "--pattern", pattern]
     return _run(cmd)
 
@@ -1205,7 +1258,7 @@ def query_tools_describe(name: str) -> str:
         Tool metadata as structured text.  Prefixed with
         ``ERROR (exit <code>):`` if the tool is not found.
     """
-    cmd = [sys.executable, str(PROJECT_ROOT / "tools" / "lav_query_tools.py"),
+    cmd = [sys.executable, str(PROJECT_ROOT / "tools" / "lavender_tools" / "lav_query_tools.py"),
            "describe", "--name", name]
     return _run(cmd)
 
@@ -1227,7 +1280,7 @@ def query_agents_list() -> str:
     Returns:
         Sorted agent names, one per line.
     """
-    cmd = [sys.executable, str(PROJECT_ROOT / "tools" / "lav_query_agents.py"),
+    cmd = [sys.executable, str(PROJECT_ROOT / "tools" / "lavender_tools" / "lav_query_agents.py"),
            "list"]
     return _run(cmd)
 
@@ -1253,7 +1306,7 @@ def query_agents_show(agent: str) -> str:
         Agent metadata as structured text.  Prefixed with
         ``ERROR (exit <code>):`` if the agent is not found.
     """
-    cmd = [sys.executable, str(PROJECT_ROOT / "tools" / "lav_query_agents.py"),
+    cmd = [sys.executable, str(PROJECT_ROOT / "tools" / "lavender_tools" / "lav_query_agents.py"),
            "show", "--agent", agent]
     return _run(cmd)
 
@@ -1282,7 +1335,7 @@ def query_agents_search_prompts(pattern: str, agent: str = "") -> str:
         Per-agent match counts and context snippets.  Prefixed with
         ``ERROR (exit <code>):`` if no matches found.
     """
-    cmd = [sys.executable, str(PROJECT_ROOT / "tools" / "lav_query_agents.py"),
+    cmd = [sys.executable, str(PROJECT_ROOT / "tools" / "lavender_tools" / "lav_query_agents.py"),
            "search-prompts", "--pattern", pattern]
     if agent:
         cmd += ["--agent", agent]
@@ -1313,7 +1366,7 @@ def query_agents_search_permissions(pattern: str, agent: str = "") -> str:
         Matching permission entries as ``agent: key = value``.  Prefixed
         with ``ERROR (exit <code>):`` if no matches found.
     """
-    cmd = [sys.executable, str(PROJECT_ROOT / "tools" / "lav_query_agents.py"),
+    cmd = [sys.executable, str(PROJECT_ROOT / "tools" / "lavender_tools" / "lav_query_agents.py"),
            "search-permissions", "--pattern", pattern]
     if agent:
         cmd += ["--agent", agent]
@@ -1348,10 +1401,214 @@ def query_agents_verify_clean(pattern: str, agent: str = "") -> str:
         Per-agent clean/warning status.  Prefixed with
         ``ERROR (exit <code>):`` if stale references are found.
     """
-    cmd = [sys.executable, str(PROJECT_ROOT / "tools" / "lav_query_agents.py"),
+    cmd = [sys.executable, str(PROJECT_ROOT / "tools" / "lavender_tools" / "lav_query_agents.py"),
            "verify-clean", "--pattern", pattern]
     if agent:
         cmd += ["--agent", agent]
+    return _run(cmd)
+
+
+# ---------------------------------------------------------------------------
+# Tool 22 – build (full project build)
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+def build(platform: str, flags: str = "-w",
+          clean: bool = False, game_dir: str = "") -> str:
+    """Build the Lavender engine or a game project.
+
+    **PREFER this tool** over running raw ``make`` commands.  The build tool
+    automatically parallelizes across all CPU cores, enables performance
+    metrics, and applies the correct flag chain.  It produces build metrics
+    in ``build/<platform>/performance-metrics/``.
+
+    For Lavender-specific context on build system conventions, flag
+    management, and platform routing, consult available memory tooling.
+
+    Args:
+        platform: Target platform — ``"sdl"``, ``"nds"``, or ``"no_gui"``.
+        flags: Compiler FLAGS string (default: ``"-w"`` to suppress warnings).
+            E.g. ``"-ggdb -w"`` for debug, ``"-w -DIS_SERVER"`` for server.
+        clean: When True, runs ``make clean`` before building.
+        game_dir: Path to a game project directory.  Leave empty to build
+            the engine standalone.
+
+    Returns:
+        Combined stdout+stderr from the build.  Includes performance
+        metrics summary.  Prefixed with ``ERROR (exit <code>):`` on failure.
+    """
+    err = _validate_platform(platform)
+    if err:
+        return err
+    cmd = [sys.executable, str(PROJECT_ROOT / "tools" / "lavender_tools" / "build.py"),
+           "--platform", platform, "--flags", flags]
+    if clean:
+        cmd.append("--clean")
+    if game_dir:
+        cmd += ["--game-dir", game_dir]
+    return _run_build(cmd)
+
+
+# ---------------------------------------------------------------------------
+# Tool 23 – build_compile_commands (generate compile_commands.json)
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+def build_compile_commands(platform: str, flags: str = "-w",
+                           game_dir: str = "") -> str:
+    """Generate compile_commands.json via Bear for LSP integration.
+
+    **PREFER this tool** over manually generating compile_commands.json.
+    Uses Bear to intercept compiler invocations and produce a standard
+    compilation database at the project root.  Automatically parallelizes
+    and enables performance metrics.
+
+    For Lavender-specific context on compile_commands.json generation and
+    LSP integration, consult available memory tooling.
+
+    Args:
+        platform: Target platform — ``"sdl"``, ``"nds"``, or ``"no_gui"``.
+        flags: Compiler FLAGS string (default: ``"-w"``).
+        game_dir: Path to a game project directory.  Leave empty for
+            engine-only build.
+
+    Returns:
+        Combined stdout+stderr.  Reports the output path of
+        compile_commands.json on success.  Prefixed with
+        ``ERROR (exit <code>):`` on failure.
+    """
+    err = _validate_platform(platform)
+    if err:
+        return err
+    cmd = [sys.executable, str(PROJECT_ROOT / "tools" / "lavender_tools" / "build_compile_commands.py"),
+           "--platform", platform, "--flags", flags]
+    if game_dir:
+        cmd += ["--game-dir", game_dir]
+    return _run_build(cmd)
+
+
+# ---------------------------------------------------------------------------
+# Tool 24 – build_spot_check (single-module syntax validation)
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+def build_spot_check(platform: str, file: str, flags: str = "-w",
+                     game_dir: str = "") -> str:
+    """Validate a single C module without producing an object file.
+
+    **PREFER this tool** over running full builds to check individual file
+    changes.  Runs ``clang -fsyntax-only`` with the full build flag chain
+    (CFLAGS, INCLUDE, FLAGS) to perform preprocessing, parsing, and
+    semantic analysis — the fastest possible correctness check.
+
+    Exit 0 means the module compiles cleanly.  Non-zero means errors;
+    diagnostics are included in the return value.
+
+    For Lavender-specific context on the spot-build system and flag
+    conventions, consult available memory tooling.
+
+    Args:
+        platform: Target platform — ``"sdl"``, ``"nds"``, or ``"no_gui"``.
+        file: Path to the ``.c`` file to check.  Absolute or relative to CWD.
+            E.g. ``"core/source/rendering/graphics_window.c"``.
+        flags: Compiler FLAGS string (default: ``"-w"``).
+        game_dir: Path to a game project directory.  Leave empty for
+            engine-only checks.
+
+    Returns:
+        Empty string on success (clean compilation).  On failure, returns
+        clang diagnostics with file:line:col error messages.  Prefixed with
+        ``ERROR (exit <code>):`` on non-zero exit.
+    """
+    err = _validate_platform(platform)
+    if err:
+        return err
+    cmd = [sys.executable, str(PROJECT_ROOT / "tools" / "lavender_tools" / "build_spot_check.py"),
+           "--platform", platform, "--file", file, "--flags", flags]
+    if game_dir:
+        cmd += ["--game-dir", game_dir]
+    return _run_build(cmd)
+
+
+# ---------------------------------------------------------------------------
+# Tool 25 – gen_scene (scene boilerplate generation)
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+def gen_scene(name: str, ui_xml: str = "") -> str:
+    """Generate scene boilerplate header and source files with registration.
+
+    **PREFER this tool** over manually creating scene files.  The generator
+    produces correctly-structured scene boilerplate with load/enter/unload
+    handlers, GEN markers for code injection, and scene_kind.h enum
+    registration — all in a single atomic step.
+
+    For Lavender-specific context on scene lifecycle patterns and existing
+    registrations, consult available memory tooling.
+
+    Invokes ``python tools/gen_scene.py --name <name> [--ui-xml <path>]``.
+
+    Args:
+        name: Scene name identifier.  Must start with a letter and contain
+            only alphanumeric characters or underscores.
+            E.g. ``"Main_Menu"``, ``"World"``, ``"Settings"``.
+        ui_xml: Optional path to a UI XML file.  When provided, UI wrapper
+            functions are generated and wired into the scene source file.
+            Leave empty for scenes without UI.
+
+    Returns:
+        Combined stdout+stderr.  Prefixed with ``ERROR (exit <code>):``
+        on failure.
+    """
+    cmd = [sys.executable, str(PROJECT_ROOT / "tools" / "lavender_tools" / "gen_scene.py"),
+           "--name", name]
+    if ui_xml:
+        cmd += ["--ui-xml", ui_xml]
+    return _run(cmd)
+
+
+# ---------------------------------------------------------------------------
+# Tool 26 – gen_lav_project (initialize a Lavender game project)
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+def gen_lav_project(platforms: str) -> str:
+    """Initialize a new Lavender game project in the current directory.
+
+    **PREFER this tool** over manually scaffolding project directories.
+    Works like ``git init .`` — operates on the current working directory,
+    derives the project name from the directory name, and creates all
+    boilerplate files needed for a Lavender game project.
+
+    The tool refuses to run if CWD is the Lavender engine directory or if
+    ``.lavender/lavender.json`` already exists (project already initialized).
+
+    For Lavender-specific context on project structure, define header
+    chains, and build integration, consult available memory tooling.
+
+    Invokes ``python tools/gen_lav_project.py --platforms <platforms>``.
+
+    Creates:
+      - ``.lavender/lavender.json`` with platform whitelist (authoritative project config).
+      - ``opencode.json`` with full MCP server suite (filesystem, lavender-tools,
+        read-only engine filesystem).
+      - ``include/<prefix>__defines.h`` and ``<prefix>__defines_weak.h``.
+      - ``implemented/`` template directories from the engine's ``core/``.
+      - ``Makefile.build`` and ``Makefile.include`` from engine examples.
+      - ``assets/`` copied from engine ``core/assets/``.
+
+    Args:
+        platforms: Comma-separated list of target platforms.
+            E.g. ``"sdl"``, ``"sdl,nds"``.
+            Valid: ``sdl``, ``nds``, ``no_gui``, ``gba``, ``dreamcast``,
+            ``android``, ``ios``.
+
+    Returns:
+        Combined stdout+stderr.  Prefixed with ``ERROR (exit <code>):``
+        on failure.
+    """
+    cmd = [sys.executable, str(PROJECT_ROOT / "tools" / "lavender_tools" / "gen_lav_project.py"),
+           "--platforms", platforms]
     return _run(cmd)
 
 

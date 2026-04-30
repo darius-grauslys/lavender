@@ -6,6 +6,8 @@ import re
 import sys
 import xml.etree.ElementTree as ET
 
+from lavender_tools import tool_manifest
+
 
 def validate_name(name):
     if not re.match(r'^[a-zA-Z][a-zA-Z0-9_]*$', name):
@@ -54,6 +56,7 @@ def update_scene_kind(name):
 
     with open(path, "w") as f:
         f.write(new_content)
+    tool_manifest.record_modify(path)
 
     print(f"Updated {path} with Scene_Kind__{name}.")
 
@@ -80,6 +83,7 @@ def copy_and_rename_header(name_lower, lavender_dir):
 
     with open(dst, "w") as f:
         f.write(content)
+    tool_manifest.record_create(dst)
 
     print(f"Created {dst}.")
 
@@ -311,6 +315,7 @@ def copy_and_rename_source(name_lower, lavender_dir, ui_config=None):
 
     with open(dst, "w") as f:
         f.write(content)
+    tool_manifest.record_create(dst)
 
     print(f"Created {dst}.")
 
@@ -378,6 +383,7 @@ def update_scene_registrar(name, name_lower):
 
     with open(path, "w") as f:
         f.write(content)
+    tool_manifest.record_modify(path)
 
 
 def main():

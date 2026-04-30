@@ -7,7 +7,7 @@
       "command": [
         "sh",
         "-c",
-        "python3 \"$LAVENDER_DIR/tools/lav_ai/lav_ai_app.py\""
+        "python3 \"$LAVENDER_DIR/tools/lavender_tools/lav_ai/lav_ai_app.py\""
       ]
     },
     "filesystem": {

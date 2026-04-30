@@ -158,7 +158,7 @@ $(OUTPUT): $(OFILES)
 # -MMD -MP generate .d dependency files for incremental rebuilds.
 %.o: %.c
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) $(FLAGS) -MMD -MP -MF $*.d -c $< -o $@
+	$(SILENT)$(CC) $(CFLAGS) $(FLAGS) -MMD -MP -MF $*.d -c $< -o $@
 
 -include $(OFILES:.o=.d)
 

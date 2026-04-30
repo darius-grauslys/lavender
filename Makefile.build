@@ -1,5 +1,5 @@
 
-.PHONY: COPY_CFILES GAME_SETUP check-file
+.PHONY: COPY_CFILES GAME_SETUP check-file FORCE
 
 ifneq ($(BUILD),$(CURDIR))
 
@@ -14,7 +14,7 @@ GAME_SETUP:
 	@echo Building from $LAVENDER_DIR
 endif
 
-$(BUILD): 
+$(BUILD): FORCE
 	$(SILENT)mkdir -p $(BUILD)
 	$(SILENT)make -f $(BASE_DIR)/Makefile.build -C $(BUILD) 
 
@@ -38,12 +38,41 @@ endif
 # vpath directives in core/Makefile.build, $(PLATFORM)/Makefile.build,
 # and $(GAME_DIR)/Makefile.build tell Make where to find each .c file.
 # -MMD -MP generate .d dependency files for incremental rebuilds.
+#
+# When PERF_METRICS=1, each compilation is timed and a CSV line is
+# written to $(BUILD)/performance-metrics/modules.csv.
+ifeq ($(PERF_METRICS),1)
+PERF_DIR := $(CURDIR)/performance-metrics
+%.o: %.c
+	@mkdir -p $(dir $@)
+	@mkdir -p $(PERF_DIR)
+	@start=$$(date +%s%N); \
+	$(CC) $(CFLAGS) $(INCLUDE) $(FLAGS) -MMD -MP -MF $*.d -c $< -o $@; \
+	rc=$$?; \
+	end=$$(date +%s%N); \
+	ms=$$(( (end - start) / 1000000 )); \
+	echo "$$ms,$@,$<" >> $(PERF_DIR)/modules.csv; \
+	exit $$rc
+else
 %.o: %.c
 	@mkdir -p $(dir $@)
 	$(SILENT)$(CC) $(CFLAGS) $(INCLUDE) $(FLAGS) -MMD -MP -MF $*.d -c $< -o $@
+endif
 
-$(GAME): GAME_SETUP $(OFILES) 
+ifeq ($(PERF_METRICS),1)
+$(GAME): $(OFILES) | GAME_SETUP
+	@start=$$(date +%s%N); \
+	$(LD) $(LDFLAGS) $(FLAGS_LINKER) $(OFILES) $(LIBPATHS) $(LIBS) -o $@; \
+	rc=$$?; \
+	end=$$(date +%s%N); \
+	ms=$$(( (end - start) / 1000000 )); \
+	echo "$$ms,LINK,$@" >> $(PERF_DIR)/modules.csv; \
+	exit $$rc
+	@$(BASE_DIR)/tools/perf_summary.sh $(PERF_DIR)/modules.csv
+else
+$(GAME): $(OFILES) | GAME_SETUP
 	$(SILENT)$(LD) $(LDFLAGS) $(FLAGS_LINKER) $(OFILES) $(LIBPATHS) $(LIBS) -o $@
+endif
 
 -include $(OFILES:.o=.d)
 

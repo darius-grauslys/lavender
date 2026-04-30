@@ -24,6 +24,8 @@ import re
 import sys
 from itertools import permutations
 
+from lavender_tools import tool_manifest
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -44,9 +46,14 @@ def _read(path):
 
 
 def _write(path, content):
+    existed = os.path.isfile(path)
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w") as f:
         f.write(content)
+    if existed:
+        tool_manifest.record_modify(path)
+    else:
+        tool_manifest.record_create(path)
 
 
 def _validate_name(name):
@@ -283,8 +290,13 @@ def _load_specs():
 
 
 def _save_specs(specs):
+    existed = os.path.isfile(_SPEC_FILE)
     with open(_SPEC_FILE, "w") as f:
         json.dump(specs, f, indent=2)
+    if existed:
+        tool_manifest.record_modify(_SPEC_FILE)
+    else:
+        tool_manifest.record_create(_SPEC_FILE)
 
 
 # ---------------------------------------------------------------------------

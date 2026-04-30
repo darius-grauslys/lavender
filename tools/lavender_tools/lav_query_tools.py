@@ -26,10 +26,7 @@ import re
 import sys
 from pathlib import Path
 
-# Ensure tools/ is importable so lav_ai is a top-level package.
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-
-from lav_ai.lav_ai_app import mcp as _mcp  # noqa: E402
+from lavender_tools.lav_ai.lav_ai_app import mcp as _mcp
 
 
 # ---------------------------------------------------------------------------

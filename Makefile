@@ -47,8 +47,10 @@ default:
 	@echo "-DNLOG		-	disable logging, keep debug safety checks."
 else
 default:
-	$(SILENT)bear --output ./compile_commands.json --force-preload \
+	$(SILENT)mkdir -p $(BUILD)
+	$(SILENT)bear --output $(BUILD)/compile_commands.json --force-preload \
 		-- make -f $(LAVENDER_DIR)/Makefile.build $(BUILD)
+	$(SILENT)ln -sf build/$(PLATFORM)/compile_commands.json $(GAME_DIR)/compile_commands.json
 endif
 
 # compile_commands: Generate compile_commands.json without a full build.
@@ -58,8 +60,10 @@ compile_commands:
 ifndef PLATFORM
 	$(error Usage: make compile_commands -e PLATFORM=sdl)
 endif
-	$(SILENT)bear --output ./compile_commands.json --force-wrapper \
+	$(SILENT)mkdir -p $(BUILD)
+	$(SILENT)bear --output $(BUILD)/compile_commands.json --force-wrapper \
 		-- make -f $(LAVENDER_DIR)/Makefile.build $(BUILD)
+	$(SILENT)ln -sf build/$(PLATFORM)/compile_commands.json $(GAME_DIR)/compile_commands.json
 
 # check-file: Spot-build a single module with -fsyntax-only for validation.
 # Accepts absolute paths or paths relative to CWD.
@@ -79,21 +83,23 @@ test:
 	fi
 	@sh -c "cd ./tests && ./update.sh $(PLATFORM)"
 	$(SILENT)if [ -z "${PLATFORM}" ]; then \
-		mkdir -p ./build \
-		&& bear --output $(GAME_DIR)/compile_commands.json --force-preload \
+		mkdir -p $(GAME_DIR)/build/test_core \
+		&& bear --output $(GAME_DIR)/build/test_core/compile_commands.json --force-preload \
 			-- make -C $(GAME_DIR)/tests \
 			-f $(LAVENDER_DIR)/tests/Makefile \
 			-e BUILD=$(GAME_DIR)/build/test_core\
-				DIR_CORE=$(LAVENDER_DIR)/core; \
+				DIR_CORE=$(LAVENDER_DIR)/core \
+		&& ln -sf build/test_core/compile_commands.json $(GAME_DIR)/compile_commands.json; \
 	else \
-		mkdir -p ./build \
-		&& bear --output $(GAME_DIR)/compile_commands.json --force-preload \
+		mkdir -p $(GAME_DIR)/build/test_$(PLATFORM) \
+		&& bear --output $(GAME_DIR)/build/test_$(PLATFORM)/compile_commands.json --force-preload \
 			-- make \
 				-C $(GAME_DIR)/tests \
 				-f $(LAVENDER_DIR)/tests/Makefile \
 				-e BUILD=$(GAME_DIR)/build/test_$(PLATFORM) \
 					DIR_CORE=$(LAVENDER_DIR)/core \
-					PLATFORM=$(PLATFORM); \
+					PLATFORM=$(PLATFORM) \
+		&& ln -sf build/test_$(PLATFORM)/compile_commands.json $(GAME_DIR)/compile_commands.json; \
 	fi
 
 clean:
@@ -101,3 +107,4 @@ clean:
 	@if [ -e "./build" ]; then \
 		rm -r ./build ; \
 	fi
+	@rm -f ./compile_commands.json

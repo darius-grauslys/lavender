@@ -26,6 +26,8 @@ import os
 import re
 import sys
 
+from lavender_tools import tool_manifest
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -59,9 +61,14 @@ def read_file(path):
 
 
 def write_file(path, content):
+    existed = os.path.isfile(path)
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w") as f:
         f.write(content)
+    if existed:
+        tool_manifest.record_modify(path)
+    else:
+        tool_manifest.record_create(path)
 
 
 # ---------------------------------------------------------------------------
