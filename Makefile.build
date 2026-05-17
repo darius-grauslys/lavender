@@ -26,6 +26,8 @@ check-file:
 
 else
 
+.DEFAULT_GOAL := $(GAME)
+
 include $(BASE_DIR)/Makefile.include
 include $(BASE_DIR)/core/Makefile.build
 include $(BASE_DIR)/$(PLATFORM)/Makefile.build

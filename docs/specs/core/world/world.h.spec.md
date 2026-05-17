@@ -100,7 +100,7 @@ accessor functions.
 | `get_p_inventory_manager_from__world` | `Inventory_Manager*` | Returns `&world.inventory_manager`. |
 | `get_p_item_manager_from__world` | `Item_Manager*` | Returns `&world.item_manager`. |
 | `get_p_entity_manager_from__world` | `Entity_Manager*` | Returns `&world.entity_manager`. Debug null-checked. |
-| `get_p_tile_logic_table_from__world` | `Tile_Logic_Table*` | Returns `&world.tile_logic_table`. |
+| `get_p_tile_logic_context_from__world` | `Tile_Logic_Context*` | Returns `&world.tile_logic_context`. |
 | `get_p_chunk_generation_table_from__world` | `Chunk_Generator_Table*` | Returns `&world.chunk_generator_table`. |
 | `get_p_global_space_manager_from__world` | `Global_Space_Manager*` | Returns `&world.global_space_manager`. |
 | `get_p_collision_node_pool_from__world` | `Collision_Node_Pool*` | Returns `&world.collision_node_pool`. |

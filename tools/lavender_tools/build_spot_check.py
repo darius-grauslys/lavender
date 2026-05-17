@@ -30,6 +30,26 @@ def _get_lavender_dir() -> str:
     return str(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 
+def _resolve_game_dir(explicit: str | None) -> str | None:
+    """Resolve game_dir and determine if GAME_DIR should be passed to make.
+
+    Resolution:
+        1. Use --game-dir if given, otherwise use CWD.
+        2. If the resolved dir has .lavender/lavender.json AND is not
+           $LAVENDER_DIR itself, it is a game project → return its path.
+        3. Otherwise it is an engine-only context → return None.
+    """
+    game_dir = os.path.abspath(explicit) if explicit else os.getcwd()
+    lavender_dir = os.path.realpath(_get_lavender_dir())
+    # Engine directory → engine-only build, no GAME_DIR
+    if os.path.realpath(game_dir) == lavender_dir:
+        return None
+    # Game project → has .lavender/lavender.json
+    if os.path.isfile(os.path.join(game_dir, ".lavender", "lavender.json")):
+        return game_dir
+    return None
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="Spot-check a single C module with -fsyntax-only.",
@@ -51,11 +71,12 @@ def main() -> int:
     parser.add_argument(
         "--game-dir", default=None,
         help="Path to a game project directory. "
-             "Omit to check against the engine standalone.",
+             "Defaults to CWD if CWD is a Lavender project.",
     )
     args = parser.parse_args()
 
     lavender_dir = _get_lavender_dir()
+    game_dir = _resolve_game_dir(args.game_dir)
 
     cmd = [
         "make",
@@ -66,8 +87,8 @@ def main() -> int:
         "-e", f"FILE={args.file}",
     ]
 
-    if args.game_dir:
-        cmd.extend(["-e", f"GAME_DIR={os.path.abspath(args.game_dir)}"])
+    if game_dir:
+        cmd.extend(["-e", f"GAME_DIR={game_dir}"])
 
     result = subprocess.run(cmd)
     return result.returncode

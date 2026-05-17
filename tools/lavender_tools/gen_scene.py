@@ -6,7 +6,7 @@ import re
 import sys
 import xml.etree.ElementTree as ET
 
-from lavender_tools import tool_manifest
+from lavender_tools import tool_history
 
 
 def validate_name(name):
@@ -56,7 +56,7 @@ def update_scene_kind(name):
 
     with open(path, "w") as f:
         f.write(new_content)
-    tool_manifest.record_modify(path)
+    tool_history.record_modify(path)
 
     print(f"Updated {path} with Scene_Kind__{name}.")
 
@@ -75,15 +75,18 @@ def copy_and_rename_header(name_lower, lavender_dir):
     with open(src, "r") as f:
         content = f.read()
 
-    # Replace references to main with the new name
+    # Replace references to main with the new name.
+    # Use a placeholder for register_scene__main so that the broader
+    # scene__main replacement does not corrupt it (e.g. Main_Menu).
+    content = content.replace("register_scene__main", "___REGISTER_SCENE_PLACEHOLDER___")
     content = content.replace("scene__main", f"scene__{name_lower}")
+    content = content.replace("___REGISTER_SCENE_PLACEHOLDER___", f"register_scene__{name_lower}")
     content = content.replace("SCENE__MAIN", f"SCENE__{name_lower.upper()}")
     content = content.replace("scene_main", f"scene_{name_lower}")
-    content = content.replace("register_scene__main", f"register_scene__{name_lower}")
 
     with open(dst, "w") as f:
         f.write(content)
-    tool_manifest.record_create(dst)
+    tool_history.record_create(dst)
 
     print(f"Created {dst}.")
 
@@ -288,7 +291,7 @@ def generate_ui_code(content, name_lower, ui_config):
     return content
 
 
-def copy_and_rename_source(name_lower, lavender_dir, ui_config=None):
+def copy_and_rename_source(name, name_lower, lavender_dir, ui_config=None):
     src = os.path.join(lavender_dir, "core", "source", "scene", "implemented", "scene__main.c")
     dst_dir = os.path.join("source", "scene", "implemented")
     dst = os.path.join(dst_dir, f"scene__{name_lower}.c")
@@ -302,12 +305,15 @@ def copy_and_rename_source(name_lower, lavender_dir, ui_config=None):
     with open(src, "r") as f:
         content = f.read()
 
-    # Replace all mentions of "main" contextually
+    # Replace all mentions of "main" contextually.
+    # Use a placeholder for register_scene__main so that the broader
+    # scene__main replacement does not corrupt it (e.g. Main_Menu).
+    content = content.replace("register_scene__main", "___REGISTER_SCENE_PLACEHOLDER___")
     content = content.replace("scene__main", f"scene__{name_lower}")
+    content = content.replace("___REGISTER_SCENE_PLACEHOLDER___", f"register_scene__{name_lower}")
     content = content.replace("SCENE__MAIN", f"SCENE__{name_lower.upper()}")
     content = content.replace("scene_main", f"scene_{name_lower}")
-    content = content.replace("register_scene__main", f"register_scene__{name_lower}")
-    content = content.replace("Scene_Kind__Main", f"Scene_Kind__{name_lower.capitalize()}")
+    content = content.replace("Scene_Kind__None", f"Scene_Kind__{name}")
 
     # Populate GEN marker regions when --ui-xml was supplied
     if ui_config is not None:
@@ -315,7 +321,7 @@ def copy_and_rename_source(name_lower, lavender_dir, ui_config=None):
 
     with open(dst, "w") as f:
         f.write(content)
-    tool_manifest.record_create(dst)
+    tool_history.record_create(dst)
 
     print(f"Created {dst}.")
 
@@ -383,7 +389,7 @@ def update_scene_registrar(name, name_lower):
 
     with open(path, "w") as f:
         f.write(content)
-    tool_manifest.record_modify(path)
+    tool_history.record_modify(path)
 
 
 def main():
@@ -414,7 +420,7 @@ def main():
 
     update_scene_kind(name)
     copy_and_rename_header(name_lower, lavender_dir)
-    copy_and_rename_source(name_lower, lavender_dir, ui_config)
+    copy_and_rename_source(name, name_lower, lavender_dir, ui_config)
     update_scene_registrar(name, name_lower)
 
     print(f"Scene '{name}' generated successfully.")

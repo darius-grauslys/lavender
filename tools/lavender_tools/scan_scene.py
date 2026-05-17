@@ -43,11 +43,19 @@ def run(project_root: str, output_path: str = "") -> dict:
         result["summary"]["warnings"] += 1
 
     # 1. Parse scene_kind.h
-    scene_kind_path = os.path.join(project_root, "core", "include", "types", "implemented", "scene", "scene_kind.h")
+    scene_kind_paths = [
+        os.path.join(project_root, "include", "types", "implemented", "scene", "scene_kind.h"),
+        os.path.join(project_root, "core", "include", "types", "implemented", "scene", "scene_kind.h")
+    ]
+    scene_kind_path = next((p for p in scene_kind_paths if os.path.isfile(p)), scene_kind_paths[0])
     scene_kinds = _parse_gen_entries(scene_kind_path, r'Scene_Kind__([A-Za-z0-9_]+)')
 
     # 2. Parse scene_registrar.c
-    scene_registrar_path = os.path.join(project_root, "core", "source", "scene", "implemented", "scene_registrar.c")
+    scene_registrar_paths = [
+        os.path.join(project_root, "source", "scene", "implemented", "scene_registrar.c"),
+        os.path.join(project_root, "core", "source", "scene", "implemented", "scene_registrar.c")
+    ]
+    scene_registrar_path = next((p for p in scene_registrar_paths if os.path.isfile(p)), scene_registrar_paths[0])
     registrar_content = ""
     registered_scenes = []
     if os.path.isfile(scene_registrar_path):
@@ -115,7 +123,11 @@ def run(project_root: str, output_path: str = "") -> dict:
         import glob
         scene_files = glob.glob(os.path.join(project_root, "**", "source", "scene", "implemented", f"scene__{name_lower}.c"), recursive=True)
         if not scene_files:
-            scene_file_path = os.path.join(project_root, "core", "source", "scene", "implemented", f"scene__{name_lower}.c")
+            scene_file_paths = [
+                os.path.join(project_root, "source", "scene", "implemented", f"scene__{name_lower}.c"),
+                os.path.join(project_root, "core", "source", "scene", "implemented", f"scene__{name_lower}.c")
+            ]
+            scene_file_path = next((p for p in scene_file_paths if os.path.isfile(p)), scene_file_paths[0])
             if os.path.isfile(scene_file_path):
                 scene_files = [scene_file_path]
         
@@ -163,3 +175,16 @@ def run(project_root: str, output_path: str = "") -> dict:
             json.dump(result, f, indent=2)
             
     return result
+
+
+def main() -> None:
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--project-root", default="")
+    parser.add_argument("--output", default="")
+    args = parser.parse_args()
+    result = run(project_root=args.project_root, output_path=args.output)
+    print(json.dumps(result, indent=2))
+
+if __name__ == "__main__":
+    main()

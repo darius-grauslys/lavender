@@ -17,6 +17,7 @@ from __future__ import annotations
 import argparse
 import multiprocessing
 import os
+import json
 import subprocess
 import sys
 import time
@@ -31,7 +32,25 @@ def _get_lavender_dir() -> str:
     return str(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 
-def _build_make_args(args: argparse.Namespace, lavender_dir: str) -> list[str]:
+def _resolve_game_dir(explicit: str | None) -> str | None:
+    """Resolve game_dir and determine if GAME_DIR should be passed to make.
+
+    Resolution:
+        1. Use --game-dir if given, otherwise use CWD.
+        2. If the resolved dir has .lavender/lavender.json AND is not
+           $LAVENDER_DIR itself, it is a game project → return its path.
+        3. Otherwise it is an engine-only context → return None.
+    """
+    game_dir = os.path.abspath(explicit) if explicit else os.getcwd()
+    lavender_dir = os.path.realpath(_get_lavender_dir())
+    if os.path.realpath(game_dir) == lavender_dir:
+        return None
+    if os.path.isfile(os.path.join(game_dir, ".lavender", "lavender.json")):
+        return game_dir
+    return None
+
+
+def _build_make_args(args: argparse.Namespace, lavender_dir: str, game_dir: str | None) -> list[str]:
     """Construct the make command list."""
     nproc = multiprocessing.cpu_count()
 
@@ -54,8 +73,8 @@ def _build_make_args(args: argparse.Namespace, lavender_dir: str) -> list[str]:
         "-e", "PERF_METRICS=1",
     ])
 
-    if args.game_dir:
-        cmd.extend(["-e", f"GAME_DIR={os.path.abspath(args.game_dir)}"])
+    if game_dir:
+        cmd.extend(["-e", f"GAME_DIR={game_dir}"])
 
     return cmd
 
@@ -81,36 +100,68 @@ def main() -> int:
     parser.add_argument(
         "--game-dir", default=None,
         help="Path to a game project directory. "
-             "Omit to build the engine standalone.",
+             "Defaults to CWD if CWD is a Lavender project.",
     )
     args = parser.parse_args()
 
     lavender_dir = _get_lavender_dir()
+    game_dir = _resolve_game_dir(args.game_dir)
 
     # Clean if requested
     if args.clean:
         clean_cmd = [
             "make", "-f", os.path.join(lavender_dir, "Makefile"), "clean",
         ]
-        if args.game_dir:
-            clean_cmd.extend(["-e", f"GAME_DIR={os.path.abspath(args.game_dir)}"])
-        print("=== Cleaning ===")
+        if game_dir:
+            clean_cmd.extend(["-e", f"GAME_DIR={game_dir}"])
+        sys.stderr.write("=== Cleaning ===\n")
         subprocess.run(clean_cmd, check=False)
 
     # Build
-    cmd = _build_make_args(args, lavender_dir)
+    cmd = _build_make_args(args, lavender_dir, game_dir)
 
     nproc = multiprocessing.cpu_count()
-    print(f"=== Building ({args.platform}, -j{nproc}, perf_metrics=on) ===")
+    sys.stderr.write(f"=== Building ({args.platform}, -j{nproc}, perf_metrics=on) ===\n")
 
     wall_start = time.monotonic()
-    result = subprocess.run(cmd)
+    result = subprocess.run(cmd, capture_output=True, text=True)
     wall_end = time.monotonic()
 
     wall_ms = int((wall_end - wall_start) * 1000)
-    print(f"\n=== Wall-clock time: {wall_ms} ms ({wall_ms / 1000:.2f} s) ===")
+    sys.stderr.write(f"\n=== Wall-clock time: {wall_ms} ms ({wall_ms / 1000:.2f} s) ===\n")
 
-    return result.returncode
+    # Compute expected binary path
+    if game_dir:
+        game_name = os.path.basename(game_dir)
+        binary_path = os.path.join(game_dir, "build", args.platform, game_name)
+    else:
+        lav_name = os.path.basename(os.path.realpath(lavender_dir))
+        binary_path = os.path.join(lavender_dir, "build", args.platform, lav_name)
+
+    build_output_lines = []
+    build_output_lines.append(f"=== Building ({args.platform}, -j{nproc}, perf_metrics=on) ===")
+    build_output_lines.append(result.stdout or "")
+    if result.stderr:
+        build_output_lines.append(result.stderr)
+    build_output_lines.append(f"\n=== Wall-clock time: {wall_ms} ms ({wall_ms / 1000:.2f} s) ===")
+
+    build_output = "\n".join(build_output_lines)
+
+    exit_code = result.returncode
+    binary_exists = os.path.isfile(binary_path) if exit_code == 0 else False
+
+    if exit_code == 0 and not binary_exists:
+        build_output += f"\nERROR: Build reported success but binary not found at {binary_path}"
+        exit_code = 1  # Override to failure
+
+    output = {
+        "build_exit_code": exit_code,
+        "build_output": build_output,
+        "binary_path": binary_path,
+        "binary_exists": binary_exists,
+    }
+    print(json.dumps(output))
+    return exit_code
 
 
 if __name__ == "__main__":

@@ -291,6 +291,7 @@ class ClangdSession:
         self._opened_files: set[str] = set()
         self._started = False
         self._lock = threading.Lock()
+        self._compile_commands_ok = False  # tracks whether CDB was valid at start
 
     # -- lifecycle -----------------------------------------------------------
 
@@ -317,8 +318,9 @@ class ClangdSession:
             self._run_sync(self._async_start())
             self._started = True
             self._opened_files.clear()
-            logger.info("clangd started successfully at %s",
-                        self.config.clangd_path)
+            self._compile_commands_ok = self.compile_commands_is_populated()
+            logger.info("clangd started successfully at %s (cdb_ok=%s)",
+                        self.config.clangd_path, self._compile_commands_ok)
         except Exception:
             self._cleanup()
             raise
@@ -401,6 +403,47 @@ class ClangdSession:
         with self._lock:
             self._cleanup()
             self._do_start()
+
+    def restart(self) -> None:
+        """Stop and re-start clangd (e.g. after compile_commands.json changes)."""
+        logger.info("Restarting clangd to pick up updated compile_commands.json")
+        with self._lock:
+            if self._started:
+                try:
+                    # Use a short timeout — don't block forever on shutdown
+                    self._run_sync(self._async_stop(), timeout=5.0)
+                except Exception as exc:
+                    logger.warning("Error during clangd restart shutdown: %s", exc)
+                finally:
+                    self._cleanup()
+            self._do_start()
+            self._compile_commands_ok = self.compile_commands_is_populated()
+
+    def compile_commands_is_populated(self) -> bool:
+        """Check whether compile_commands.json exists and contains entries.
+
+        Returns True if the file referenced by the config contains at
+        least one compilation-database entry (i.e. is not ``[]`` or missing).
+        """
+        cdb_path = self.project_root / self.config.compile_commands_path
+        # Follow symlinks
+        try:
+            resolved = cdb_path.resolve(strict=True)
+        except (OSError, FileNotFoundError):
+            return False
+        try:
+            content = resolved.read_text().strip()
+            # Fast check: empty file, empty JSON array, or too short to hold an entry
+            if not content or content == "[]" or len(content) < 10:
+                return False
+            return True
+        except OSError:
+            return False
+
+    @property
+    def started_with_valid_cdb(self) -> bool:
+        """Whether clangd was started with a populated compile_commands.json."""
+        return self._compile_commands_ok
 
     # -- file tracking -------------------------------------------------------
 

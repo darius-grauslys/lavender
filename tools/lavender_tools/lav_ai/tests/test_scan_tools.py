@@ -4,9 +4,9 @@ import os
 import json
 from pathlib import Path
 
-from lavender_tools.scan_ui import run as scan_ui_run
-from lavender_tools.scan_entity import run as scan_entity_run
-from lavender_tools.scan_scene import run as scan_scene_run
+from lavender_tools.scan_ui import run as scan_ui_run, main as scan_ui_main
+from lavender_tools.scan_entity import run as scan_entity_run, main as scan_entity_main
+from lavender_tools.scan_scene import run as scan_scene_run, main as scan_scene_main
 
 # --- Helper functions for file creation ---
 
@@ -246,8 +246,8 @@ class TestScanScene:
         assert result["summary"]["warnings"] > 0
         assert any("clangd" in r["message"].lower() for r in result["results"] if r["status"] == "warning")
 
-from lavender_tools.scan_textures import run as scan_textures_run
-from lavender_tools.scan_game_actions import run as scan_game_actions_run
+from lavender_tools.scan_textures import run as scan_textures_run, main as scan_textures_main
+from lavender_tools.scan_game_actions import run as scan_game_actions_run, main as scan_game_actions_main
 
 class TestScanTextures:
     @pytest.fixture
@@ -404,3 +404,82 @@ class TestScanGameActions:
         with open(output_file) as f:
             data = json.load(f)
             assert "summary" in data
+
+
+# ---------------------------------------------------------------------------
+# Scan tool CLI entry points (main functions)
+# ---------------------------------------------------------------------------
+
+class TestScanUiMain:
+    def test_scan_ui_main_prints_json(self, capsys):
+        dummy = {
+            "tool": "scan_ui",
+            "summary": {"total_checked": 0, "passed": 0, "warnings": 0, "errors": 0},
+            "results": [],
+        }
+        with patch("lavender_tools.scan_ui.run", return_value=dummy), \
+             patch("sys.argv", ["scan_ui.py", "--project-root", "/tmp"]):
+            scan_ui_main()
+        captured = capsys.readouterr()
+        result = json.loads(captured.out)
+        assert result == dummy
+
+
+class TestScanEntityMain:
+    def test_scan_entity_main_prints_json(self, capsys):
+        dummy = {
+            "tool": "scan_entity",
+            "summary": {"total_checked": 0, "passed": 0, "warnings": 0, "errors": 0},
+            "results": [],
+        }
+        with patch("lavender_tools.scan_entity.run", return_value=dummy), \
+             patch("sys.argv", ["scan_entity.py", "--project-root", "/tmp"]):
+            scan_entity_main()
+        captured = capsys.readouterr()
+        result = json.loads(captured.out)
+        assert result == dummy
+
+
+class TestScanSceneMain:
+    def test_scan_scene_main_prints_json(self, capsys):
+        dummy = {
+            "tool": "scan_scene",
+            "summary": {"total_checked": 0, "passed": 0, "warnings": 0, "errors": 0},
+            "results": [],
+        }
+        with patch("lavender_tools.scan_scene.run", return_value=dummy), \
+             patch("sys.argv", ["scan_scene.py", "--project-root", "/tmp"]):
+            scan_scene_main()
+        captured = capsys.readouterr()
+        result = json.loads(captured.out)
+        assert result == dummy
+
+
+class TestScanTexturesMain:
+    def test_scan_textures_main_prints_json(self, capsys):
+        dummy = {
+            "tool": "scan_textures",
+            "summary": {"total_checked": 0, "passed": 0, "warnings": 0, "errors": 0},
+            "results": [],
+        }
+        with patch("lavender_tools.scan_textures.run", return_value=dummy), \
+             patch("sys.argv", ["scan_textures.py", "--project-root", "/tmp"]):
+            scan_textures_main()
+        captured = capsys.readouterr()
+        result = json.loads(captured.out)
+        assert result == dummy
+
+
+class TestScanGameActionsMain:
+    def test_scan_game_actions_main_prints_json(self, capsys):
+        dummy = {
+            "tool": "scan_game_actions",
+            "summary": {"total_checked": 0, "passed": 0, "warnings": 0, "errors": 0},
+            "results": [],
+        }
+        with patch("lavender_tools.scan_game_actions.run", return_value=dummy), \
+             patch("sys.argv", ["scan_game_actions.py", "--project-root", "/tmp"]):
+            scan_game_actions_main()
+        captured = capsys.readouterr()
+        result = json.loads(captured.out)
+        assert result == dummy

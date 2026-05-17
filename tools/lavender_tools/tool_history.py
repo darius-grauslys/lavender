@@ -1,7 +1,7 @@
-"""tool_manifest.py — Unified file-operation tracking for Lavender tools.
+"""tool_history.py — Unified file-operation tracking for Lavender tools.
 
 Records file creates, modifies, and reads performed by any Lavender tool
-script into per-tool JSON manifests under ``.lavender/tool-manifest/``.
+script into per-tool JSON manifests under ``.lavender/tool-history/``.
 
 Manifests are blocked by UTC day to keep individual files manageable and
 minimize UUID collision probability over year-long projects.
@@ -11,10 +11,10 @@ on the call stack), and either a file path or a sub-tool reference.
 
 Usage from any tool script::
 
-    import tool_manifest
+    import tool_history
 
-    tool_manifest.record_create("/abs/path/to/new_file.h")
-    tool_manifest.record_modify("/abs/path/to/existing_file.c")
+    tool_history.record_create("/abs/path/to/new_file.h")
+    tool_history.record_modify("/abs/path/to/existing_file.c")
 
 The module silently no-ops if ``.lavender/`` does not exist (engine dir
 or non-Lavender project).
@@ -36,7 +36,7 @@ from pathlib import Path
 
 _LAVENDER_DIR: Path | None = None
 _DOTLAVENDER: str = ".lavender"
-_MANIFEST_DIR: str = "tool-manifest"
+_MANIFEST_DIR: str = "tool-history"
 _CONFIG_NAME: str = "lavender.json"
 
 
@@ -48,9 +48,44 @@ def _get_lavender_dir() -> Path:
         if env:
             _LAVENDER_DIR = Path(env).resolve()
         else:
-            # Two levels up from tools/tool_manifest.py → project root
+            # Two levels up from tools/lavender_tools/tool_history.py → project root
             _LAVENDER_DIR = Path(__file__).resolve().parents[1]
     return _LAVENDER_DIR
+
+
+def _get_pipeline_context() -> dict | None:
+    """Read pipeline execution context from environment variables.
+
+    These are set by the pipeline runner (executor.py) when tools are
+    invoked as part of a pipeline execution.  When tools are invoked
+    standalone (outside a pipeline), these env vars are absent and this
+    function returns None.
+
+    Environment variables:
+        LAV_PIPELINE_RUN_ID:  UUID4 identifying this execution run.
+        LAV_PIPELINE_ID:      Pipeline definition ID (from JSON).
+        LAV_NODE_ID:          The pipeline node that triggered this tool call.
+        LAV_EXECUTION_MODE:   "sandbox" or "direct".
+    """
+    run_id = os.environ.get("LAV_PIPELINE_RUN_ID")
+    if not run_id:
+        return None  # Not running inside a pipeline
+
+    ctx: dict = {"run_id": run_id}
+
+    pipeline_id = os.environ.get("LAV_PIPELINE_ID")
+    if pipeline_id:
+        ctx["pipeline_id"] = pipeline_id
+
+    node_id = os.environ.get("LAV_NODE_ID")
+    if node_id:
+        ctx["node_id"] = node_id
+
+    execution_mode = os.environ.get("LAV_EXECUTION_MODE")
+    if execution_mode:
+        ctx["execution_mode"] = execution_mode
+
+    return ctx
 
 
 # ---------------------------------------------------------------------------
@@ -86,7 +121,7 @@ def _is_operation_enabled(op: str) -> bool:
     config = _read_config()
     if config is None:
         return False  # No .lavender dir or config → no-op
-    tm = config.get("tool-manifest", {})
+    tm = config.get("tool-history", {})
     defaults = {"create": True, "modify": True, "read": False}
     return tm.get(op, defaults.get(op, False))
 
@@ -146,7 +181,7 @@ def _get_tool_name(chain: list[str]) -> str | None:
 # ---------------------------------------------------------------------------
 
 def _manifest_path(tool_name: str) -> Path | None:
-    """Return the path to .lavender/tool-manifest/{tool_name}.json."""
+    """Return the path to .lavender/tool-history/{tool_name}.json."""
     dot = _get_dotlavender()
     if dot is None:
         return None
@@ -212,6 +247,14 @@ def _make_record(
             "sub-tool": sub_tool,
             "sub-tool-uuid": sub_tool_uuid,
         }
+
+    # Annotate with pipeline execution context when available.
+    # These env vars are set by the pipeline runner (executor.py).
+    # When tools run standalone, this is a no-op.
+    pipeline_ctx = _get_pipeline_context()
+    if pipeline_ctx is not None:
+        rec["pipeline_context"] = pipeline_ctx
+
     return rec
 
 
@@ -223,6 +266,13 @@ def _record_operation(op: str, file_path: str) -> str | None:
     3. Write a "file" record under the originator tool's manifest.
     4. Write "sub-tool" records under all other tools in the chain.
     """
+    # TODO(parallel-safety): _load_manifest / _save_manifest performs a
+    # read-modify-write cycle with no file locking.  This is safe while
+    # LangGraph executes nodes sequentially, but will cause data corruption
+    # if parallel fork/join is enabled.  When that happens, either:
+    #   (a) wrap _save_manifest in fcntl.flock(), or
+    #   (b) switch from per-tool .json to per-tool .jsonl (append-only,
+    #       no read-modify-write needed).
     if not _is_operation_enabled(op):
         return None
 

@@ -94,8 +94,8 @@ These combine record lookup and query in one call:
 
 ### 1.5.1 Ownership
 
-Owned by `World` (at `world.tile_logic_table`). Accessed via
-`get_p_tile_logic_table_from__world`.
+Owned by `World` (at `world.tile_logic_context`). Accessed via
+`get_p_tile_logic_context_from__world`.
 
 ### 1.5.2 Registration
 

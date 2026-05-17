@@ -120,8 +120,12 @@ def run(project_root: str, output_path: str = "") -> dict:
             result["summary"]["total_checked"] += 1
 
     # 6. Parse ui_window_registrar.c GEN-BEGIN/END block.
-    registrar_path = os.path.join(project_root, "core", "source", "ui", "implemented", "ui_window_registrar.c")
-    
+    registrar_paths = [
+        os.path.join(project_root, "source", "ui", "implemented", "ui_window_registrar.c"),
+        os.path.join(project_root, "core", "source", "ui", "implemented", "ui_window_registrar.c")
+    ]
+    registrar_path = next((p for p in registrar_paths if os.path.isfile(p)), registrar_paths[0])
+
     registered_windows = set()
     registrar_content = ""
     if os.path.isfile(registrar_path):
@@ -129,7 +133,7 @@ def run(project_root: str, output_path: str = "") -> dict:
             registrar_content = f.read()
             m = re.search(r'// GEN-BEGIN\n(.*?)// GEN-END', registrar_content, re.DOTALL)
             if m:
-                registered_windows = set(re.findall(r'UI_Window_Kind__([A-Za-z0-9_]+)', m.group(1)))
+                registered_windows = set(re.findall(r'Graphics_Window_Kind__(?:UI__)?([A-Za-z0-9_]+)', m.group(1)))
                 if not registered_windows:
                     registered_windows = set(re.findall(r'register_ui_window(?:__|_into__ui_window_manager_as__)([A-Za-z0-9_]+)', m.group(1).lower()))
 
@@ -168,3 +172,16 @@ def run(project_root: str, output_path: str = "") -> dict:
             json.dump(result, f, indent=2)
             
     return result
+
+
+def main() -> None:
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--project-root", default="")
+    parser.add_argument("--output", default="")
+    args = parser.parse_args()
+    result = run(project_root=args.project_root, output_path=args.output)
+    print(json.dumps(result, indent=2))
+
+if __name__ == "__main__":
+    main()

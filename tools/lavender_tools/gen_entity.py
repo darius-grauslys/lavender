@@ -17,7 +17,7 @@ import os
 import re
 import sys
 
-from lavender_tools import tool_manifest
+from lavender_tools import tool_history
 
 # ---------------------------------------------------------------------------
 # Argument parsing
@@ -200,7 +200,7 @@ def generate_source(name, args):
 
     # -- Deserialize handler --
     if gen_flags["Deserialize"]:
-        parts.append(f"PLATFORM_Read_File_Error *m_entity_deserialization_handler__{lower}(")
+        parts.append(f"PLATFORM_Read_File_Error m_entity_deserialization_handler__{lower}(")
         parts.append("        Entity *p_entity_self, ")
         parts.append("        Game *p_game,")
         parts.append("        PLATFORM_File_System_Context *p_PLATFORM_file_system_context,")
@@ -343,7 +343,7 @@ def patch_registrar(name, header_include_path):
 
     with open(REGISTRAR_PATH, "w") as f:
         f.write(content)
-    tool_manifest.record_modify(REGISTRAR_PATH)
+    tool_history.record_modify(REGISTRAR_PATH)
 
     print(f"Registered entity '{name}' in {REGISTRAR_PATH}.")
 
@@ -390,12 +390,12 @@ def main():
 
     with open(h_path, "w") as f:
         f.write(header_content)
-    tool_manifest.record_create(h_path)
+    tool_history.record_create(h_path)
     print(f"Generated header: {h_path}")
 
     with open(c_path, "w") as f:
         f.write(source_content)
-    tool_manifest.record_create(c_path)
+    tool_history.record_create(c_path)
     print(f"Generated source: {c_path}")
 
     # Build the include path as it would appear in a #include directive

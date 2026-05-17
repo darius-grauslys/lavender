@@ -19,7 +19,7 @@ import os
 import sys
 from abc import ABC, abstractmethod
 
-from lavender_tools import tool_manifest
+from lavender_tools import tool_history
 
 try:
     from PIL import Image
@@ -269,7 +269,7 @@ def generate_images(output_path, frame_res, row_count, col_count,
         abs_output = os.path.join("./assets", output_path)
         os.makedirs(os.path.dirname(abs_output) or ".", exist_ok=True)
         img.save(abs_output)
-        tool_manifest.record_create(abs_output)
+        tool_history.record_create(abs_output)
         print(f"Wrote single file: {abs_output}  ({img_w}x{img_h})")
 
     else:
@@ -293,7 +293,7 @@ def generate_images(output_path, frame_res, row_count, col_count,
                 fname = f"{base_name}_{frame_idx}.png"
                 fpath = os.path.join(abs_folder, fname)
                 img.save(fpath)
-                tool_manifest.record_create(fpath)
+                tool_history.record_create(fpath)
                 frame_idx += 1
 
         print(f"Wrote {frame_idx} files to: {abs_folder}/")

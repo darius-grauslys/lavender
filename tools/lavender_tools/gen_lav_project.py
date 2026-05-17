@@ -22,7 +22,7 @@ import shutil
 import sys
 from pathlib import Path
 
-from lavender_tools import tool_manifest
+from lavender_tools import tool_history
 
 
 VALID_PLATFORMS = {"sdl", "nds", "no_gui", "gba", "dreamcast", "android", "ios"}
@@ -97,6 +97,40 @@ def _copy_assets(lavender_dir: Path, dest: Path):
         print(f"  assets/ already exists, skipping.")
 
 
+def _copy_pipelines(lavender_dir: Path, dest: Path):
+    """Copy .lavender/pipelines/ to the project.
+
+    Copies the full pipeline runner configuration:
+    - pipeline__default.json (top-level orchestrator)
+    - agents/*.json (LLM agent configs)
+    - sub/*.json (sub-pipeline definitions)
+    - templates/*.md (prompt templates)
+    - templates/*.py (validation/helper scripts)
+
+    Excludes __pycache__/ directories.
+    """
+    src = lavender_dir / ".lavender" / "pipelines"
+    if not src.exists():
+        print(f"Warning: {src} not found, skipping pipeline config copy.",
+              file=sys.stderr)
+        return
+
+    dest_pipelines = dest / ".lavender" / "pipelines"
+    if dest_pipelines.exists():
+        print(f"  .lavender/pipelines/ already exists, skipping.")
+        return
+
+    shutil.copytree(
+        src, dest_pipelines,
+        ignore=shutil.ignore_patterns("__pycache__"),
+    )
+
+    # Count what was copied
+    copied = list(dest_pipelines.rglob("*"))
+    file_count = sum(1 for f in copied if f.is_file())
+    print(f"  Copied .lavender/pipelines/ ({file_count} files)")
+
+
 def _generate_defines_headers(dest: Path, prefix: str, project_name: str):
     """Generate <prefix>__defines.h and <prefix>__defines_weak.h."""
     include_dir = dest / "include"
@@ -121,7 +155,7 @@ def _generate_defines_headers(dest: Path, prefix: str, project_name: str):
             f"\n"
             f"#endif\n"
         )
-        tool_manifest.record_create(str(defines_h))
+        tool_history.record_create(str(defines_h))
         print(f"  Generated {prefix}__defines.h")
     else:
         print(f"  {prefix}__defines.h already exists, skipping.")
@@ -141,7 +175,7 @@ def _generate_defines_headers(dest: Path, prefix: str, project_name: str):
             f"\n"
             f"#endif\n"
         )
-        tool_manifest.record_create(str(defines_weak_h))
+        tool_history.record_create(str(defines_weak_h))
         print(f"  Generated {prefix}__defines_weak.h")
     else:
         print(f"  {prefix}__defines_weak.h already exists, skipping.")
@@ -153,7 +187,7 @@ def _generate_lavender_json(dest: Path, platforms: list[str]):
     dotlavender.mkdir(parents=True, exist_ok=True)
     config = {
         "platforms": platforms,
-        "tool-manifest": {
+        "tool-history": {
             "create": True,
             "modify": True,
             "read": False,
@@ -161,7 +195,7 @@ def _generate_lavender_json(dest: Path, platforms: list[str]):
     }
     config_path = dotlavender / "lavender.json"
     config_path.write_text(json.dumps(config, indent=2) + "\n")
-    tool_manifest.record_create(str(config_path))
+    tool_history.record_create(str(config_path))
     print(f"  Generated .lavender/lavender.json (platforms: {platforms})")
 
 
@@ -220,7 +254,7 @@ def _generate_opencode_json(dest: Path, lavender_dir: Path, platforms: list[str]
 
     config_path = dest / "opencode.json"
     config_path.write_text(json.dumps(config, indent=2) + "\n")
-    tool_manifest.record_create(str(config_path))
+    tool_history.record_create(str(config_path))
     print(f"  Generated opencode.json")
 
 
@@ -290,6 +324,7 @@ def main() -> int:
 
     _ensure_directories(cwd)
     _generate_lavender_json(cwd, platforms)
+    _copy_pipelines(lavender_dir, cwd)
     _copy_implemented_templates(lavender_dir, cwd)
     _copy_makefiles(lavender_dir, cwd)
     _copy_assets(lavender_dir, cwd)

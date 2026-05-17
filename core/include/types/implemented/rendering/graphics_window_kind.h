@@ -5,6 +5,8 @@
 
 typedef enum Graphics_Window_Kind {
     Graphics_Window_Kind__None = 0,
+    // GEN-BEGIN
+    // GEN-END
     Graphics_Window_Kind__Unknown
 } Graphics_Window_Kind;
 

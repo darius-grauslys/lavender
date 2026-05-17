@@ -56,6 +56,10 @@ from lavender_tools.lav_ai.lav_ai_app import (
     clangd_symbols,
     clangd_workspace_symbol,
     clangd_hover,
+    gen_window,
+    gen_chunk_generator,
+    mod_scene,
+    mod_entity,
 )
 
 
@@ -133,6 +137,24 @@ class TestGenUiCode:
             result = gen_ui_code("x.xml")
         assert result.startswith("ERROR (exit 1):")
         assert "boom" in result
+
+
+# ---------------------------------------------------------------------------
+# _derive_window_name (gen_ui.py)
+# ---------------------------------------------------------------------------
+
+class TestDeriveWindowName:
+    def test_single_word(self):
+        from lavender_tools.gen_ui import _derive_window_name
+        assert _derive_window_name("ui_window__hud") == "Hud"
+
+    def test_multi_word_pascal_case(self):
+        from lavender_tools.gen_ui import _derive_window_name
+        assert _derive_window_name("ui_window__main_menu__buttons") == "Main_Menu__Buttons"
+
+    def test_without_prefix(self):
+        from lavender_tools.gen_ui import _derive_window_name
+        assert _derive_window_name("pause_menu__overlay") == "Pause_Menu__Overlay"
 
 
 # ---------------------------------------------------------------------------
@@ -257,6 +279,21 @@ class TestGenUiCreate:
         assert len(include_indices) == 2
         assert "ui/ui_ag__slider.h" in cmd
         assert "ui/ui_ag__element.h" in cmd
+
+    def test_window_name_passed_when_provided(self):
+        proc = _make_completed_process()
+        with _patch_run(proc) as mock_run:
+            gen_ui_create("out.xml", window_name="World__HUD")
+        cmd = mock_run.call_args[0][0]
+        assert "--window-name" in cmd
+        assert "World__HUD" in cmd
+
+    def test_window_name_omitted_by_default(self):
+        proc = _make_completed_process()
+        with _patch_run(proc) as mock_run:
+            gen_ui_create("out.xml")
+        cmd = mock_run.call_args[0][0]
+        assert "--window-name" not in cmd
 
     def test_extra_includes_omitted_when_empty(self):
         proc = _make_completed_process()
@@ -540,6 +577,40 @@ class TestGenTileLayerName:
             result = gen_tile_layer_name("Ground", 10, 4, 4)
         assert result.startswith("ERROR (exit 1):")
 
+    def test_returns_stdout_on_success(self):
+        proc = _make_completed_process(stdout="[gen_tile_layer] Done.\n")
+        with _patch_run(proc):
+            result = gen_tile_layer_name("Ground", 8, 4, 2)
+        assert "Done" in result
+
+    def test_all_args_passed_as_strings(self):
+        proc = _make_completed_process()
+        with _patch_run(proc) as mock_run:
+            gen_tile_layer_name("Cover", 10, 6, 4)
+        cmd = mock_run.call_args[0][0]
+        assert "10" in cmd
+        assert "6" in cmd
+        assert "4" in cmd
+
+    def test_two_layer_sequential_calls_independent(self):
+        """Simulates the pipeline pattern: create Ground, then Cover."""
+        proc1 = _make_completed_process(stdout="[gen_tile_layer] Done.\n")
+        proc2 = _make_completed_process(stdout="[gen_tile_layer] Done.\n")
+        with _patch_run(proc1) as mock_run:
+            result1 = gen_tile_layer_name("Ground", 8, 4, 2)
+        with _patch_run(proc2) as mock_run:
+            result2 = gen_tile_layer_name("Cover", 8, 4, 2)
+        assert "Done" in result1
+        assert "Done" in result2
+
+    def test_error_message_includes_stderr(self):
+        proc = _make_completed_process(
+            stdout="", stderr="logic + animation exceed total\n", returncode=1)
+        with _patch_run(proc):
+            result = gen_tile_layer_name("Bad", 4, 3, 3)
+        assert result.startswith("ERROR (exit 1):")
+        assert "logic + animation exceed total" in result
+
 
 # ---------------------------------------------------------------------------
 # gen_tile_layer_make_default
@@ -577,6 +648,34 @@ class TestGenTileLayerMakeDefault:
         with _patch_run(proc):
             result = gen_tile_layer_make_default("Ground", "default")
         assert result.startswith("ERROR (exit 1):")
+
+    def test_returns_stdout_on_success(self):
+        proc = _make_completed_process(
+            stdout="[gen_tile_layer] Setting Tile_Layer__Default__Is_Passable = Tile_Layer__Ground\n")
+        with _patch_run(proc):
+            result = gen_tile_layer_make_default("Ground", "is-passable")
+        assert "Setting" in result
+
+    def test_name_is_passed_correctly(self):
+        proc = _make_completed_process()
+        with _patch_run(proc) as mock_run:
+            gen_tile_layer_make_default("Cover", "sight-blocking")
+        cmd = mock_run.call_args[0][0]
+        name_idx = cmd.index("--name")
+        assert cmd[name_idx + 1] == "Cover"
+
+    def test_no_cwd(self):
+        proc = _make_completed_process()
+        with _patch_run(proc) as mock_run:
+            gen_tile_layer_make_default("Ground", "default")
+        assert "cwd" not in mock_run.call_args.kwargs
+
+    def test_error_message_includes_invalid_kind(self):
+        proc = _make_completed_process()
+        with _patch_run(proc):
+            result = gen_tile_layer_make_default("Ground", "non-existent-kind")
+        assert "non-existent-kind" in result
+        assert "Must be one of" in result
 
 
 # ---------------------------------------------------------------------------
@@ -1508,8 +1607,8 @@ class TestBuild:
         with _patch_run_build(proc) as mock_run:
             build("sdl", flags="-ggdb -w")
         cmd = mock_run.call_args[0][0]
-        assert "--flags" in cmd
-        assert "-ggdb -w" in cmd
+        assert any("--flags=" in arg for arg in cmd)
+        assert any("-ggdb -w" in arg for arg in cmd)
 
     def test_clean_flag(self):
         proc = _make_completed_process()
@@ -1544,13 +1643,17 @@ class TestBuild:
         proc = _make_completed_process(stdout="Build complete\n")
         with _patch_run_build(proc):
             result = build("sdl")
-        assert "Build complete" in result
+        parsed = json.loads(result)
+        assert parsed["build_exit_code"] == 0
+        assert "Build complete" in parsed["build_output"]
 
     def test_error_prefix_on_nonzero_exit(self):
         proc = _make_completed_process(stdout="", stderr="error msg\n", returncode=2)
         with _patch_run_build(proc):
             result = build("sdl")
-        assert result.startswith("ERROR (exit 2):")
+        parsed = json.loads(result)
+        assert parsed["build_exit_code"] == 2
+        assert parsed["build_output"].startswith("ERROR (exit 2):")
 
     def test_no_cwd_guard(self):
         """Build tools must work from the engine directory — no CWD guard."""
@@ -1558,7 +1661,18 @@ class TestBuild:
         with _patch_run_build(proc) as mock_run:
             result = build("sdl")
         mock_run.assert_called_once()
-        assert "ok" in result
+        parsed = json.loads(result)
+        assert parsed["build_exit_code"] == 0
+        assert "ok" in parsed["build_output"]
+
+    def test_returns_json_dict(self):
+        proc = _make_completed_process(stdout="Build complete\n")
+        with _patch_run_build(proc):
+            result = build("sdl")
+        parsed = json.loads(result)
+        assert isinstance(parsed, dict)
+        assert "build_exit_code" in parsed
+        assert "build_output" in parsed
 
 
 # ===========================================================================
@@ -1580,8 +1694,7 @@ class TestBuildCompileCommands:
         with _patch_run_build(proc) as mock_run:
             build_compile_commands("sdl", flags="-ggdb -w")
         cmd = mock_run.call_args[0][0]
-        assert "--flags" in cmd
-        assert "-ggdb -w" in cmd
+        assert "--flags=-ggdb -w" in cmd
 
     def test_game_dir_passed(self):
         proc = _make_completed_process()
@@ -1632,8 +1745,8 @@ class TestBuildSpotCheck:
         with _patch_run_build(proc) as mock_run:
             build_spot_check("sdl", "test.c", flags="-ggdb")
         cmd = mock_run.call_args[0][0]
-        assert "--flags" in cmd
-        assert "-ggdb" in cmd
+        assert any("--flags=" in arg for arg in cmd)
+        assert any("-ggdb" in arg for arg in cmd)
 
     def test_game_dir_passed(self):
         proc = _make_completed_process()
@@ -1650,19 +1763,41 @@ class TestBuildSpotCheck:
         cmd = mock_run.call_args[0][0]
         assert "--game-dir" not in cmd
 
-    def test_returns_empty_on_success(self):
+    def test_returns_stdout_on_success(self):
         proc = _make_completed_process(stdout="", stderr="")
         with _patch_run_build(proc):
             result = build_spot_check("sdl", "test.c")
-        assert result == ""
+        parsed = json.loads(result)
+        assert parsed["build_exit_code"] == 0
+        assert parsed["build_output"] == ""
 
     def test_error_prefix_on_nonzero_exit(self):
         proc = _make_completed_process(
             stdout="", stderr="test.c:4:10: error: undeclared\n", returncode=1)
         with _patch_run_build(proc):
             result = build_spot_check("sdl", "test.c")
-        assert result.startswith("ERROR (exit 1):")
-        assert "undeclared" in result
+        parsed = json.loads(result)
+        assert parsed["build_exit_code"] == 1
+        assert "undeclared" in parsed["build_output"]
+
+    def test_no_cwd_guard(self):
+        """Build tools must work from the engine directory — no CWD guard."""
+        proc = _make_completed_process(stdout="ok\n")
+        with _patch_run_build(proc) as mock_run:
+            result = build_spot_check("sdl", "test.c")
+        mock_run.assert_called_once()
+        parsed = json.loads(result)
+        assert parsed["build_exit_code"] == 0
+        assert "ok" in parsed["build_output"]
+
+    def test_returns_json_dict(self):
+        proc = _make_completed_process(stdout="")
+        with _patch_run_build(proc):
+            result = build_spot_check("sdl", "test.c")
+        parsed = json.loads(result)
+        assert isinstance(parsed, dict)
+        assert "build_exit_code" in parsed
+        assert "build_output" in parsed
 
     def test_absolute_path_accepted(self):
         proc = _make_completed_process()
@@ -1718,6 +1853,58 @@ class TestGenScene:
         with _patch_run(proc) as mock_run:
             gen_scene("Test")
         assert mock_run.call_args[1].get("cwd") is None
+
+    def test_main_menu_no_double_suffix(self, tmp_path, monkeypatch):
+        """Integration test: gen_scene must not produce register_scene__main_menu_menu."""
+        # Build minimal fake game project structure
+        (tmp_path / "include" / "types" / "implemented" / "scene").mkdir(parents=True)
+        (tmp_path / "source" / "scene" / "implemented").mkdir(parents=True)
+
+        scene_kind = tmp_path / "include" / "types" / "implemented" / "scene" / "scene_kind.h"
+        scene_kind.write_text(
+            "#ifndef IMPL_SCENE_KIND_H\n"
+            "#define IMPL_SCENE_KIND_H\n"
+            "#define DEFINE_SCENE_KIND\n"
+            "typedef enum Scene_Kind {\n"
+            "    Scene_Kind__None = 0,\n"
+            "    // GEN-BEGIN\n"
+            "    // GEN-END\n"
+            "    Scene_Kind__Unknown\n"
+            "} Scene_Kind;\n"
+            "#endif\n"
+        )
+
+        registrar = tmp_path / "source" / "scene" / "implemented" / "scene_registrar.c"
+        registrar.write_text(
+            '#include "scene/implemented/scene_registrar.h"\n'
+            "// GEN-INCLUDE-BEGIN\n"
+            '#include "scene/implemented/scene__main.h"\n'
+            "// GEN-INCLUDE-END\n"
+            "\n"
+            "void register_scenes(Scene_Manager *p_scene_manager) {\n"
+            "    // GEN-BEGIN\n"
+            "    register_scene__main(p_scene_manager);\n"
+            "    // GEN-END\n"
+            "}\n"
+        )
+
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.setenv("LAVENDER_DIR", str(PROJECT_ROOT))
+        monkeypatch.setenv("PYTHONPATH", str(PROJECT_ROOT / "tools"))
+
+        result = gen_scene("Main_Menu")
+        assert "generated successfully" in result
+
+        header = (tmp_path / "include" / "scene" / "implemented" / "scene__main_menu.h").read_text()
+        assert "register_scene__main_menu" in header
+        assert "register_scene__main_menu_menu" not in header
+
+        source = (tmp_path / "source" / "scene" / "implemented" / "scene__main_menu.c").read_text()
+        assert "register_scene__main_menu" in source
+        assert "register_scene__main_menu_menu" not in source
+        # Scene_Kind must preserve multi-word PascalCase
+        assert "Scene_Kind__Main_Menu" in source
+        assert "Scene_Kind__Main_menu" not in source
 
 
 # ===========================================================================
@@ -2043,3 +2230,370 @@ class TestScanGameActionsMcp:
         with patch("lavender_tools.scan_game_actions.run", side_effect=RuntimeError("boom")):
             result = scan_game_actions()
         assert result.startswith("ERROR:")
+
+
+# ---------------------------------------------------------------------------
+# gen_window
+# ---------------------------------------------------------------------------
+
+class TestGenWindow:
+    def test_basic_command(self):
+        proc = _make_completed_process()
+        with _patch_run(proc) as mock_run:
+            gen_window("MyWindow")
+        cmd = mock_run.call_args[0][0]
+        assert str(PROJECT_ROOT / "tools" / "lavender_tools" / "gen_window.py") in cmd
+        assert "--name" in cmd
+        assert "MyWindow" in cmd
+        assert "--ui" not in cmd
+
+    def test_ui_flag(self):
+        proc = _make_completed_process()
+        with _patch_run(proc) as mock_run:
+            gen_window("MyWindow", ui=True)
+        cmd = mock_run.call_args[0][0]
+        assert "--ui" in cmd
+
+    def test_load_func(self):
+        proc = _make_completed_process()
+        with _patch_run(proc) as mock_run:
+            gen_window("MyWindow", ui=True, load_func="custom_load")
+        cmd = mock_run.call_args[0][0]
+        assert "--load-func" in cmd
+        assert "custom_load" in cmd
+
+    def test_close_func(self):
+        proc = _make_completed_process()
+        with _patch_run(proc) as mock_run:
+            gen_window("MyWindow", ui=True, close_func="custom_close")
+        cmd = mock_run.call_args[0][0]
+        assert "--close-func" in cmd
+        assert "custom_close" in cmd
+
+    def test_sprites(self):
+        proc = _make_completed_process()
+        with _patch_run(proc) as mock_run:
+            gen_window("MyWindow", sprites=8)
+        cmd = mock_run.call_args[0][0]
+        assert "--sprites" in cmd
+        assert "8" in cmd
+
+    def test_ui_elements(self):
+        proc = _make_completed_process()
+        with _patch_run(proc) as mock_run:
+            gen_window("MyWindow", ui_elements=32)
+        cmd = mock_run.call_args[0][0]
+        assert "--ui-elements" in cmd
+        assert "32" in cmd
+
+    def test_no_cwd(self):
+        proc = _make_completed_process()
+        with _patch_run(proc) as mock_run:
+            gen_window("MyWindow")
+        assert "cwd" not in mock_run.call_args.kwargs
+
+    def test_success_returns_stdout(self):
+        proc = _make_completed_process(stdout="window registered\n")
+        with _patch_run(proc):
+            result = gen_window("MyWindow")
+        assert "window registered" in result
+
+    def test_error_on_nonzero(self):
+        proc = _make_completed_process(returncode=1, stderr="fail\n")
+        with _patch_run(proc):
+            result = gen_window("MyWindow")
+        assert result.startswith("ERROR (exit 1):")
+        assert "fail" in result
+
+
+# ---------------------------------------------------------------------------
+# gen_chunk_generator
+# ---------------------------------------------------------------------------
+
+class TestGenChunkGenerator:
+    def test_basic_command(self):
+        proc = _make_completed_process()
+        with _patch_run(proc) as mock_run:
+            gen_chunk_generator("Overworld")
+        cmd = mock_run.call_args[0][0]
+        assert str(PROJECT_ROOT / "tools" / "lavender_tools" / "gen_chunk_generator.py") in cmd
+        assert "--name" in cmd
+        assert "Overworld" in cmd
+
+    def test_no_cwd(self):
+        proc = _make_completed_process()
+        with _patch_run(proc) as mock_run:
+            gen_chunk_generator("Overworld")
+        assert "cwd" not in mock_run.call_args.kwargs
+
+    def test_success_returns_stdout(self):
+        proc = _make_completed_process(stdout="generator registered\n")
+        with _patch_run(proc):
+            result = gen_chunk_generator("Overworld")
+        assert "generator registered" in result
+
+    def test_error_on_nonzero(self):
+        proc = _make_completed_process(returncode=1, stderr="fail\n")
+        with _patch_run(proc):
+            result = gen_chunk_generator("Overworld")
+        assert result.startswith("ERROR (exit 1):")
+        assert "fail" in result
+
+
+# ---------------------------------------------------------------------------
+# mod_scene
+# ---------------------------------------------------------------------------
+
+class TestModScene:
+    @staticmethod
+    def _make_scene_file(tmp_path: Path) -> Path:
+        scene_dir = tmp_path / "source" / "scene" / "implemented"
+        scene_dir.mkdir(parents=True)
+        scene_file = scene_dir / "scene__test.c"
+        scene_file.write_text(
+            '// GEN-INCLUDE-BEGIN\n'
+            '// GEN-INCLUDE-END\n'
+            '\n'
+            '// GEN-FORWARD-BEGIN\n'
+            '// GEN-FORWARD-END\n'
+            '\n'
+            '// GEN-LOAD-BEGIN\n'
+            '// GEN-LOAD-END\n'
+            '\n'
+            '// GEN-FRAME-BEGIN\n'
+            '// GEN-FRAME-END\n'
+            '\n'
+            '// GEN-UNLOAD-BEGIN\n'
+            '// GEN-UNLOAD-END\n'
+        )
+        return scene_file
+
+    def test_register_chunk_generator_includes_header(self, tmp_path, monkeypatch):
+        scene_file = self._make_scene_file(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.setenv("LAVENDER_DIR", str(PROJECT_ROOT))
+        monkeypatch.setenv("PYTHONPATH", str(PROJECT_ROOT / "tools"))
+
+        result = mod_scene("Test", register_chunk_generator="register_chunk_generators")
+        assert "updated" in result
+
+        content = scene_file.read_text()
+        assert '#include "world/implemented/chunk_generator_registrar.h"' in content
+
+    def test_register_entity_initializer_includes_header(self, tmp_path, monkeypatch):
+        scene_file = self._make_scene_file(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.setenv("LAVENDER_DIR", str(PROJECT_ROOT))
+        monkeypatch.setenv("PYTHONPATH", str(PROJECT_ROOT / "tools"))
+
+        result = mod_scene("Test", register_entity_initializer="set_entity_initializer_in__entity_manager")
+        assert "updated" in result
+
+        content = scene_file.read_text()
+        assert '#include "entity/entity_manager.h"' in content
+
+    def test_register_tile_logic_includes_header(self, tmp_path, monkeypatch):
+        scene_file = self._make_scene_file(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.setenv("LAVENDER_DIR", str(PROJECT_ROOT))
+        monkeypatch.setenv("PYTHONPATH", str(PROJECT_ROOT / "tools"))
+
+        result = mod_scene("Test", register_tile_logic="register_tile_logic_tables")
+        assert "updated" in result
+
+        content = scene_file.read_text()
+        assert '#include "world/implemented/tile_logic_table_registrar.h"' in content
+        assert '#include "world/world.h"' in content
+
+    def test_multiple_registrations_include_all_headers(self, tmp_path, monkeypatch):
+        scene_file = self._make_scene_file(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.setenv("LAVENDER_DIR", str(PROJECT_ROOT))
+        monkeypatch.setenv("PYTHONPATH", str(PROJECT_ROOT / "tools"))
+
+        result = mod_scene(
+            "Test",
+            register_chunk_generator="register_chunk_generators",
+            register_entity_initializer="set_entity_initializer_in__entity_manager",
+            register_tile_logic="register_tile_logic_tables",
+        )
+        assert "updated" in result
+
+        content = scene_file.read_text()
+        assert '#include "world/implemented/chunk_generator_registrar.h"' in content
+        assert '#include "entity/entity_manager.h"' in content
+        assert '#include "world/implemented/tile_logic_table_registrar.h"' in content
+
+
+# ---------------------------------------------------------------------------
+# mod_entity
+# ---------------------------------------------------------------------------
+
+class TestModEntity:
+    @staticmethod
+    def _make_entity_file(tmp_path: Path) -> Path:
+        entity_dir = tmp_path / "source" / "entity" / "implemented"
+        entity_dir.mkdir(parents=True)
+        entity_file = entity_dir / "player.c"
+        entity_file.write_text(
+            '// GEN-INCLUDE-BEGIN\n'
+            '// GEN-INCLUDE-END\n'
+            '\n'
+            '// GEN-BEGIN-BEGIN\n'
+            '// GEN-BEGIN-END\n'
+            '\n'
+            'void m_entity_handler__update__player(\n'
+            '        Entity *p_entity,\n'
+            '        Game *p_game,\n'
+            '        World *p_world) {\n'
+            '    // player logic\n'
+            '}\n'
+        )
+        return entity_file
+
+    def test_sprite_wiring_includes_correct_headers(self, tmp_path, monkeypatch):
+        entity_file = self._make_entity_file(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.setenv("LAVENDER_DIR", str(PROJECT_ROOT))
+        monkeypatch.setenv("PYTHONPATH", str(PROJECT_ROOT / "tools"))
+
+        result = mod_entity(
+            "Player",
+            sprite_kind="Player_Knight",
+            texture_alias="player_knight",
+            animation_group="Player_Knight",
+            texture_size="16x16",
+        )
+        assert "updated" in result
+
+        content = entity_file.read_text()
+        assert '#include "rendering/aliased_texture_manager.h"' in content
+        assert '#include "rendering/sprite.h"' in content
+        assert '#include "rendering/sprite_manager.h"' in content
+        assert '#include "world/world.h"' in content
+        assert '#include "rendering/graphics_window.h"' in content
+        assert "allocate_sprite_from__sprite_manager" in content
+        assert "Sprite_Kind__Player_Knight" in content
+        assert "Sprite_Animation_Group_Kind__Player_Knight" in content
+        assert "TEXTURE_FLAG__SIZE_16x16" in content
+        assert "get_texture_by__alias" in content
+
+    def test_hitbox_wiring_includes_correct_headers(self, tmp_path, monkeypatch):
+        entity_file = self._make_entity_file(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.setenv("LAVENDER_DIR", str(PROJECT_ROOT))
+        monkeypatch.setenv("PYTHONPATH", str(PROJECT_ROOT / "tools"))
+
+        result = mod_entity(
+            "Player",
+            hitbox_size="16x16",
+        )
+        assert "updated" in result
+
+        content = entity_file.read_text()
+        assert '#include "collisions/hitbox_context.h"' in content
+        assert '#include "collisions/core/aabb/hitbox_aabb_manager.h"' in content
+        assert '#include "collisions/core/aabb/hitbox_aabb.h"' in content
+        assert '#include "world/world.h"' in content
+        assert "allocate_hitbox_aabb_from__hitbox_aabb_manager" in content
+        assert "set_size_of__hitbox_aabb" in content
+        assert "GET_UUID_P(p_entity)" in content
+        assert "GET_UUID_P(get_p_world_from__game(p_game))" in content
+
+    def test_update_handler_replacement(self, tmp_path, monkeypatch):
+        entity_file = self._make_entity_file(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.setenv("LAVENDER_DIR", str(PROJECT_ROOT))
+        monkeypatch.setenv("PYTHONPATH", str(PROJECT_ROOT / "tools"))
+
+        result = mod_entity(
+            "Player",
+            update_handler="m_entity_handler__update__player",
+        )
+        assert "updated" in result
+
+        content = entity_file.read_text()
+        assert "m_entity_handler__update__player" in content
+        assert "p_entity->entity_functions.m_entity_update_handler =" in content
+
+
+# ---------------------------------------------------------------------------
+# build (command construction)
+# ---------------------------------------------------------------------------
+
+class TestBuildCommandConstruction:
+    def test_build_invokes_build_py_with_equals_flags(self):
+        proc = _make_completed_process()
+        with _patch_run_build(proc) as mock_run:
+            build(platform="sdl", flags="-w")
+        cmd = mock_run.call_args[0][0]
+        assert f"--flags=-w" in cmd
+        # Ensure it is NOT split into two tokens
+        assert "--flags" not in cmd
+
+    def test_build_passes_game_dir_when_provided(self):
+        proc = _make_completed_process()
+        with _patch_run_build(proc) as mock_run:
+            build(platform="sdl", game_dir="/some/game")
+        cmd = mock_run.call_args[0][0]
+        assert "--game-dir" in cmd
+        assert "/some/game" in cmd
+
+    def test_build_omits_clean_when_false(self):
+        proc = _make_completed_process()
+        with _patch_run_build(proc) as mock_run:
+            build(platform="sdl", clean=False)
+        cmd = mock_run.call_args[0][0]
+        assert "--clean" not in cmd
+
+    def test_build_includes_clean_when_true(self):
+        proc = _make_completed_process()
+        with _patch_run_build(proc) as mock_run:
+            build(platform="sdl", clean=True)
+        cmd = mock_run.call_args[0][0]
+        assert "--clean" in cmd
+
+    def test_build_omits_game_dir_when_empty(self):
+        proc = _make_completed_process()
+        with _patch_run_build(proc) as mock_run:
+            build(platform="sdl")
+        cmd = mock_run.call_args[0][0]
+        assert "--game-dir" not in cmd
+
+
+# ---------------------------------------------------------------------------
+# build_spot_check (command construction)
+# ---------------------------------------------------------------------------
+
+class TestBuildSpotCheckCommandConstruction:
+    def test_build_spot_check_invokes_build_py_with_equals_flags(self):
+        proc = _make_completed_process()
+        with _patch_run_build(proc) as mock_run:
+            build_spot_check(platform="sdl", file="test.c", flags="-w")
+        cmd = mock_run.call_args[0][0]
+        assert f"--flags=-w" in cmd
+        # Ensure it is NOT split into two tokens
+        assert "--flags" not in cmd
+
+    def test_build_spot_check_passes_game_dir_when_provided(self):
+        proc = _make_completed_process()
+        with _patch_run_build(proc) as mock_run:
+            build_spot_check(platform="sdl", file="test.c", game_dir="/some/game")
+        cmd = mock_run.call_args[0][0]
+        assert "--game-dir" in cmd
+        assert "/some/game" in cmd
+
+    def test_build_spot_check_passes_file(self):
+        proc = _make_completed_process()
+        with _patch_run_build(proc) as mock_run:
+            build_spot_check(platform="sdl", file="core/source/test.c")
+        cmd = mock_run.call_args[0][0]
+        assert "--file" in cmd
+        assert "core/source/test.c" in cmd
+
+    def test_build_spot_check_omits_game_dir_when_empty(self):
+        proc = _make_completed_process()
+        with _patch_run_build(proc) as mock_run:
+            build_spot_check(platform="sdl", file="test.c")
+        cmd = mock_run.call_args[0][0]
+        assert "--game-dir" not in cmd

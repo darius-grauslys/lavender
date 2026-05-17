@@ -18,7 +18,7 @@ import struct
 import sys
 import zlib
 
-from lavender_tools import tool_manifest
+from lavender_tools import tool_history
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -82,9 +82,9 @@ def _write(path, content):
     with open(path, "w") as f:
         f.write(content)
     if existed:
-        tool_manifest.record_modify(path)
+        tool_history.record_modify(path)
     else:
-        tool_manifest.record_create(path)
+        tool_history.record_create(path)
 
 
 def _validate_name(name):
@@ -239,6 +239,14 @@ def main():
     # ===================================================================
     # 2. Update the .c file — GEN-BEGIN region (registration call)
     # ===================================================================
+    
+    # Check if the GEN region already has the p_PLATFORM_gfx_context declaration.
+    # If not, prepend it before the first registration call.
+    gen_begin = c_text.find("// GEN-BEGIN")
+    gen_end = c_text.find("// GEN-END")
+    gen_region = c_text[gen_begin:gen_end] if gen_begin != -1 and gen_end != -1 else ""
+    needs_decl = "PLATFORM_Gfx_Context *p_PLATFORM_gfx_context" not in gen_region
+    
     register_call = (
         f"\n"
         f"    load_texture_from__path_with__alias(\n"
@@ -253,6 +261,14 @@ def main():
         f"            {var_path},\n"
         f"            0);\n"
     )
+    
+    if needs_decl:
+        register_call = (
+            "\n"
+            "    PLATFORM_Gfx_Context *p_PLATFORM_gfx_context =\n"
+            "        get_p_PLATFORM_gfx_context_from__game(p_game);\n"
+            + register_call
+        )
 
     c_text = _insert_between_markers(
         c_text,

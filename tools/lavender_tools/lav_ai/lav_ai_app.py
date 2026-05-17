@@ -1,8 +1,7 @@
 """lav_ai_app.py — Lavender MCP server wrapping the project's code-gen scripts.
 
-This module exposes each of the 18 generator/modifier/query/build scripts
-plus 5 clangd LSP query tools (43 tools total) as MCP tools via a
-FastMCP server.
+This module exposes the project's generator, modifier, query, build, and
+clangd LSP query scripts as MCP tools via a FastMCP server.
 All scripts are invoked as sub-processes that inherit the caller's working
 directory (CWD).  Tool scripts are run via their absolute path under the
 Lavender project root.  The tools expect CWD to be a game project directory
@@ -23,6 +22,12 @@ import sys
 from pathlib import Path
 
 from mcp.server.fastmcp import FastMCP
+
+# Ensure the 'tools/' directory is on sys.path so that 'from lavender_tools.xxx import ...'
+# resolves correctly when this script is run directly.
+_TOOLS_DIR = str(Path(__file__).resolve().parents[2])
+if _TOOLS_DIR not in sys.path:
+    sys.path.insert(0, _TOOLS_DIR)
 
 # ---------------------------------------------------------------------------
 # Project root – three levels up from this file:
@@ -166,6 +171,7 @@ def gen_ui_create(
     output: str,
     sub_dir: str = "ui/implemented/generated/game/",
     source_name: str = "",
+    window_name: str = "",
     platform: str = "SDL",
     size: str = "256,192",
     base_dir: str = "./",
@@ -196,6 +202,10 @@ def gen_ui_create(
             (default: ``"ui/implemented/generated/game/"``).
         source_name: C source name (without extension).  Defaults to the
             output filename stem when empty.
+        window_name: The Graphics_Window_Kind name as registered by
+            ``gen_window``.  If empty, derived from ``source_name``.
+            Use this when the window name casing differs from the
+            source name (e.g. acronyms like ``"World__HUD"``).
         platform: Target platform — ``"SDL"`` or ``"NDS"``
             (default: ``"SDL"``).
         size: Window size as ``"W,H"`` (default: ``"256,192"``).
@@ -221,6 +231,8 @@ def gen_ui_create(
         cmd += ["--sub-dir", sub_dir]
     if source_name:
         cmd += ["--source-name", source_name]
+    if window_name:
+        cmd += ["--window-name", window_name]
     if platform != "SDL":
         cmd += ["--platform", platform]
     if size != "256,192":
@@ -507,7 +519,7 @@ def gen_tile(layer: str, name: str, is_logical: bool = False) -> str:
         ``python tools/gen_tile.py --layer <Layer> --name <TileName> [--is-logical]``
 
     The generator validates that the named layer exists in ``tile_layer.h``
-    and has a matching entry in ``.tile_layer_specs.json`` (created by
+    and has a matching entry in ``.lavender/tile_layer_specs.json`` (created by
     ``gen_tile_layer_name``).  It then inserts the new enum entry in the
     appropriate region of the layer's kind header.
 
@@ -565,7 +577,7 @@ def gen_tile_layer_name(
     This is the first step when introducing a new tile layer.  The generator:
 
     1. Adds ``Tile_Layer__<Name>`` to ``tile_layer.h``.
-    2. Saves the layer spec to ``.tile_layer_specs.json``.
+    2. Saves the layer spec to ``.lavender/tile_layer_specs.json``.
     3. Creates ``tile_<name>_kind.h`` (the first layer reuses ``tile_kind.h``).
     4. Creates ``tile_logic_table__<name>.h`` and ``.c``.
     5. Re-derives the optimal byte-packing and rewrites ``tile.h``,
@@ -1441,12 +1453,19 @@ def build(platform: str, flags: str = "-w",
     if err:
         return err
     cmd = [sys.executable, str(PROJECT_ROOT / "tools" / "lavender_tools" / "build.py"),
-           "--platform", platform, "--flags", flags]
+           "--platform", platform, f"--flags={flags}"]
     if clean:
         cmd.append("--clean")
     if game_dir:
         cmd += ["--game-dir", game_dir]
-    return _run_build(cmd)
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    output = result.stdout + result.stderr
+    if result.returncode != 0:
+        output = f"ERROR (exit {result.returncode}):\n{output}"
+    return json.dumps({
+        "build_exit_code": result.returncode,
+        "build_output": output
+    })
 
 
 # ---------------------------------------------------------------------------
@@ -1483,7 +1502,7 @@ def build_compile_commands(platform: str, flags: str = "-w",
     if err:
         return err
     cmd = [sys.executable, str(PROJECT_ROOT / "tools" / "lavender_tools" / "build_compile_commands.py"),
-           "--platform", platform, "--flags", flags]
+           "--platform", platform, f"--flags={flags}"]
     if game_dir:
         cmd += ["--game-dir", game_dir]
     return _run_build(cmd)
@@ -1526,10 +1545,17 @@ def build_spot_check(platform: str, file: str, flags: str = "-w",
     if err:
         return err
     cmd = [sys.executable, str(PROJECT_ROOT / "tools" / "lavender_tools" / "build_spot_check.py"),
-           "--platform", platform, "--file", file, "--flags", flags]
+           "--platform", platform, "--file", file, f"--flags={flags}"]
     if game_dir:
         cmd += ["--game-dir", game_dir]
-    return _run_build(cmd)
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    output = result.stdout + result.stderr
+    if result.returncode != 0:
+        output = f"ERROR (exit {result.returncode}):\n{output}"
+    return json.dumps({
+        "build_exit_code": result.returncode,
+        "build_output": output
+    })
 
 
 # ---------------------------------------------------------------------------
@@ -1630,15 +1656,82 @@ except Exception as _exc:
     def _get_clangd_session(**kwargs):  # type: ignore[misc]
         return None
 
+_clangd_cdb_recovery_attempted = False
+
+
+def _resolve_default_platform() -> str:
+    """Pick the first platform from .lavender/lavender.json, fallback 'sdl'."""
+    config = _read_lavender_config()
+    if config:
+        platforms = config.get("platforms", [])
+        if platforms:
+            return platforms[0].lower()
+    return "sdl"
+
+
+def _regenerate_compile_commands() -> bool:
+    """Run build_compile_commands to regenerate compile_commands.json.
+
+    Returns True if the file is now populated, False otherwise.
+    """
+    import logging as _logging
+    _log = _logging.getLogger(__name__)
+    platform = _resolve_default_platform()
+    _log.info("Auto-regenerating compile_commands.json (platform=%s)", platform)
+
+    cmd = [
+        sys.executable,
+        str(PROJECT_ROOT / "tools" / "lavender_tools" / "build_compile_commands.py"),
+        "--platform", platform,
+        "--flags=-w",
+    ]
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+        if result.returncode != 0:
+            _log.warning("compile_commands regeneration failed (exit %d): %s",
+                         result.returncode, result.stderr)
+            return False
+        _log.info("compile_commands.json regenerated successfully")
+        return True
+    except subprocess.TimeoutExpired:
+        _log.warning("compile_commands regeneration timed out (300s)")
+        return False
+    except Exception as exc:
+        _log.warning("compile_commands regeneration error: %s", exc)
+        return False
+
 
 def _require_clangd():
-    """Return a live ClangdSession or raise with a helpful message."""
-    global _clangd_session
+    """Return a live ClangdSession or raise with a helpful message.
+
+    Performs automatic recovery when compile_commands.json is empty or
+    missing:
+      1. Regenerates compile_commands.json via build_compile_commands.
+      2. Restarts clangd so it picks up the new index.
+    Recovery is attempted at most once per MCP server lifetime.
+    """
+    global _clangd_session, _clangd_cdb_recovery_attempted
     if _clangd_session is None:
         _clangd_session = _get_clangd_session()
     if _clangd_session is None:
         return None
     _clangd_session.ensure_ready()
+
+    # Check if clangd was started with an empty/missing CDB and recovery
+    # hasn't been attempted yet.
+    if not _clangd_session.started_with_valid_cdb and not _clangd_cdb_recovery_attempted:
+        _clangd_cdb_recovery_attempted = True
+        import logging as _logging
+        _log = _logging.getLogger(__name__)
+        _log.info("clangd started with empty compile_commands.json — "
+                   "attempting automatic recovery")
+        if _regenerate_compile_commands():
+            try:
+                _clangd_session.restart()
+                _log.info("clangd restarted with populated compile_commands.json")
+            except Exception as exc:
+                _log.warning("clangd restart after CDB regeneration failed: %s", exc)
+
     return _clangd_session
 
 
@@ -2108,6 +2201,424 @@ def scan_game_actions(project_root: str = "") -> str:
         from lavender_tools.scan_game_actions import run as _scan_game_actions_run
         result = _scan_game_actions_run(root)
         return json.dumps(result, indent=2)
+    except Exception as e:
+        return f"ERROR: {e}"
+
+
+# ---------------------------------------------------------------------------
+# Tool 37 – gen_window (Graphics_Window_Kind registration)
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+def gen_window(name: str, ui: bool = False, load_func: str = "",
+               close_func: str = "f_ui_window__close__default",
+               sprites: int = 0, ui_elements: int = 16) -> str:
+    """Register a Graphics_Window_Kind enum entry and optionally wire UI window.
+
+    **PREFER this tool** over manually editing ``graphics_window_kind.h``
+    or ``ui_window_registrar.c``.  The generator inserts enum entries inside
+    ``// GEN-BEGIN`` / ``// GEN-END`` markers with duplicate checking, and
+    wires the registrar atomically.
+
+    For UI windows (``ui=True``), the enum entry is auto-prefixed with
+    ``UI__``, producing ``Graphics_Window_Kind__UI__<Name>``.  The registrar
+    is also updated with a ``register_ui_window_into__ui_context()`` call.
+
+    For non-UI windows, only the enum entry is added as
+    ``Graphics_Window_Kind__<Name>``.
+
+    **Prerequisite for ui-architect tools**: ``gen_ui_create`` and
+    ``gen_ui_code`` will error if the window kind is not registered.
+    Run this tool first.
+
+    For Lavender-specific context on window registration patterns and
+    naming conventions, consult available memory tooling.
+
+    Invokes ``python tools/lavender_tools/gen_window.py --name <name> [--ui] [options]``.
+
+    Args:
+        name: Window name identifier.  E.g. ``"Game__Hud"``,
+            ``"World__Ground"``.  For UI windows, ``UI__`` is
+            auto-prepended to the enum entry.
+        ui: When True, marks as UI-centric window.  Adds ``UI__`` prefix
+            and wires ``ui_window_registrar.c``.
+        load_func: Load function name for UI windows.  Defaults to
+            ``allocate_ui_for__ui_window__<name_lower>``.
+        close_func: Close function name for UI windows.
+            (default: ``f_ui_window__close__default``)
+        sprites: Sprite allocation quantity for UI windows.
+            Positive = allocate, negative = share from parent,
+            0 = none.  (default: 0)
+        ui_elements: UI element allocation quantity for UI windows.
+            Positive = allocate, negative = share from parent,
+            0 = none.  (default: 16)
+
+    Returns:
+        Combined stdout+stderr.  Prefixed with ``ERROR (exit <code>):``
+        on failure.
+    """
+    cmd = [sys.executable, str(PROJECT_ROOT / "tools" / "lavender_tools" / "gen_window.py"),
+           "--name", name]
+    if ui:
+        cmd.append("--ui")
+    if load_func:
+        cmd += ["--load-func", load_func]
+    if close_func != "f_ui_window__close__default":
+        cmd += ["--close-func", close_func]
+    if sprites != 0:
+        cmd += ["--sprites", str(sprites)]
+    if ui_elements != 16:
+        cmd += ["--ui-elements", str(ui_elements)]
+    return _run(cmd)
+
+
+# ---------------------------------------------------------------------------
+# Tool 38 – mod_scene (scene resource wiring)
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+def mod_scene(
+    scene: str,
+    open_ui_windows: list[str] = [],
+    persist_ui_windows: list[str] = [],
+    call_register_ui_windows: bool = False,
+    call_register_aliased_textures: list[str] = [],
+    register_tile_logic: str = "",
+    register_chunk_generator: str = "",
+    register_entity_initializer: str = "",
+    allocate_world: bool = False,
+    manage_world: bool = False,
+) -> str:
+    """Wire resource lifecycle boilerplate into scene GEN markers.
+
+    **PREFER this tool** over manually editing scene source files to add
+    ``open_ui_window``, ``register_aliased_textures``, or world setup calls.
+    The tool injects idempotent C code into ``GEN-LOAD``, ``GEN-FRAME``,
+    ``GEN-FORWARD``, and ``GEN-UNLOAD`` marker regions.
+
+    **Prerequisite**: The scene must already exist (created by
+    ``gen_scene``).  UI windows must be registered (via ``gen_window``).
+
+    By default, every window opened via ``open_ui_windows`` is
+    automatically closed in ``GEN-UNLOAD``.  Use ``persist_ui_windows``
+    to exempt specific windows from auto-close.
+
+    **Out of scope**: World serialization/deserialization (load_world,
+    load_client, save_client).
+
+    For Lavender-specific context on scene lifecycle and resource wiring,
+    consult available memory tooling.
+
+    Invokes ``python tools/lavender_tools/mod_scene.py --scene <scene> [options]``.
+
+    Args:
+        scene: Scene name (e.g. ``"Main_Menu"``, ``"World"``).
+        open_ui_windows: List of UI window kinds to open in GEN-LOAD
+            and auto-close in GEN-UNLOAD.  E.g. ``["Game__Hud"]``.
+        persist_ui_windows: List of UI window kinds to exempt from
+            auto-close.  Must be a subset of ``open_ui_windows``.
+        call_register_ui_windows: When True, emits
+            ``register_ui_windows()`` in GEN-LOAD.
+        call_register_aliased_textures: List of texture registration
+            function names to call in GEN-LOAD.
+            E.g. ``["register_aliased_textures"]``.
+        register_tile_logic: Tile logic registration function name.
+        register_chunk_generator: Chunk generator registration function.
+        register_entity_initializer: Entity initializer function name.
+        allocate_world: When True, emits ``allocate_world_for__game``
+            and ``initialize_world`` in GEN-LOAD.
+        manage_world: When True, emits ``manage_world`` in GEN-FRAME.
+
+    Returns:
+        Combined stdout+stderr.  Prefixed with ``ERROR (exit <code>):``
+        on failure.
+    """
+    cmd = [sys.executable, str(PROJECT_ROOT / "tools" / "lavender_tools" / "mod_scene.py"),
+           "--scene", scene]
+    for w in open_ui_windows:
+        cmd += ["--open-ui-window", w]
+    for w in persist_ui_windows:
+        cmd += ["--persist-ui-window", w]
+    if call_register_ui_windows:
+        cmd.append("--call-register-ui-windows")
+    for f in call_register_aliased_textures:
+        cmd += ["--call-register-aliased-textures", f]
+    if register_tile_logic:
+        cmd += ["--register-tile-logic", register_tile_logic]
+    if register_chunk_generator:
+        cmd += ["--register-chunk-generator", register_chunk_generator]
+    if register_entity_initializer:
+        cmd += ["--register-entity-initializer", register_entity_initializer]
+    if allocate_world:
+        cmd.append("--allocate-world")
+    if manage_world:
+        cmd.append("--manage-world")
+    return _run(cmd)
+
+
+# ---------------------------------------------------------------------------
+# Tool 39 – gen_tile_logic (tile logic table entry management)
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+def gen_tile_logic(layer: str, name: str, impassable: bool = False,
+                   sight_blocking: bool = False, height: int = 0,
+                   is_logical: bool = False, remove: bool = False) -> str:
+    """Add or remove tile logic table entries.
+
+    **PREFER this tool** over manually editing tile logic table files.
+    Max 255 entries per layer (index 0 reserved).
+
+    For Lavender-specific context on tile logic conventions, consult
+    available memory tooling.
+
+    Args:
+        layer: Tile layer name (e.g. ``"Ground"``, ``"Cover"``).
+        name: Tile kind name (e.g. ``"Grass"``, ``"Stone_Brick"``).
+        impassable: Mark tile as impassable (default: passable).
+        sight_blocking: Mark tile as sight-blocking.
+        height: Tile height value (default: 0).
+        is_logical: Place in the logical region.
+        remove: Remove the entry instead of adding.
+
+    Returns:
+        Combined stdout+stderr.  Prefixed with ``ERROR (exit <code>):``
+        on failure.
+    """
+    cmd = [sys.executable, str(PROJECT_ROOT / "tools" / "lavender_tools" / "gen_tile_logic.py"),
+           "--layer", layer, "--name", name]
+    if impassable:
+        cmd.append("--impassable")
+    if sight_blocking:
+        cmd.append("--sight-blocking")
+    if height != 0:
+        cmd += ["--height", str(height)]
+    if is_logical:
+        cmd.append("--is-logical")
+    if remove:
+        cmd.append("--remove")
+    return _run(cmd)
+
+
+# ---------------------------------------------------------------------------
+# Tool 40 – gen_chunk_generator (chunk generator registration)
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+def gen_chunk_generator(name: str) -> str:
+    """Register a Chunk_Generator_Kind entry and create stub files.
+
+    **PREFER this tool** over manually creating chunk generator files.
+    Adds the enum entry, creates stub .h/.c, and patches the registrar.
+
+    For Lavender-specific context on chunk generation patterns, consult
+    available memory tooling.
+
+    Args:
+        name: Generator name (e.g. ``"Overworld"``, ``"Underground"``).
+
+    Returns:
+        Combined stdout+stderr.  Prefixed with ``ERROR (exit <code>):``
+        on failure.
+    """
+    cmd = [sys.executable, str(PROJECT_ROOT / "tools" / "lavender_tools" / "gen_chunk_generator.py"),
+           "--name", name]
+    return _run(cmd)
+
+
+# ---------------------------------------------------------------------------
+# Tool 41 – mod_entity (entity __begin handler wiring)
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+def mod_entity(entity: str, sprite_kind: str = "", texture_alias: str = "",
+               animation_group: str = "", texture_size: str = "16x16",
+               hitbox_size: str = "",
+               update_handler: str = "") -> str:
+    """Wire __begin first-frame handler boilerplate into entity files.
+
+    **PREFER this tool** over manually writing sprite allocation, hitbox
+    setup, and handler replacement code.  Not all entities need this.
+
+    Sprite allocation follows the engine pattern: texture lookup via alias,
+    sprite manager resolution through the world's graphics window, and
+    struct-field assignment for kind/animation_group.  Hitbox allocation
+    follows the engine pattern: hitbox context -> manager lookup (cast to
+    Hitbox_AABB_Manager), allocation with entity UUID, then size setting.
+
+    For Lavender-specific context on entity lifecycle patterns, consult
+    available memory tooling.
+
+    Args:
+        entity: Entity name (e.g. ``"Player"``, ``"Skeleton"``).
+        sprite_kind: Sprite_Kind name to attach.
+        texture_alias: Aliased texture name for the sprite.
+        animation_group: Sprite_Animation_Group_Kind name.
+        texture_size: Texture size flag for sprite allocation
+            (e.g. ``"16x16"``, ``"8x8"``, ``"32x32"``). Default: ``"16x16"``.
+        hitbox_size: Hitbox dimensions as ``"WxH"`` (e.g. ``"16x16"``).
+        update_handler: Real update handler function name.
+
+    Returns:
+        Combined stdout+stderr.  Prefixed with ``ERROR (exit <code>):``
+        on failure.
+    """
+    cmd = [sys.executable, str(PROJECT_ROOT / "tools" / "lavender_tools" / "mod_entity.py"),
+           "--entity", entity]
+    if sprite_kind:
+        cmd += ["--sprite-kind", sprite_kind]
+    if texture_alias:
+        cmd += ["--texture-alias", texture_alias]
+    if animation_group:
+        cmd += ["--animation-group", animation_group]
+    if texture_size:
+        cmd += ["--texture-size", texture_size]
+    if hitbox_size:
+        cmd += ["--hitbox-size", hitbox_size]
+    if update_handler:
+        cmd += ["--update-handler", update_handler]
+    return _run(cmd)
+
+
+# ---------------------------------------------------------------------------
+# Tool 42 – scan_sprite_assets (sprite sheet analysis)
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+def scan_sprite_assets(project_root: str = "") -> str:
+    """Analyze sprite sheet PNGs and produce a groups manifest.
+
+    **PREFER this tool** over manual visual inspection of sprite sheets.
+    Detects group boundaries, frame resolutions, and animation patterns.
+    Output: ``.lavender/sprite_groups_manifest.json``.
+
+    For Lavender-specific context on sprite sheet conventions, consult
+    available memory tooling.
+
+    Args:
+        project_root: Project root directory.  Defaults to CWD.
+
+    Returns:
+        JSON analysis report.  Prefixed with ``ERROR:`` on failure.
+    """
+    try:
+        root = project_root or str(Path.cwd())
+        from lavender_tools.scan_sprite_assets import run as _scan_run
+        result = _scan_run(root)
+        return json.dumps(result, indent=2)
+    except Exception as e:
+        return f"ERROR: {e}"
+
+
+# ---------------------------------------------------------------------------
+# Tool 43 – scan_assets (filesystem asset discovery)
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+def scan_assets(project_root: str = "") -> str:
+    """Discover and classify project assets.
+
+    **PREFER this tool** over manual directory inspection.  Scans
+    ``assets/`` recursively, classifies files by type, and validates
+    directory structure.  Output: ``.lavender/file_inventory.json``.
+
+    For Lavender-specific context on asset conventions, consult
+    available memory tooling.
+
+    Args:
+        project_root: Project root directory.  Defaults to CWD.
+
+    Returns:
+        JSON inventory report.  Prefixed with ``ERROR:`` on failure.
+    """
+    try:
+        root = project_root or str(Path.cwd())
+        from lavender_tools.scan_assets import run as _scan_run
+        result = _scan_run(root)
+        return json.dumps(result, indent=2)
+    except Exception as e:
+        return f"ERROR: {e}"
+
+
+# ---------------------------------------------------------------------------
+# Tool 44 – analyze_pipeline_run
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+def analyze_pipeline_run(run_id: str = "", project_root: str = "") -> str:
+    """Analyze a pipeline execution run and produce a structured report.
+
+    Parses .lavender/ artifacts (latest_run.json, agent logs, tool-history,
+    and pipeline logs) to return run status, duration, token cost, per-node
+    metrics, and detected anomalies.
+
+    Args:
+        run_id: UUID of the run to analyze.  If empty, the most recent run
+            from ``.lavender/pipeline_state/*/latest_run.json`` is used.
+        project_root: Project root directory.  Defaults to CWD.
+
+    Returns:
+        JSON report.  Prefixed with ``ERROR:`` on failure.
+    """
+    try:
+        root = project_root or str(Path.cwd())
+        from lavender_tools.analyze_pipeline import analyze_run
+        result = analyze_run(root, run_id)
+        return json.dumps(result, indent=2, default=str)
+    except Exception as e:
+        return f"ERROR: {e}"
+
+
+# ---------------------------------------------------------------------------
+# Tool 45 – analyze_pipeline_node
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+def analyze_pipeline_node(run_id: str, node_id: str, project_root: str = "") -> str:
+    """Deep-dive analysis of a specific pipeline node.
+
+    Returns every invocation of the node (timestamps, cycles, tokens,
+    acceptance status, response preview) and a summary histogram.
+
+    Args:
+        run_id: UUID of the pipeline run.
+        node_id: The node identifier to inspect.
+        project_root: Project root directory.  Defaults to CWD.
+
+    Returns:
+        JSON report.  Prefixed with ``ERROR:`` on failure.
+    """
+    try:
+        root = project_root or str(Path.cwd())
+        from lavender_tools.analyze_pipeline import analyze_node
+        result = analyze_node(root, run_id, node_id)
+        return json.dumps(result, indent=2, default=str)
+    except Exception as e:
+        return f"ERROR: {e}"
+
+
+# ---------------------------------------------------------------------------
+# Tool 46 – validate_pipeline_schema
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+def validate_pipeline_schema(project_root: str = "") -> str:
+    """Static pre-flight validation of pipeline JSON schemas.
+
+    Checks output-key consistency, condition expression type compatibility,
+    cycle edge metadata, and convergence progress_key references.
+
+    Args:
+        project_root: Project root directory.  Defaults to CWD.
+
+    Returns:
+        JSON validation report.  Prefixed with ``ERROR:`` on failure.
+    """
+    try:
+        root = project_root or str(Path.cwd())
+        from lavender_tools.analyze_pipeline import validate_schema
+        result = validate_schema(root)
+        return json.dumps(result, indent=2, default=str)
     except Exception as e:
         return f"ERROR: {e}"
 

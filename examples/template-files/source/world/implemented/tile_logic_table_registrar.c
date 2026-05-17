@@ -1,3 +1,9 @@
+/*
+ * THESE FILES ARE PSEUDO-CODE EXAMPLES.
+ * They illustrate how game projects can implement tile logic registration.
+ * They do NOT directly interface with the Lavender game engine core.
+ * Actual engine APIs and types may differ; consult core headers for canonical definitions.
+ */
 #include "world/implemented/tile_logic_table_registrar.h"
 #include "defines_weak.h"
 #include "world/tile_logic_context.h"
@@ -29,8 +35,6 @@ void register_tile_logic_tables(
                 p_tile_logic_context, 
                 Tile_Layer__Default, 
                 Tile_Kind__Logical),
-            // TODO: in this rework, do we even still use Tile_Kind within CORE?
-            // TODO: we probably still do.
             Tile_Cover_Kind__Logical, 
             sizeof(Tile_Logic_Record__Cover))) {
         debug_error("register_tile_logic_tables, failed to allocate tile_logic_table for Tile_Logic_Record__Cover");

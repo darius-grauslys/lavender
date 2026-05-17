@@ -6,11 +6,13 @@ Usage:
 
 This script reads the same XML format consumed by ``ui_builder.py`` and
 produces functionally identical C code with correct indentation.
-It also updates ``source/ui/implemented/ui_window_registrar.c`` to include
-and register the generated UI window function.
 
 The generated .c/.h files are **code-identical** to ``ui_builder.py``
 output except for whitespace/indentation improvements.
+
+**Prerequisite**: The target ``Graphics_Window_Kind`` entry must already
+exist.  Run ``gen_window.py`` first.  This script will error if the
+registration is missing.
 """
 
 from __future__ import annotations
@@ -23,7 +25,7 @@ import xml.etree.ElementTree as ET
 from collections import deque
 from typing import Dict, List, Optional, Sequence, Tuple
 
-from lavender_tools import tool_manifest
+from lavender_tools import tool_history
 
 # ---------------------------------------------------------------------------
 # Tiny XML helpers
@@ -1031,107 +1033,46 @@ def _write_output(config: Config, state: GeneratorState) -> None:
         with open(full, "w") as fh:
             fh.write(writer.get_source())
         if existed:
-            tool_manifest.record_modify(full)
+            tool_history.record_modify(full)
         else:
-            tool_manifest.record_create(full)
+            tool_history.record_create(full)
         print(f"  [wrote] {full}")
 
 
 # ---------------------------------------------------------------------------
-# UI Window Registrar updater
+# Window registration verification
 # ---------------------------------------------------------------------------
 
-_REGISTRAR_REL_PATH = "source/ui/implemented/ui_window_registrar.c"
-_REGISTRAR_HEADER_PATH = "include/ui/implemented/ui_window_registrar.h"
 
+def _derive_window_name(source_name: str) -> str:
+    """Derive the Graphics_Window_Kind segment from a source name.
 
-def _update_ui_window_registrar(config: Config) -> None:
-    """Add an include and register_ui_window_into__ui_context call.
-
-    Idempotent: if the entry already exists, does nothing.
+    e.g. 'ui_window__game__test' -> 'Game__Test'
     """
-    registrar_path = os.path.join(config.base_dir, _REGISTRAR_REL_PATH)
-    if not os.path.exists(registrar_path):
-        print(f"  [skip registrar] {registrar_path} not found")
-        return
-
-    # Derive the include path and function name from config
-    sub_dir = config.associated_header_sub_dir_in__include_folder
-    source_name = config.source_name
-    include_path = f"{sub_dir}{source_name}.h"
-    func_name = f"allocate_ui_for__{source_name}"
-
-    text = open(registrar_path, "r").read()
-
-    # Check if already registered
-    if func_name in text:
-        print(f"  [registrar] already contains {func_name}, skipping")
-        return
-
-    lines = text.split("\n")
-
-    # --- Add include ---
-    # Find the last #include line and insert after it
-    last_include_idx = -1
-    for i, line in enumerate(lines):
-        if line.startswith("#include"):
-            last_include_idx = i
-
-    include_line = f'#include "{include_path}"'
-    if include_line not in text:
-        lines.insert(last_include_idx + 1, include_line)
-        # Re-find the closing brace since we shifted lines
-        text = "\n".join(lines)
-        lines = text.split("\n")
-
-    # --- Add registration call ---
-    # Find the closing brace of register_ui_windows()
-    closing_brace_idx = -1
-    for i, line in enumerate(lines):
-        if line.strip() == "}":
-            closing_brace_idx = i
-
-    if closing_brace_idx == -1:
-        print(f"  [registrar] could not find closing brace in {registrar_path}")
-        return
-
-    # Build the registration call matching AncientsGame style
-    # We need a UI_Window_Kind. Derive from the source_name.
-    # e.g. "ui_window__game__test" -> "UI_Window_Kind__Game__Test"
-    window_kind = _derive_window_kind(source_name)
-
-    reg_call = (
-        f"    register_ui_window_into__ui_context(\n"
-        f"            p_ui_context, \n"
-        f"            {func_name}, \n"
-        f"            f_ui_window__close__default, \n"
-        f"            {window_kind},\n"
-        f"            0, 16); // TODO: magic num sprite quant"
-    )
-
-    lines.insert(closing_brace_idx, reg_call)
-
-    with open(registrar_path, "w") as fh:
-        fh.write("\n".join(lines))
-    tool_manifest.record_modify(registrar_path)
-
-    print(f"  [registrar] added {func_name} to {registrar_path}")
-
-
-def _derive_window_kind(source_name: str) -> str:
-    """Derive UI_Window_Kind__ enum from a source name.
-
-    e.g. 'ui_window__game__test' -> 'UI_Window_Kind__Game__Test'
-    """
-    # Strip the "ui_window__" prefix
     suffix = source_name
     if suffix.startswith("ui_window__"):
         suffix = suffix[len("ui_window__"):]
-
-    # Split on __ and capitalize each part
     parts = suffix.split("__")
-    capitalized = "__".join(p.capitalize() for p in parts)
-    return f"UI_Window_Kind__{capitalized}"
+    return "__".join(p.capitalize() for p in parts)
+
+
+def _verify_window_registration(config: Config) -> None:
+    """Verify that the target Graphics_Window_Kind entry exists.
+
+    Errors with an actionable message if the entry is missing,
+    directing the user to run gen_window.py first.
+    """
+    from lavender_tools import gen_window
+
+    name = _derive_window_name(config.source_name)
+    ok = gen_window.verify_window_exists(
+        name, ui=True, base_dir=config.base_dir,
+    )
+    if not ok:
+        print(
+            "  [verify] Window registration missing. "
+            "gen_ui_code.py requires the window to be registered first."
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -1170,7 +1111,7 @@ def read_ui(path: str, config: Config) -> Optional[GeneratorState]:
 
     if config.is_outputting:
         _write_output(config, state)
-        _update_ui_window_registrar(config)
+        _verify_window_registration(config)
 
     return state
 

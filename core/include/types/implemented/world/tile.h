@@ -3,6 +3,9 @@
 
 #include "defines_weak.h"
 
+// GEN-INCLUDE-BEGIN
+// GEN-INCLUDE-END
+
 #define DEFINE_TILE
 
 typedef struct Tile_t {

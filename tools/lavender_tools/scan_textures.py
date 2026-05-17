@@ -192,3 +192,16 @@ def run(project_root: str, output_path: str = "") -> dict:
             json.dump(result, f, indent=2)
             
     return result
+
+
+def main() -> None:
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--project-root", default="")
+    parser.add_argument("--output", default="")
+    args = parser.parse_args()
+    result = run(project_root=args.project_root, output_path=args.output)
+    print(json.dumps(result, indent=2))
+
+if __name__ == "__main__":
+    main()

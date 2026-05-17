@@ -53,16 +53,19 @@ default:
 	$(SILENT)ln -sf build/$(PLATFORM)/compile_commands.json $(GAME_DIR)/compile_commands.json
 endif
 
-# compile_commands: Generate compile_commands.json without a full build.
-# Uses bear with make -n (dry-run) via --force-wrapper mode.
+# compile_commands: Generate compile_commands.json for LSP tooling.
+# Uses bear with --force-preload (LD_PRELOAD) to intercept compiler
+# invocations across recursive make calls.  -B forces unconditional
+# rebuild so bear always captures cc commands even when objects are
+# already up to date.
 # Requires PLATFORM to be set.
 compile_commands:
 ifndef PLATFORM
 	$(error Usage: make compile_commands -e PLATFORM=sdl)
 endif
 	$(SILENT)mkdir -p $(BUILD)
-	$(SILENT)bear --output $(BUILD)/compile_commands.json --force-wrapper \
-		-- make -f $(LAVENDER_DIR)/Makefile.build $(BUILD)
+	$(SILENT)bear --output $(BUILD)/compile_commands.json --force-preload \
+		-- make -B -f $(LAVENDER_DIR)/Makefile.build $(BUILD)
 	$(SILENT)ln -sf build/$(PLATFORM)/compile_commands.json $(GAME_DIR)/compile_commands.json
 
 # check-file: Spot-build a single module with -fsyntax-only for validation.

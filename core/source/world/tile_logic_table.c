@@ -11,11 +11,11 @@ void initialize_tile_logic_table(
             sizeof(Tile_Logic_Table));
 }
 
-bool allocate_tile_logic_records_in__tile_logic_table(
+bool allocate_tile_logic_table__tile_logic_entries(
         Tile_Logic_Table *p_tile_logic_table,
         Quantity__u16 quantity_of__tile_logic_records__u16) {
     if (0 == quantity_of__tile_logic_records__u16) {
-        debug_error("allocate_tile_logic_records_in__tile_logic_table, quantity_of__tile_logic_records__u16 == 0.");
+        debug_error("allocate_tile_logic_table__tile_logic_entries, quantity_of__tile_logic_records__u16 == 0.");
         return false;
     }
 

@@ -18,7 +18,7 @@ import os
 import re
 import sys
 
-from lavender_tools import tool_manifest
+from lavender_tools import tool_history
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -26,7 +26,7 @@ from lavender_tools import tool_manifest
 
 PROJECT_ROOT = os.getcwd()
 
-_SPEC_FILE = os.path.join(PROJECT_ROOT, ".tile_layer_specs.json")
+_SPEC_FILE = os.path.join(PROJECT_ROOT, ".lavender", "tile_layer_specs.json")
 
 _TILE_LAYER_H = os.path.join(
     PROJECT_ROOT, "include", "types", "implemented", "world", "tile_layer.h")
@@ -49,9 +49,9 @@ def _write(path, content):
     with open(path, "w") as f:
         f.write(content)
     if existed:
-        tool_manifest.record_modify(path)
+        tool_history.record_modify(path)
     else:
-        tool_manifest.record_create(path)
+        tool_history.record_create(path)
 
 
 def _validate_name(name):
@@ -104,9 +104,13 @@ def _set_region(text, begin_tag, end_tag, new_lines):
 # ---------------------------------------------------------------------------
 
 def _load_specs():
-    if os.path.exists(_SPEC_FILE):
-        with open(_SPEC_FILE, "r") as f:
-            return json.load(f)
+    """Load tile layer specs, checking .lavender/ first, then project root (legacy)."""
+    new_path = os.path.join(PROJECT_ROOT, ".lavender", "tile_layer_specs.json")
+    old_path = os.path.join(PROJECT_ROOT, ".tile_layer_specs.json")
+    for path in (new_path, old_path):
+        if os.path.exists(path):
+            with open(path, "r") as f:
+                return json.load(f)
     return {}
 
 
@@ -227,7 +231,7 @@ def main():
     specs = _load_specs()
     if layer_pascal not in specs:
         msg = (f"Layer '{layer_pascal}' has no spec in "
-               f".tile_layer_specs.json. Run gen_tile_layer.py first.")
+               f".lavender/tile_layer_specs.json. Run gen_tile_layer.py first.")
         print(f"ERROR: {msg}", file=sys.stdout)
         print(f"ERROR: {msg}", file=sys.stderr)
         sys.exit(1)
@@ -278,22 +282,22 @@ def main():
                            "// GEN-LOGIC-BEGIN", "// GEN-LOGIC-END",
                            new_logic_region)
 
-        # Update Tile_Kind__Logical to point to the new last entry
-        # Pattern: Tile_Kind__Logical = <something>,
-        # or: Tile_Kind__Logical = Tile_Kind__None,
+        # Update the __Logical sentinel to point to the new last entry.
+        # First-layer uses Tile_Kind__Logical; other layers use
+        # Tile_{Layer}_Kind__Logical (e.g. Tile_Cover_Kind__Logical).
         logical_pattern = re.compile(
-            r'(Tile_Kind__Logical\s*=\s*)\w+',
+            r'(\w+__Logical\s*=\s*)\w+',
             re.MULTILINE)
         if logical_pattern.search(text):
             text = logical_pattern.sub(
                 rf'\g<1>{entry_name}', text)
         else:
-            _fatal("Could not find 'Tile_Kind__Logical = ...' in "
+            _fatal("Could not find '__Logical = ...' in "
                    f"{kind_header_path}")
 
         print(f"[gen_tile] Added logical entry '{entry_name}' to "
               f"{kind_header_path}")
-        print(f"  Updated Tile_Kind__Logical = {entry_name}")
+        print(f"  Updated __Logical = {entry_name}")
 
     else:
         # --- Insert into GEN-NO-LOGIC region ---

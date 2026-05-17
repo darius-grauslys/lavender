@@ -43,11 +43,19 @@ def run(project_root: str, output_path: str = "") -> dict:
         result["summary"]["warnings"] += 1
 
     # 1. Parse entity_kind.h
-    entity_kind_path = os.path.join(project_root, "core", "include", "types", "implemented", "entity", "entity_kind.h")
+    entity_kind_paths = [
+        os.path.join(project_root, "include", "types", "implemented", "entity", "entity_kind.h"),
+        os.path.join(project_root, "core", "include", "types", "implemented", "entity", "entity_kind.h")
+    ]
+    entity_kind_path = next((p for p in entity_kind_paths if os.path.isfile(p)), entity_kind_paths[0])
     entity_kinds = _parse_gen_entries(entity_kind_path, r'Entity_Kind__([A-Za-z0-9_]+)')
 
     # 2. Parse entity_registrar.c
-    entity_registrar_path = os.path.join(project_root, "core", "source", "entity", "implemented", "entity_registrar.c")
+    entity_registrar_paths = [
+        os.path.join(project_root, "source", "entity", "implemented", "entity_registrar.c"),
+        os.path.join(project_root, "core", "source", "entity", "implemented", "entity_registrar.c")
+    ]
+    entity_registrar_path = next((p for p in entity_registrar_paths if os.path.isfile(p)), entity_registrar_paths[0])
     registrar_content = ""
     registered_entities = []
     if os.path.isfile(entity_registrar_path):
@@ -60,7 +68,11 @@ def run(project_root: str, output_path: str = "") -> dict:
                     registered_entities = [name.lower() for name in re.findall(r'Entity_Kind__([A-Za-z0-9_]+)', m.group(1))]
 
     # Get sprite kinds to cross-reference (4.3.2)
-    sprite_kind_path = os.path.join(project_root, "core", "include", "types", "implemented", "rendering", "sprite", "sprite_kind.h")
+    sprite_kind_paths = [
+        os.path.join(project_root, "include", "types", "implemented", "rendering", "sprite", "sprite_kind.h"),
+        os.path.join(project_root, "core", "include", "types", "implemented", "rendering", "sprite", "sprite_kind.h")
+    ]
+    sprite_kind_path = next((p for p in sprite_kind_paths if os.path.isfile(p)), sprite_kind_paths[0])
     sprite_kinds = _parse_gen_entries(sprite_kind_path, r'Sprite_Kind__([A-Za-z0-9_]+)')
     
     handlers_to_check = ["update", "dispose", "enable", "disable", "serialize", "deserialize"]
@@ -155,3 +167,16 @@ def run(project_root: str, output_path: str = "") -> dict:
             json.dump(result, f, indent=2)
             
     return result
+
+
+def main() -> None:
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--project-root", default="")
+    parser.add_argument("--output", default="")
+    args = parser.parse_args()
+    result = run(project_root=args.project_root, output_path=args.output)
+    print(json.dumps(result, indent=2))
+
+if __name__ == "__main__":
+    main()

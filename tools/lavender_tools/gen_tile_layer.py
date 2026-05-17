@@ -24,7 +24,7 @@ import re
 import sys
 from itertools import permutations
 
-from lavender_tools import tool_manifest
+from lavender_tools import tool_history
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -51,9 +51,9 @@ def _write(path, content):
     with open(path, "w") as f:
         f.write(content)
     if existed:
-        tool_manifest.record_modify(path)
+        tool_history.record_modify(path)
     else:
-        tool_manifest.record_create(path)
+        tool_history.record_create(path)
 
 
 def _validate_name(name):
@@ -79,24 +79,38 @@ def _to_upper(name):
 # Region helpers  (GEN-BEGIN / GEN-END style)
 # ---------------------------------------------------------------------------
 
-def _get_region(text, begin_tag, end_tag):
+def _get_region(text, begin_tag, end_tag, last=False):
     """Return (pre, region_lines, post, indent) for a delimited region.
 
     *pre*   - lines up to and including the begin_tag line
     *region* - lines strictly between the two tag lines
     *post*  - lines from the end_tag line onward
     *indent* - whitespace prefix of the begin_tag line
+
+    When *last* is True, finds the last occurrence of *begin_tag* instead
+    of the first.
     """
     lines = text.split("\n")
     begin_idx = end_idx = None
     indent = ""
-    for i, line in enumerate(lines):
-        if begin_tag in line:
-            begin_idx = i
-            indent = line[: len(line) - len(line.lstrip())]
-        if end_tag in line and begin_idx is not None:
-            end_idx = i
-            break
+    if last:
+        for i, line in enumerate(lines):
+            if begin_tag in line:
+                begin_idx = i
+                indent = line[: len(line) - len(line.lstrip())]
+        if begin_idx is not None:
+            for i in range(begin_idx + 1, len(lines)):
+                if end_tag in lines[i]:
+                    end_idx = i
+                    break
+    else:
+        for i, line in enumerate(lines):
+            if begin_tag in line:
+                begin_idx = i
+                indent = line[: len(line) - len(line.lstrip())]
+            if end_tag in line and begin_idx is not None:
+                end_idx = i
+                break
     if begin_idx is None or end_idx is None:
         return None
     pre = lines[: begin_idx + 1]
@@ -105,9 +119,9 @@ def _get_region(text, begin_tag, end_tag):
     return pre, region, post, indent
 
 
-def _set_region(text, begin_tag, end_tag, new_lines):
+def _set_region(text, begin_tag, end_tag, new_lines, last=False):
     """Replace content between *begin_tag* and *end_tag* with *new_lines*."""
-    parts = _get_region(text, begin_tag, end_tag)
+    parts = _get_region(text, begin_tag, end_tag, last=last)
     if parts is None:
         _fatal(f"Could not find region {begin_tag}..{end_tag}")
     pre, _old, post, _indent = parts
@@ -132,7 +146,7 @@ _REGISTRAR_C = os.path.join(
     PROJECT_ROOT, "source", "world", "implemented",
     "tile_logic_table_registrar.c")
 
-_SPEC_FILE = os.path.join(PROJECT_ROOT, ".tile_layer_specs.json")
+_SPEC_FILE = os.path.join(PROJECT_ROOT, ".lavender", "tile_layer_specs.json")
 
 
 # ---------------------------------------------------------------------------
@@ -279,24 +293,35 @@ def _find_best_packing(layer_specs):
 
 
 # ---------------------------------------------------------------------------
-# Persistent layer spec storage  (.tile_layer_specs.json)
+# Persistent layer spec storage  (.lavender/tile_layer_specs.json)
 # ---------------------------------------------------------------------------
 
 def _load_specs():
-    if os.path.exists(_SPEC_FILE):
-        with open(_SPEC_FILE, "r") as f:
-            return json.load(f)
+    """Load tile layer specs, checking .lavender/ first, then project root (legacy)."""
+    new_path = os.path.join(PROJECT_ROOT, ".lavender", "tile_layer_specs.json")
+    old_path = os.path.join(PROJECT_ROOT, ".tile_layer_specs.json")
+    for path in (new_path, old_path):
+        if os.path.exists(path):
+            with open(path, "r") as f:
+                return json.load(f)
     return {}
 
 
 def _save_specs(specs):
-    existed = os.path.isfile(_SPEC_FILE)
-    with open(_SPEC_FILE, "w") as f:
+    """Save tile layer specs to .lavender/tile_layer_specs.json."""
+    path = os.path.join(PROJECT_ROOT, ".lavender", "tile_layer_specs.json")
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    existed = os.path.isfile(path)
+    with open(path, "w") as f:
         json.dump(specs, f, indent=2)
     if existed:
-        tool_manifest.record_modify(_SPEC_FILE)
+        tool_history.record_modify(path)
     else:
-        tool_manifest.record_create(_SPEC_FILE)
+        tool_history.record_create(path)
+    # Migrate: remove legacy root-level file if it exists
+    old_path = os.path.join(PROJECT_ROOT, ".tile_layer_specs.json")
+    if os.path.exists(old_path):
+        os.remove(old_path)
 
 
 # ---------------------------------------------------------------------------
@@ -372,14 +397,14 @@ def _create_tile_kind_h(name, is_first_layer):
             f"#define DEFINE_TILE_{upper}_KIND\n"
             f"\n"
             f"typedef enum {kind_name} {{\n"
-            f"    Tile_Kind__None = 0,\n"
+            f"    {kind_name}__None = 0,\n"
             f"    // GEN-LOGIC-BEGIN\n"
             f"    // GEN-LOGIC-END\n"
-            f"    Tile_Kind__Logical = Tile_Kind__None,\n"
+            f"    {kind_name}__Logical = {kind_name}__None,\n"
             f"\n"
             f"    // GEN-NO-LOGIC-BEGIN\n"
             f"    // GEN-NO-LOGIC-END\n"
-            f"    Tile_Kind__Unknown\n"
+            f"    {kind_name}__Unknown\n"
             f"}} {kind_name};\n"
             f"\n"
             f"#endif\n"
@@ -530,10 +555,14 @@ def _make_mask_and_shift(byte_idx, bit_offset, bits):
     return mask_expr, bit_offset
 
 
-def _emit_case_lines(pascal, byte_idx, mask_expr, shift):
+def _emit_case_lines(pascal, byte_idx, mask_expr, shift, is_default=False):
     """Return the C case-body lines for one layer."""
     lines = []
-    lines.append(f"        case Tile_Layer__{pascal}:")
+    if is_default:
+        lines.append(
+            f"        case Tile_Layer__{pascal}: /* == Tile_Layer__Default */")
+    else:
+        lines.append(f"        case Tile_Layer__{pascal}:")
     accessor = f"p_tile->array_of__tile_data__u8[{byte_idx}]"
     if shift > 0:
         lines.append(
@@ -569,7 +598,6 @@ def _generate_registrar_h(all_specs, ordered_names, placements, total_bytes):
     # ---- GET-LOGIC ----
     logic_lines = []
     logic_lines.append("    switch (the_tile_layer) {")
-    logic_lines.append("        case Tile_Layer__Default:")
     for idx, name in enumerate(ordered_names):
         pascal = _to_pascal(name)
         spec = specs_by_name[name]
@@ -580,7 +608,8 @@ def _generate_registrar_h(all_specs, ordered_names, placements, total_bytes):
             continue
         byte_idx, bit_offset, bits = field_map[key]
         mask_expr, shift = _make_mask_and_shift(byte_idx, bit_offset, bits)
-        logic_lines += _emit_case_lines(pascal, byte_idx, mask_expr, shift)
+        logic_lines += _emit_case_lines(
+            pascal, byte_idx, mask_expr, shift, is_default=(idx == 0))
     logic_lines.append("        default:")
     logic_lines.append("            return 0;")
     logic_lines.append("    }")
@@ -591,7 +620,6 @@ def _generate_registrar_h(all_specs, ordered_names, placements, total_bytes):
     # ---- GET-ANIMATION ----
     anim_lines = []
     anim_lines.append("    switch (the_tile_layer) {")
-    anim_lines.append("        case Tile_Layer__Default:")
     for idx, name in enumerate(ordered_names):
         pascal = _to_pascal(name)
         spec = specs_by_name[name]
@@ -602,7 +630,8 @@ def _generate_registrar_h(all_specs, ordered_names, placements, total_bytes):
             continue
         byte_idx, bit_offset, bits = field_map[key]
         mask_expr, shift = _make_mask_and_shift(byte_idx, bit_offset, bits)
-        anim_lines += _emit_case_lines(pascal, byte_idx, mask_expr, shift)
+        anim_lines += _emit_case_lines(
+            pascal, byte_idx, mask_expr, shift, is_default=(idx == 0))
     anim_lines.append("        default:")
     anim_lines.append("            return 0;")
     anim_lines.append("    }")
@@ -629,6 +658,9 @@ def _generate_registrar_c(all_specs, ordered_names):
 
     # --- GEN-INCLUDE-BEGIN / GEN-INCLUDE-END ---
     inc_lines = []
+    # tile_logic_context.h provides the static inline
+    # get_p_tile_logic_table_from__tile_logic_context() used in GEN-RECORDS.
+    inc_lines.append('#include "world/tile_logic_context.h"')
     for name in ordered_names:
         lower = _to_lower(name)
         inc_lines.append(
@@ -646,8 +678,7 @@ def _generate_registrar_c(all_specs, ordered_names):
             logical_name = "Tile_Kind__Logical"
         else:
             logical_name = f"Tile_{pascal}_Kind__Logical"
-
-        record_type = f"Tile_Logic_Record__{pascal}"
+        record_type = "Tile_Logic_Record"
 
         tbl_lines.append(
             "    if (!allocate_tile_logic_table__tile_logic_entries(")
@@ -656,22 +687,20 @@ def _generate_registrar_c(all_specs, ordered_names):
         tbl_lines.append(
             "                p_tile_logic_context, ")
         tbl_lines.append(
-            "                Tile_Layer__Default, ")
+            f"                Tile_Layer__{pascal}, ")
         tbl_lines.append(
-            f"                Tile_Kind__Logical),")
+            f"                {logical_name}),")
         tbl_lines.append(
-            f"            {logical_name}, ")
-        tbl_lines.append(
-            f"            sizeof({record_type}))) {{")
+            f"            {logical_name})) {{")
         tbl_lines.append(
             f'        debug_error("register_tile_logic_tables, '
             f'failed to allocate tile_logic_table for '
-            f'{record_type}");')
+            f'Tile_Layer__{pascal}");')
         tbl_lines.append(
             "    }")
     text = _set_region(text,
                        "// GEN-TABLES-BEGIN", "// GEN-TABLES-END",
-                       tbl_lines)
+                       tbl_lines, last=True)
 
     # --- GEN-RECORDS-BEGIN / GEN-RECORDS-END ---
     rec_lines = []
@@ -830,8 +859,10 @@ def cmd_make_default(args):
     #     Tile_Layer__Default__Sight_Blocking = \n        Tile_Layer__Cover,
     # as well as single-line:
     #     Tile_Layer__Default = Tile_Layer__Ground,
+    # Fresh projects from core use a numeric literal:
+    #     Tile_Layer__Default = 0,
     pattern = re.compile(
-        rf'({re.escape(enum_name)}\s*=\s*\n?\s*)Tile_Layer__\w+',
+        rf'({re.escape(enum_name)}\s*=\s*\n?\s*)(?:Tile_Layer__\w+|\d+)',
         re.MULTILINE)
 
     if not pattern.search(text):

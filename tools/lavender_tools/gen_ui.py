@@ -19,7 +19,7 @@ import sys
 import xml.etree.ElementTree as ET
 from typing import List, Tuple
 
-from lavender_tools import tool_manifest
+from lavender_tools import tool_history
 
 
 # ---------------------------------------------------------------------------
@@ -110,6 +110,18 @@ def _indent_xml(elem: ET.Element, level: int = 0) -> None:
         elem.tail = "\n" + "  " * (level - 1)
 
 
+def _derive_window_name(source_name: str) -> str:
+    """Derive the Graphics_Window_Kind segment from a source name.
+
+    e.g. 'ui_window__game__test' -> 'Game__Test'
+    """
+    suffix = source_name
+    if suffix.startswith("ui_window__"):
+        suffix = suffix[len("ui_window__"):]
+    parts = suffix.split("__")
+    return "__".join(p.title() for p in parts)
+
+
 def create_xml(cli_args: List[str]) -> None:
     """Scaffold a new UI XML template with all core Lavender essentials.
 
@@ -174,6 +186,14 @@ def create_xml(cli_args: List[str]) -> None:
             "when multiple XML UIs are loaded simultaneously.  For example, "
             "if the HUD uses IDs 0-2, a screen that includes the HUD should "
             "set this to 3 so its own elements start at ID 3.  (default: 0)"
+        ),
+    )
+    parser.add_argument(
+        "--window-name",
+        default=None,
+        help=(
+            "The Graphics_Window_Kind name as registered by gen_window. "
+            "If omitted, derived from --source-name."
         ),
     )
     parser.add_argument(
@@ -260,7 +280,20 @@ def create_xml(cli_args: List[str]) -> None:
     os.makedirs(os.path.dirname(os.path.abspath(opts.output)), exist_ok=True)
     ET.indent(tree, space="  ")
     tree.write(opts.output, encoding="utf-8", xml_declaration=True)
-    tool_manifest.record_create(opts.output)
+    # --- Verify window registration exists ---
+    from lavender_tools import gen_window
+
+    window_name = opts.window_name or _derive_window_name(source_name)
+    if not gen_window.verify_window_exists(
+        window_name, ui=True, base_dir=opts.base_dir,
+    ):
+        print(
+            "  [verify] Window registration missing. "
+            "gen_ui.py requires the window to be registered first."
+        )
+        sys.exit(1)
+
+    tool_history.record_create(opts.output)
 
     print(f"Created: {opts.output}")
     print(f"  source_name:          {source_name}")

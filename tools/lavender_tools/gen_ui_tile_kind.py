@@ -17,7 +17,7 @@ import os
 import re
 import sys
 
-from lavender_tools import tool_manifest
+from lavender_tools import tool_history
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -46,9 +46,9 @@ def _write(path, content):
     with open(path, "w") as f:
         f.write(content)
     if existed:
-        tool_manifest.record_modify(path)
+        tool_history.record_modify(path)
     else:
-        tool_manifest.record_create(path)
+        tool_history.record_create(path)
 
 
 def _validate_name(name):

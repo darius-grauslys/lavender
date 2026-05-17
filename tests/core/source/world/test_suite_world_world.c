@@ -55,11 +55,11 @@ TEST_FUNCTION(world__get_p_item_manager__returns_address) {
 /// Spec:    docs/specs/core/world/world.h.spec.md
 /// Section: 1.4.8 Sub-Component Accessors (static inline)
 ///
-TEST_FUNCTION(world__get_p_tile_logic_table__returns_address) {
+TEST_FUNCTION(world__get_p_tile_logic_context__returns_address) {
     World world;
     memset(&world, 0, sizeof(World));
-    Tile_Logic_Table *p_tlt = get_p_tile_logic_table_from__world(&world);
-    munit_assert_ptr_equal(p_tlt, &world.tile_logic_table);
+    Tile_Logic_Context *p_tlc = get_p_tile_logic_context_from__world(&world);
+    munit_assert_ptr_equal(p_tlc, &world.tile_logic_context);
     return MUNIT_OK;
 }
 

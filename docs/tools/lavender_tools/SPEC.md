@@ -38,7 +38,7 @@ gen_scene.py
   tool_history.py (records file operations with full callee-chain)
 ```
 
-Tools that compose other tools (scan_\* tools, future mod_scene.py) MUST
+Tools that compose other tools (scan_* tools, mod_scene.py) MUST
 import their dependencies as Python modules.
 
 ### 1.3 Module Layout
@@ -70,9 +70,9 @@ All project configuration lives under `.lavender/`:
 
 | File | Purpose |
 |------|---------|
-| `.lavender/lavender.json` | Authoritative project config: platforms, tool-manifest flags |
+| `.lavender/lavender.json` | Authoritative project config: platforms, tool-history flags |
 | `.lavender/clangd.json` | clangd subprocess config: path, timeouts, startup mode |
-| `.lavender/tool-manifest/` | Per-tool file operation history (tool_history output) |
+| `.lavender/tool-history/` | Per-tool file operation history (tool_history output) |
 | `.lavender/scans/` | Scan tool analysis output (JSON) |
 
 ### 1.5 Tool Categories
@@ -86,12 +86,82 @@ All project configuration lives under `.lavender/`:
 | `clangd_*` | LSP query | In-process (import) | `clang_tools.py` |
 | `query_*` | Introspection | Subprocess from MCP | `lav_query_tools.py` |
 
+### 1.6 Scene Resource Wiring (mod_scene.py)
+
+`mod_scene.py` injects resource lifecycle boilerplate into existing scene
+`GEN-*-BEGIN/END` markers.  It bridges the gap between `gen_scene.py`
+(which creates an empty skeleton) and the Coder Agent (which implements
+business logic).
+
+**CLI**:
+```
+python mod_scene.py --scene <Name>
+    [--open-ui-window <Kind>]...
+    [--persist-ui-window <Kind>]...
+    [--call-register-ui-windows]
+    [--call-register-aliased-textures <func>]...
+    [--register-tile-logic <func>]
+    [--register-chunk-generator <func>]
+    [--register-entity-initializer <func>]
+    [--allocate-world]
+    [--manage-world]
+```
+
+**Default lifecycle**: All windows opened via `--open-ui-window` are
+automatically closed in `GEN-UNLOAD`.  Use `--persist-ui-window` to
+exempt specific windows.
+
+**GEN markers touched**: `GEN-INCLUDE`, `GEN-FORWARD`, `GEN-LOAD`,
+`GEN-FRAME`, `GEN-UNLOAD`.
+
+**Idempotent**: Duplicate checking prevents re-injection of existing calls.
+
+**Out of scope**: World serialization/deserialization (separate future tool).
+
+### 1.7 Window Registration (gen_window.py)
+
+`gen_window.py` manages the `Graphics_Window_Kind` enum and UI window
+registrar wiring. It is a **prerequisite** for the UI generation tools.
+
+**Enforced workflow**:
+```
+scene-architect: gen_window --name Game__Hud --ui
+    |  Creates Graphics_Window_Kind__UI__Game__Hud enum entry
+    |  Wires ui_window_registrar.c
+    v
+ui-architect: gen_ui_create / gen_ui_code
+    |  VERIFIES window exists (errors if missing)
+```
+
+**CLI**:
+```
+python gen_window.py --name <Name> [--ui] [--load-func F] [--close-func F] [--sprites N] [--ui-elements N]
+```
+
+**Naming convention**:
+- UI windows: `Graphics_Window_Kind__UI__<Name>` (auto-prefixed when `--ui`)
+- Non-UI windows: `Graphics_Window_Kind__<Name>`
+
+**Files touched**:
+- `core/include/types/implemented/rendering/graphics_window_kind.h` — enum entry (GEN-BEGIN/END)
+- `source/ui/implemented/ui_window_registrar.c` — include + register call (GEN-INCLUDE-BEGIN/END, GEN-BEGIN/END) (UI mode only)
+
+**Public Python API** (for sub-tool composition per Section 1.2):
+```python
+register_window_kind(name, ui=False, base_dir="./") -> str | None
+register_ui_window(name, ..., base_dir="./") -> bool
+verify_window_exists(name, ui=False, base_dir="./") -> bool
+```
+
+`gen_ui_code.py` and `gen_ui.py` import `gen_window.verify_window_exists()`
+to gate their execution. They do NOT auto-register windows.
+
 ---
 
 ## 2.0 Tool History (tool_history.py)
 
 Tracks which tools touched which files, with full callee-chain attribution.
-Currently named `tool_manifest.py` (rename to `tool_history.py` pending).
+Module: `tools/lavender_tools/tool_history.py`.
 
 ### 2.1 API
 
@@ -101,9 +171,9 @@ record_modify(file_path: str) -> str | None   # Returns UUID
 record_read(file_path: str) -> str | None      # Returns UUID (disabled by default)
 ```
 
-### 2.2 Manifest Schema
+### 2.2 Record Schema
 
-Per-tool JSON files in `.lavender/tool-manifest/<tool_name>.json`:
+Per-tool JSON files in `.lavender/tool-history/<tool_name>.json`:
 
 ```json
 [{
@@ -139,7 +209,7 @@ In `.lavender/lavender.json`:
 
 ```json
 {
-  "tool-manifest": {
+  "tool-history": {
     "create": true,
     "modify": true,
     "read": false
@@ -147,7 +217,7 @@ In `.lavender/lavender.json`:
 }
 ```
 
-When `read` is `true`, scan_\* tools calling `record_read()` will log every
+When `read` is `true`, scan_* tools calling `record_read()` will log every
 file they analyze, creating a full trace of analysis inputs.
 
 ### 2.5 Future: Read-Back API
@@ -222,7 +292,7 @@ All scan tools:
   a matching `ui_func_signature` entry exists in the XML config section.
 
 **Inputs**: `assets/ui/xml/**/*.xml`, `ui_window_registrar.c`,
-`core/include/defines.h` (m_UI_\* typedefs)
+`core/include/defines.h` (m_UI_* typedefs)
 
 **Output**: `.lavender/scans/scan_ui.json`
 
@@ -258,12 +328,12 @@ All scan tools:
   `scene_kind.h` entries.
 - `4.4.3` UI window cross-ref: Parse scene source files for
   `open_ui_window`/`close_ui_window` calls. Verify referenced
-  `UI_Window_Kind__*` values exist.
+  `Graphics_Window_Kind__UI__*` values exist.
 - `4.4.4` Scene transition tracing: Find all `Scene_Kind__*` references in
   scene source files. Map which scenes can transition to which.
 
 **Inputs**: `scene_kind.h`, `scene_registrar.c`, `scene__*.c`,
-`ui_window_kind.h`
+`graphics_window_kind.h`
 
 **Output**: `.lavender/scans/scan_scene.json`
 
@@ -334,7 +404,7 @@ humans to look up the exact verification rule that produced each result.
 
 ### 4.8 Tool History Integration
 
-When `.lavender/lavender.json` has `"read": true` in the `tool-manifest`
+When `.lavender/lavender.json` has `"read": true` in the `tool-history`
 section, scan tools call `tool_history.record_read()` for every file they
 analyze. This creates a traceable record of analysis inputs. The scan output
 file itself is tracked via `tool_history.record_create()` (first run) or
