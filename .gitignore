@@ -10,3 +10,4 @@ core.*
 .aider*
 aider_notes/*
 *__pycache__*
+*.log
