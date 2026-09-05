@@ -11,10 +11,12 @@
 #include <libgen.h>
 #include <sys/stat.h>
 
-bool SDL_get_path_to__the_game(char path[1024]) {
+bool SDL_get_path_to__the_game(IO_path path) {
     bool result = (bool)(uint64_t)realpath("/proc/self/exe", path);
     if (!result) return false;
     dirname(path);
+    Index__u32 index_of__null_char = strnlen(path, MAX_LENGTH_OF__IO_PATH);
+    memset(&path[index_of__null_char], 0, MAX_LENGTH_OF__IO_PATH - index_of__null_char);
     return access(path, F_OK) == 0;
 }
 
@@ -60,7 +62,7 @@ Quantity__u32 PLATFORM_get_directories(
         Quantity__u32 max_length_of__directory_name) {
     DIR *p_dir = opendir(path);
     if (!p_dir) {
-        debug_error("SDL::UNIX::PLATFORM_get_directories, failed to find path: %s",
+        debug_warning("SDL::UNIX::PLATFORM_get_directories, failed to find path: %s",
                 path);
         return 0;
     }

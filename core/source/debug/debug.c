@@ -76,6 +76,10 @@ void debug_error(const char *msg_fmt, ...) {
     PLATFORM_coredump();
 #endif
 #endif
+
+#ifdef CRASH_ON_ERROR
+    PLATFORM_abort();
+#endif
 }
 
 void debug_abort(const char *msg_fmt, ...) {

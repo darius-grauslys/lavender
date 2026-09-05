@@ -14,6 +14,7 @@ void GL_process_input(
         GL_get_p_viewport__base_from__viewport_stack(
                 p_GL_viewport_stack);
 
+#ifndef DEBUG_INPUT
     clamp__p_i32(
             &p_input->cursor__3i32.x__i32,
             p_GL_viewport->x, 
@@ -45,4 +46,5 @@ void GL_process_input(
 
     p_input->cursor__3i32.x__i32 = (i32)x;
     p_input->cursor__3i32.y__i32 = (i32)y;
+#endif
 }

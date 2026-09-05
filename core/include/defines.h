@@ -2535,7 +2535,8 @@ typedef struct Game_Action_t Game_Action;
 typedef bool (*m_Game_Action_Handler)(
         Game *p_this_game,
         Client *p_client,
-        Game_Action *p_game_action);
+        Game_Action *p_game_action,
+        Process **p_ptr_OUT_process);
 
 typedef u32 Game_Flags__u32;
 

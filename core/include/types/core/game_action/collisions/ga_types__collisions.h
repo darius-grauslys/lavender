@@ -17,10 +17,10 @@ LAV_UNION__BEGIN(GA_Collisions){
 #endif
 
     struct {
-        Identifier__u32 uuid_of__target; 
         union {
 #include "types/core/game_action/collisions/aabb/ga_types__aabb.h"
         };
+        Identifier__u32 uuid_of__target; 
         Hitbox_Kind the_kind_of__hitbox;;
     };
 

@@ -187,6 +187,8 @@ void save_world(
 }
 
 Process *load_world(Game *p_game) {
+    // TODO: determine if this should be reworked as a functioning helper
+    // based on AG's world_load or require decomp (likely to be a helper)
     (void)get_p_latest_allocated_process_from__process_manager(
             get_p_process_manager_from__game(p_game));
 
@@ -198,7 +200,7 @@ Process *load_world(Game *p_game) {
         return 0;
     }
 
-    if (!dispatch_game_action__world__load_world(
+    if (!dispatch_game_action__world__load_world_and__get_a_process(
                 p_game, 
                 GET_UUID_P(
                     p_client__local))) {

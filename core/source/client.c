@@ -1,28 +1,28 @@
-#include "client.h"
-#include "collisions/collision_node.h"
-#include "collisions/hitbox_context.h"
-#include "collisions/core/aabb/hitbox_aabb.h"
-#include "collisions/core/aabb/hitbox_aabb_manager.h"
-#include "defines.h"
-#include "defines_weak.h"
-#include "game.h"
-#include "game_action/game_action.h"
-#include "game_action/game_action_logic_entry.h"
-#include "game_action/game_action_logic_table.h"
-#include "game_action/game_action_manager.h"
-#include "multiplayer/tcp_socket.h"
-#include "multiplayer/tcp_socket_manager.h"
-#include "platform.h"
-#include "process/process.h"
-#include "process/process_manager.h"
-#include "serialization/hashing.h"
-#include "serialization/serialization_header.h"
-#include "serialization/serialized_field.h"
-#include "world/chunk_vectors.h"
-#include "world/global_space_manager.h"
-#include "world/local_space.h"
-#include "world/local_space_manager.h"
-#include "world/world.h"
+#include <client.h>
+#include <collisions/collision_node.h>
+#include <collisions/hitbox_context.h>
+#include <collisions/core/aabb/hitbox_aabb.h>
+#include <collisions/core/aabb/hitbox_aabb_manager.h>
+#include <defines.h>
+#include <defines_weak.h>
+#include <game.h>
+#include <game_action/game_action.h>
+#include <game_action/game_action_logic_entry.h>
+#include <game_action/game_action_logic_table.h>
+#include <game_action/game_action_manager.h>
+#include <multiplayer/tcp_socket.h>
+#include <multiplayer/tcp_socket_manager.h>
+#include <platform.h>
+#include <process/process.h>
+#include <process/process_manager.h>
+#include <serialization/hashing.h>
+#include <serialization/serialization_header.h>
+#include <serialization/serialized_field.h>
+#include <world/chunk_vectors.h>
+#include <world/global_space_manager.h>
+#include <world/local_space.h>
+#include <world/local_space_manager.h>
+#include <world/world.h>
 
 void initialize_client(
         Client *p_client,
@@ -182,7 +182,10 @@ bool release_game_action_from__client(
 bool receive_game_action_for__client(
         Client *p_client,
         Game *p_game,
-        Game_Action *p_game_action) {
+        Game_Action *p_game_action,
+        Process **p_ptr_OUT_process) {
+    if (p_ptr_OUT_process)
+        *p_ptr_OUT_process = 0;
 
     Process_Manager *p_process_manager =
         get_p_process_manager_from__game(p_game);
@@ -267,6 +270,11 @@ bool receive_game_action_for__client(
                     p_game_action__allocated);
             return false;
         }
+
+        // Callee is passing the intent to track non-ephemeral processes.
+        if (p_ptr_OUT_process)
+            *p_ptr_OUT_process = p_process;
+
         return true;
     }
 
@@ -293,7 +301,10 @@ bool dispatch_game_action_for__client(
         Client *p_client,
         Game *p_game,
         TCP_Socket_Manager *p_tcp_socket_manager,
-        Game_Action *p_game_action) {
+        Game_Action *p_game_action,
+        Process **p_ptr_OUT_process) {
+    if (p_ptr_OUT_process)
+        *p_ptr_OUT_process = 0;
 
     Process_Manager *p_process_manager =
         get_p_process_manager_from__game(p_game);
@@ -350,6 +361,10 @@ bool dispatch_game_action_for__client(
                         p_game_action__allocated);
                 return false;
             }
+
+            // Callee is passing the intent to track this process.
+            if (p_ptr_OUT_process)
+                *p_ptr_OUT_process = p_process;
         }
     } else if (
             get_m_process__outbound_of__game_action_logic_entry(

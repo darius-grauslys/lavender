@@ -1,35 +1,35 @@
-#include "client.h"
-#include "collisions/core/aabb/hitbox_aabb_manager.h"
-#include "collisions/hitbox_context.h"
-#include "defines.h"
-#include "defines_weak.h"
-#include "game_action/core/world/game_action__world__load_client.h"
-#include "game_action/game_action.h"
-#include "game_action/game_action_logic_table.h"
-#include "game_action/implemented/game_action_registrar.h"
-#include "inventory/inventory_manager.h"
-#include "inventory/item_manager.h"
-#include "log/log.h"
-#include "multiplayer/tcp_socket_manager.h"
-#include "platform.h"
-#include "platform_defaults.h"
-#include "platform_defines.h"
-#include "process/filesystem_process.h"
-#include "process/process_manager.h"
-#include "rendering/aliased_texture_manager.h"
-#include "rendering/gfx_context.h"
-#include "rendering/graphics_window_manager.h"
-#include "rendering/sprite_manager.h"
-#include "scene/implemented/scene_registrar.h"
-#include "scene/scene.h"
-#include "scene/scene_manager.h"
-#include "serialization/hashing.h"
-#include "serialization/serialization_header.h"
-#include "sort/sort_list/sort_list_manager.h"
-#include "vectors.h"
-#include "world/chunk_vectors.h"
-#include "world/local_space_manager.h"
-#include "world/serialization/world_directory.h"
+#include <client.h>
+#include <collisions/core/aabb/hitbox_aabb_manager.h>
+#include <collisions/hitbox_context.h>
+#include <defines.h>
+#include <defines_weak.h>
+#include <game_action/core/world/game_action__world__load_client.h>
+#include <game_action/game_action.h>
+#include <game_action/game_action_logic_table.h>
+#include <game_action/implemented/game_action_registrar.h>
+#include <inventory/inventory_manager.h>
+#include <inventory/item_manager.h>
+#include <log/log.h>
+#include <multiplayer/tcp_socket_manager.h>
+#include <platform.h>
+#include <platform_defaults.h>
+#include <platform_defines.h>
+#include <process/filesystem_process.h>
+#include <process/process_manager.h>
+#include <rendering/aliased_texture_manager.h>
+#include <rendering/gfx_context.h>
+#include <rendering/graphics_window_manager.h>
+#include <rendering/sprite_manager.h>
+#include <scene/implemented/scene_registrar.h>
+#include <scene/scene.h>
+#include <scene/scene_manager.h>
+#include <serialization/hashing.h>
+#include <serialization/serialization_header.h>
+#include <sort/sort_list/sort_list_manager.h>
+#include <vectors.h>
+#include <world/chunk_vectors.h>
+#include <world/local_space_manager.h>
+#include <world/serialization/world_directory.h>
 #include <game.h>
 #include <entity/entity.h>
 #include <entity/entity_manager.h>
@@ -64,29 +64,35 @@ void flag_game_as__client(
 bool m_game_action_handler__dispatch__singleplayer(
         Game *p_game,
         Client *p_client,
-        Game_Action *p_game_action);
+        Game_Action *p_game_action,
+        Process **p_ptr_OUT_process);
 bool m_game_action_handler__dispatch__multiplayer(
         Game *p_game,
         Client *p_client,
-        Game_Action *p_game_action);
+        Game_Action *p_game_action,
+        Process **p_ptr_OUT_process);
 
 bool m_game_action_handler__receive__singleplayer(
         Game *p_game,
         Client *p_client,
-        Game_Action *p_game_action);
+        Game_Action *p_game_action,
+        Process **p_ptr_OUT_process);
 bool m_game_action_handler__receive__multiplayer(
         Game *p_game,
         Client *p_client,
-        Game_Action *p_game_action);
+        Game_Action *p_game_action,
+        Process **p_ptr_OUT_process);
 
 bool m_game_action_handler__resolve__singleplayer(
         Game *p_game,
         Client *p_client,
-        Game_Action *p_game_action);
+        Game_Action *p_game_action,
+        Process **p_ptr_OUT_process);
 bool m_game_action_handler__resolve__multiplayer(
         Game *p_game,
         Client *p_client,
-        Game_Action *p_game_action);
+        Game_Action *p_game_action,
+        Process **p_ptr_OUT_process);
 
 void initialize_game(
         Game *p_game) {
@@ -490,19 +496,13 @@ Process *load_client(
     (void)get_p_latest_allocated_process_from__process_manager(
             get_p_process_manager_from__game(p_game));
 
-    if (!dispatch_game_action__world__load_client(
+    Process *p_process = 
+        dispatch_game_action__world__load_client_and__get_a_process(
             p_game, 
-            uuid_of__client__u32)) {
-        debug_error("load_client, failed to dispatch game_action__world__load_client.");
-        return 0;
-    }
+            uuid_of__client__u32);
 
-    Process *p_process =
-        get_p_latest_allocated_process_from__process_manager(
-                get_p_process_manager_from__game(p_game));
-    
     if (!p_process) {
-        debug_error("load_client, process wasn't created.");
+        debug_error("load_client, failed to dispatch game_action__world__load_client.");
         return 0;
     }
 
@@ -576,7 +576,8 @@ void broadcast_game_action(
             get_p_local_client_by__from__game(p_game), 
             p_game, 
             get_p_tcp_socket_manager_from__game(p_game),
-            p_game_action);
+            p_game_action,
+            0);
 
     if (is_game_action__bad_request(p_game_action)) {
         return;
@@ -607,7 +608,8 @@ void broadcast_game_action(
                 p_client, 
                 p_game, 
                 get_p_tcp_socket_manager_from__game(p_game), 
-                p_game_action);
+                p_game_action,
+                0);
     }
 }
 
@@ -757,23 +759,27 @@ void manage_game__post_render(Game *p_game) {
 bool m_game_action_handler__dispatch__singleplayer(
         Game *p_game,
         Client *p_client,
-        Game_Action *p_game_action) {
+        Game_Action *p_game_action,
+        Process **p_ptr_OUT_process) {
     return dispatch_game_action_for__client(
             p_client, 
             p_game, 
             0,
-            p_game_action);
+            p_game_action,
+            p_ptr_OUT_process);
 }
 
 bool m_game_action_handler__dispatch__multiplayer(
         Game *p_game,
         Client *p_client,
-        Game_Action *p_game_action) {
+        Game_Action *p_game_action,
+        Process **p_ptr_OUT_process) {
     if (is_game_action__local(p_game_action)) {
         return m_game_action_handler__dispatch__singleplayer(
                 p_game, 
                 p_client,
-                p_game_action);
+                p_game_action,
+                p_ptr_OUT_process);
     }
 
     if (is_game_action__broadcasted(p_game_action)) {
@@ -794,28 +800,33 @@ bool m_game_action_handler__dispatch__multiplayer(
             p_client, 
             p_game, 
             get_p_tcp_socket_manager_from__game(p_game), 
-            p_game_action);
+            p_game_action,
+            p_ptr_OUT_process);
 }
 
 bool m_game_action_handler__receive__singleplayer(
         Game *p_game,
         Client *p_client,
-        Game_Action *p_game_action) {
+        Game_Action *p_game_action,
+        Process **p_ptr_OUT_process) {
     return receive_game_action_for__client(
             p_client, 
             p_game, 
-            p_game_action);
+            p_game_action,
+            p_ptr_OUT_process);
 }
 
 bool m_game_action_handler__receive__multiplayer(
         Game *p_game,
         Client *p_client,
-        Game_Action *p_game_action) {
+        Game_Action *p_game_action,
+        Process **p_ptr_OUT_process) {
     if (is_game_action__local(p_game_action)) {
         return m_game_action_handler__receive__singleplayer(
                 p_game, 
                 p_client,
-                p_game_action);
+                p_game_action,
+                p_ptr_OUT_process);
     }
 
     if (!p_client) {
@@ -826,14 +837,16 @@ bool m_game_action_handler__receive__multiplayer(
     receive_game_action_for__client(
             p_client, 
             p_game, 
-            p_game_action);
+            p_game_action,
+            p_ptr_OUT_process);
     return true;
 }
 
 bool m_game_action_handler__resolve__singleplayer(
         Game *p_game,
         Client *p_client,
-        Game_Action *p_game_action) {
+        Game_Action *p_game_action,
+        Process **p_ptr_OUT_process) {
     if (!is_game_action__allocated(p_game_action))
         return true;
 
@@ -850,14 +863,16 @@ bool m_game_action_handler__resolve__singleplayer(
 bool m_game_action_handler__resolve__multiplayer(
         Game *p_game,
         Client *p_client,
-        Game_Action *p_game_action) {
+        Game_Action *p_game_action,
+        Process **p_ptr_OUT_process) {
     if (!is_game_action__allocated(p_game_action))
         return true;
     if (is_game_action__local(p_game_action)) {
         return m_game_action_handler__resolve__singleplayer(
                 p_game, 
                 p_client,
-                p_game_action);
+                p_game_action,
+                p_ptr_OUT_process);
     }
 
     if (!p_client) {

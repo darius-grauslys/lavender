@@ -24,3 +24,11 @@ bool allocate_tile_logic_table__tile_logic_entries(
 
     return (bool)p_tile_logic_table->pM_tile_logic_records;
 }
+
+void release_tile_logic_table__tile_logic_entries(
+        Tile_Logic_Table *p_tile_logic_table) {
+    if (p_tile_logic_table->pM_tile_logic_records) {
+        free(p_tile_logic_table->pM_tile_logic_records);
+        p_tile_logic_table->pM_tile_logic_records = 0;
+    }
+}

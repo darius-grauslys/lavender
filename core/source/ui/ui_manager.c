@@ -567,7 +567,7 @@ void poll_ui_manager__update(
             break;
     }
 
-    if (is_input__click_released(p_input)) {
+    if (is_input__click_released(get_p_input_from__game(p_game))) {
         poll_ui_manager__update_for__clicked_and_dropped(
                 p_ui_manager, 
                 p_game,

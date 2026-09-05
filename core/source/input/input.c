@@ -1,5 +1,5 @@
-#include "game_action/core/input/game_action__input.h"
-#include "platform_defaults.h"
+#include <game_action/core/input/game_action__input.h>
+#include <platform_defaults.h>
 #include <input/input.h>
 
 void initialize_input(Input *p_input) {

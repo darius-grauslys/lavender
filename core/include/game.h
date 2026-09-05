@@ -364,7 +364,26 @@ bool dispatch_game_action(
             get_p_client_by__uuid_from__game(
                 p_game, 
                 uuid_of__client__u32),
-            p_game_action);
+            p_game_action,
+            0);
+}
+
+static inline
+Process *dispatch_game_action_and__expect_a_process(
+        Game *p_game,
+        Identifier__u32 uuid_of__client__u32,
+        Game_Action *p_game_action) {
+    Process *p_process;
+    if (p_game->m_game_action_handler__dispatch(
+            p_game,
+            get_p_client_by__uuid_from__game(
+                p_game, 
+                uuid_of__client__u32),
+            p_game_action,
+            &p_process)) {
+        return p_process;
+    }
+    return 0;
 }
 
 static inline
@@ -374,7 +393,23 @@ bool dispatch_game_action_to__server(
     return p_game->m_game_action_handler__dispatch(
             p_game,
             get_p_local_client_by__from__game(p_game),
-            p_game_action);
+            p_game_action,
+            0);
+}
+
+static inline
+Process *dispatch_game_action_to__server_and__expect_a_process(
+        Game *p_game,
+        Game_Action *p_game_action) {
+    Process *p_process;
+    if (p_game->m_game_action_handler__dispatch(
+            p_game,
+            get_p_local_client_by__from__game(p_game),
+            p_game_action,
+            &p_process)) {
+        return p_process;
+    }
+    return 0;
 }
 
 static inline
@@ -387,7 +422,26 @@ bool receive_game_action(
             get_p_client_by__uuid_from__game(
                 p_game, 
                 uuid_of__client__u32),
-            p_game_action);
+            p_game_action,
+            0);
+}
+
+static inline
+Process *receive_game_action_and__expect_a_process(
+        Game *p_game,
+        Identifier__u32 uuid_of__client__u32,
+        Game_Action *p_game_action) {
+    Process *p_process;
+    if (p_game->m_game_action_handler__receive(
+            p_game,
+            get_p_client_by__uuid_from__game(
+                p_game, 
+                uuid_of__client__u32),
+            p_game_action,
+            &p_process)) {
+        return p_process;
+    }
+    return 0;
 }
 
 static inline
@@ -400,7 +454,26 @@ bool resolve_game_action(
             get_p_client_by__uuid_from__game(
                 p_game, 
                 uuid_of__client__u32),
-            p_game_action);
+            p_game_action,
+            0);
+}
+
+static inline
+Process *resolve_game_action_and__expect_a_process(
+        Game *p_game,
+        Identifier__u32 uuid_of__client__u32,
+        Game_Action *p_game_action) {
+    Process *p_process;
+    if (p_game->m_game_action_handler__resolve(
+            p_game,
+            get_p_client_by__uuid_from__game(
+                p_game, 
+                uuid_of__client__u32),
+            p_game_action,
+            &p_process)) {
+        return p_process;
+    }
+    return 0;
 }
 
 static inline

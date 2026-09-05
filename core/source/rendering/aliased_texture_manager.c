@@ -254,12 +254,12 @@ bool get_texture_by__alias(
                 MAX_LENGTH_OF__TEXTURE_NAME);
         name_of__texture__copied__c_str[MAX_LENGTH_OF__TEXTURE_NAME] = 0;
         debug_error("get_texture_by__alias, failed to find texture for given name: %s", name_of__texture__copied__c_str);
-        return true;
+        return false;
     }
 
     *p_OUT_texture = get_texture_from__aliased_texture(
             p_aliased_texture__matching);
-    return false;
+    return true;
 }
 
 static inline

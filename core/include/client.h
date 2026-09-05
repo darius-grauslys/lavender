@@ -18,7 +18,8 @@ bool dispatch_game_action_for__client(
         Client *p_client,
         Game *p_game,
         TCP_Socket_Manager *p_tcp_socket_manager,
-        Game_Action *p_game_action);
+        Game_Action *p_game_action,
+        Process **p_ptr_OUT_process);
 
 Process *teleport_client(
         Game *p_game,
@@ -31,7 +32,8 @@ Process *teleport_client(
 bool receive_game_action_for__client(
         Client *p_client,
         Game *p_game,
-        Game_Action *p_game_action);
+        Game_Action *p_game_action,
+        Process **p_ptr_OUT_process);
 
 bool release_game_action_from__client(
         Client *p_client,

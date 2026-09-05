@@ -1,23 +1,24 @@
-#include "game_action/core/world/game_action__world__load_world.h"
-#include "client.h"
-#include "collisions/core/aabb/hitbox_aabb.h"
-#include "collisions/hitbox_context.h"
-#include "defines.h"
-#include "defines_weak.h"
-#include "game.h"
-#include "game_action/core/game_action__bad_request.h"
-#include "game_action/core/world/game_action__world__load_client.h"
-#include "game_action/game_action_logic_entry.h"
-#include "game_action/game_action_logic_table.h"
-#include "platform_defines.h"
-#include "process/game_action_process.h"
-#include "process/process.h"
-#include "process/process_manager.h"
-#include "world/chunk_vectors.h"
-#include "world/local_space_manager.h"
-#include "world/serialization/world_directory.h"
-#include "collisions/core/aabb/hitbox_aabb_manager.h"
-#include "types/core/game_action/world/load/ga_type__world__load__client.h"
+#include <game_action/core/world/game_action__world__load_world.h>
+#include <client.h>
+#include <collisions/core/aabb/hitbox_aabb.h>
+#include <collisions/hitbox_context.h>
+#include <defines.h>
+#include <defines_weak.h>
+#include <game.h>
+#include <game_action/core/game_action__bad_request.h>
+#include <game_action/core/world/game_action__world__load_client.h>
+#include <game_action/game_action_logic_entry.h>
+#include <game_action/game_action_logic_table.h>
+#include <platform_defines.h>
+#include <process/game_action_process.h>
+#include <process/process.h>
+#include <process/process_manager.h>
+#include <world/chunk_vectors.h>
+#include <world/local_space_manager.h>
+#include <world/serialization/world_directory.h>
+#include <collisions/core/aabb/hitbox_aabb_manager.h>
+#include <types/core/game_action/world/load/ga_type__world__load__client.h>
+#include <world/world.h>
 
 void m_process__game_action__world__load_world(
         Process *p_this_process,
@@ -69,21 +70,11 @@ void m_process__game_action__world__load_world(
     return;
 load_world_data:
     ;
-    Hitbox_AABB *p_hitbox_aabb =
-        get_p_hitbox_aabb_by__uuid_u32_from__hitbox_aabb_manager(
-                p_hitbox_aabb_manager,
-                GET_UUID_P(p_client));
-
-    if (!p_hitbox_aabb) {
-        debug_error("m_process__game_action__world__load_world, p_client lacks hitbox component. Cannot determine location to load.");
-        fail_process(p_this_process);
-        return;
-    }
 
     Chunk_Vector__3i32 gsv__3i32 =
         vector_3i32F4_to__chunk_vector_3i32(
-                get_position_3i32F4_of__hitbox_aabb(
-                    p_hitbox_aabb));
+                get_spawn_point_of__world(
+                    get_p_world_from__game(p_game)));
 
     load_local_space_manager_at__global_space_vector__3i32(
             get_p_local_space_manager_from__client(p_client), 

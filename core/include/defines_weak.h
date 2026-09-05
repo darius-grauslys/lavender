@@ -566,7 +566,7 @@ typedef void (*f_Tile_Render_Kernel)(
         u8 y__local,
         u8 z__local);
 
-#include "types/implemented/world/chunk_generator_kind.h"
+#include <types/implemented/world/chunk_generator_kind.h>
 #ifndef DEFINE_CHUNK_GENERATOR_KIND
 typedef enum Chunk_Generator_Kind {
     /// Assign enum to same value as None to specify default generator.

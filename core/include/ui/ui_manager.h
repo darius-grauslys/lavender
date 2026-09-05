@@ -138,9 +138,17 @@ UI_Element *get_p_ui_element_by__index_from__ui_manager(
         UI_Manager *p_ui_manager,
         Index__u16 index_of__ui_element) {
 #ifndef NDEBUG
+    if (!p_ui_manager) {
+        debug_error("get_p_ui_element_by__index_from__ui_manager, p_ui_manager == 0.");
+        return 0;
+    }
+    if (!p_ui_manager->pM_ptr_array_of__ui_elements) {
+        debug_error("get_p_ui_element_by__index_from__ui_manager, p_ui_manager->pM_ptr_array_of__ui_elements == 0.");
+        return 0;
+    }
     if (index_of__ui_element >=
             MAX_QUANTITY_OF__UI_ELEMENTS) {
-        debug_abort("get_p_ui_element_by__index_from__ui_manager, index of out bounds: %d", index_of__ui_element);
+        debug_error("get_p_ui_element_by__index_from__ui_manager, index of out bounds: %d", index_of__ui_element);
         return 0;
     }
 #endif

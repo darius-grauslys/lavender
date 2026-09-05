@@ -1,27 +1,27 @@
-#include "game_action/core/hitbox/game_action__hitbox.h"
-#include "collisions/collision_node.h"
-#include "collisions/hitbox_context.h"
-#include "defines.h"
-#include "defines_weak.h"
-#include "game.h"
-#include "game_action/game_action_logic_entry.h"
-#include "game_action/game_action_logic_table.h"
-#include "collisions/core/aabb/hitbox_aabb_manager.h"
-#include "collisions/core/aabb/hitbox_aabb.h"
-#include "process/process.h"
-#include "vectors.h"
-#include "world/chunk_vectors.h"
-#include "world/global_space.h"
-#include "world/global_space_manager.h"
-#include "world/world.h"
-#include "types/core/game_action/collisions/ga_types__collisions.h"
-#include "types/core/game_action/collisions/aabb/ga_types__aabb.h"
+#include <game_action/core/hitbox/game_action__hitbox.h>
+#include <collisions/collision_node.h>
+#include <collisions/hitbox_context.h>
+#include <defines.h>
+#include <defines_weak.h>
+#include <game.h>
+#include <game_action/game_action_logic_entry.h>
+#include <game_action/game_action_logic_table.h>
+#include <collisions/core/aabb/hitbox_aabb_manager.h>
+#include <collisions/core/aabb/hitbox_aabb.h>
+#include <process/process.h>
+#include <vectors.h>
+#include <world/chunk_vectors.h>
+#include <world/global_space.h>
+#include <world/global_space_manager.h>
+#include <world/world.h>
+#include <types/core/game_action/collisions/ga_types__collisions.h>
+#include <types/core/game_action/collisions/aabb/ga_types__aabb.h>
                                  
-#include "types/core/game_action/collisions/aabb/ga_type__collisions__aabb__update__pos_vec_i32.h"
-#include "types/core/game_action/collisions/aabb/ga_type__collisions__aabb__update__pos_vec_i32F4.h"
-#include "types/core/game_action/collisions/aabb/ga_type__collisions__aabb__update__acc_i16.h"
-#include "types/core/game_action/collisions/aabb/ga_type__collisions__aabb__update__acc_i16F4.h"
-#include "types/core/game_action/collisions/aabb/ga_type__collisions__aabb__update__acc_i16F8.h"
+#include <types/core/game_action/collisions/aabb/ga_type__collisions__aabb__update__pos_vec_i32.h>
+#include <types/core/game_action/collisions/aabb/ga_type__collisions__aabb__update__pos_vec_i32F4.h>
+#include <types/core/game_action/collisions/aabb/ga_type__collisions__aabb__update__acc_i16.h>
+#include <types/core/game_action/collisions/aabb/ga_type__collisions__aabb__update__acc_i16F4.h>
+#include <types/core/game_action/collisions/aabb/ga_type__collisions__aabb__update__acc_i16F8.h>
 
 void m_process__game_action__hitbox(
         Process *p_this_process,
@@ -156,8 +156,6 @@ void initialize_game_action_for__hitbox(
     set_the_kind_of__game_action(
             p_game_action, 
             Game_Action_Kind__Hitbox);
-    *get_p_uuid_of__target_from__ga_collisions(p_game_action) =
-        uuid_of__target__u32;
     *get_p_position_3i32F4_from__ga_aabb__update__pos_vec_i32F4(p_game_action) =
         position__3i32F4;
     *get_p_velocity_3i32F4_from__ga_aabb__update__pos_vec_i32F4(p_game_action) =
@@ -165,6 +163,8 @@ void initialize_game_action_for__hitbox(
     *get_p_acceleration_3i16F8_from__ga_aabb__update__acc_i16F8(
             p_game_action) =
         acceleration__3i16F8;
+    *get_p_uuid_of__target_from__ga_collisions(p_game_action) =
+        uuid_of__target__u32;
     *get_p_the_kind_of_hitbox_from__ga_collisions(p_game_action) =
         the_kind_of__hitbox;
 }

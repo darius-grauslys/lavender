@@ -1,7 +1,7 @@
 #ifndef INPUT_H
 #define INPUT_H
 
-#include "platform_defaults.h"
+#include <platform_defaults.h>
 #include <bits/pthreadtypes.h>
 #include <vectors.h>
 #include <defines.h>
@@ -76,7 +76,7 @@ static bool inline is_input__turn_right_released(Input *p_input) {
     return p_input->input_flags__released & INPUT_TURN_RIGHT;
 }
 static bool inline is_input__none_released(Input *p_input) {
-    return p_input->input_flags__released & INPUT_NONE;
+    return p_input->input_flags__released == INPUT_NONE;
 }
 static bool inline is_input__click_released(Input *p_input) {
     return p_input->input_flags__released & INPUT_CLICK;

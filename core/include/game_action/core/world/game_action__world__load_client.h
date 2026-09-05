@@ -13,14 +13,14 @@ void initialize_game_action_for__world__load_client(
         Identifier__u32 uuid_of__client__u32);
 
 static inline
-bool dispatch_game_action__world__load_client(
+Process *dispatch_game_action__world__load_client_and__get_a_process(
         Game *p_game,
         Identifier__u32 uuid_of__client__u32) {
     Game_Action ga_resolve;
     initialize_game_action_for__world__load_client(
             &ga_resolve,
             uuid_of__client__u32);
-    return dispatch_game_action_to__server(
+    return dispatch_game_action_to__server_and__expect_a_process(
             p_game, 
             &ga_resolve);
 }

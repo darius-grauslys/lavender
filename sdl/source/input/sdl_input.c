@@ -317,6 +317,10 @@ void PLATFORM_poll_input(
         Input *p_input) {
     const u8 *p_keys = SDL_GetKeyboardState(0);
 
+#ifndef DEBUG_INPUT
+    // If DEBUG_INPUT is defined, then the input is being
+    // manually driven and cleared.
+
     p_input->input_flags__pressed_old =
         p_input->input_flags__pressed;
 
@@ -367,6 +371,7 @@ void PLATFORM_poll_input(
                     p_input);
             break;
     }
+#endif
 
     p_input->input_flags__held =
         p_input->input_flags__pressed_old

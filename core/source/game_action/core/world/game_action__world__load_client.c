@@ -1,25 +1,25 @@
-#include "game_action/core/world/game_action__world__load_client.h"
-#include "client.h"
-#include "collisions/hitbox_context.h"
-#include "collisions/core/aabb/hitbox_aabb.h"
-#include "collisions/core/aabb/hitbox_aabb_manager.h"
-#include "debug/debug.h"
-#include "defines.h"
-#include "defines_weak.h"
-#include "game.h"
-#include "game_action/core/game_action__bad_request.h"
-#include "game_action/game_action.h"
-#include "game_action/game_action_logic_entry.h"
-#include "game_action/game_action_logic_table.h"
-#include "process/game_action_process.h"
-#include "process/process.h"
-#include "process/process_manager.h"
-#include "vectors.h"
-#include "world/chunk_vectors.h"
-#include "world/local_space_manager.h"
-#include "world/serialization/world_directory.h"
-#include "world/world.h"
-#include "types/core/game_action/world/load/ga_type__world__load__client.h"
+#include <game_action/core/world/game_action__world__load_client.h>
+#include <client.h>
+#include <collisions/hitbox_context.h>
+#include <collisions/core/aabb/hitbox_aabb.h>
+#include <collisions/core/aabb/hitbox_aabb_manager.h>
+#include <debug/debug.h>
+#include <defines.h>
+#include <defines_weak.h>
+#include <game.h>
+#include <game_action/core/game_action__bad_request.h>
+#include <game_action/game_action.h>
+#include <game_action/game_action_logic_entry.h>
+#include <game_action/game_action_logic_table.h>
+#include <process/game_action_process.h>
+#include <process/process.h>
+#include <process/process_manager.h>
+#include <vectors.h>
+#include <world/chunk_vectors.h>
+#include <world/local_space_manager.h>
+#include <world/serialization/world_directory.h>
+#include <world/world.h>
+#include <types/core/game_action/world/load/ga_type__world__load__client.h>
 
 void m_process__game_action__world__load_client__inbound(
         Process *p_this_process,
@@ -47,25 +47,13 @@ void m_process__game_action__world__load_client__inbound(
         return;
     }
 
-    if (!dispatch_game_action__world__load_client(
+    Process *p_process = 
+        dispatch_game_action__world__load_client_and__get_a_process(
                 p_game, 
-                get_uuid_u32_of__client_from__ga_world_load(p_game_action))) {
-        debug_error("m_process__game_action__world__load_client__inbound, fail to dispatch game_action load_client.");
-        dispatch_game_action__bad_request(
-                p_game, 
-                p_game_action, 
-                1);
-        fail_process(p_this_process);
-        return;
-    }
-
-    Process *p_process =
-        get_p_latest_allocated_process_from__process_manager(
-                get_p_process_manager_from__game(
-                    p_game));
+                get_uuid_u32_of__client_from__ga_world_load(p_game_action));
 
     if (!p_process) {
-        debug_error("m_process__game_action__world__load_client__inbound, process for loading client wasn't created.");
+        debug_error("m_process__game_action__world__load_client__inbound, fail to dispatch game_action load_client.");
         dispatch_game_action__bad_request(
                 p_game, 
                 p_game_action, 

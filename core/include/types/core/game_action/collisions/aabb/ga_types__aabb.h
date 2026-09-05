@@ -1,5 +1,9 @@
-#ifndef GA_TYPES__AABB_H
+#if !defined(GA_TYPES__AABB_H) \
+    || defined(INJECTION_ACTIVE)
+
+#ifndef INJECTION_ACTIVE
 #define GA_TYPES__AABB_H
+#endif
 #define GA_TYPE_CONTEXT
 
 #ifndef DEFINES_H

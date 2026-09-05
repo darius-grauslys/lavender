@@ -28,13 +28,13 @@ else
 
 .DEFAULT_GOAL := $(GAME)
 
-include $(BASE_DIR)/Makefile.include
-include $(BASE_DIR)/core/Makefile.build
-include $(BASE_DIR)/$(PLATFORM)/Makefile.build
-
 ifneq ($(GAME_DIR),$(BASE_DIR))
 include $(GAME_DIR)/Makefile.build
 endif
+
+include $(BASE_DIR)/Makefile.include
+include $(BASE_DIR)/core/Makefile.build
+include $(BASE_DIR)/$(PLATFORM)/Makefile.build
 
 # Unified pattern rule for all .c -> .o compilation.
 # vpath directives in core/Makefile.build, $(PLATFORM)/Makefile.build,

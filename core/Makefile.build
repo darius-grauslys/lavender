@@ -1,1 +1,6 @@
+ifeq ($(GAME_DIR),$(BASE_DIR))
 vpath %.c $(SOURCE_CORE)
+else
+CORE_VPATH_DIRS := $(shell find $(SOURCE_CORE) -type d)
+vpath %.c $(CORE_VPATH_DIRS)
+endif

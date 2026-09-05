@@ -1,6 +1,8 @@
 #ifndef SDL_FILESYSTEM_DEFINES_H
 #define SDL_FILESYSTEM_DEFINES_H
 
+#include <defines.h>
+
 typedef enum {
     Asset_Directory_Kind__None,
     Asset_Directory_Kind__Assets,
@@ -19,6 +21,6 @@ typedef enum {
     Asset_Directory_Kind__World,
 } Asset_Directory_Kind;
 
-bool SDL_get_path_to__the_game(char path[1024]);
+bool SDL_get_path_to__the_game(IO_path path);
 
 #endif

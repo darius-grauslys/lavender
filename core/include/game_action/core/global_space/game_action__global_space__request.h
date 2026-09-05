@@ -1,9 +1,9 @@
 #ifndef GAME_ACTION__GLOBAL_SPACE__REQUEST_H
 #define GAME_ACTION__GLOBAL_SPACE__REQUEST_H
 
-#include "defines.h"
-#include "defines_weak.h"
-#include "game.h"
+#include <defines.h>
+#include <defines_weak.h>
+#include <game.h>
 
 void register_game_action__global_space__request_for__client(
         Game_Action_Logic_Table *p_game_action_logic_table);
