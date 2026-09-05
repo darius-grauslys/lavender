@@ -8,6 +8,7 @@
 #include "platform.h"
 #include "serialization/identifiers.h"
 #include "serialization/serialization_header.h"
+#include "types/implemented/ui/ui_element_kind.h"
 #include "vectors.h"
 #include <defines.h>
 
@@ -287,10 +288,16 @@ UI_Element *iterate_to_child_of__ui_element(
 }
 
 static inline
+UI_Element_Kind get_kind_of__ui_element(
+        UI_Element *p_ui_element) {
+    return p_ui_element->the_kind_of_ui_element__this_is;
+}
+
+static inline
 bool is_ui_element_of__this_kind(
         UI_Element *p_ui_element,
         enum UI_Element_Kind the_kind_of_ui_element) {
-    return p_ui_element->the_kind_of_ui_element__this_is
+    return get_kind_of__ui_element(p_ui_element)
         == the_kind_of_ui_element;
 }
 

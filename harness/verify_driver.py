@@ -32,8 +32,6 @@ from harness.debug_scanner import DebugScannerBase
 from harness.debug_scanner_ui import (
     DebugUIScanner,
     DEBUG_UI_SCANNER_FIELDS,
-    UI_MANAGER_FIELDS,
-    UI_ELEMENT_FIELDS,
 )
 from harness.debug_scanner_entity import (
     DebugEntityScanner,
@@ -43,6 +41,10 @@ from harness.debug_scanner_scene import (
     DebugSceneScanner,
     DEBUG_SCENE_SCANNER_FIELDS,
 )
+
+# Sentinel for a deallocated serialization header (defines.h):
+#   #define IDENTIFIER__UNKNOWN__u32 (uint32_t)(-1)
+_IDENT_UNKNOWN__U32 = "(Identifier__u32)-1"
 
 
 # --------------------------------------------------------------------------- #
@@ -94,63 +96,197 @@ class FakeGdbmi:
 
 
 class FakeUIGdbmi(FakeGdbmi):
-    """A stub gdbmi that models the UI scanner's nested managers -> elements.
+    """A stub gdbmi that models the UI scanner's function-pointer iteration.
 
-    ``managers`` maps a manager index to:
-        {"allocated": bool,
-         "fields": {dotted_field: value},
-         "elements": {elem_index: {"ptr": str|None, "fields": {dotted_field: value}}}}
+    ``managers`` maps a manager pointer to:
+        {"uuid": hex_uuid,
+         "elements": {elem_ptr: {"uuid": hex_uuid, "kind": int}}}
+
+    The fake tracks which manager / element the scanner is currently
+    positioned at (mimicking ``p_ui_manager__current`` /
+    ``p_ptr_ui_element__current``).  The cast-and-call advance
+    (``((m_DEBUG_UI_Scanner_Func)$debug_ui_scanner.m_next_manager)()``)
+    is intercepted in ``write()`` to advance the position.
+
+    On ``get_scanner()`` (the ``set $debug_ui_scanner = ...`` exec), the fake
+    resets to the first allocated manager and its first element.
     """
 
     def __init__(self, top_fields, managers, level=3):
         super().__init__(fields={}, level=level)
         self.top_fields = dict(top_fields)
+        # managers: dict[str_ptr -> {"uuid": hex, "elements": dict[ptr -> {"uuid": hex, "kind": int}]}
         self.managers = managers
+        self._mgr_keys = list(managers.keys())
+        # Position state (set / reset on get_scanner).
+        self._current_mgr_idx: int | None = None
+        self._current_el_ptr: str | None = None
+
+    def _current_mgr_ptr(self) -> str | None:
+        if self._current_mgr_idx is None:
+            return None
+        return self._mgr_keys[self._current_mgr_idx]
+
+    def _current_mgr_data(self) -> dict | None:
+        ptr = self._current_mgr_ptr()
+        if ptr is None:
+            return None
+        return self.managers.get(ptr, {})
+
+    def _current_el_data(self) -> dict | None:
+        if self._current_el_ptr is None:
+            return None
+        mgr = self._current_mgr_data()
+        if mgr is None:
+            return None
+        return mgr.get("elements", {}).get(self._current_el_ptr, {})
 
     def _struct_repr(self):
-        parts = ", ".join(f"{k} = {v}" for k, v in self.top_fields.items())
-        return "{%s}" % parts
+        """Build a struct repr that reflects the *current* scanner position."""
+        mgr_ptr = self._current_mgr_ptr() or "0x0"
+        el_ptr_field = self._current_el_ptr or "0x0"
+        mgr = self._current_mgr_data()
+        mgr_uuid = mgr.get("uuid", _IDENT_UNKNOWN__U32) if mgr else _IDENT_UNKNOWN__U32
+        el = self._current_el_data()
+        el_uuid = el.get("uuid", _IDENT_UNKNOWN__U32) if el else _IDENT_UNKNOWN__U32
+        el_kind = str(el.get("kind", 9)) if el else "9"
+
+        parts = dict(self.top_fields)
+        parts["p_ui_context"] = self.top_fields.get("p_ui_context", "0xABCD")
+        parts["p_ui_manager__current"] = mgr_ptr
+        parts["p_ptr_ui_element__current"] = el_ptr_field
+        parts["m_next_manager"] = self.top_fields.get("m_next_manager", "0x0")
+        parts["m_next_element"] = self.top_fields.get("m_next_element", "0x0")
+        parts["m_refresh"] = self.top_fields.get("m_refresh", "0x0")
+        parts["uuid_of__ui_manager__current"] = mgr_uuid
+        parts["uuid_of__ui_element__current"] = el_uuid
+        parts["the_kind_of__ui_element__current"] = el_kind
+        parts["max_quantity_of__ui_managers__u32"] = self.top_fields.get("max_quantity_of__ui_managers__u32", "8")
+        parts["array_of__quantity_of__elements_in__all_managers__u32"] = self.top_fields.get("array_of__quantity_of__elements_in__all_managers__u32", "[0, 0, 0, 0, 0, 0, 0, 0]")
+        return "{" + ", ".join(f"{k} = {v}" for k, v in parts.items()) + "}"
+
+    def _advance_manager(self) -> None:
+        """Mimic m_next_manager: move to the next allocated manager (circular)."""
+        if not self._mgr_keys:
+            return
+        if self._current_mgr_idx is None:
+            self._current_mgr_idx = 0
+        else:
+            self._current_mgr_idx = (self._current_mgr_idx + 1) % len(self._mgr_keys)
+        # Reset element to first when moving to a new manager.
+        mgr = self._current_mgr_data()
+        if mgr:
+            els = mgr.get("elements", {})
+            self._current_el_ptr = next(iter(els)) if els else None
+        else:
+            self._current_el_ptr = None
+
+    def _advance_element(self) -> None:
+        """Mimic m_next_element: move to the next allocated element (circular)."""
+        mgr = self._current_mgr_data()
+        if not mgr:
+            self._current_el_ptr = None
+            return
+        els = mgr.get("elements", {})
+        if not els:
+            self._current_el_ptr = None
+            return
+        el_keys = list(els.keys())
+        if self._current_el_ptr is None:
+            self._current_el_ptr = el_keys[0]
+        else:
+            idx = el_keys.index(self._current_el_ptr)
+            self._current_el_ptr = el_keys[(idx + 1) % len(el_keys)]
+
+    # Override write to intercept the cast-and-call advance.
+    def write(self, cmd):
+        # Intercept the cast-and-call advance for m_next_manager.
+        # (Checked first because the get_scanner reset also starts with
+        #  "set $debug_ui_scanner" but uses debug_get_ui_scanner, not m_next_.)
+        if "m_next_manager" in cmd and "interpreter-exec console" in cmd:
+            self.commands.append(cmd)
+            self._advance_manager()
+            return [{"type": "result", "message": "done"}]
+
+        # Intercept the cast-and-call advance for m_next_element.
+        if "m_next_element" in cmd and "interpreter-exec console" in cmd:
+            self.commands.append(cmd)
+            self._advance_element()
+            return [{"type": "result", "message": "done"}]
+
+        # Intercept the exec for set $debug_ui_scanner (get_scanner).
+        # Only matches debug_get_ui_scanner, not the cast-and-call advances above.
+        if "-interpreter-exec console \"set $debug_ui_scanner = debug_get_ui_scanner" in cmd:
+            self.commands.append(cmd)
+            # Reset position: first allocated manager, first element.
+            self._current_mgr_idx = 0
+            mgr = self._current_mgr_data()
+            if mgr:
+                els = mgr.get("elements", {})
+                self._current_el_ptr = next(iter(els)) if els else None
+            else:
+                self._current_el_ptr = None
+            return [{"type": "result", "message": "done"}]
+
+        return super().write(cmd)
 
     def _eval(self, expr):
         if expr == "$debug_ui_scanner":
             return self._struct_repr()
+
+        # Handle (*$debug_ui_scanner.p_ptr_ui_element__current) — dereference
+        # the pointer-to-pointer to get the UI_Element *.
+        if expr == "(*$debug_ui_scanner.p_ptr_ui_element__current)":
+            return self._current_el_ptr or "0x0"
+
         if not expr.startswith("$debug_ui_scanner."):
             return "0x0"
         rest = expr[len("$debug_ui_scanner."):]
 
-        # manager allocation: ...ui_managers[i]._serialization_header.uuid != (Identifier__u32)-1
-        m = re.match(
-            r"p_ui_context->ui_managers\[(\d+)\]\._serialization_header\.uuid"
-            r" != \(Identifier__u32\)-1$", rest)
-        if m:
-            mgr = self.managers.get(int(m.group(1)))
-            return "1" if (mgr and mgr.get("allocated")) else "0"
+        # p_ui_manager__current — the pointer to the current manager.
+        if rest == "p_ui_manager__current":
+            return self._current_mgr_ptr() or "0x0"
 
-        # element pointer: ...ui_managers[i].pM_ptr_array_of__ui_elements[j]
-        m = re.match(
-            r"p_ui_context->ui_managers\[(\d+)\]\."
-            r"pM_ptr_array_of__ui_elements\[(\d+)\]$", rest)
-        if m:
-            el = self.managers.get(int(m.group(1)), {}).get(
-                "elements", {}).get(int(m.group(2)))
-            return el["ptr"] if (el and el.get("ptr")) else "(UI_Element *) 0x0"
+        # p_ptr_ui_element__current — the pointer-to-pointer slot.
+        if rest == "p_ptr_ui_element__current":
+            return self._current_el_ptr or "0x0"
 
-        # element field: ...ui_managers[i].pM_ptr_array_of__ui_elements[j].<dotted>
-        m = re.match(
-            r"p_ui_context->ui_managers\[(\d+)\]\."
-            r"pM_ptr_array_of__ui_elements\[(\d+)\]\.(.+)$", rest)
-        if m:
-            el = self.managers.get(int(m.group(1)), {}).get(
-                "elements", {}).get(int(m.group(2)), {})
-            return el.get("fields", {}).get(m.group(3), "0x0")
+        # Post-condition fields: return based on current position.
+        if rest == "uuid_of__ui_manager__current":
+            mgr = self._current_mgr_data()
+            return mgr.get("uuid", _IDENT_UNKNOWN__U32) if mgr else _IDENT_UNKNOWN__U32
 
-        # manager field: ...ui_managers[i].<dotted>
-        m = re.match(r"p_ui_context->ui_managers\[(\d+)\]\.(.+)$", rest)
-        if m:
-            return self.managers.get(int(m.group(1)), {}).get(
-                "fields", {}).get(m.group(2), "0x0")
+        if rest == "uuid_of__ui_element__current":
+            el = self._current_el_data()
+            return el.get("uuid", _IDENT_UNKNOWN__U32) if el else _IDENT_UNKNOWN__U32
 
-        # top-level scanner field
+        if rest == "the_kind_of__ui_element__current":
+            el = self._current_el_data()
+            return str(el.get("kind", 9)) if el else "9"
+
+        # top-level scanner fields (from the captured struct repr)
+        if rest in self.top_fields:
+            return self.top_fields[rest]
+        return "0x0"
+        rest = expr[len("$debug_ui_scanner."):]
+
+        # p_ui_manager__current — the pointer to the current manager.
+        if rest == "p_ui_manager__current":
+            return self._current_mgr_ptr() or "0x0"
+
+        # p_ptr_ui_element__current — the pointer-to-pointer slot.
+        if rest == "p_ptr_ui_element__current":
+            return self._current_el_ptr or "0x0"
+
+        # Manager field: p_ui_manager__current-><dotted>
+        m = re.match(r"p_ui_manager__current->(.+)$", rest)
+        if m:
+            field = m.group(1)
+            mgr = self._current_mgr_data() or {}
+            fields = mgr.get("fields", {})
+            return fields.get(field, "0x0")
+
+        # top-level scanner fields (from the captured struct repr)
         if rest in self.top_fields:
             return self.top_fields[rest]
         return "0x0"
@@ -248,68 +384,45 @@ def test_base_scanner():
 
 # ---- UI scanner ------------------------------------------------------------ #
 
+_MGR0_PTR = "0x1000"
+_MGR3_PTR = "0x5000"
+
+# The scanner's post-condition fields (debug_ui.h lines 51-56).
+# _struct_repr and _eval return these based on the current position.
 _UI_TOP = {
-    "p_ui_context": "0x1000",
-    "p_ui_manager__current": "0x1000",
-    "p_ptr_ui_element__current": "0x2000",
+    "p_ui_context": "0xABCD",
     "m_next_manager": "0x555555555229 <adv_manager>",
     "m_next_element": "0x5555555551c3 <adv_element>",
+    "m_refresh": "0x555555555330 <refresh>",
+    "max_quantity_of__ui_managers__u32": "8",
+    "array_of__quantity_of__elements_in__all_managers__u32": "[2, 0, 0, 1, 0, 0, 0, 0]",
 }
 
 
 def _ui_managers():
+    """Return pointer-keyed manager data for the UI scanner tests.
+
+    The first manager (0x1000) has two elements (0x2000, 0x2100).
+    The second manager (0x5000) has one element (0x7000).
+
+    Each manager has:
+        "uuid": hex uuid of the manager
+        "elements": {ptr: {"uuid": hex, "kind": int}}
+    """
     return {
-        0: {
-            "allocated": True,
-            "fields": {
-                "_serialization_header.uuid": "0xAAAA",
-                "pM_ui_element_pool": "0x3000",
-                "pM_ptr_array_of__ui_elements": "0x4000",
-                "p_ui_element__focused": "0x2000",
-                "max_quantity_of__ui_elements": "2",
-                "ui_manager_flags__u8": "1",
-            },
+        _MGR0_PTR: {
+            "uuid": "0xAAAA",
             "elements": {
-                0: {"ptr": "0x2000", "fields": {
-                    "_serialization_header.uuid": "0xE0001",
-                    "p_parent": "0x0",
-                    "p_child": "0x0",
-                    "p_next": "0x2100",
-                    "ui_flags": "4",
-                    "the_kind_of_ui_element__this_is": "1",
-                }},
-                1: {"ptr": "0x2100", "fields": {
-                    "_serialization_header.uuid": "0xE0002",
-                    "p_parent": "0x2000",
-                    "p_child": "0x0",
-                    "p_next": "0x0",
-                    "ui_flags": "8",
-                    "the_kind_of_ui_element__this_is": "3",
-                }},
+                "0x2000": {"uuid": "0xE0001", "kind": 1},  # UI_Element_Kind__Button
+                "0x2100": {"uuid": "0xE0002", "kind": 3},  # UI_Element_Kind__Slider
             },
         },
-        3: {
-            "allocated": True,
-            "fields": {
-                "_serialization_header.uuid": "0xBBBB",
-                "pM_ui_element_pool": "0x5000",
-                "pM_ptr_array_of__ui_elements": "0x6000",
-                "p_ui_element__focused": "0x0",
-                "max_quantity_of__ui_elements": "1",
-                "ui_manager_flags__u8": "0",
-            },
+        _MGR3_PTR: {
+            "uuid": "0xBBBB",
             "elements": {
-                0: {"ptr": "0x7000", "fields": {
-                    "_serialization_header.uuid": "0xE1000",
-                    "p_parent": "0x0",
-                    "p_child": "0x0",
-                    "p_next": "0x0",
-                    "ui_flags": "2",
-                    "the_kind_of_ui_element__this_is": "5",
-                }},
+                "0x7000": {"uuid": "0xE1000", "kind": 5},  # UI_Element_Kind__Text
             },
         },
-        # indices 1,2,4,5,6,7 are deallocated
     }
 
 
@@ -320,21 +433,15 @@ def test_ui_scanner():
     # field list mirrors debug_ui.h
     assert DEBUG_UI_SCANNER_FIELDS == (
         "p_ui_context", "p_ui_manager__current", "p_ptr_ui_element__current",
-        "m_next_manager", "m_next_element",
+        "m_next_manager", "m_next_element", "m_refresh",
+        "array_of__quantity_of__elements_in__all_managers__u32",
+        "uuid_of__ui_manager__current", "uuid_of__ui_element__current",
+        "max_quantity_of__ui_managers__u32", "the_kind_of__ui_element__current",
     )
-    assert set(UI_MANAGER_FIELDS) == {
-        "_serialization_header.uuid", "pM_ui_element_pool",
-        "pM_ptr_array_of__ui_elements", "p_ui_element__focused",
-        "max_quantity_of__ui_elements", "ui_manager_flags__u8",
-    }
-    assert set(UI_ELEMENT_FIELDS) == {
-        "_serialization_header.uuid", "p_parent", "p_child", "p_next",
-        "ui_flags", "the_kind_of_ui_element__this_is",
-    }
 
     # get_scanner: push_main_frame, set $var = debug_get_ui_scanner(&game), pop
     repr_s = ex.get_scanner()
-    assert repr_s is not None and "p_ui_context = 0x1000" in repr_s
+    assert repr_s is not None and "p_ui_context = 0xABCD" in repr_s
     assert g.commands[0] == "-stack-info-frame"
     assert g.commands[1] == "-stack-select-frame 0"
     assert g.commands[2] == '-interpreter-exec console "set $debug_ui_scanner = debug_get_ui_scanner(&game)"'
@@ -342,41 +449,53 @@ def test_ui_scanner():
 
     # get_table: top-level fields + ui_managers nested map
     table = ex.get_table()
-    assert table["p_ui_context"] == "0x1000"
+    assert table["p_ui_context"] == "0xABCD"
     assert table["m_next_element"] == "0x5555555551c3 <adv_element>"
     assert ex.get_fields() == [
         "p_ui_context", "p_ui_manager__current", "p_ptr_ui_element__current",
-        "m_next_manager", "m_next_element", "ui_managers",
+        "m_next_manager", "m_next_element", "m_refresh",
+        "array_of__quantity_of__elements_in__all_managers__u32",
+        "uuid_of__ui_manager__current", "uuid_of__ui_element__current",
+        "max_quantity_of__ui_managers__u32", "the_kind_of__ui_element__current",
+        "ui_managers",
     ]
 
-    # only allocated managers are mapped, keyed by index
-    assert list(table["ui_managers"].keys()) == ["0", "3"]
+    # only allocated managers are mapped, keyed by pointer
+    assert set(table["ui_managers"].keys()) == {_MGR0_PTR, _MGR3_PTR}
 
-    # manager 0
-    mgr0 = table["ui_managers"]["0"]
-    assert mgr0["_serialization_header"]["uuid"] == "0xAAAA"
-    assert mgr0["max_quantity_of__ui_elements"] == "2"
-    assert list(mgr0["ui_elements"].keys()) == ["0", "1"]
-    assert mgr0["ui_elements"]["0"]["_serialization_header"]["uuid"] == "0xE0001"
-    assert mgr0["ui_elements"]["1"]["the_kind_of_ui_element__this_is"] == "3"
+    # manager 0 (first in iteration order)
+    mgr0 = table["ui_managers"][_MGR0_PTR]
+    assert mgr0["uuid"] == "0xAAAA"
+    assert mgr0["quantity_of__ui_elements"] == 2
+    # elements are keyed by pointer, each entry has uuid and kind
+    assert set(mgr0["ui_elements"].keys()) == {"0x2000", "0x2100"}
+    assert mgr0["ui_elements"]["0x2000"]["uuid"] == "0xE0001"
+    assert mgr0["ui_elements"]["0x2000"]["kind"] == "UI_Element_Kind__Button"
+    assert mgr0["ui_elements"]["0x2100"]["uuid"] == "0xE0002"
+    assert mgr0["ui_elements"]["0x2100"]["kind"] == "UI_Element_Kind__Slider"
 
-    # manager 3
-    mgr3 = table["ui_managers"]["3"]
-    assert mgr3["_serialization_header"]["uuid"] == "0xBBBB"
-    assert mgr3["ui_elements"]["0"]["_serialization_header"]["uuid"] == "0xE1000"
+    # manager 1
+    mgr3 = table["ui_managers"][_MGR3_PTR]
+    assert mgr3["uuid"] == "0xBBBB"
+    assert mgr3["quantity_of__ui_elements"] == 1
+    assert mgr3["ui_elements"]["0x7000"]["uuid"] == "0xE1000"
+    assert mgr3["ui_elements"]["0x7000"]["kind"] == "UI_Element_Kind__Text"
 
     # get_field: navigate the nested table via demeter dot-paths
-    assert ex.get_field("ui_managers.0._serialization_header.uuid") == "0xAAAA"
-    assert ex.get_field("ui_managers.0.ui_elements.1.p_parent") == "0x2000"
-    assert ex.get_field("ui_managers.3") == mgr3  # a nested node -> dict
+    assert ex.get_field(f"ui_managers.{_MGR0_PTR}.uuid") == "0xAAAA"
+    assert ex.get_field(f"ui_managers.{_MGR0_PTR}.ui_elements.0x2100.kind") == "UI_Element_Kind__Slider"
+    assert ex.get_field(f"ui_managers.{_MGR3_PTR}") == mgr3  # a nested node -> dict
 
-    # find_demeters: every "...uuid" path, in document order
+    # find_demeters: every "...uuid" key, in document order (includes top-level
+    # scanner fields like uuid_of__ui_manager__current).
     assert ex.find_demeters("uuid") == [
-        "ui_managers.0._serialization_header.uuid",
-        "ui_managers.0.ui_elements.0._serialization_header.uuid",
-        "ui_managers.0.ui_elements.1._serialization_header.uuid",
-        "ui_managers.3._serialization_header.uuid",
-        "ui_managers.3.ui_elements.0._serialization_header.uuid",
+        "uuid_of__ui_manager__current",
+        "uuid_of__ui_element__current",
+        f"ui_managers.{_MGR0_PTR}.uuid",
+        f"ui_managers.{_MGR0_PTR}.ui_elements.0x2000.uuid",
+        f"ui_managers.{_MGR0_PTR}.ui_elements.0x2100.uuid",
+        f"ui_managers.{_MGR3_PTR}.uuid",
+        f"ui_managers.{_MGR3_PTR}.ui_elements.0x7000.uuid",
     ]
 
     # Liskov invariant: the table is JSON-parsable
@@ -387,17 +506,6 @@ def test_ui_scanner():
     ex.get_table()
     after = sum(c.startswith("-data-evaluate-expression") for c in g.commands)
     assert before == after, "get_table must be cached"
-
-    # next_element / next_manager issue the cast-and-call exec, then pop+eval
-    g3 = FakeUIGdbmi(_UI_TOP, _ui_managers())
-    ex3 = DebugUIScanner(g3)
-    ex3.next_element()
-    assert g3.commands[2] == '-interpreter-exec console "set $debug_ui_scanner = ((m_DEBUG_UI_Scanner_Func)$debug_ui_scanner.m_next_element)()"', g3.commands[2]
-
-    g4 = FakeUIGdbmi(_UI_TOP, _ui_managers())
-    ex4 = DebugUIScanner(g4)
-    ex4.next_manager()
-    assert g4.commands[2] == '-interpreter-exec console "set $debug_ui_scanner = ((m_DEBUG_UI_Scanner_Func)$debug_ui_scanner.m_next_manager)()"', g4.commands[2]
 
     # inheritance
     assert isinstance(ex, GDBFrameController)

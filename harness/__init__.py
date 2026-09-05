@@ -10,8 +10,6 @@ Public API (re-exported for convenience):
     DebugInputDriver           — drive game input via debug_drive_* functions
     Input_Flags__u32           — mirror of platform_defaults.h INPUT_* macros
     DEBUG_UI_SCANNER_FIELDS    — field list of DEBUG_UI_Scanner struct
-    UI_MANAGER_FIELDS          — fields presented per UI_Manager in get_table()
-    UI_ELEMENT_FIELDS          — fields presented per UI_Element in get_table()
     main                       — CLI entry point: parse_args + session loop
 
 Scanner API (see debug_scanner.py / TODOS.md item 1):
@@ -43,8 +41,6 @@ from .debug_scanner import DebugScannerBase
 from .debug_scanner_ui import (
     DebugUIScanner,
     DEBUG_UI_SCANNER_FIELDS,
-    UI_MANAGER_FIELDS,
-    UI_ELEMENT_FIELDS,
 )
 from .debug_scanner_entity import DebugEntityScanner, DEBUG_ENTITY_SCANNER_FIELDS
 from .debug_scanner_scene import DebugSceneScanner, DEBUG_SCENE_SCANNER_FIELDS
@@ -62,8 +58,6 @@ __all__ = [
     "DebugInputDriver",
     "Input_Flags__u32",
     "DEBUG_UI_SCANNER_FIELDS",
-    "UI_MANAGER_FIELDS",
-    "UI_ELEMENT_FIELDS",
     "DEBUG_ENTITY_SCANNER_FIELDS",
     "DEBUG_SCENE_SCANNER_FIELDS",
     "parse_hex",

@@ -4,10 +4,73 @@
 #include "game.h"
 #include "rendering/gfx_context.h"
 #include "serialization/serialization_header.h"
+#include "types/implemented/ui/ui_element_kind.h"
 #include "ui/ui_manager.h"
+#include <ui/ui_element.h>
 #include <debug/debug_ui.h>
 
 DEBUG_UI_Scanner __DEBUG_ui_scanner = {0};
+
+DEBUG_UI_Scanner __m_debug_ui_scanner__refresh() {
+    if (!__DEBUG_ui_scanner.p_ui_context) {
+        debug_warning("[DEBUG] _m_debug_ui_scanner__refresh, p_ui_context == 0.");
+        debug_warning("[DEBUG] scanner state was not updated!");
+        goto exit;
+    }
+
+    if (!__DEBUG_ui_scanner.p_ui_manager__current) {
+        debug_warning("[DEBUG] _m_debug_ui_scanner__refresh, p_ui_manager__current == 0.");
+        debug_warning("[DEBUG] scanner state was not updated!");
+        goto exit;
+    }
+
+    // Update max manager count
+    __DEBUG_ui_scanner.max_quantity_of__ui_managers__u32 =
+        MAX_QUANTITY_OF__UI_MANAGERS;
+
+    // Update UUIDs
+    __DEBUG_ui_scanner.uuid_of__ui_manager__current =
+        GET_UUID_P(__DEBUG_ui_scanner.p_ui_manager__current);
+    __DEBUG_ui_scanner.uuid_of__ui_element__current =
+        (__DEBUG_ui_scanner.p_ptr_ui_element__current != 0)
+        ? GET_UUID_P(*__DEBUG_ui_scanner.p_ptr_ui_element__current)
+        : IDENTIFIER__UNKNOWN__u32
+        ;
+
+    // Update element kind
+    __DEBUG_ui_scanner.the_kind_of__ui_element__current =
+        (__DEBUG_ui_scanner.p_ptr_ui_element__current != 0)
+        ? get_kind_of__ui_element(*__DEBUG_ui_scanner.p_ptr_ui_element__current)
+        : UI_Element_Kind__Unknown
+        ;
+
+    // Update ui_element quantities.
+    for (Index__u32 index_of__ui_manager = 0;
+            index_of__ui_manager < MAX_QUANTITY_OF__UI_MANAGERS;
+            index_of__ui_manager++) {
+        UI_Manager *p_ui_manager = 
+            &__DEBUG_ui_scanner.p_ui_context
+            ->ui_managers[index_of__ui_manager]
+            ;
+
+        if (!p_ui_manager) {
+            __DEBUG_ui_scanner
+                .array_of__quantity_of__elements_in__all_managers__u32[
+                index_of__ui_manager] = 0;
+            continue;
+        } else {
+            __DEBUG_ui_scanner
+                .array_of__quantity_of__elements_in__all_managers__u32[
+                index_of__ui_manager] = 
+                    p_ui_manager->p_ptr_of__ui_element__latest_in_ptr_array
+                    - p_ui_manager->pM_ptr_array_of__ui_elements
+                    ;
+        }
+    }
+
+exit:
+    return __DEBUG_ui_scanner;
+}
 
 DEBUG_UI_Scanner __m_debug_ui_scanner__next_ui_manager() {
     if (!__DEBUG_ui_scanner.p_ui_context) {
@@ -49,6 +112,8 @@ DEBUG_UI_Scanner __m_debug_ui_scanner__next_ui_manager() {
             ;
         break;
     }
+
+    __m_debug_ui_scanner__refresh();
 
 exit:
     return __DEBUG_ui_scanner;
@@ -99,6 +164,8 @@ DEBUG_UI_Scanner __m_debug_ui_scanner__next_ui_element() {
             ->pM_ptr_array_of__ui_elements[index_of__p_ptr];
     }
 
+    __m_debug_ui_scanner__refresh();
+
 exit:
     return __DEBUG_ui_scanner;
 }
@@ -137,6 +204,9 @@ DEBUG_UI_Scanner debug_get_ui_scanner(Game *p_game) {
         p_ui_manager->pM_ptr_array_of__ui_elements;
     __DEBUG_ui_scanner.m_next_manager = __m_debug_ui_scanner__next_ui_manager;
     __DEBUG_ui_scanner.m_next_element = __m_debug_ui_scanner__next_ui_element;
+    __DEBUG_ui_scanner.m_refresh = __m_debug_ui_scanner__refresh;
+
+    __m_debug_ui_scanner__refresh();
 
     return __DEBUG_ui_scanner;
 }
