@@ -85,13 +85,14 @@ DEBUG_UI_Scanner __m_debug_ui_scanner__next_ui_manager() {
         ->ui_managers
         ;
 
-    __DEBUG_ui_scanner.p_ptr_ui_element__current = 0;
-
     if (index_of__ui_manager >= MAX_QUANTITY_OF__UI_MANAGERS) {
         debug_warning("[DEBUG] __m_debug_ui_scanner__next_ui_manager, p_ui_manager out of bounds.");
         debug_warning("[DEBUG] memory might be corrupted!");
         goto exit;
     }
+
+    UI_Manager *p_ui_manager = 
+        __DEBUG_ui_scanner.p_ui_manager__current;
 
     for (Index__u32 offset_of__ui_manager = 1;
             offset_of__ui_manager < MAX_QUANTITY_OF__UI_MANAGERS;
@@ -101,16 +102,36 @@ DEBUG_UI_Scanner __m_debug_ui_scanner__next_ui_manager() {
             % MAX_QUANTITY_OF__UI_MANAGERS
             ;
 
-        if (IS_DEALLOCATED(__DEBUG_ui_scanner.p_ui_context[index_normalized])) {
+        if (IS_DEALLOCATED(
+                    __DEBUG_ui_scanner
+                    .p_ui_context
+                    ->ui_managers[index_normalized])) {
             continue;
         }
 
-        __DEBUG_ui_scanner.p_ui_manager__current =
+        p_ui_manager = 
             &__DEBUG_ui_scanner
             .p_ui_context
             ->ui_managers[index_normalized]
             ;
         break;
+    }
+    
+    // If we found a next manager (possible the same manager)
+    // update the scanner.
+    if (p_ui_manager) {
+        __DEBUG_ui_scanner.p_ui_manager__current =
+            p_ui_manager
+            ;
+    }
+
+    // If there is a found manager, reset the
+    // ui element pointer.
+    if (__DEBUG_ui_scanner.p_ui_manager__current) {
+        __DEBUG_ui_scanner.p_ptr_ui_element__current = 
+            __DEBUG_ui_scanner.p_ui_manager__current
+            ->pM_ptr_array_of__ui_elements
+            ;
     }
 
     __m_debug_ui_scanner__refresh();

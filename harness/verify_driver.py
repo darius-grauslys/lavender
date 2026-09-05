@@ -119,7 +119,7 @@ class FakeUIGdbmi(FakeGdbmi):
         self.managers = managers
         self._mgr_keys = list(managers.keys())
         # Position state (set / reset on get_scanner).
-        self._current_mgr_idx: int | None = None
+        self._current_mgr_idx: int | None = None  # index into _mgr_keys
         self._current_el_ptr: str | None = None
 
     def _current_mgr_ptr(self) -> str | None:
@@ -198,8 +198,59 @@ class FakeUIGdbmi(FakeGdbmi):
             idx = el_keys.index(self._current_el_ptr)
             self._current_el_ptr = el_keys[(idx + 1) % len(el_keys)]
 
-    # Override write to intercept the cast-and-call advance.
+    def _handle_batch_call(self, cmd: str) -> list:
+        """Simulate a batched call and return console records with struct array.
+
+        Parses the batch expression to determine the sequence of
+        ``m_next_manager`` / ``m_next_element`` calls, simulates advancing
+        through all positions, and returns a console stream record containing
+        the printed struct array.
+        """
+        # Count the number of each call type in the batch.
+        # The expression looks like: call {((FUNC)$s.m_next_manager)(), ((FUNC)$s.m_next_element)(), ...}
+        # Note the ")" before "()": it's m_next_manager)(), not m_next_manager().
+        import re as _re
+        calls = _re.findall(
+            r"m_next_manager\)\(\)|m_next_element\)\(\)", cmd)
+        # Normalize to the simple name for comparison.
+        calls = [c.replace(")", "").replace("(", "") for c in calls]
+
+        # Snapshot the starting state so we can restore after capturing all
+        # positions.
+        start_mgr_idx = self._current_mgr_idx
+        start_el_ptr = self._current_el_ptr
+
+        positions: list[str] = []
+        for call_name in calls:
+            if call_name == "m_next_manager":
+                self._advance_manager()
+            elif call_name == "m_next_element":
+                self._advance_element()
+            # Capture the struct repr after this call.
+            positions.append(self._struct_repr())
+
+        # Restore the starting state (the struct array captures all positions).
+        self._current_mgr_idx = start_mgr_idx
+        self._current_el_ptr = start_el_ptr
+
+        # Build the struct array output: $1 = {<struct1>, <struct2>, ...}
+        if not positions:
+            struct_array = "$1 = {}"
+        else:
+            struct_array = "$1 = {" + ", ".join(positions) + "}"
+
+        # Return as a console stream record (like pygdbmi would).
+        return [{"type": "console", "payload": struct_array + "\n"}]
+
+    # Override write to intercept the cast-and-call advance and batch calls.
     def write(self, cmd):
+        # Intercept batched calls: "call {expr1, expr2, ...}"
+        # These contain "m_next_manager" or "m_next_element" and "call" and "{".
+        if ("call " in cmd and "{" in cmd and "interpreter-exec console" in cmd
+                and ("m_next_manager" in cmd or "m_next_element" in cmd)):
+            self.commands.append(cmd)
+            return self._handle_batch_call(cmd)
+
         # Intercept the cast-and-call advance for m_next_manager.
         # (Checked first because the get_scanner reset also starts with
         #  "set $debug_ui_scanner" but uses debug_get_ui_scanner, not m_next_.)

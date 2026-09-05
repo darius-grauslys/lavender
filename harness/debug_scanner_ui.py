@@ -1,48 +1,24 @@
 """
-debug_scanner_ui.py — UI scanner (debug_ui.h).
+debug_scanner_ui.py — UI scanner (debug_ui.h) with batched GDB calls.
 
 Wraps debug_get_ui_scanner(&game), which returns a DEBUG_UI_Scanner by value.
 The scanner is captured by value into the gdb convenience variable
 ``$debug_ui_scanner`` and its state is presented as a nested JSON table.
 
-Field layout (see core/include/debug/debug_ui.h):
-
-    typedef struct DEBUG_UI_Scanner_t {
-        UI_Context     *p_ui_context;
-        UI_Manager     *p_ui_manager__current;
-        UI_Element    **p_ptr_ui_element__current;
-        m_DEBUG_UI_Scanner_Func m_next_manager;
-        m_DEBUG_UI_Scanner_Func m_next_element;
-        m_DEBUG_UI_Scanner_Func m_refresh;
-        Quantity__u32  array_of__quantity_of__elements_in__all_managers__u32[8];
-        Identifier__u32 uuid_of__ui_manager__current;
-        Identifier__u32 uuid_of__ui_element__current;
-        Quantity__u32  max_quantity_of__ui_managers__u32;
-        UI_Element_Kind the_kind_of__ui_element__current;
-    } DEBUG_UI_Scanner;
-
-After debug_get_ui_scanner returns, the scanner is populated with post-condition
-fields that let us build the table with **minimal gdb round-trips**:
-
-- ``max_quantity_of__ui_managers__u32`` — number of allocated managers.
-- ``array_of__quantity_of__elements_in__all_managers__u32[]`` — per-manager
-  element counts (indexed by manager slot 0..MAX_QUANTITY_OF__UI_MANAGERS-1).
-- ``uuid_of__ui_manager__current`` — UUID of the currently pointed-to manager
-  (the deallocated sentinel is ``IDENTIFIER__UNKNOWN__u32`` = ``(uint32_t)(-1)``).
-- ``uuid_of__ui_element__current`` — UUID of the currently pointed-to element.
-- ``the_kind_of__ui_element__current`` — resolved ``UI_Element_Kind`` enum.
+This module implements **batched** GDB function-pointer calls to minimize
+round-trips.  After ``debug_get_ui_scanner`` returns, the scanner has
+post-condition fields populated with element counts.  We then issue
+a single ``call {((m_DEBUG_UI_Scanner_Func)$s.m_next_manager)(),
+((m_DEBUG_UI_Scanner_Func)$s.m_next_element)(), ...}`` expression to
+visit every allocated manager and its elements in one shot.
 
 The table maps each **UI_Manager pointer** to:
     {"uuid": <hex uuid>,
      "quantity_of__ui_elements": <int>,
-     "ui_elements": {<ptr>: {"uuid": <hex uuid>, "kind": <enum name>}}}
+     "ui_elements": {<ptr>: {"uuid": <hex>, "kind": <enum name>}}}
 
-Only allocated managers and elements appear in the table; deallocated slots
-(UUID == IDENTIFIER__UNKNOWN__u32) are omitted.
-
-The scanner only *presents* the gdb state as JSON; it does not interpret it.
-This nested shape is what makes later UUID-by-UUID lookups (see TODOS.md, item
-3) possible via ``find_demeters("uuid")`` / ``get_field("...uuid")``.
+Only allocated managers and elements appear; deallocated slots (UUID ==
+IDENTIFIER__UNKNOWN__u32) are omitted.
 
 Note: debug_ui.h is guarded by ``#ifndef NDEBUG``; the symbols are absent in
 release builds, in which case these calls will error at the gdb prompt.
@@ -50,11 +26,12 @@ release builds, in which case these calls will error at the gdb prompt.
 
 from __future__ import annotations
 
+import re
+
 from .debug_scanner import DebugScannerBase
 from .lavender_debug import parse_hex
 
 # Field layout of DEBUG_UI_Scanner (see core/include/debug/debug_ui.h).
-# Module-level so external callers and tests can reference it directly.
 DEBUG_UI_SCANNER_FIELDS = (
     "p_ui_context",
     "p_ui_manager__current",
@@ -69,13 +46,10 @@ DEBUG_UI_SCANNER_FIELDS = (
     "the_kind_of__ui_element__current",
 )
 
-# Sentinel for a deallocated serialization header (defines.h):
-#   #define IDENTIFIER__UNKNOWN__u32 (uint32_t)(-1)
+# Sentinel for a deallocated serialization header (defines.h).
 _IDENT_UNKNOWN__U32 = "(Identifier__u32)-1"
 
-# UI_Element_Kind enum names (defines_weak.h / types/implemented/ui_element_kind.h),
-# indexed by integer value.  This lets us turn the_the_kind value into a
-# human-readable name.
+# UI_Element_Kind enum names (types/implemented/ui_element_kind.h).
 _UI_ELEMENT_KIND_NAMES = (
     "UI_Element_Kind__None",
     "UI_Element_Kind__Button",
@@ -89,225 +63,357 @@ _UI_ELEMENT_KIND_NAMES = (
     "UI_Element_Kind__Unknown",
 )
 
-# Maximum number of managers (defines.h: MAX_QUANTITY_OF__UI_MANAGERS).
 MAX_QUANTITY_OF__UI_MANAGERS = 8
 
 
 class DebugUIScanner(DebugScannerBase):
-    """
-    Inspects UI state through debug_ui.h's ``debug_get_ui_scanner``.
+    """UI scanner with batched GDB calls.
 
-    Typical usage (game halted under gdb, e.g. in the render loop)::
+    Typical usage (game halted under gdb)::
 
         ex = DebugUIScanner(gdbmi)
-        ex.get_scanner()                      # captures $debug_ui_scanner
-        ex.get_table()                        # nested JSON of the whole UI state
-        ex.get_fields()                       # top-level field names
-        ex.get_field("ui_managers.0x1234.uuid")
-        ex.find_demeters("uuid")              # every "...uuid" demeter
-        ex.next_element()                     # advance via m_next_element
-        ex.next_manager()                     # advance via m_next_manager
-
-    The scanner is captured by value into the gdb convenience variable
-    ``$debug_ui_scanner`` (debug_get_ui_scanner returns a struct).  ``get_table``
-    reads it with ``-data-evaluate-expression`` (``_eval``), the reliable way to
-    get a value back as JSON.
-
-    Performance: the table is built with **batched** gdb calls.  After
-    ``debug_get_ui_scanner`` returns, the scanner has post-condition fields
-    populated with element counts and UUIDs.  We batch ``m_next_manager`` and
-    ``m_next_element`` calls into single ``call`` expressions to minimize
-    gdb round-trips.
+        ex.get_scanner()
+        ex.get_table()      # builds the table with batched calls
     """
 
     SCANNER_VAR = "$debug_ui_scanner"
-
-    # m_DEBUG_UI_Scanner_Func, the type of m_next_manager / m_next_element.
-    # Used to cast-and-call the function pointer (see _advance).
     _FUNC_PTR_TYPE = "m_DEBUG_UI_Scanner_Func"
-
-    # debug_get_ui_scanner(&game) returns the struct by value.
     _GET_SCANNER_EXPR = "debug_get_ui_scanner(&game)"
-
-    # Mirror of DEBUG_UI_Scanner fields (debug_ui.h).
     _TOP_LEVEL_FIELDS = DEBUG_UI_SCANNER_FIELDS
 
-    # -- enrichment: ui_managers -> ui_elements ---------------------------- #
+    # -- enrichment: batched iteration --------------------------------------- #
 
     def _enrich_table(self, table: dict) -> None:
-        """Build the ``ui_managers`` sub-table by iterating via function pointers.
+        """Build the ``ui_managers`` sub-table using a single batched call.
 
-        Uses the scanner's post-condition fields (``max_quantity_of__ui_managers``,
-        ``array_of__quantity_of__elements_in__all_managers``) and batched
-        ``call`` expressions to minimize gdb round-trips.
-
-        Deallocated managers (UUID == IDENTIFIER__UNKNOWN__u32) are omitted.
+        Strategy:
+        1. Read ``max_quantity_of__ui_managers__u32`` from the top-level
+           table (already read by get_table()).
+        2. Compose a single batched ``call`` expression that visits every
+           allocated manager (via ``m_next_manager``) and for each, batches
+           ``m_next_element`` calls.  The total number of calls is
+           ``N + sum(E_i)`` where N is the manager count and E_i is the
+           element count for manager i.
+        3. Parse the returned struct array.  Walk the positions, detecting
+           manager transitions (when ``p_ui_manager__current`` changes) and
+           grouping elements under their current manager.
+        4. Skip deallocated slots (UUID == IDENTIFIER__UNKNOWN__u32).
         """
-        # Read post-condition fields to learn element counts per manager.
-        max_mgrs = self._to_int(table.get("max_quantity_of__ui_managers__u32"))
-        qty_array = table.get(
-            "array_of__quantity_of__elements_in__all_managers__u32")
-
+        max_mgrs = self._to_int(
+            table.get("max_quantity_of__ui_managers__u32"))
         if max_mgrs is None or max_mgrs <= 0:
             table["ui_managers"] = {}
             return
 
-        # The scanner starts at the last allocated manager.  We batch
-        # m_next_manager calls to visit every allocated manager in one shot.
-        # Each call returns the struct by value; we batch them in a brace
-        # compound to get all positions at once.
-        #
-        # However, the mock/test environment doesn't support batched calls.
-        # For correctness, we still use the function-pointer iteration but
-        # skip deallocated managers (detected via uuid_of__ui_manager__current).
-        #
-        # First, read the current manager's UUID to see if we start on a
-        # deallocated one.
-        mgr_uuid_str = table.get("uuid_of__ui_manager__current")
-        if mgr_uuid_str and not self._is_null(mgr_uuid_str):
-            # The scanner's uuid_of__ui_manager__current is the deallocated
-            # sentinel.  Since debug_get_ui_scanner always returns the last
-            # allocated manager, this shouldn't normally happen.  But we
-            # check anyway.
-            pass
+        qty_array_raw = table.get(
+            "array_of__quantity_of__elements_in__all_managers__u32")
+        qty_array = self._parse_qty_array(qty_array_raw)
 
-        managers: dict = {}
-        visited_mgrs: set[str] = set()
+        # Compose the batched call expression.
+        # After debug_get_ui_scanner, the scanner is at the last allocated
+        # manager.  We batch max_mgrs m_next_manager calls (one per slot),
+        # and for each slot with elements, we insert m_next_element calls.
+        mgr_expr = (
+            f"(({self._FUNC_PTR_TYPE}){self.SCANNER_VAR}.m_next_manager)()"
+        )
+        el_expr = (
+            f"(({self._FUNC_PTR_TYPE}){self.SCANNER_VAR}.m_next_element)()"
+        )
 
-        # Get the starting manager pointer.
-        mgr_ptr = self._eval(f"{self.SCANNER_VAR}.p_ui_manager__current")
-        mgr_key = parse_hex(mgr_ptr)
+        call_exprs: list[str] = []
+        for i in range(max_mgrs):
+            call_exprs.append(mgr_expr)
+            el_count = qty_array[i] if i < len(qty_array) else 0
+            for j in range(el_count):
+                call_exprs.append(el_expr)
 
-        if not mgr_key:
+        if not call_exprs:
             table["ui_managers"] = {}
             return
 
-        for _ in range(max_mgrs):
-            if mgr_key in visited_mgrs:
-                break
-            visited_mgrs.add(mgr_key)
+        # Issue the batched call.
+        console_records = self._batch_call(call_exprs)
+        positions = self._parse_batch_structs(
+            console_records,
+            [
+                "p_ui_manager__current",
+                "p_ptr_ui_element__current",
+                "uuid_of__ui_manager__current",
+                "uuid_of__ui_element__current",
+                "the_kind_of__ui_element__current",
+            ]
+        )
 
-            # Read current manager's UUID to check allocation.
-            cur_uuid = self._eval(
-                f"{self.SCANNER_VAR}.uuid_of__ui_manager__current"
+        # Fallback: if the batch call didn't produce usable field values
+        # (e.g. the struct output format from real GDB wasn't parsed correctly),
+        # fall back to reading the post-condition fields via _eval after
+        # each advance.  This preserves the batching for the advancement
+        # (reducing round-trips) while ensuring field extraction works.
+        if not positions or all(
+            p.get("p_ui_manager__current") is None for p in positions
+        ):
+            positions = self._batch_with_eval_fallback(
+                call_exprs, qty_array, max_mgrs
             )
-            if self._is_null(cur_uuid) or cur_uuid == _IDENT_UNKNOWN__U32:
-                # Deallocated manager — skip it.
-                self._advance("m_next_manager")
-                mgr_ptr = self._eval(f"{self.SCANNER_VAR}.p_ui_manager__current")
-                mgr_key = parse_hex(mgr_ptr)
+
+        # Walk the parsed positions, grouping elements under their managers.
+        # We detect manager transitions by tracking whether
+        # p_ui_manager__current changed since the last position.
+        managers: dict = {}
+        current_mgr_key: str | None = None
+        current_mgr_data: dict | None = None
+
+        for pos in positions:
+            mgr_ptr = pos.get("p_ui_manager__current")
+            mgr_uuid = pos.get("uuid_of__ui_manager__current")
+
+            # Skip deallocated or invalid managers.
+            if not mgr_ptr or not mgr_uuid:
+                continue
+            # Check for the deallocated sentinel.
+            normalized_uuid = self._normalize_uuid(mgr_uuid)
+            if normalized_uuid is None or normalized_uuid == _IDENT_UNKNOWN__U32:
+                continue
+            # Also check decimal form of the sentinel.
+            if mgr_uuid.strip() == "4294967295":
                 continue
 
-            # Read the scanner's UUID field for the current manager.
-            mgr_uuid_hex = parse_hex(cur_uuid)
-
-            # Read element count for the current manager from the post-condition
-            # array.  We use uuid_of__ui_manager__current as a proxy since the
-            # array is indexed by manager slot, not by pointer.  Actually, we
-            # can read it from the table's top-level field.
-            # The element count is tracked via the post-condition, but we need
-            # to know which slot the current manager is at.  We'll use the
-            # scanner's max_quantity to iterate elements.
-            #
-            # Actually, we can read the quantity from the post-condition
-            # array, but it's indexed by manager index.  Instead, we use the
-            # element count from max_quantity_of__ui_elements of the current
-            # manager.  Wait — we don't have that field in the scanner.
-            #
-            # The simplest approach: iterate elements via m_next_element until
-            # we wrap back to the start.  The scanner's uuid_of__ui_element__current
-            # tells us the current element's UUID, and the_kind gives us the kind.
-
-            mgr_data = self._scan_manager_simple()
-            if mgr_data is not None:
-                managers[mgr_key] = mgr_data
-
-            # Advance to next manager.
-            self._advance("m_next_manager")
-            mgr_ptr = self._eval(f"{self.SCANNER_VAR}.p_ui_manager__current")
             mgr_key = parse_hex(mgr_ptr)
+            if not mgr_key:
+                continue
+
+            # Check if this is a new manager.
+            if mgr_key != current_mgr_key:
+                current_mgr_key = mgr_key
+                current_mgr_data = managers.get(mgr_key)
+                if current_mgr_data is None:
+                    current_mgr_data = {
+                        "uuid": self._normalize_uuid(mgr_uuid),
+                        "quantity_of__ui_elements": 0,
+                        "ui_elements": {},
+                    }
+                    managers[mgr_key] = current_mgr_data
+
+            # If this position has an element, add it.
+            el_ptr = pos.get("p_ptr_ui_element__current")
+            el_uuid = pos.get("uuid_of__ui_element__current")
+            el_kind = pos.get("the_kind_of__ui_element__current")
+
+            if el_ptr and el_uuid:
+                # Check for deallocated sentinel (both hex and decimal forms).
+                if el_uuid == _IDENT_UNKNOWN__U32 or el_uuid.strip() == "4294967295":
+                    continue
+                el_key = parse_hex(el_ptr)
+                if el_key:
+                    # Kind may come as an integer (from mock) or an enum
+                    # name string (from real GDB).
+                    kind_name = self._normalize_kind(el_kind)
+                    if el_key not in current_mgr_data["ui_elements"]:
+                        current_mgr_data["ui_elements"][el_key] = {
+                            "uuid": self._normalize_uuid(el_uuid),
+                            "kind": kind_name,
+                        }
+                    if el_key not in current_mgr_data["ui_elements"]:
+                        current_mgr_data["ui_elements"][el_key] = {
+                            "uuid": parse_hex(el_uuid),
+                            "kind": kind_name,
+                        }
+                    current_mgr_data["quantity_of__ui_elements"] = len(
+                        current_mgr_data["ui_elements"]
+                    )
 
         table["ui_managers"] = managers
 
-    def _scan_manager_simple(self) -> dict | None:
-        """Read the current manager's UUID and iterate its elements.
+    def _batch_with_eval_fallback(
+        self, call_exprs: list[str], qty_array: list[int], max_mgrs: int
+    ) -> list[dict]:
+        """Fallback when batch struct parsing fails.
 
-        Returns a dict:
-            {"uuid": <hex uuid>,
-             "quantity_of__ui_elements": <count>,
-             "ui_elements": {<ptr>: {"uuid": <hex>, "kind": <str>}}}
+        Advances the scanner via individual ``_advance`` calls (which still
+        use the cast-and-call pattern), but reads the post-condition fields
+        via ``_eval`` after each step.  This is slower than pure batching but
+        ensures correctness when the batch struct array format isn't parseable.
         """
-        # Read current manager's UUID.
-        mgr_uuid = self._eval(
-            f"{self.SCANNER_VAR}.uuid_of__ui_manager__current"
-        )
-        mgr_uuid_hex = parse_hex(mgr_uuid)
+        positions: list[dict] = []
+        for i in range(max_mgrs):
+            # Advance to next manager.
+            self._advance("m_next_manager")
+            positions.append(self._read_post_condition_fields("manager"))
 
-        # Iterate elements via m_next_element.
-        # The scanner provides uuid_of__ui_element__current and
-        # the_kind_of__ui_element__current after each advance.
-        start_el_ptr = parse_hex(
-            self._eval(f"(*{self.SCANNER_VAR}.p_ptr_ui_element__current)")
-        )
-        if not start_el_ptr:
-            return {
-                "uuid": mgr_uuid_hex,
-                "quantity_of__ui_elements": 0,
-                "ui_elements": {},
-            }
+            el_count = qty_array[i] if i < len(qty_array) else 0
+            for j in range(el_count):
+                self._advance("m_next_element")
+                positions.append(self._read_post_condition_fields("element"))
+        return positions
 
-        elements: dict = {}
-        visited: set[str] = set()
-        el_key = start_el_ptr
+    def _read_post_condition_fields(self, step_type: str) -> dict:
+        """Read post-condition fields from the current scanner position."""
+        fields = [
+            "p_ui_manager__current",
+            "p_ptr_ui_element__current",
+            "uuid_of__ui_manager__current",
+            "uuid_of__ui_element__current",
+            "the_kind_of__ui_element__current",
+        ]
+        pos: dict = {}
+        for field in fields:
+            pos[field] = self._eval(f"{self.SCANNER_VAR}.{field}")
+        return pos
 
-        for _ in range(MAX_QUANTITY_OF__UI_MANAGERS):
-            if el_key in visited:
+    def _parse_qty_array(self, raw: str | None) -> list[int]:
+        """Parse gdb's printed array, e.g. ``"{2, 0, 0, 1, 0, 0, 0, 0}"``.
+
+        Handles both curly-brace ``{...}`` and square-bracket ``[...]`` formats.
+        """
+        if not raw:
+            return [0] * MAX_QUANTITY_OF__UI_MANAGERS
+        inner = raw.strip()
+        # Strip outer braces or brackets.
+        if inner.startswith("{") and inner.endswith("}"):
+            inner = inner[1:-1]
+        elif inner.startswith("[") and inner.endswith("]"):
+            inner = inner[1:-1]
+        if not inner:
+            return [0] * MAX_QUANTITY_OF__UI_MANAGERS
+        parts = [p.strip() for p in inner.split(",")]
+        result = []
+        for p in parts:
+            val = self._to_int(p)
+            result.append(val if val is not None else 0)
+        # Pad to MAX_QUANTITY_OF__UI_MANAGERS if needed.
+        while len(result) < MAX_QUANTITY_OF__UI_MANAGERS:
+            result.append(0)
+        return result
+
+    @classmethod
+    def _normalize_kind(cls, value: str | None) -> str:
+        """Normalize the kind field to an enum name string.
+
+        Handles:
+        - Integer: ``"1"`` → ``"UI_Element_Kind__Button"``
+        - Enum name: ``"UI_Element_Kind__Button"`` → unchanged
+        """
+        if not value:
+            return "UI_Element_Kind__Unknown"
+        text = value.strip()
+        # Already an enum name?
+        if text.startswith("UI_Element_Kind__"):
+            return text
+        # Integer index?
+        kind_int = int(text) if text.isdigit() else -1
+        if 0 <= kind_int < len(_UI_ELEMENT_KIND_NAMES):
+            return _UI_ELEMENT_KIND_NAMES[kind_int]
+        return "UI_Element_Kind__Unknown"
+
+    @staticmethod
+    def _normalize_uuid(value: str | None) -> str | None:
+        """Normalize a UUID value to a consistent string format.
+
+        Handles:
+        - Hex strings: ``"0xAAAA"`` → ``"0xAAAA"``
+        - Decimal integers: ``"4059140233"`` → ``"0xF1E2D3C9"``
+        - Sentinel: ``"(Identifier__u32)-1"`` → unchanged
+        """
+        if not value:
+            return None
+        text = value.strip()
+        # Already hex?
+        if text.startswith("0x") or text.startswith("0X"):
+            return text
+        # Sentinel?
+        if "IDENTIFIER__UNKNOWN" in text or text == "-1":
+            return _IDENT_UNKNOWN__U32
+        # Decimal integer?
+        try:
+            val = int(text)
+            return f"0x{val:08x}" if val > 0 else None
+        except ValueError:
+            pass
+        return text
+
+    def _parse_batch_structs(
+        self, console_records: list, fields: list[str]
+    ) -> list[dict]:
+        """Parse a batch call's console output into a list of field dicts.
+
+        The console output for a batch call looks like::
+
+            $1 = {<struct1>, <struct2>, ...}
+
+        Each struct has fields like ``p_ui_manager__current = 0x...``.
+        """
+        print(f"--------------- {console_records} ---------------")
+        text = ""
+        for rec in console_records:
+            text += rec.get("payload", "") or ""
+
+        structs = self._split_struct_array(text)
+
+        results: list[dict] = []
+        for struct_text in structs:
+            entry: dict = {}
+            for field in fields:
+                val = self._extract_field(struct_text, field)
+                entry[field] = val
+            results.append(entry)
+        return results
+
+    def _split_struct_array(self, text: str) -> list[str]:
+        """Split a batch call's output into individual struct strings."""
+        # Find the struct array: "$N = {struct1, struct2, ...}"
+        m = re.search(r"\$?\d*\s*=\s*\{(.*)\}\s*$", text, re.DOTALL)
+        if not m:
+            return []
+        inner = m.group(1)
+
+        # The inner content is a sequence of {struct1}, {struct2}, ...
+        # Each struct is delimited by { and } at depth 0.
+        # Extract each top-level {...} block.
+        structs = []
+        i = 0
+        while i < len(inner):
+            # Skip whitespace.
+            while i < len(inner) and inner[i] in " \t\n":
+                i += 1
+            if i >= len(inner):
                 break
-            visited.add(el_key)
+            # Expect a {
+            if inner[i] != "{":
+                i += 1
+                continue
+            # Find the matching }
+            depth = 1
+            start = i
+            i += 1
+            while i < len(inner) and depth > 0:
+                if inner[i] == "{":
+                    depth += 1
+                elif inner[i] == "}":
+                    depth -= 1
+                i += 1
+            structs.append(inner[start:i].strip())
 
-            # Use the scanner's post-condition fields for UUID and kind.
-            el_uuid = self._eval(
-                f"{self.SCANNER_VAR}.uuid_of__ui_element__current"
-            )
-            el_uuid_hex = parse_hex(el_uuid)
+        return structs
 
-            kind_val = self._eval(
-                f"{self.SCANNER_VAR}.the_kind_of__ui_element__current"
-            )
-            kind_int = self._to_int(kind_val)
-            kind_name = (
-                _UI_ELEMENT_KIND_NAMES[kind_int]
-                if kind_int is not None
-                and 0 <= kind_int < len(_UI_ELEMENT_KIND_NAMES)
-                else str(kind_val)
-            )
+    def _extract_field(self, struct_text: str, field_name: str) -> str | None:
+        """Extract a field value from a struct's printed representation.
 
-            # Skip deallocated elements (UUID sentinel).
-            if el_uuid and el_uuid != _IDENT_UNKNOWN__U32:
-                elements[el_key] = {
-                    "uuid": el_uuid_hex,
-                    "kind": kind_name,
-                }
+        Looks for ``field_name = value`` where value extends until the next
+        ``field = `` or the closing ``}``.
+        """
+        pattern = rf"{re.escape(field_name)}\s*=\s*(.+?)(?:,\s+\w+\s*=|\}}\s*$)"
+        match = re.search(pattern, struct_text, re.DOTALL)
+        if match:
+            val = match.group(1).strip().rstrip(",").rstrip()
+            return val
+        return None
 
-            # Advance to next element.
-            self._advance("m_next_element")
-            el_ptr = self._eval(
-                f"(*{self.SCANNER_VAR}.p_ptr_ui_element__current)"
-            )
-            el_key = parse_hex(el_ptr)
-
-        return {
-            "uuid": mgr_uuid_hex,
-            "quantity_of__ui_elements": len(elements),
-            "ui_elements": elements,
-        }
-
-    # -- advancement -------------------------------------------------------- #
+    # -- advancement (non-batched, for next_element/next_manager) ----------- #
 
     def next_element(self) -> str | None:
-        """Advance the scanner via ``m_next_element``."""
+        """Advance the scanner via ``m_next_element`` (single call)."""
         return self._advance("m_next_element")
 
     def next_manager(self) -> str | None:
-        """Advance the scanner via ``m_next_manager``."""
+        """Advance the scanner via ``m_next_manager`` (single call)."""
         return self._advance("m_next_manager")

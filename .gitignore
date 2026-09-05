@@ -11,3 +11,4 @@ core.*
 aider_notes/*
 *__pycache__*
 *.log
+.opencode

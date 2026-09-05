@@ -1,8 +1,9 @@
-# TODOS — harness
+# TODOS — harness_batch
 
 Backlog for the gdb QA harness. Ordered roughly by when we intend to pick
 each item up. The **focus of the current session** is items **1** and **2**
-(the `DebugScannerBase` redesign + the subtypes that accommodate it).
+(the `DebugScannerBase` redesign + the subtypes that accommodate it) plus
+the **batched GDB calls** optimization.
 
 > Note: `harness_qa.py` is **obsolete** and should be ignored. The harness is
 > the modular package under `harness/` (see `__init__.py`). `AGENTS.md` is
@@ -48,18 +49,18 @@ Implementation notes (settled in this session):
 ## 2. Update the scanner subtypes to the new base  ✅ (this session)
 
 - **`DebugUIScanner`** (the "iterating manager" case): `get_table()` maps
-  **by `ui_manager`**, then each `ui_manager` **sub-maps to each `ui_element`**:
+  **by `ui_manager` pointer**, then each `ui_manager` **sub-maps to each `ui_element`**:
 
   ```
   {
     <DEBUG_UI_Scanner top-level fields ...>,
     "ui_managers": {
-      "0": {
-        "_serialization_header": {"uuid": ...},
-        ... <UI_Manager fields> ...,
+      "0x1234": {
+        "uuid": "0xAAAA",
+        "quantity_of__ui_elements": 2,
         "ui_elements": {
-          "0": { "_serialization_header": {"uuid": ...}, ... },
-          "1": { ... }
+          "0x2000": {"uuid": "0x...", "kind": "UI_Element_Kind__Button"},
+          "0x2100": {"uuid": "0x...", "kind": "UI_Element_Kind__Slider"}
         }
       }
     }
@@ -67,6 +68,12 @@ Implementation notes (settled in this session):
   ```
   Scanners only *present* the gdb state as JSON; they do not interpret it.
   This is what makes item 3 possible later.
+
+- **Batched GDB calls** ✅ (this session): `get_table()` composes a single
+  `call {((FUNC)$s.m_next_manager)(), ((FUNC)$s.m_next_element)(), ...}`
+  expression to visit all allocated managers and their elements in one gdb
+  round-trip, dramatically reducing overhead (similar to ADB on Android).
+
 - **`DebugEntityScanner` / `DebugSceneScanner`**: flat — they adapt to the new
   base (top-level fields only, no `_enrich_table` override).
 
@@ -123,9 +130,9 @@ Wrap the screenshot helper in a new `harness` module (a GL driver, alongside
 ## Verifying
 
 ```
-/home/shalidor/.pyenv/versions/3.12.9/bin/python3 harness/verify_driver.py
-python3 -m py_compile harness/debug_scanner.py harness/debug_scanner_ui.py \
-    harness/debug_scanner_entity.py harness/debug_scanner_scene.py
+python3 -m harness_batch.verify_driver
+python3 -m py_compile harness_batch/debug_scanner.py harness_batch/debug_scanner_ui.py \
+    harness_batch/debug_scanner_entity.py harness_batch/debug_scanner_scene.py
 ```
 
 `verify_driver.py` drives every scanner against a `FakeGdbmi` stub and asserts

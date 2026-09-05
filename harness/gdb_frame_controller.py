@@ -66,6 +66,27 @@ class GDBFrameController:
         """
         return self._gdbmi.write(f'-interpreter-exec console "call {expr}"')
 
+    def _batch_call(self, exprs: list[str]) -> list[str]:
+        """Invoke multiple function-pointer calls in a single gdb ``call``.
+
+        Composes a C brace expression like::
+
+            call {func1(), func2(), func3()}
+
+        This lets us advance the scanner multiple steps with a single gdb
+        round-trip, dramatically reducing overhead (each round-trip to gdb
+        has a high fixed cost, similar to ADB on Android).
+
+        Returns the console stream records from the response, which contain
+        the struct array printed by gdb.  Callers parse the array to extract
+        scanner positions (pointers, UUIDs, kinds).
+        """
+        # Build the brace expression: {expr1(), expr2(), ...}
+        batch = "{" + ", ".join(exprs) + "}"
+        resp = self._gdbmi.write(f'-interpreter-exec console "call {batch}"')
+        # Filter for console stream records (the struct array is printed here).
+        return [rec for rec in resp if rec.get("type") == "console"]
+
     def _exec(self, stmt: str) -> list:
         """Run an arbitrary gdb console statement (e.g. ``set $x = ...``)."""
         return self._gdbmi.write(f'-interpreter-exec console "{stmt}"')
