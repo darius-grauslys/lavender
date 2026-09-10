@@ -373,6 +373,12 @@ class LavMcpSession:
 
         self.state = SessionState()
 
+        # Per-session lock to serialize tool calls.  Prevents concurrent GDB
+        # writes from racing when multiple MCP clients call tools on the same
+        # session simultaneously.
+        import threading
+        self._tool_lock = threading.Lock()
+
         # Ensure the dump location directory exists.
         os.makedirs(self._dump_location, exist_ok=True)
 
@@ -650,16 +656,20 @@ class LavMcpSession:
             return f"ERROR stepping frame: {type(e).__name__}: {e}"
 
     def navigate_source(self) -> str:
-        """Print the current backtrace and the source of the current frame."""
+        """Print the current backtrace and the source of the current frame.
+
+        Uses ``-stack-info-frame`` to get the current frame's file/line/function,
+        then reads the source file directly from disk (since the GDB server
+        process has access to the same filesystem).  Shows a 7-line window
+        centered on the current line, with the current line marked.
+        """
         if not _HAS_PYGDBMI or self._gdbmi is None:
             return "ERROR: GDB not started. Call session_start() first."
 
         try:
             self._refresh_backtrace()
 
-            # Get source of current frame.
             gdbmi = self._gdbmi
-            source_lines: list[str] = []
             resp = gdbmi.write("-stack-info-frame")
             for rec in resp:
                 if rec.get("type") == "result" and rec.get("message") == "done":
@@ -668,26 +678,48 @@ class LavMcpSession:
                     file_ = frame.get("file", "?")
                     line = frame.get("line", "0")
                     func = frame.get("func", "?")
-                    source_lines.append(
-                        f"Current frame: {func} at {file_}:{line}"
-                    )
-                    # Try to read source lines around the current line.
+
+                    header = f"Current frame: {func} at {file_}:{line}"
+
+                    # Read the source file directly from disk.
                     if file_ and file_ != "?":
                         try:
                             line_int = int(line)
                             start = max(1, line_int - 3)
                             end = line_int + 3
-                            src_resp = gdbmi.write(
-                                f"-source-list-lines {file_}"
+
+                            with open(file_) as f:
+                                all_lines = f.readlines()
+
+                            source_lines = []
+                            for i in range(start, min(end + 1, len(all_lines) + 1)):
+                                content = all_lines[i - 1].rstrip()
+                                marker = "> " if i == line_int else "  "
+                                source_lines.append(
+                                    f"  {marker}{i:>5} | {content}"
+                                )
+
+                            return (
+                                f"Backtrace:\n{self.state.backtrace}\n\n"
+                                f"{header}\n"
+                                + "\n".join(source_lines)
                             )
-                            # If we can read source, show a small window.
-                            source_lines.append(f"  (source available at {file_})")
-                        except (ValueError, Exception):
-                            source_lines.append(f"  (source at {file_})")
+                        except (ValueError, OSError, Exception) as e:
+                            return (
+                                f"Backtrace:\n{self.state.backtrace}\n\n"
+                                f"{header}\n"
+                                f"  (unable to read source: {type(e).__name__}: {e})"
+                            )
+
+                    return (
+                        f"Backtrace:\n{self.state.backtrace}\n\n"
+                        f"{header}\n"
+                        f"  (no source file available)"
+                    )
 
             return (
                 f"Backtrace:\n{self.state.backtrace}\n\n"
-                + "\n".join(source_lines)
+                f"(unable to determine current frame)"
             )
         except Exception as e:
             return f"ERROR reading source: {type(e).__name__}: {e}"
@@ -712,11 +744,29 @@ class LavMcpSession:
             # Stop the game first to get a consistent state.
             if self.state.running:
                 self._gdbmi.write("-exec-interrupt")
+                # Read the interrupt response.
+                try:
+                    self._gdbmi.get_gdb_response(timeout_sec=5.0)
+                except Exception:
+                    pass
                 self._set_halted(True)
 
-            # Use gcore to generate the core dump.
-            self._gdbmi.write(f"gcore {dump_path}")
-            self._gdbmi.write(f"-interpreter-exec console \"gcore {dump_path}\"")
+            # Use gcore to generate the core dump via console interpreter.
+            self._gdbmi.write(
+                f"-interpreter-exec console \"gcore {dump_path}\""
+            )
+            # Read the response to ensure gcore has completed.
+            try:
+                self._gdbmi.get_gdb_response(timeout_sec=30.0)
+            except Exception:
+                pass
+
+            if not os.path.exists(dump_path):
+                return (
+                    f"ERROR: core dump file was not created.\n"
+                    f"  Expected path: {dump_path}\n"
+                    f"  Check that gcore is available and GDB has write permission."
+                )
 
             self.state.last_dump_uuid = dump_uuid
 
@@ -1135,27 +1185,116 @@ class LavMcpSession:
     #  Tool: graphics                                                   #
     # ------------------------------------------------------------------ #
 
-    def graphics_screenshot(self, output_path: str | None = None) -> str:
+    def graphics_screenshot(self, output_path: str | None = None) -> dict[str, Any] | str:
         """Capture a screenshot of the current game frame.
 
         Uses ``debug_gl.h`` (via GLDebugHarness) to produce a screenshot.
+
+        The game must be stopped at ``scene__main.c:205`` (post-render,
+        pre-swap) for the GL backbuffer to be valid.  If the game is not
+        already at that frame, this method attempts to set a temporary
+        breakpoint there and continue to it (up to 15 seconds).
+
+        Returns a structured dict with ``content`` containing both a text
+        message and the base64-encoded PNG image data (MCP ``image`` content
+        type) on success, or a plain error string on failure.
         """
         if not _HAS_PYGDBMI or self._gdbmi is None:
             return "ERROR: GDB not started. Call session_start() first."
 
-        if output_path is None:
-            screenshot_uuid = str(uuid.uuid4())
-            output_path = os.path.join(
-                self._dump_location, f"screen-{screenshot_uuid}.png"
-            )
+        # gl_debug_screencap(&game) always saves "screen.png" to the game's
+        # working directory (which may differ from the server's CWD).  We
+        # search for it in likely locations after the call.
+        import base64
 
         try:
             harness = self._get_gl_harness()
-            harness.screenshot(output_path)
-            return (
-                f"Screenshot saved.\n"
-                f"  Path: {output_path}"
-            )
+
+            # Ensure we're at the screencap breakpoint (scene__main.c:205).
+            # set_screencap_breakpoint sets a temp breakpoint; then continue
+            # and poll for the stop.
+            harness.set_screencap_breakpoint()
+            import time
+            deadline = time.monotonic() + 15.0
+            stop_found = False
+            while time.monotonic() < deadline:
+                try:
+                    resp = self._gdbmi.get_gdb_response(timeout_sec=2.0)
+                except Exception:
+                    break
+                if not resp:
+                    continue
+                for rec in resp:
+                    if (isinstance(rec, dict) and
+                            rec.get("type") == "notify" and
+                            rec.get("message") == "stopped"):
+                        stop_found = True
+                        break
+                if stop_found:
+                    break
+
+            if not stop_found:
+                # Game might already be at the right frame, or the breakpoint
+                # didn't fire (e.g. the game hasn't reached scene__main.c:205
+                # yet).  Try screencap anyway — it may work if we're already
+                # stopped at the right line.
+                pass
+
+            ok = harness.screencap()
+            if not ok:
+                return (
+                    "ERROR: screencap returned False.\n"
+                    "  Ensure the game is stopped at scene__main.c:205 "
+                    "(post-render, pre-swap) with a valid GL context."
+                )
+
+            # Find the screenshot file.  The game saves "screen.png" to its
+            # CWD, which is typically the directory containing the executable.
+            search_dirs = [
+                os.path.dirname(os.path.abspath(self._executable)),
+                os.getcwd(),
+                self._dump_location,
+            ]
+            png_path = None
+            for d in search_dirs:
+                candidate = os.path.join(d, "screen.png")
+                if os.path.exists(candidate) and os.path.getsize(candidate) > 0:
+                    png_path = candidate
+                    break
+
+            if png_path is None:
+                return (
+                    "ERROR: screen.png was not found after screencap.\n"
+                    "  Searched: " + ", ".join(
+                        os.path.join(d, "screen.png") for d in search_dirs
+                    )
+                )
+
+            # Read the PNG file and encode it as base64 for MCP image transfer.
+            with open(png_path, "rb") as f:
+                png_bytes = f.read()
+            b64_data = base64.b64encode(png_bytes).decode("ascii")
+
+            # If a specific output_path was requested, copy the file there.
+            if output_path is not None:
+                abs_output_path = os.path.abspath(output_path)
+                os.makedirs(os.path.dirname(abs_output_path) or ".", exist_ok=True)
+                with open(abs_output_path, "wb") as f:
+                    f.write(png_bytes)
+                display_path = abs_output_path
+            else:
+                display_path = png_path
+
+            return {
+                "content": [
+                    {"type": "text", "text": f"Screenshot: {display_path}"},
+                    {
+                        "type": "image",
+                        "data": b64_data,
+                        "mimeType": "image/png",
+                    },
+                ],
+            }
         except Exception as e:
             return f"ERROR capturing screenshot: {type(e).__name__}: {e}"
 
@@ -1185,6 +1324,8 @@ class LavMcpSession:
         """Dispatch a tool call to the appropriate method.
 
         This is used by the MCP server router to invoke tools by name.
+        Tool calls are serialized per-session via ``_tool_lock`` to prevent
+        concurrent GDB writes from racing.
         """
         arguments = arguments or {}
         method_name = _TOOL_METHOD_MAP.get(tool_name)
@@ -1193,4 +1334,5 @@ class LavMcpSession:
         method = getattr(self, method_name, None)
         if method is None:
             return f"ERROR: method '{method_name}' not found on LavMcpSession."
-        return method(**arguments)
+        with self._tool_lock:
+            return method(**arguments)

@@ -94,7 +94,7 @@ class DebugUIUtils:
 
     # -- frame navigation ------------------------------------------------------ #
 
-    def _navigate_to_frame(self, timeout: float = 5.0) -> None:
+    def _navigate_to_frame(self, timeout: float = 15.0) -> None:
         """Ensure gdb is stopped at ``poll_ui_manager__update``, navigating if
         needed.
 
@@ -108,7 +108,7 @@ class DebugUIUtils:
         frame in the game loop.
 
         Args:
-            timeout: Maximum seconds to wait for the breakpoint (default 5.0).
+            timeout: Maximum seconds to wait for the breakpoint (default 15.0).
 
         Raises:
             RuntimeError: If navigation fails within the timeout.

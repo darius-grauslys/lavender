@@ -21,6 +21,10 @@ Usage:
   python3 -m mcp.lav_mcp_server --stdio \\
       --config /path/to/config.json
 
+  # Override the executable from config with a CLI argument:
+  python3 -m mcp.lav_mcp_server --executable /path/to/game \\
+      --stdio
+
   # Run a single session per HTTP connection (no session ID in URL):
   python3 -m mcp.lav_mcp_server --port 8890 --no-session-routing
 """
@@ -531,6 +535,10 @@ def main() -> int:
         help="Use a single shared session (no per-connection session IDs)."
     )
     parser.add_argument(
+        "--executable", "-e", default=None,
+        help="Override the game executable path (overwrites config)."
+    )
+    parser.add_argument(
         "--verbose", "-v", action="store_true",
         help="Enable verbose logging."
     )
@@ -543,6 +551,15 @@ def main() -> int:
     )
 
     config = load_config(args.config)
+
+    # CLI executable override takes precedence over config.
+    if args.executable:
+        resolved = _resolve_executable(args.executable)
+        session_cfg = config.setdefault("config", {}).setdefault("session", {})
+        session_cfg["executable"] = resolved
+        logger.info("Executable overridden via CLI: %s -> %s",
+                     args.executable, resolved)
+
     session_factory = make_session_factory(config)
 
     if args.stdio:

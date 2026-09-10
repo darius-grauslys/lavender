@@ -47,7 +47,7 @@ REPL commands (all map to MCP tools):
     ui managers        → ui_manager     (list UI managers)
     ui select <ptr>    → ui_manager_select (select a manager)
     ui list            → ui_list        (list elements under manager)
-    ui invoke <element> <handler> [args...]
+    ui invoke <handler> <element> [args...]
                        → ui_invoke      (invoke a handler)
 
     screenshot [path]  → graphics_screenshot
@@ -106,11 +106,24 @@ class McpClient:
         self._req_id = 0
 
     def call_tool(self, name: str, arguments: dict[str, Any] | None = None) -> str:
-        """Call an MCP tool and return the result text."""
+        """Call an MCP tool and return the result text.
+
+        Handles MCP multi-content results (text + image).  When an image
+        content item is present, the base64-decoded PNG is written to
+        ``screen.png`` (or the path embedded in the text message) so the
+        CLI user can inspect it with an image viewer.
+        """
+        import base64
+
         arguments = arguments or {}
 
         if self._local:
-            return self._session.dispatch_tool(name, arguments)
+            raw = self._session.dispatch_tool(name, arguments)
+            # dispatch_tool may return a dict (structured result with content)
+            # or a plain string (error message).
+            if isinstance(raw, dict):
+                return self._format_content(raw.get("content", []))
+            return raw
 
         # Remote: JSON-RPC 2.0 POST
         self._req_id += 1
@@ -139,9 +152,52 @@ class McpClient:
             return f"ERROR: {err.get('message', 'unknown error')}"
 
         content = result.get("result", {}).get("content", [])
-        if content:
-            return content[0].get("text", "")
-        return "(no output)"
+        return self._format_content(content)
+
+    def _format_content(self, content: list[dict[str, Any]]) -> str:
+        """Format MCP content items, writing images to disk as needed.
+
+        Returns the text from the first text content item, or a summary
+        string if no text is present.
+        """
+        import base64
+
+        text_parts = []
+        for item in content:
+            ctype = item.get("type", "")
+            if ctype == "text":
+                text_parts.append(item.get("text", ""))
+            elif ctype == "image":
+                data = item.get("data", "")
+                if data:
+                    try:
+                        raw = base64.b64decode(data)
+                    except Exception as e:
+                        print(f"  [!] Failed to decode image: {e}")
+                        continue
+                    # Determine output path from text message, or default.
+                    out_path = self._extract_image_path(text_parts)
+                    try:
+                        with open(out_path, "wb") as f:
+                            f.write(raw)
+                        print(f"  [image] Saved {len(raw)} bytes to {out_path}")
+                    except OSError as e:
+                        print(f"  [!] Failed to write image: {e}")
+        if text_parts:
+            return "\n".join(text_parts)
+        return "(no text output)"
+
+    @staticmethod
+    def _extract_image_path(text_parts: list[str]) -> str:
+        """Try to extract an image path from text message, default screen.png."""
+        for text in reversed(text_parts):
+            if ".png" in text:
+                # Extract the path from the text message.
+                import re
+                match = re.search(r"([/\w\-]+\.png)", text)
+                if match:
+                    return match.group(1)
+        return "screen.png"
 
     def list_tools(self) -> list[str]:
         """List available MCP tool names."""
@@ -256,7 +312,7 @@ class VerifyCLI:
     def do_ui_invoke(self, args: list[str]) -> None:
         """Call ui_invoke MCP tool."""
         if len(args) < 2:
-            print("  usage: ui invoke <element_ptr> <handler> [extra_args...]")
+            print("  usage: ui invoke <handler> <element_ptr> [extra_args...]")
             print("    handlers: clicked, dragged, dropped, receive_drop, held, "
                   "typed, compose, dispose")
             return
@@ -269,12 +325,13 @@ class VerifyCLI:
 
         if handler == "receive_drop":
             if not rest:
-                print("  usage: ui invoke receive_drop <element_ptr> <dropped_ptr>")
+                print("  usage: ui invoke receive_drop <target_ptr> <dropped_ptr>")
                 return
             tool_args["dropped_ptr"] = rest[0]
         elif handler == "typed":
             if not rest:
                 print("  usage: ui invoke typed <element_ptr> <symbol>")
+                # (handler-first: ui invoke typed <element_ptr> <symbol>)
                 return
             tool_args["symbol"] = rest[0]
 
@@ -315,7 +372,7 @@ Commands (mode: {mode}):
   ui managers        List UI managers (ui_manager)
   ui select <ptr>    Select a UI manager (ui_manager_select)
   ui list            List elements under manager (ui_list)
-  ui invoke <element> <handler> [args...]
+    ui invoke <handler> <element_ptr> [args...]
                      Invoke a handler (ui_invoke)
 
   screenshot [path]  Take screenshot (graphics_screenshot)
@@ -444,8 +501,8 @@ Raw gdb (local mode only):
 
             # -- graphics tools -- #
             elif cmd == "screenshot":
-                path = args[0] if args else None
-                self._call("graphics_screenshot", {"output_path": path} if path else {})
+                path = args[0] if args else "screen.png"
+                self._call("graphics_screenshot", {"output_path": path})
 
             # -- audio tools (unsupported) -- #
             elif cmd == "audio":

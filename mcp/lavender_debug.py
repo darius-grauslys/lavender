@@ -61,20 +61,20 @@ def _vector__3i32_literal(x: int, y: int, z: int) -> str:
 #  Response parsing
 # --------------------------------------------------------------------------- #
 _CALL_VALUE_RE = re.compile(
-    r"=\s*(?:\([^)]*\)\s*)?(0x[0-9a-fA-F]+)"
+    r"=\s*(?:\([^)]*\)\s*)?(0x[0-9a-fA-F]+|true|false)"
 )
 
 _HEX_RE = re.compile(r"0x[0-9a-fA-F]+")
 
 
 def _extract_call_value(resp: list) -> str | None:
-    """Pull a hex value out of a ``call`` console-stream response.
+    """Pull a return value out of a ``call`` console-stream response.
 
     pygdbmi's ``-interpreter-exec console "call ..."`` only reports a
     function's return value as console output (e.g.
-    ``$1 = (Process *) 0x55558018 <f>``); the parsed MI result record's
-    payload is ``None``. This scans the console stream records and returns
-    the address, or ``None`` if nothing was found.
+    ``$1 = (Process *) 0x55558018 <f>`` or ``$2 = true``); the parsed MI
+    results record's payload is ``None``. This scans the console stream
+    records and returns the address, boolean, or ``None`` if nothing was found.
     """
     for rec in resp:
         payload = rec.get("payload")

@@ -114,13 +114,16 @@ class GLDebugHarness(GDBFrameController):
         """Take a GL screenshot via ``gl_debug_screencap(&game)``.
 
         Calls the in-game debug function which reads the GL backbuffer
-        via ``glReadPixels(GL_BACK)`` and writes a PNG to the given path.
+        via ``glReadPixels(GL_BACK)`` and writes ``screen.png`` to the
+        game's working directory (no path argument is accepted).
 
         IMPORTANT: Call this ONCE per breakpoint hit.  Repeated calls
-        can SIGSEGV the PulseMainloop thread (observed ~2/5 calls).
+        can SIGSEGV the PulseMainloop pulse loop thread (observed ~2/5 calls).
 
         Args:
-            path: Output path for the PNG (relative to the game's CWD).
+            path: Ignored for the GDB call (kept for API compatibility).
+                The caller should look for ``screen.png`` in the game's
+                working directory after this returns True.
 
         Returns:
             True if the screencap function returned a non-null value,
@@ -129,7 +132,7 @@ class GLDebugHarness(GDBFrameController):
         # Push main frame so &game is resolvable.
         self.push_main_frame()
         try:
-            resp = self._call(f"gl_debug_screencap(&game)")
+            resp = self._call("gl_debug_screencap(&game)")
             value = _extract_call_value(resp)
             if value is not None and not _is_null_ptr(value):
                 print(f"[+] gl_harness: screenshot saved → {path}")
@@ -252,9 +255,12 @@ def _is_null_ptr(value: str | None) -> bool:
     text = value.strip()
     if not text:
         return True
-    # Match null tokens: "0", "0x0", "(type) 0x0", "(type) 0", "(type) NULL"
+    # Match null tokens: "0", "0x0", "(type) 0x0", "(type) 0", "(type) NULL",
+    # "false" (boolean false return from a function that returns bool)
     import re
-    return bool(re.match(r"^\s*(?:\([^()]*\)\s*)?(0x0|0|NULL)\s*$", text))
+    return bool(re.match(
+        r"^\s*(?:\([^()]*\)\s*)?(0x0|0|NULL|false)\s*$", text
+    ))
 
 
 def _step_to_next_frame(gdb, timeout: float) -> bool:
