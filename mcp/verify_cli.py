@@ -30,7 +30,7 @@ REPL commands (all map to MCP tools):
     status             → session_status (check running/halted/crashed)
     stop               → session_stop   (exit GDB)
 
-    step               → navigate_step  (one game frame)
+    step [count]       → navigate_step  (advance one or more game frames; default 1)
     bt                 → navigate_source (backtrace + source)
 
     core dump          → core_dump      (extract coredump)
@@ -44,9 +44,7 @@ REPL commands (all map to MCP tools):
     input write <flag> [drive|drop]
                        → input_write    (set/clear input flag)
 
-    ui managers        → ui_manager     (list UI managers)
-    ui select <ptr>    → ui_manager_select (select a manager)
-    ui list            → ui_list        (list elements under manager)
+    ui list            → ui_list        (list all elements across all managers)
     ui invoke <handler> <element> [args...]
                        → ui_invoke      (invoke a handler)
 
@@ -355,7 +353,7 @@ Commands (mode: {mode}):
   status             Check session status (session_status)
   stop               Stop game and exit GDB (session_stop)
 
-  step               Advance one game frame (navigate_step)
+  step [count]       Advance one or more game frames (navigate_step; default count=1)
   bt                 Backtrace + source (navigate_source)
 
   core dump          Extract core dump (core_dump)
@@ -369,9 +367,7 @@ Commands (mode: {mode}):
   input write <flag> [drive|drop]
                      Set/clear input flag (input_write)
 
-  ui managers        List UI managers (ui_manager)
-  ui select <ptr>    Select a UI manager (ui_manager_select)
-  ui list            List elements under manager (ui_list)
+  ui list            List all elements across all managers (ui_list)
     ui invoke <handler> <element_ptr> [args...]
                      Invoke a handler (ui_invoke)
 
@@ -429,7 +425,8 @@ Raw gdb (local mode only):
 
             # -- navigate tools -- #
             elif cmd == "step":
-                self._call("navigate_step")
+                count = int(args[0]) if args else 1
+                self._call("navigate_step", {"count": count})
 
             elif cmd == "bt":
                 self._call("navigate_source")
@@ -481,18 +478,11 @@ Raw gdb (local mode only):
             # -- ui tools -- #
             elif cmd == "ui":
                 if not args:
-                    print("  usage: ui managers|select <ptr>|list|invoke ...")
+                    print("  usage: ui list|invoke ...")
                     continue
                 sub = args[0].lower()
                 rest = args[1:]
-                if sub == "managers":
-                    self._call("ui_manager")
-                elif sub == "select":
-                    if not rest:
-                        print("  usage: ui select <ptr>")
-                        continue
-                    self._call("ui_manager_select", {"manager_ptr": rest[0]})
-                elif sub == "list":
+                if sub == "list":
                     self._call("ui_list")
                 elif sub == "invoke":
                     self.do_ui_invoke(rest)
@@ -576,6 +566,16 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help="Path to config.json for local mode (specifies executable + dump location).",
     )
+    parser.add_argument(
+        "--log",
+        type=str,
+        default="/tmp/lav-log/",
+        help="Enable MCP tool call/response logging (JSON lines format). "
+             "If a directory is given (trailing slash or no extension), "
+             "per-session UUID-named log files are created inside it. "
+             "Example: --log /tmp/lav-log/ or --log /tmp/lav-log/session1.jsonl. "
+             "Default: /tmp/lav-log/ (logging always enabled).",
+    )
     return parser.parse_args()
 
 
@@ -630,8 +630,21 @@ def main() -> int:
         print("[!] No executable specified. Use --program <path> or set config.json.")
         return 1
 
+    # Resolve --log: if it points to a directory (or has no extension),
+    # create a per-session UUID-named log file inside it.
+    log_file: str | None = None
+    if args.log is not None:
+        p = Path(args.log).expanduser()
+        if p.suffix == "" or p.is_dir():
+            import uuid as _uuid
+            p.mkdir(parents=True, exist_ok=True)
+            log_file = str(p / f"{_uuid.uuid4().hex}.jsonl")
+        else:
+            p.parent.mkdir(parents=True, exist_ok=True)
+            log_file = str(p)
+
     print(f"=== verify_cli (MCP local) -- {executable} ===")
-    session = LavMcpSession(executable=executable, dump_location=dump_location)
+    session = LavMcpSession(executable=executable, dump_location=dump_location, log_file=log_file)
     client = McpClient(session=session)
     cli = VerifyCLI(client)
 

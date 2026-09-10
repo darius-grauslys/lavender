@@ -492,8 +492,32 @@ def load_config(config_path: str | None) -> dict[str, Any]:
     return config
 
 
-def make_session_factory(config: dict[str, Any] | None) -> Any:
-    """Create a factory closure that produces LavMcpSession instances."""
+def _resolve_log_file(log_arg: str | None) -> str | None:
+    """Resolve a --log argument into a concrete file path (or None).
+
+    If the argument is a directory (or has no file extension), a per-session
+    UUID-named log file is created inside that directory at factory call time.
+
+    If it's a concrete path, we just ensure the parent dir exists and return it.
+    """
+    if log_arg is None:
+        return None
+    p = Path(log_arg).expanduser()
+    if p.suffix == "" or p.is_dir():
+        # Defer UUID generation to factory call time — each session gets its own file.
+        p.mkdir(parents=True, exist_ok=True)
+        return None  # signal to factory to generate a UUID file
+    p.parent.mkdir(parents=True, exist_ok=True)
+    return str(p)
+
+
+def make_session_factory(config: dict[str, Any] | None, log_arg: str | None = None) -> Any:
+    """Create a factory closure that produces LavMcpSession instances.
+
+    If *log_arg* is provided, tool call/response logging is enabled.  If it's
+    a directory path (or no extension), each session gets its own UUID-named
+    log file inside that directory.
+    """
     cfg = (config or {}).get("config", {})
     session_cfg = cfg.get("session", {})
     core_cfg = cfg.get("core", {})
@@ -501,8 +525,21 @@ def make_session_factory(config: dict[str, Any] | None) -> Any:
     executable = _resolve_executable(session_cfg.get("executable"))
     dump_location = core_cfg.get("dump-location", "/tmp/lav-core-dump/")
 
+    # Pre-resolve the log path.  If it's a directory, we'll generate a UUID per session.
+    log_path = _resolve_log_file(log_arg) if log_arg else None
+    log_dir = Path(log_arg).expanduser() if log_arg and (log_path is None) else None
+
     def factory() -> LavMcpSession:
-        return LavMcpSession(executable=executable, dump_location=dump_location)
+        if log_path is not None:
+            session_log = log_path
+        elif log_dir is not None:
+            import uuid as _uuid
+            session_log = str(log_dir / f"{_uuid.uuid4().hex}.jsonl")
+        else:
+            session_log = None
+        return LavMcpSession(
+            executable=executable, dump_location=dump_location, log_file=session_log
+        )
 
     return factory
 
@@ -542,6 +579,12 @@ def main() -> int:
         "--verbose", "-v", action="store_true",
         help="Enable verbose logging."
     )
+    parser.add_argument(
+        "--log", default="/tmp/lav-log/",
+        help="Enable MCP tool call/response logging (JSON lines format). "
+             "If a directory is given, per-session UUID-named log files are "
+             "created inside it. Default: /tmp/lav-log/ (always enabled)."
+    )
 
     args = parser.parse_args()
 
@@ -560,7 +603,7 @@ def main() -> int:
         logger.info("Executable overridden via CLI: %s -> %s",
                      args.executable, resolved)
 
-    session_factory = make_session_factory(config)
+    session_factory = make_session_factory(config, args.log)
 
     if args.stdio:
         logger.info("Starting MCP server in stdio mode")

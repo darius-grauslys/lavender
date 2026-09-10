@@ -164,7 +164,7 @@ def test_tool_definitions() -> None:
         "core_dump", "core_load", "core_reset",
         "process_list", "process_watch",
         "input_read", "input_write",
-        "ui_manager", "ui_manager_select", "ui_list", "ui_invoke",
+        "ui_list", "ui_invoke",
         "graphics_screenshot",
         "audio_list", "audio_listen",
     }
@@ -214,7 +214,6 @@ def test_session_state() -> None:
     _check("default halted=False", state.halted is False)
     _check("default crashed=False", state.crashed is False)
     _check("default backtrace=''", state.backtrace == "")
-    _check("default selected_manager_ptr=None", state.selected_manager_ptr is None)
     _check("default last_dump_uuid=None", state.last_dump_uuid is None)
 
     # Test with values.
@@ -223,13 +222,11 @@ def test_session_state() -> None:
         halted=True,
         crashed=False,
         backtrace="#0  main",
-        selected_manager_ptr="0x1000",
         last_dump_uuid="abc-123",
     )
     _check("running=True", state2.running is True)
     _check("halted=True", state2.halted is True)
     _check("backtrace set", state2.backtrace == "#0  main")
-    _check("selected_manager_ptr set", state2.selected_manager_ptr == "0x1000")
     _check("last_dump_uuid set", state2.last_dump_uuid == "abc-123")
 
 
@@ -265,10 +262,12 @@ def test_session_not_started() -> None:
         f"got: {result}",
     )
 
-    result = session.ui_manager()
+    # ui_manager is no longer a tool — ui_list now shows all elements.
+    # Verify dispatch returns error for non-existent tools.
+    result = session.dispatch_tool("ui_manager")
     _check(
-        "ui_manager returns error",
-        "ERROR" in result or "not started" in result.lower(),
+        "ui_manager no longer exists as a tool",
+        "ERROR" in result or "not found" in result.lower() or "unknown" in result.lower(),
         f"got: {result}",
     )
 

@@ -30,6 +30,7 @@ from __future__ import annotations
 import dataclasses
 import json
 import os
+import time
 import uuid
 from typing import Any
 
@@ -95,8 +96,6 @@ class SessionState:
       - ``running``    — the game process is executing (gdb has continued it).
       - ``halted``     — gdb has the process stopped (breakpoint, signal, etc.).
       - ``crashed``    — the process exited abnormally.
-      - ``selected_manager_ptr`` — the UI manager currently selected for
-        ``ui_list`` / ``ui_invoke`` operations.
       - ``last_dump_uuid`` — UUID of the most recent core dump (for ``core_reset``).
     """
 
@@ -104,9 +103,10 @@ class SessionState:
     halted: bool = False
     crashed: bool = False
     backtrace: str = ""
-    selected_manager_ptr: str | None = None
+    # (selected_manager_ptr removed — ui_list now shows all elements across all managers)
     last_dump_uuid: str | None = None
     crash_signal: str | None = None
+    log_file: str | None = None  # path to MCP tool call/response log
 
 
 # --------------------------------------------------------------------------- #
@@ -136,10 +136,21 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
     {
         "name": "navigate_step",
         "description": (
-            "Advance exactly one game frame: continue to manage_game__post_render, "
-            "then execute 'finish' to reach the post-render state."
+            "Advance one or more game frames: continue to manage_game__post_render, "
+            "then execute 'finish' to reach the post-render state. "
+            "Repeats count times (default 1)."
         ),
-        "inputSchema": {"type": "object", "properties": {}, "required": []},
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer",
+                    "description": "Number of frames to step (default 1, must be >= 1).",
+                    "default": 1,
+                },
+            },
+            "required": [],
+        },
     },
     {
         "name": "navigate_source",
@@ -226,31 +237,9 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
     },
     # ---- ui ----
     {
-        "name": "ui_manager",
-        "description": (
-            "List all UI managers from the DebugUIScanner. Also reports the "
-            "currently selected manager."
-        ),
-        "inputSchema": {"type": "object", "properties": {}, "required": []},
-    },
-    {
-        "name": "ui_manager_select",
-        "description": "Select a UI manager by pointer for subsequent ui_list/ui_invoke calls.",
-        "inputSchema": {
-            "type": "object",
-            "properties": {
-                "manager_ptr": {
-                    "type": "string",
-                    "description": "Hex pointer to the UI_Manager (from ui_manager).",
-                }
-            },
-            "required": ["manager_ptr"],
-        },
-    },
-    {
         "name": "ui_list",
         "description": (
-            "List all UI elements under the currently selected UI manager."
+            "List all UI elements across all UI managers."
         ),
         "inputSchema": {"type": "object", "properties": {}, "required": []},
     },
@@ -333,8 +322,6 @@ _TOOL_METHOD_MAP: dict[str, str] = {
     "process_watch": "process_watch",
     "input_read": "input_read",
     "input_write": "input_write",
-    "ui_manager": "ui_manager",
-    "ui_manager_select": "ui_manager_select",
     "ui_list": "ui_list",
     "ui_invoke": "ui_invoke",
     "graphics_screenshot": "graphics_screenshot",
@@ -360,6 +347,7 @@ class LavMcpSession:
         self,
         executable: str,
         dump_location: str = "/tmp/lav-core-dump/",
+        log_file: str | None = None,
     ) -> None:
         self._executable = executable
         self._dump_location = os.path.expanduser(dump_location)
@@ -373,6 +361,11 @@ class LavMcpSession:
         self._gl_harness: GLDebugHarness | None = None
 
         self.state = SessionState()
+
+        # Optional MCP tool call/response log file.
+        if log_file is not None:
+            self.state.log_file = os.path.expanduser(log_file)
+            os.makedirs(os.path.dirname(self.state.log_file), exist_ok=True)
 
         # Per-session lock to serialize tool calls.  Prevents concurrent GDB
         # writes from racing when multiple MCP clients call tools on the same
@@ -490,8 +483,6 @@ class LavMcpSession:
            to get fresh data — the game state may have changed since the
            last scan).
         2. Builds the table and checks for UI managers.
-        3. If no UI manager is selected (``selected_manager_ptr`` is None),
-           auto-selects the first one.
 
         Returns ``None`` on success, or an error string if something failed.
         Callers should check the return value and abort if non-None.
@@ -514,11 +505,6 @@ class LavMcpSession:
                     "  The game may not have reached poll_ui_manager__update.\n"
                     "  Try stepping a few frames first (use 'step' command)."
                 )
-
-            # Auto-select first manager if none is selected.
-            if self.state.selected_manager_ptr is None:
-                first_ptr = sorted(managers.keys())[0]
-                self.state.selected_manager_ptr = first_ptr
 
             return None  # success
         except Exception as e:
@@ -724,8 +710,6 @@ class LavMcpSession:
         return (
             f"Game: started\n"
             f"Status: {status}\n"
-            f"Selected UI manager: "
-            f"{self.state.selected_manager_ptr or '(none)'}\n"
             f"Last dump UUID: {self.state.last_dump_uuid or '(none)'}\n"
             f"Backtrace:\n{self.state.backtrace}"
         )
@@ -758,33 +742,47 @@ class LavMcpSession:
     #  Tool: navigate                                                   #
     # ------------------------------------------------------------------ #
 
-    def navigate_step(self) -> str:
-        """Advance exactly one game frame.
+    def navigate_step(self, count: int = 1) -> str:
+        """Advance one or more game frames.
 
         Uses ``step_frame("manage_game__post_render")`` to continue until
         the end-of-frame breakpoint, then executes ``finish`` to get the
-        post-render state.
+        post-render state.  Repeats *count* times (default 1).
+
+        Args:
+            count: Number of frames to step (default 1).
         """
         if not _HAS_PYGDBMI or self._gdbmi is None:
             return "ERROR: GDB not started. Call session_start() first."
 
+        if count < 1:
+            return "ERROR: count must be >= 1."
+
         try:
-            hit = step_frame(self._gdbmi, "manage_game__post_render", timeout=15.0)
-            if not hit:
+            for i in range(count):
+                hit = step_frame(self._gdbmi, "manage_game__post_render", timeout=15.0)
+                if not hit:
+                    return (
+                        f"ERROR: timed out waiting for manage_game__post_render "
+                        f"on step {i+1}/{count} "
+                        "(possible infinite loop or the function doesn't exist)."
+                    )
+
+                # Execute 'finish' to get state after manage_game__post_render.
+                self._gdbmi.write("-exec-finish")
+                self._set_halted(True)
+                self._refresh_backtrace()
+
+            if count == 1:
                 return (
-                    "ERROR: timed out waiting for manage_game__post_render "
-                    "(possible infinite loop or the function doesn't exist)."
+                    "Stepped one game frame to post-render.\n"
+                    f"Backtrace:\n{self.state.backtrace}"
                 )
-
-            # Execute 'finish' to get state after manage_game__post_render.
-            self._gdbmi.write("-exec-finish")
-            self._set_halted(True)
-            self._refresh_backtrace()
-
-            return (
-                "Stepped one game frame to post-render.\n"
-                f"Backtrace:\n{self.state.backtrace}"
-            )
+            else:
+                return (
+                    f"Stepped {count} game frames to post-render.\n"
+                    f"Backtrace:\n{self.state.backtrace}"
+                )
         except Exception as e:
             self._set_crashed()
             return f"ERROR stepping frame: {type(e).__name__}: {e}"
@@ -1139,90 +1137,12 @@ class LavMcpSession:
     #  Tool: ui                                                         #
     # ------------------------------------------------------------------ #
 
-    def ui_manager(self) -> str:
-        """List all UI managers.
-
-        Uses DebugUIScanner (SSOT) to list all UI managers from the scanner
-        table.  Also reports the currently selected manager.
-
-        Automatically navigates to ``poll_ui_manager__update`` to ensure
-        the scanner struct is populated with live data.
-        """
-        if not _HAS_PYGDBMI or self._gdbmi is None:
-            return "ERROR: GDB not started. Call session_start() first."
-
-        try:
-            scanner = self._get_ui_scanner()
-
-            # Always re-scan for fresh data.
-            scanner.get_scanner()
-            table = scanner.get_table()
-            managers = table.get("ui_managers", {})
-
-            if not managers:
-                # Try stepping the game loop once, then re-scan.
-                from .gdb_nav_utils import step_frame
-                try:
-                    step_frame(
-                        self._gdbmi, "manage_game__post_render", timeout=15.0
-                    )
-                    scanner.get_scanner()
-                    table = scanner.get_table()
-                    managers = table.get("ui_managers", {})
-                except Exception:
-                    pass
-
-            if not managers:
-                return "No UI managers found."
-
-            lines: list[str] = ["UI Managers:"]
-            for ptr, info in sorted(managers.items()):
-                uuid_val = info.get("uuid", "?")
-                qty = info.get("quantity_of__ui_elements", 0)
-                marker = " (SELECTED)" if ptr == self.state.selected_manager_ptr else ""
-                lines.append(
-                    f"  {ptr}  uuid={uuid_val}  elements={qty}{marker}"
-                )
-
-            if self.state.selected_manager_ptr is None:
-                lines.append("\nNo manager selected. Use ui_manager_select.")
-
-            return "\n".join(lines)
-        except Exception as e:
-            return f"ERROR listing UI managers: {type(e).__name__}: {e}"
-
-    def ui_manager_select(self, manager_ptr: str) -> str:
-        """Select a UI manager for subsequent ui_list/ui_invoke calls."""
-        if not _HAS_PYGDBMI or self._gdbmi is None:
-            return "ERROR: GDB not started. Call session_start() first."
-
-        try:
-            scanner = self._get_ui_scanner()
-            # Always re-scan for fresh data.
-            scanner.get_scanner()
-            table = scanner.get_table()
-            managers = table.get("ui_managers", {})
-
-            # Normalize the pointer for comparison.
-            from .lavender_debug import parse_hex
-            normalized = parse_hex(manager_ptr) or manager_ptr
-
-            if normalized not in managers:
-                return (
-                    f"ERROR: UI manager '{manager_ptr}' not found in scanner table.\n"
-                    f"Use ui_manager to list available managers."
-                )
-
-            self.state.selected_manager_ptr = normalized
-            return (
-                f"Selected UI manager: {normalized}\n"
-                f"Use ui_list to see its elements, or ui_invoke to call handlers."
-            )
-        except Exception as e:
-            return f"ERROR selecting manager: {type(e).__name__}: {e}"
-
     def ui_list(self) -> str:
-        """List all UI elements under the selected UI manager."""
+        """List all UI elements across all UI managers.
+
+        Scans all managers and their elements, producing a flat list.
+        Only handlers with non-null function pointers are advertised.
+        """
         if not _HAS_PYGDBMI or self._gdbmi is None:
             return "ERROR: GDB not started. Call session_start() first."
 
@@ -1236,33 +1156,30 @@ class LavMcpSession:
             table = scanner.get_table()
             managers = table.get("ui_managers", {})
 
-            mgr_info = managers.get(self.state.selected_manager_ptr)
-            if mgr_info is None:
-                return (
-                    f"ERROR: selected manager {self.state.selected_manager_ptr} "
-                    "not found. It may have been deallocated.\n"
-                    "Use ui_manager to re-scan and ui_manager_select."
-                )
+            if not managers:
+                return "No UI managers found."
 
-            elements = mgr_info.get("ui_elements", {})
-            if not elements:
-                return f"No UI elements under manager {self.state.selected_manager_ptr}."
+            lines: list[str] = ["UI Elements:"]
+            total = 0
+            for mgr_ptr, mgr in sorted(managers.items()):
+                elements = mgr.get("ui_elements", {})
+                for el_ptr, info in sorted(elements.items()):
+                    uuid_val = info.get("uuid", "?")
+                    kind = info.get("kind", "?")
+                    handlers = info.get("handlers", {})
+                    # Only advertise handlers with non-null function pointers.
+                    available = sorted(
+                        name for name, addr in handlers.items() if addr is not None
+                    )
+                    handler_names = ", ".join(available) if available else "none"
+                    lines.append(
+                        f"  {el_ptr}  uuid={uuid_val}  kind={kind}  "
+                        f"mngr={mgr_ptr}  handlers=[{handler_names}]"
+                    )
+                    total += 1
 
-            lines: list[str] = [
-                f"UI Elements under manager {self.state.selected_manager_ptr}:"
-            ]
-            for ptr, info in sorted(elements.items()):
-                uuid_val = info.get("uuid", "?")
-                kind = info.get("kind", "?")
-                handlers = info.get("handlers", {})
-                # Only advertise handlers with non-null function pointers.
-                available = sorted(
-                    name for name, addr in handlers.items() if addr is not None
-                )
-                handler_names = ", ".join(available) if available else "none"
-                lines.append(
-                    f"  {ptr}  uuid={uuid_val}  kind={kind}  handlers=[{handler_names}]"
-                )
+            if total == 0:
+                lines.append("  (no elements found)")
 
             return "\n".join(lines)
         except Exception as e:
@@ -1483,6 +1400,24 @@ class LavMcpSession:
     #  Internal: tool dispatch                                          #
     # ------------------------------------------------------------------ #
 
+    def _log_tool_call(self, tool_name: str, arguments: dict[str, Any], response: str) -> None:
+        """Append a JSON-lines record of a tool call and its response to the log file."""
+        if self.state.log_file is None:
+            return
+        record = {
+            "timestamp": time.time(),
+            "tool": tool_name,
+            "arguments": arguments,
+            "response_len": len(response),
+            "response": response,
+        }
+        try:
+            with open(self.state.log_file, "a") as f:
+                f.write(json.dumps(record) + "\n")
+                f.flush()  # ensure log is on disk immediately
+        except OSError:
+            pass  # logging is best-effort
+
     def dispatch_tool(self, tool_name: str, arguments: dict[str, Any] | None = None) -> str:
         """Dispatch a tool call to the appropriate method.
 
@@ -1493,9 +1428,15 @@ class LavMcpSession:
         arguments = arguments or {}
         method_name = _TOOL_METHOD_MAP.get(tool_name)
         if method_name is None:
-            return f"ERROR: unknown tool '{tool_name}'."
+            response = f"ERROR: unknown tool '{tool_name}'."
+            self._log_tool_call(tool_name, arguments, response)
+            return response
         method = getattr(self, method_name, None)
         if method is None:
-            return f"ERROR: method '{method_name}' not found on LavMcpSession."
+            response = f"ERROR: method '{method_name}' not found on LavMcpSession."
+            self._log_tool_call(tool_name, arguments, response)
+            return response
         with self._tool_lock:
-            return method(**arguments)
+            response = method(**arguments)
+            self._log_tool_call(tool_name, arguments, response)
+            return response
