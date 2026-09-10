@@ -106,6 +106,7 @@ class SessionState:
     backtrace: str = ""
     selected_manager_ptr: str | None = None
     last_dump_uuid: str | None = None
+    crash_signal: str | None = None
 
 
 # --------------------------------------------------------------------------- #
@@ -446,9 +447,17 @@ class LavMcpSession:
         return self._input_driver
 
     def _get_ui_utils(self) -> DebugUIUtils:
-        """Return or create the DebugUIUtils."""
+        """Return or create the DebugUIUtils, sharing the session's scanner.
+
+        Uses the same DebugUIScanner as the session (via ``_get_ui_scanner()``)
+        to avoid redundant scanning.  Since ``_refresh_ui()`` already calls
+        ``scanner.get_scanner()`` to rebuild the table, DebugUIUtils can simply
+        read the cached table without triggering another scan.
+        """
         if self._ui_utils is None:
-            self._ui_utils = DebugUIUtils(self._ensure_gdb())
+            self._ui_utils = DebugUIUtils(
+                self._ensure_gdb(), scanner=self._get_ui_scanner()
+            )
         return self._ui_utils
 
     def _get_gl_harness(self) -> GLDebugHarness:
@@ -469,6 +478,131 @@ class LavMcpSession:
         self.state.crashed = True
         self.state.running = False
         self.state.halted = False
+
+    # -- lazy UI initialization ----------------------------------------------- #
+
+    def _refresh_ui(self) -> str | None:
+        """Re-scan the UI state and ensure a manager is selected.
+
+        This is the initializer/refresher for UI operations:
+
+        1. Re-captures the scanner struct via ``get_scanner()`` (always,
+           to get fresh data — the game state may have changed since the
+           last scan).
+        2. Builds the table and checks for UI managers.
+        3. If no UI manager is selected (``selected_manager_ptr`` is None),
+           auto-selects the first one.
+
+        Returns ``None`` on success, or an error string if something failed.
+        Callers should check the return value and abort if non-None.
+        """
+        if self._gdbmi is None:
+            return "ERROR: GDB not started. Call session_start() first."
+
+        try:
+            scanner = self._get_ui_scanner()
+
+            # Always re-scan to get fresh data. get_scanner() invalidates
+            # _table_cache, so get_table() will rebuild.
+            scanner.get_scanner()
+            table = scanner.get_table()
+            managers = table.get("ui_managers", {})
+
+            if not managers:
+                return (
+                    "ERROR: no UI managers found.\n"
+                    "  The game may not have reached poll_ui_manager__update.\n"
+                    "  Try stepping a few frames first (use 'step' command)."
+                )
+
+            # Auto-select first manager if none is selected.
+            if self.state.selected_manager_ptr is None:
+                first_ptr = sorted(managers.keys())[0]
+                self.state.selected_manager_ptr = first_ptr
+
+            return None  # success
+        except Exception as e:
+            # Handle timeout errors gracefully — the game may be stuck
+            # in scene loading and not yet at poll_ui_manager__update.
+            errno_name = type(e).__name__
+            if "timeout" in errno_name.lower() or "time" in errno_name.lower():
+                return (
+                    f"ERROR: GDB timed out ({errno_name}).\n"
+                    "  The game may be stuck in scene loading.\n"
+                    "  Try using 'step' to advance the game loop first."
+                )
+            return f"ERROR initializing UI: {type(e).__name__}: {e}"
+
+    # -- crash detection ------------------------------------------------------- #
+
+    def _check_crash(self, resp: list) -> bool:
+        """Scan a GDB response list for a crash (signal-received stop).
+
+        pygdbmi has no callback mechanism, so we must poll responses after
+        each ``write``.  A crash appears as a ``notify`` record with
+        ``message == "stopped"`` and ``reason == "signal-received"``.
+
+        When a crash is detected:
+        - The session state is marked as crashed.
+        - A core dump is saved immediately (via ``core_dump``).
+        - The core dump's UUID is stored in ``self.state.last_dump_uuid``.
+
+        Returns ``True`` if a crash was detected, ``False`` otherwise.
+        """
+        if not resp:
+            return False
+
+        for rec in resp:
+            if not isinstance(rec, dict):
+                continue
+            if rec.get("type") != "notify":
+                continue
+            if rec.get("message") != "stopped":
+                continue
+
+            payload = rec.get("payload") or {}
+            reason = payload.get("reason", "")
+            if reason == "signal-received":
+                signal_name = payload.get("signal-name", "unknown")
+                # Mark the session as crashed.
+                self._set_crashed()
+
+                # Save the crash info for the caller.
+                self.state.crash_signal = signal_name
+                self.state.backtrace = self._refresh_backtrace()
+
+                # Auto-create a core dump immediately.
+                dump_uuid = str(uuid.uuid4())
+                dump_path = os.path.join(self._dump_location, f"core-{dump_uuid}")
+                try:
+                    self._gdbmi.get_gdb_response(timeout_sec=2.0)  # drain
+                    self._gdbmi.write(
+                        f"-interpreter-exec console \"gcore {dump_path}\""
+                    )
+                    try:
+                        self._gdbmi.get_gdb_response(timeout_sec=30.0)
+                    except Exception:
+                        pass
+                    self.state.last_dump_uuid = dump_uuid
+                except Exception:
+                    pass
+
+                return True
+        return False
+
+    def _gdb_exec(self, cmd: str, timeout: float = 15.0) -> list:
+        """Execute a GDB MI command and return the response.
+
+        This wraps ``write`` + ``get_gdb_response`` and automatically
+        checks for crashes.  Use this for all GDB commands to ensure
+        crash detection works consistently.
+        """
+        self._gdbmi.write(cmd)
+        resp = self._gdbmi.get_gdb_response(timeout_sec=timeout)
+        if self._check_crash(resp):
+            # Raise or handle — for now, callers can check state.is_crashed.
+            pass
+        return resp
 
     def _refresh_backtrace(self) -> str:
         """Query gdb for the current backtrace and cache it."""
@@ -1010,16 +1144,34 @@ class LavMcpSession:
 
         Uses DebugUIScanner (SSOT) to list all UI managers from the scanner
         table.  Also reports the currently selected manager.
+
+        Automatically navigates to ``poll_ui_manager__update`` to ensure
+        the scanner struct is populated with live data.
         """
         if not _HAS_PYGDBMI or self._gdbmi is None:
             return "ERROR: GDB not started. Call session_start() first."
 
         try:
             scanner = self._get_ui_scanner()
+
+            # Always re-scan for fresh data.
             scanner.get_scanner()
             table = scanner.get_table()
-
             managers = table.get("ui_managers", {})
+
+            if not managers:
+                # Try stepping the game loop once, then re-scan.
+                from .gdb_nav_utils import step_frame
+                try:
+                    step_frame(
+                        self._gdbmi, "manage_game__post_render", timeout=15.0
+                    )
+                    scanner.get_scanner()
+                    table = scanner.get_table()
+                    managers = table.get("ui_managers", {})
+                except Exception:
+                    pass
+
             if not managers:
                 return "No UI managers found."
 
@@ -1046,6 +1198,8 @@ class LavMcpSession:
 
         try:
             scanner = self._get_ui_scanner()
+            # Always re-scan for fresh data.
+            scanner.get_scanner()
             table = scanner.get_table()
             managers = table.get("ui_managers", {})
 
@@ -1072,11 +1226,10 @@ class LavMcpSession:
         if not _HAS_PYGDBMI or self._gdbmi is None:
             return "ERROR: GDB not started. Call session_start() first."
 
-        if self.state.selected_manager_ptr is None:
-            return (
-                "ERROR: no UI manager selected.\n"
-                "Use ui_manager to list managers, then ui_manager_select."
-            )
+        # Refresh UI state (always re-scan for fresh data).
+        err = self._refresh_ui()
+        if err:
+            return err
 
         try:
             scanner = self._get_ui_scanner()
@@ -1102,7 +1255,11 @@ class LavMcpSession:
                 uuid_val = info.get("uuid", "?")
                 kind = info.get("kind", "?")
                 handlers = info.get("handlers", {})
-                handler_names = ", ".join(sorted(handlers.keys())) if handlers else "none"
+                # Only advertise handlers with non-null function pointers.
+                available = sorted(
+                    name for name, addr in handlers.items() if addr is not None
+                )
+                handler_names = ", ".join(available) if available else "none"
                 lines.append(
                     f"  {ptr}  uuid={uuid_val}  kind={kind}  handlers=[{handler_names}]"
                 )
@@ -1140,6 +1297,11 @@ class LavMcpSession:
         if not _HAS_PYGDBMI or self._gdbmi is None:
             return "ERROR: GDB not started. Call session_start() first."
 
+        # Refresh UI state (always re-scan for fresh data).
+        err = self._refresh_ui()
+        if err:
+            return err
+
         try:
             ui_utils = self._get_ui_utils()
 
@@ -1153,8 +1315,9 @@ class LavMcpSession:
                     f"Valid handlers: {valid}"
                 )
 
-            # Refresh the scanner table to ensure it's current.
-            ui_utils.refresh()
+            # The scanner table was already refreshed by _refresh_ui() above,
+            # and DebugUIUtils shares the same scanner instance, so no need
+            # to scan again here.
 
             # Call the handler with appropriate arguments.
             if method_name == "receive_drop":

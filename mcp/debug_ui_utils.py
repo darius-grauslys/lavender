@@ -54,6 +54,7 @@ from __future__ import annotations
 
 import json
 import re
+import time
 from typing import Any
 
 from .debug_scanner_ui import DebugUIScanner
@@ -86,11 +87,25 @@ class DebugUIUtils:
     Every handler method automatically navigates to the ``poll_ui_manager__update``
     frame before proceeding, either by returning from a stepped-into callee
     (``finish``) or by continuing to a breakpoint (5-second timeout).
+
+    Handler invocation strategies
+    -----------------------------
+    - :meth:`_invoke_handler_breakpoint` — **preferred** (default).  Reads the
+      function pointer from the ``DEBUG_UI_Scanner.m_ui_*_handler__current``
+      field, sets a breakpoint at that address, continues until it fires, then
+      finds all ``complete_process(...)`` calls in the handler's source file,
+      breakpoints them, deletes the entry breakpoint, and continues until the
+      handler completes.  This is deterministic and does not depend on a
+      fixed step count.
+
+    - :meth:`_invoke_handler_step_based` — **backup**.  Uses the old approach of
+      calling the function pointer directly via ``call`` and then stepping a
+      fixed number of times.  Kept for compatibility / debugging.
     """
 
-    def __init__(self, gdbmi) -> None:
+    def __init__(self, gdbmi, scanner: DebugUIScanner | None = None) -> None:
         self._gdbmi = gdbmi
-        self._scanner: DebugUIScanner | None = None
+        self._scanner: DebugUIScanner | None = scanner
 
     # -- frame navigation ------------------------------------------------------ #
 
@@ -238,6 +253,15 @@ class DebugUIUtils:
                     return el_ptr
         return None
 
+    def _print_response(self, resp) -> None:
+        """Print console output from a gdb response."""
+        for rec in resp:
+            if isinstance(rec, dict):
+                rtype = rec.get("type", "?")
+                payload = rec.get("payload")
+                if rtype == "console" and payload:
+                    print(f"  [console] {payload}")
+
     # -- handler invocation ---------------------------------------------------- #
 
     def _invoke_handler(
@@ -251,26 +275,20 @@ class DebugUIUtils:
 
         Issues::
 
-            call ((FuncType)((UI_Element *)element_ptr)->field_name)(
+            call ((FuncType)((UI_Element *)element_ptr)->field)(
                 (UI_Element *)element_ptr, p_game, p_graphics_window
             )
 
-        from the current (poll_ui_manager__update) frame.
+        from the current (poll_ui_manager__update) frame, then does a
+        single ``nav step`` to let the handler execute.
 
-        *element_ptr* is a ``UI_Element *`` (single indirection) from the
-        scanner table.  We cast it to ``(UI_Element *)`` before using ``->``
-        to access handler fields.
-
-        After the call, gdb may have stepped into the handler.  We issue
-        ``finish`` to return to ``poll_ui_manager__update`` if the frame
-        changed.
+        After the handler returns, we're back at ``poll_ui_manager__update``.
         """
         # Precondition: must be in poll_ui_manager__update.
         self._navigate_to_frame()
 
         # element_ptr is a UI_Element * from the scanner table.
         # Cast it to (UI_Element *) before using -> to access handler fields.
-        # Pattern: ((FuncType)((UI_Element *)ptr)->field)((UI_Element *)ptr, p_game, p_gfx_window)
         call_expr = (
             f"call (({func_type})((UI_Element *){element_ptr})->{field_name})("
             f"(UI_Element *){element_ptr}, p_game, p_graphics_window"
@@ -283,17 +301,15 @@ class DebugUIUtils:
             f'-interpreter-exec console "{call_expr}"'
         )
         self._print_response(resp)
+
+        # Single nav step to let any handler effects propagate.
+        try:
+            self._gdbmi.write("-exec-step")
+            self._gdbmi.get_gdb_response(timeout_sec=5.0)
+        except Exception:
+            pass
+
         self._return_to_frame()
-
-    def _print_response(self, resp) -> None:
-        """Print console output from a gdb response."""
-        for rec in resp:
-            if isinstance(rec, dict):
-                rtype = rec.get("type", "?")
-                payload = rec.get("payload")
-                if rtype == "console" and payload:
-                    print(f"  [console] {payload}")
-
     # -- public handler methods ------------------------------------------------ #
 
     def clicked(self, element_ptr: str) -> None:
