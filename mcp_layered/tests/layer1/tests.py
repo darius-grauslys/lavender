@@ -1,0 +1,515 @@
+"""Tests for Layer 1a (debug_response.py) and Layer 1b (layer_pygdbmi.py).
+
+Run from repo root: python3 -m pytest mcp_layered/tests/layer1/tests.py -v
+Or:  python3 mcp_layered/tests/layer1/tests.py
+"""
+
+import os
+import sys
+import unittest
+from unittest.mock import MagicMock, patch
+
+# Ensure we can import the layer modules
+# tests.py is at mcp_layered/tests/layer1/tests.py
+# mcp_layered is at /home/shalidor/Projects/Lavender_Dev/mcp_layered/
+# We need the parent of mcp_layered in sys.path for "from mcp_layered.X import Y"
+_THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+_LAYERED_ROOT = os.path.abspath(os.path.join(_THIS_DIR, "..", ".."))
+_REPOS_ROOT = os.path.abspath(os.path.join(_LAYERED_ROOT, ".."))
+sys.path.insert(0, _REPOS_ROOT)
+sys.path.insert(0, _LAYERED_ROOT)
+
+from mcp_layered.debug_response import (
+    DebugResponse,
+    Frame,
+    Breakpoint,
+    ResponseType,
+    StoppedReason,
+    parse,
+    parse_stream,
+)
+
+
+# --------------------------------------------------------------------------- #
+# Layer 1a Tests: debug_response.py
+# --------------------------------------------------------------------------- #
+
+
+class TestDebugResponseParsing(unittest.TestCase):
+    """Test parsing of pygdbmi JSON into DebugResponse objects."""
+
+    def test_parse_notify_breakpoint_hit(self):
+        """A breakpoint-hit stopped notification parses correctly."""
+        raw = [{
+            "type": "notify",
+            "message": "stopped",
+            "payload": {
+                "reason": "breakpoint-hit",
+                "bkptno": "1",
+                "frame": {
+                    "pc": "0x55555555513d",
+                    "func": "my_func",
+                    "args": [],
+                    "file": "/tmp/test_bp.c",
+                    "line": "2",
+                },
+                "thread-id": "1",
+            },
+            "token": None,
+            "stream": "stdout",
+        }]
+        results = parse(raw)
+        self.assertEqual(len(results), 1)
+        r = results[0]
+
+        self.assertEqual(r.type, ResponseType.NOTIFY)
+        self.assertEqual(r.reason, "breakpoint-hit")
+        self.assertTrue(r.is_breakpoint_hit())
+        self.assertEqual(r.bkpt_num, "1")
+        self.assertIsNotNone(r.frame)
+        self.assertEqual(r.frame.func, "my_func")
+        self.assertEqual(r.frame.pc, "0x55555555513d")
+        self.assertEqual(r.frame.line, 2)
+        self.assertEqual(r.frame.file, "/tmp/test_bp.c")
+
+    def test_parse_notify_signal_received(self):
+        """A signal-received stopped notification parses correctly."""
+        raw = [{
+            "type": "notify",
+            "message": "stopped",
+            "payload": {
+                "reason": "signal-received",
+                "signal": "SIGSEGV",
+                "signal-name": "SIGSEGV",
+                "signal-code": "0",
+                "frame": {
+                    "pc": "0x7fff",
+                    "func": "crashing_func",
+                    "file": "crash.c",
+                    "line": "10",
+                },
+            },
+            "token": None,
+            "stream": "stdout",
+        }]
+        results = parse(raw)
+        r = results[0]
+
+        self.assertTrue(r.is_signal())
+        self.assertEqual(r.signal, "SIGSEGV")
+        self.assertEqual(r.signal_name, "SIGSEGV")
+        self.assertEqual(r.signal_code, "0")
+        self.assertEqual(r.frame.func, "crashing_func")
+
+    def test_parse_notify_single_step(self):
+        """A single-step stopped notification parses correctly."""
+        raw = [{
+            "type": "notify",
+            "message": "stopped",
+            "payload": {
+                "reason": "single-step",
+                "frame": {
+                    "pc": "0x1000",
+                    "func": "main",
+                    "file": "test.c",
+                    "line": "5",
+                },
+            },
+        }]
+        results = parse(raw)
+        r = results[0]
+        self.assertEqual(r.reason, "single-step")
+        self.assertTrue(r.is_stopped())
+        self.assertEqual(r.frame.func, "main")
+
+    def test_parse_notify_stop_with_unknown_reason(self):
+        """A stop with reason not in our known list still triggers is_stopped."""
+        # 'exited' is the GDB reason for a process exit
+        raw = [{
+            "type": "notify",
+            "message": "stopped",
+            "payload": {"reason": "exited-normally"},
+        }]
+        results = parse(raw)
+        r = results[0]
+        self.assertTrue(r.is_stopped())
+        self.assertFalse(r.is_breakpoint_hit())
+
+    def test_parse_result_done(self):
+        """A ^done result parses correctly."""
+        raw = [{"type": "result", "message": "done", "payload": {"num": "1"}}]
+        results = parse(raw)
+        r = results[0]
+
+        self.assertEqual(r.type, ResponseType.RESULT)
+        self.assertTrue(r.is_success())
+        self.assertFalse(r.is_error())
+
+    def test_parse_result_error(self):
+        """A ^error result parses correctly."""
+        raw = [{
+            "type": "result",
+            "message": "error",
+            "payload": {"msg": "No symbol for main."},
+        }]
+        results = parse(raw)
+        r = results[0]
+
+        self.assertTrue(r.is_error())
+        self.assertEqual(r.reason, "No symbol for main.")
+
+    def test_parse_result_running(self):
+        """A ^running result parses correctly."""
+        raw = [{"type": "result", "message": "running", "payload": None}]
+        results = parse(raw)
+        r = results[0]
+        self.assertTrue(r.is_success())
+
+    def test_parse_console_output(self):
+        """Console output types parse as TARGET."""
+        for rtype in ("console", "log", "output"):
+            raw = [{"type": rtype, "message": None, "payload": "hello"}]
+            results = parse(raw)
+            self.assertEqual(results[0].type, ResponseType.TARGET,
+                             f"Failed for type={rtype}")
+
+    def test_parse_empty_dict(self):
+        """Empty dict {} is classified as PROMPT."""
+        raw = [{}]
+        results = parse(raw)
+        self.assertEqual(len(results), 0)  # filtered out
+
+    def test_parse_none_payload(self):
+        """A None payload doesn't crash."""
+        raw = [{"type": "result", "message": "done", "payload": None}]
+        results = parse(raw)
+        r = results[0]
+        self.assertEqual(r.type, ResponseType.RESULT)
+        self.assertEqual(r.payload, {})
+
+    def test_parse_none_message(self):
+        """A null message doesn't crash."""
+        raw = [{"type": "notify", "message": None, "payload": {"reason": "stopped"}}]
+        results = parse(raw)
+        r = results[0]
+        self.assertEqual(r.reason, "stopped")
+
+    def test_parse_mixed_list(self):
+        """A mixed list of all response types parses in order."""
+        raw = [
+            {},
+            {"type": "notify", "message": "stopped", "payload": {"reason": "breakpoint-hit", "bkptno": "1"}},
+            {"type": "console", "message": None, "payload": "output"},
+            {"type": "result", "message": "done", "payload": {"num": "1"}},
+        ]
+        results = parse(raw)
+        types = [r.type for r in results]
+        # Empty dict filtered, 3 remain
+        self.assertEqual(len(results), 3)
+        self.assertEqual(types[0], ResponseType.NOTIFY)
+        self.assertEqual(types[1], ResponseType.TARGET)
+        self.assertEqual(types[2], ResponseType.RESULT)
+
+    def test_parse_stream_alias(self):
+        """parse_stream is an alias for parse."""
+        raw = [{"type": "result", "message": "done", "payload": {"num": "1"}}]
+        results1 = parse(raw)
+        results2 = parse_stream(raw)
+        self.assertEqual(len(results1), len(results2))
+
+
+class TestDebugResponsePredicates(unittest.TestCase):
+    """Test the convenience predicates on DebugResponse."""
+
+    def test_is_stopped_for_stop_reasons(self):
+        """is_stopped() returns True for all stopped reasons."""
+        for reason in [
+            "breakpoint-hit", "signal-received", "function-finished",
+            "single-step", "watchpoint-triggered", "exited", "exited-normally",
+            "exited-signalled", "exited-with-signal",
+        ]:
+            raw = [{"type": "notify", "message": "stopped", "payload": {"reason": reason}}]
+            r = parse(raw)[0]
+            self.assertTrue(r.is_stopped(), f"Failed for reason={reason}")
+
+    def test_is_stopped_false_for_non_stop(self):
+        """is_stopped() returns False for non-stop notifications."""
+        raw = [{"type": "notify", "message": "library-loaded", "payload": {}}]
+        r = parse(raw)[0]
+        self.assertFalse(r.is_stopped())
+
+    def test_is_breakpoint_hit_specificity(self):
+        """is_breakpoint_hit() only True for breakpoint-hit."""
+        raw_bp = [{"type": "notify", "message": "stopped", "payload": {"reason": "breakpoint-hit", "bkptno": "1"}}]
+        r = parse(raw_bp)[0]
+        self.assertTrue(r.is_breakpoint_hit())
+
+        raw_sig = [{"type": "notify", "message": "stopped", "payload": {"reason": "signal-received"}}]
+        r = parse(raw_sig)[0]
+        self.assertFalse(r.is_breakpoint_hit())
+
+
+# --------------------------------------------------------------------------- #
+# Layer 1b Tests: layer_pygdbmi.py
+# --------------------------------------------------------------------------- #
+
+
+class TestGDBSessionHooks(unittest.TestCase):
+    """Test the hook system in GDBSession using a mock GDBController."""
+
+    @patch("mcp_layered.layer_pygdbmi.GdbController")
+    def test_add_and_remove_hook(self, mock_gdb_controller_cls):
+        """Hooks can be added and removed."""
+        mock_gdb = MagicMock()
+        mock_gdb.write.return_value = [{"type": "result", "message": "done", "payload": {"num": "1"}}]
+        mock_gdb_controller_cls.return_value = mock_gdb
+
+        from mcp_layered.layer_pygdbmi import GDBSession
+        gdb = GDBSession()
+
+        hook_calls = []
+        def my_hook(responses):
+            hook_calls.append(len(responses))
+            return responses
+
+        gdb.add_hook(my_hook)
+        gdb.write("-gdb-version")
+        self.assertEqual(len(hook_calls), 1)
+
+        gdb.remove_hook(my_hook)
+        gdb.write("-gdb-version")
+        self.assertEqual(len(hook_calls), 1)  # still 1, hook was removed
+
+        gdb.close()
+
+    @patch("mcp_layered.layer_pygdbmi.GdbController")
+    def test_clear_hooks(self, mock_gdb_controller_cls):
+        """clear_hooks removes all hooks."""
+        mock_gdb = MagicMock()
+        mock_gdb.write.return_value = []
+        mock_gdb_controller_cls.return_value = mock_gdb
+
+        from mcp_layered.layer_pygdbmi import GDBSession
+        gdb = GDBSession()
+
+        calls = []
+        gdb.add_hook(lambda r: calls.append("a") or r)
+        gdb.add_hook(lambda r: calls.append("b") or r)
+
+        gdb.clear_hooks()
+        gdb.write("test")
+        self.assertEqual(len(calls), 0)
+
+        gdb.close()
+
+    @patch("mcp_layered.layer_pygdbmi.GdbController")
+    def test_hooks_called_in_order(self, mock_gdb_controller_cls):
+        """Hooks are called in registration order."""
+        mock_gdb = MagicMock()
+        mock_gdb.write.return_value = [{"type": "result", "message": "done"}]
+        mock_gdb_controller_cls.return_value = mock_gdb
+
+        from mcp_layered.layer_pygdbmi import GDBSession
+        gdb = GDBSession()
+
+        order = []
+        gdb.add_hook(lambda r: order.append(1) or r)
+        gdb.add_hook(lambda r: order.append(2) or r)
+        gdb.add_hook(lambda r: order.append(3) or r)
+
+        gdb.write("test")
+        self.assertEqual(order, [1, 2, 3])
+
+        gdb.close()
+
+    @patch("mcp_layered.layer_pygdbmi.GdbController")
+    def test_hook_can_modify_responses(self, mock_gdb_controller_cls):
+        """A hook can filter out responses before returning to caller."""
+        mock_gdb = MagicMock()
+        mock_gdb.write.return_value = [
+            {"type": "result", "message": "done"},
+            {"type": "console", "message": None, "payload": "noise"},
+        ]
+        mock_gdb_controller_cls.return_value = mock_gdb
+
+        from mcp_layered.layer_pygdbmi import GDBSession
+        gdb = GDBSession()
+
+        def filter_response(responses):
+            return [r for r in responses if r.type != ResponseType.TARGET]
+
+        gdb.add_hook(filter_response)
+        result = gdb.write("test")
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0].type, ResponseType.RESULT)
+
+        gdb.close()
+
+    @patch("mcp_layered.layer_pygdbmi.GdbController")
+    def test_write_returns_parsed_responses(self, mock_gdb_controller_cls):
+        """write() returns DebugResponse objects, not raw dicts."""
+        mock_gdb = MagicMock()
+        mock_gdb.write.return_value = [{"type": "result", "message": "done", "payload": {"num": "1"}}]
+        mock_gdb_controller_cls.return_value = mock_gdb
+
+        from mcp_layered.layer_pygdbmi import GDBSession
+        gdb = GDBSession()
+
+        result = gdb.write("-gdb-version")
+        self.assertIsInstance(result, list)
+        self.assertEqual(len(result), 1)
+        self.assertIsInstance(result[0], DebugResponse)
+
+        gdb.close()
+
+    @patch("mcp_layered.layer_pygdbmi.GdbController")
+    def test_write_after_close_raises(self, mock_gdb_controller_cls):
+        """write() raises after close()."""
+        mock_gdb = MagicMock()
+        mock_gdb_controller_cls.return_value = mock_gdb
+
+        from mcp_layered.layer_pygdbmi import GDBSession
+        gdb = GDBSession()
+        gdb.close()
+
+        with self.assertRaises(RuntimeError):
+            gdb.write("test")
+
+    @patch("mcp_layered.layer_pygdbmi.GdbController")
+    def test_gdb_path_property(self, mock_gdb_controller_cls):
+        """gdb_path returns the configured GDB executable."""
+        mock_gdb = MagicMock()
+        mock_gdb.command = ["/usr/bin/gdb"]
+        mock_gdb_controller_cls.return_value = mock_gdb
+
+        from mcp_layered.layer_pygdbmi import GDBSession
+        gdb = GDBSession()
+        self.assertEqual(gdb.gdb_path, "/usr/bin/gdb")
+        gdb.close()
+
+
+class TestGDBSessionHookFactories(unittest.TestCase):
+    """Test the hook factory functions."""
+
+    def test_logging_hook_factory(self):
+        """logging_hook_factory creates a hook that calls callback."""
+        from mcp_layered.layer_pygdbmi import logging_hook_factory
+
+        calls = []
+        hook = logging_hook_factory(lambda res: calls.append(len(res)))
+
+        responses = [{"type": "result", "message": "done"}]
+        parsed = parse(responses)
+
+        result = hook(parsed)
+        self.assertEqual(len(calls), 1)
+        self.assertIs(result, parsed)  # returns same list
+
+    def test_on_breakpoint_hook_factory(self):
+        """on_breakpoint_hook_factory only fires on breakpoint-hit."""
+        from mcp_layered.layer_pygdbmi import on_breakpoint_hook_factory
+
+        calls = []
+        hook = on_breakpoint_hook_factory(lambda res: calls.append("fired"))
+
+        # Non-breakpoint response
+        non_bp = parse([{"type": "result", "message": "done"}])
+        hook(non_bp)
+        self.assertEqual(len(calls), 0)
+
+        # Breakpoint-hit response
+        bp_hit = parse([{
+            "type": "notify",
+            "message": "stopped",
+            "payload": {"reason": "breakpoint-hit", "bkptno": "1"},
+        }])
+        hook(bp_hit)
+        self.assertEqual(len(calls), 1)
+
+
+# --------------------------------------------------------------------------- #
+# Integration Tests (require GDB)
+# --------------------------------------------------------------------------- #
+
+
+class TestIntegrationLavenderDev(unittest.TestCase):
+    """Integration tests against ./build/sdl/Lavender_Dev.
+
+    These tests require:
+    - pygdbmi installed
+    - GDB installed
+    - The Lavender_Dev binary at ./build/sdl/Lavender_Dev
+
+    They are skipped if any of these are missing.
+    """
+
+    LAVENDER_BIN = os.path.join(os.getcwd(), "build", "sdl", "Lavender_Dev")
+
+    @classmethod
+    def setUpClass(cls):
+        try:
+            from pygdbmi.gdbcontroller import GdbController
+            cls._has_pygdbmi = True
+        except ImportError:
+            cls._has_pygdbmi = False
+
+        cls._has_gdb = os.system("which gdb > /dev/null 2>&1") == 0
+        cls._has_binary = os.path.isfile(cls.LAVENDER_BIN)
+
+        if cls._has_pygdbmi and cls._has_gdb and cls._has_binary:
+            cls._skip = False
+        else:
+            cls._skip = True
+
+    def setUp(self):
+        if self._skip:
+            self.skipTest("Missing pygdbmi, gdb, or ./build/sdl/Lavender_Dev")
+        from mcp_layered.layer_pygdbmi import GDBSession
+        self._gdb = GDBSession()
+
+    def tearDown(self):
+        self._gdb.close()
+
+    def test_file_command(self):
+        """Loading the Lavender_Dev binary works."""
+        responses = self._gdb.write(f"file {self.LAVENDER_BIN}")
+        results = [r for r in responses if r.type == ResponseType.RESULT]
+        self.assertTrue(any(r.is_success() for r in results),
+                        "file command should succeed")
+
+    def test_response_count_and_types(self):
+        """We get responses with expected types."""
+        responses = self._gdb.write(f"info file")
+        # May be cached by GDB, so just check we get something
+        self.assertGreaterEqual(len(responses), 1)
+
+        types = set(r.type for r in responses)
+        # Should have at least RESULT
+        self.assertIn(ResponseType.RESULT, types)
+
+    def test_hook_fired_on_file_command(self):
+        """A hook is called when executing file command."""
+        from mcp_layered.layer_pygdbmi import GDBSession
+        gdb = GDBSession()
+
+        hook_calls = []
+        def my_hook(responses):
+            hook_calls.append(len(responses))
+            return responses
+
+        gdb.add_hook(my_hook)
+        gdb.write(f"file {self.LAVENDER_BIN}")
+        gdb.remove_hook(my_hook)
+        gdb.close()
+
+        self.assertEqual(len(hook_calls), 1)
+        self.assertGreater(hook_calls[0], 0)
+
+
+# --------------------------------------------------------------------------- #
+# Entry point
+# --------------------------------------------------------------------------- #
+
+
+if __name__ == "__main__":
+    unittest.main(verbosity=2)
