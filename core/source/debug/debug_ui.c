@@ -37,12 +37,54 @@ DEBUG_UI_Scanner __m_debug_ui_scanner__refresh() {
         : IDENTIFIER__UNKNOWN__u32
         ;
 
+    // Sync single layer indirection pointer
+    __DEBUG_ui_scanner.p_ui_element__current =
+        *__DEBUG_ui_scanner.p_ptr_ui_element__current;
+
     // Update element kind
     __DEBUG_ui_scanner.the_kind_of__ui_element__current =
         (__DEBUG_ui_scanner.p_ptr_ui_element__current != 0)
         ? get_kind_of__ui_element(*__DEBUG_ui_scanner.p_ptr_ui_element__current)
         : UI_Element_Kind__Unknown
         ;
+
+    // Update element attributes
+    __DEBUG_ui_scanner.m_ui_clicked_handler__current =
+        __DEBUG_ui_scanner.p_ui_element__current
+        ->m_ui_clicked_handler;
+    __DEBUG_ui_scanner.m_ui_dragged_handler__current =
+        __DEBUG_ui_scanner.p_ui_element__current
+        ->m_ui_dragged_handler;
+    __DEBUG_ui_scanner.m_ui_dropped_handler__current =
+        __DEBUG_ui_scanner.p_ui_element__current
+        ->m_ui_dropped_handler;
+    __DEBUG_ui_scanner.m_ui_receive_drop_handler__current =
+        __DEBUG_ui_scanner.p_ui_element__current
+        ->m_ui_receive_drop_handler;
+    __DEBUG_ui_scanner.m_ui_held_handler__current =
+        __DEBUG_ui_scanner.p_ui_element__current
+        ->m_ui_held_handler;
+    __DEBUG_ui_scanner.m_ui_typed_handler__current =
+        __DEBUG_ui_scanner.p_ui_element__current
+        ->m_ui_typed_handler;
+    __DEBUG_ui_scanner.m_ui_transformed_handler__current =
+        __DEBUG_ui_scanner.p_ui_element__current
+        ->m_ui_transformed_handler;
+    __DEBUG_ui_scanner.m_ui_compose_handler__current =
+        __DEBUG_ui_scanner.p_ui_element__current
+        ->m_ui_compose_handler;
+    __DEBUG_ui_scanner.m_ui_dispose_handler__current =
+        __DEBUG_ui_scanner.p_ui_element__current
+        ->m_ui_dispose_handler;
+    __DEBUG_ui_scanner.p_parent__current =
+        __DEBUG_ui_scanner.p_ui_element__current
+        ->p_parent;
+    __DEBUG_ui_scanner.p_child__current =
+        __DEBUG_ui_scanner.p_ui_element__current
+        ->p_child;
+    __DEBUG_ui_scanner.p_next__current =
+        __DEBUG_ui_scanner.p_ui_element__current
+        ->p_next;
 
     // Update ui_element quantities.
     for (Index__u32 index_of__ui_manager = 0;
@@ -223,6 +265,8 @@ DEBUG_UI_Scanner debug_get_ui_scanner(Game *p_game) {
     __DEBUG_ui_scanner.p_ui_manager__current = p_ui_manager;
     __DEBUG_ui_scanner.p_ptr_ui_element__current =
         p_ui_manager->pM_ptr_array_of__ui_elements;
+    __DEBUG_ui_scanner.p_ui_element__current =
+        *__DEBUG_ui_scanner.p_ptr_ui_element__current;
     __DEBUG_ui_scanner.m_next_manager = __m_debug_ui_scanner__next_ui_manager;
     __DEBUG_ui_scanner.m_next_element = __m_debug_ui_scanner__next_ui_element;
     __DEBUG_ui_scanner.m_refresh = __m_debug_ui_scanner__refresh;

@@ -1,4 +1,4 @@
-# TODOS — harness_batch
+# TODOS — harness
 
 Backlog for the gdb QA harness. Ordered roughly by when we intend to pick
 each item up. The **focus of the current session** is items **1** and **2**
@@ -74,8 +74,33 @@ Implementation notes (settled in this session):
   expression to visit all allocated managers and their elements in one gdb
   round-trip, dramatically reducing overhead (similar to ADB on Android).
 
-- **`DebugEntityScanner` / `DebugSceneScanner`**: flat — they adapt to the new
-  base (top-level fields only, no `_enrich_table` override).
+ - **`DebugEntityScanner`**: `get_table()` maps each **Entity pointer** to
+   `{"uuid": <hex>, "kind": <enum name>}`, using batched `m_next_entity` calls:
+
+   ```
+   {
+     <DEBUG_Entity_Scanner top-level fields ...>,
+     "entities": {
+       "0x2000": {"uuid": "0xE0001", "kind": "Entity_Kind__None"},
+       "0x2100": {"uuid": "0xE0002", "kind": "Entity_Kind__Unknown"}
+     }
+   }
+   ```
+
+ - **`DebugSceneScanner`**: `get_table()` maps each **Scene pointer** to
+   `{"kind": <enum name>}`, using batched `m_iterate_scene` calls:
+
+   ```
+   {
+     <DEBUG_Scene_Scanner top-level fields ...>,
+     "scenes": {
+       "0x4000": {"kind": "Scene_Kind__None"},
+       "0x5000": {"kind": "Scene_Kind__Unknown"}
+     }
+   }
+   ```
+   Note: `DEBUG_Scene_Scanner` has no UUID field — scenes are identified by
+   pointer/kind, not a UUID.
 
 ## 3. (Future) Search a Hitbox / Inventory component by UUID  ⬜
 
@@ -117,6 +142,31 @@ Wrap the screenshot helper in a new `harness` module (a GL driver, alongside
 
 ---
 
+## 6. (Known issue) Pointer-to-pointer vs single indirection for UI elements  🿡
+
+`DEBUG_UI_Scanner` has both `p_ptr_ui_element__current` (UI_Element **) and
+`p_ui_element__current` (UI_Element *).  The scanner table uses the single
+indirection pointer `p_ui_element__current` as the element key.  This is
+the `UI_Element *` that callers (like `DebugUIUtils`) use directly to invoke
+handler fields via `->`, without needing to dereference.
+
+The mock in `verify_driver.py` simplifies this by having `p_ptr_ui_element__current`
+return the element pointer directly (the mock doesn't simulate memory).
+
+## 7. (Known issue) Implicit step during UI handler invocation
+
+When `ui utils <handler>` invokes a function pointer via `call`, gdb may
+implicitly step into the handler function, moving the current frame away from
+`poll_ui_manager__update`.  This is the same behavior observed when manually
+driving gdb commands — it's a gdb characteristic, not a harness bug.
+
+`DebugUIUtils` already handles this: after each handler invocation, it checks
+the current frame via `-stack-info-frame` and issues `-exec-finish` (followed
+by `-stack-select-frame 0`) if the frame changed.  However, if multiple
+handlers are invoked in sequence and the frame is already `poll_ui_manager__update`,
+`finish` may need a conditional guard to avoid stepping out of the function
+prematurely.  Track and refine as needed.
+
 ## Housekeeping
 
 - **`AGENTS.md` is stale.** It documents the obsolete `harness_qa.py`
@@ -130,9 +180,9 @@ Wrap the screenshot helper in a new `harness` module (a GL driver, alongside
 ## Verifying
 
 ```
-python3 -m harness_batch.verify_driver
-python3 -m py_compile harness_batch/debug_scanner.py harness_batch/debug_scanner_ui.py \
-    harness_batch/debug_scanner_entity.py harness_batch/debug_scanner_scene.py
+python3 -m harness.verify_driver
+python3 -m py_compile harness/debug_scanner.py harness/debug_scanner_ui.py \
+    harness/debug_scanner_entity.py harness/debug_scanner_scene.py
 ```
 
 `verify_driver.py` drives every scanner against a `FakeGdbmi` stub and asserts

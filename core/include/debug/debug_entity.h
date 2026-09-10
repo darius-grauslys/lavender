@@ -1,6 +1,7 @@
 #ifndef DEBUG_ENTITY_H
 #define DEBUG_ENTITY_H
 
+#include "defines_weak.h"
 #include <defines.h>
 
 /*
@@ -25,7 +26,19 @@ typedef DEBUG_Entity_Scanner (*m_DEBUG_Entity_Scanner_Func)();
 typedef struct DEBUG_Entity_Scanner_t {
     Entity_Manager *p_entity_manager;
     Entity *p_entity__current;
+
+    m_DEBUG_Entity_Scanner_Func m_refresh;
     m_DEBUG_Entity_Scanner_Func m_next_entity;
+
+    ///
+    /// Module Post Condition:
+    /// After every module function and ever m_ func
+    /// the following fields will be updated to
+    /// reflect engine state.
+    ///
+    Quantity__u32 quantity_of__entities;
+    Identifier__u32 uuid_of__entity__current;
+    Entity_Kind the_kind_of__entity__current;
 } DEBUG_Entity_Scanner;
 
 DEBUG_Entity_Scanner debug_get_entity_scanner(Game *p_game);

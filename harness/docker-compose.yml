@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  debugger_env:
+    image: localhost/lav-sandbox-debug:latest
+    container_name: lavender_debugger
+    build:
+      context: ..
+      dockerfile: harness/Dockerfile
+    cap_add:
+      - SYS_PTRACE
+    security_opt:
+      - seccomp:unconfined
+    # Mount the Lavender source code and build directory.
+    volumes:
+      # Mount the entire Lavender source tree (read-only is safer, but
+      # the game writes screen.png, so we need write access there).
+      - /home/shalidor/Projects/Lavender_Dev:/work/lavender:rw
+      # Mount the X11 socket if you want to forward to a real display
+      # (uncomment if running on a host with a display):
+      # - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      # - ~/.Xauthority:/root/.Xauthority:ro
+      # Shared memory for SDL/audio
+      - /dev/shm:/dev/shm
+    environment:
+      # The container will start its own Xvfb, so DISPLAY is set
+      # by the entrypoint script. These are fallbacks.
+      DISPLAY: ':99.0'
+      SDL_VIDEODRIVER: 'x11'
+      # Allow ptrace across user boundaries (sometimes needed).
+      # This is set on the host: sudo sysctl -w kernel.yama.ptrace_scope=0
+    # Run as root so we can manage Xvfb and ptrace properly.
+    # You can also use the "ubuntu" user if ptrace is configured correctly.
+    user: '0'
+    # tty: true, so we get a proper terminal for interactive debugging.
+    tty: true
+    stdin_open: true
+    # The container runs the entrypoint script which:
+    # 1. Starts Xvfb on DISPLAY=:99.0
+    # 2. Starts PulseAudio (for SDL audio in the container)
+    # 3. Execs into bash so you can run the harness

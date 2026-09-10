@@ -155,6 +155,7 @@ class FakeUIGdbmi(FakeGdbmi):
         parts["p_ui_context"] = self.top_fields.get("p_ui_context", "0xABCD")
         parts["p_ui_manager__current"] = mgr_ptr
         parts["p_ptr_ui_element__current"] = el_ptr_field
+        parts["p_ui_element__current"] = el_ptr_field
         parts["m_next_manager"] = self.top_fields.get("m_next_manager", "0x0")
         parts["m_next_element"] = self.top_fields.get("m_next_element", "0x0")
         parts["m_refresh"] = self.top_fields.get("m_refresh", "0x0")
@@ -163,6 +164,20 @@ class FakeUIGdbmi(FakeGdbmi):
         parts["the_kind_of__ui_element__current"] = el_kind
         parts["max_quantity_of__ui_managers__u32"] = self.top_fields.get("max_quantity_of__ui_managers__u32", "8")
         parts["array_of__quantity_of__elements_in__all_managers__u32"] = self.top_fields.get("array_of__quantity_of__elements_in__all_managers__u32", "[0, 0, 0, 0, 0, 0, 0, 0]")
+        # Handler function pointers (mock returns "0x0" for unset).
+        parts["m_ui_clicked_handler__current"] = "0x0"
+        parts["m_ui_dragged_handler__current"] = "0x0"
+        parts["m_ui_dropped_handler__current"] = "0x0"
+        parts["m_ui_receive_drop_handler__current"] = "0x0"
+        parts["m_ui_held_handler__current"] = "0x0"
+        parts["m_ui_typed_handler__current"] = "0x0"
+        parts["m_ui_transformed_handler__current"] = "0x0"
+        parts["m_ui_compose_handler__current"] = "0x0"
+        parts["m_ui_dispose_handler__current"] = "0x0"
+        # Tree navigation pointers (mock returns current element for all).
+        parts["p_parent__current"] = el_ptr_field
+        parts["p_child__current"] = "0x0"
+        parts["p_next__current"] = "0x0"
         return "{" + ", ".join(f"{k} = {v}" for k, v in parts.items()) + "}"
 
     def _advance_manager(self) -> None:
@@ -285,11 +300,6 @@ class FakeUIGdbmi(FakeGdbmi):
         if expr == "$debug_ui_scanner":
             return self._struct_repr()
 
-        # Handle (*$debug_ui_scanner.p_ptr_ui_element__current) — dereference
-        # the pointer-to-pointer to get the UI_Element *.
-        if expr == "(*$debug_ui_scanner.p_ptr_ui_element__current)":
-            return self._current_el_ptr or "0x0"
-
         if not expr.startswith("$debug_ui_scanner."):
             return "0x0"
         rest = expr[len("$debug_ui_scanner."):]
@@ -299,8 +309,25 @@ class FakeUIGdbmi(FakeGdbmi):
             return self._current_mgr_ptr() or "0x0"
 
         # p_ptr_ui_element__current — the pointer-to-pointer slot.
+        # In the mock, this returns the element pointer directly (simulating
+        # the dereferenced value). Real GDB would return a UI_Element ** address.
         if rest == "p_ptr_ui_element__current":
             return self._current_el_ptr or "0x0"
+
+        # p_ui_element__current — the single indirection UI_Element * pointer.
+        # This is the same as the element pointer in the mock.
+        if rest == "p_ui_element__current":
+            return self._current_el_ptr or "0x0"
+
+        # Handler function pointers (mock returns 0x0 for all).
+        if rest.endswith("__current") and "handler" in rest:
+            return "0x0"
+
+        # Tree navigation pointers.
+        if rest == "p_parent__current":
+            return self._current_el_ptr or "0x0"
+        if rest in ("p_child__current", "p_next__current"):
+            return "0x0"
 
         # Post-condition fields: return based on current position.
         if rest == "uuid_of__ui_manager__current":
@@ -314,28 +341,6 @@ class FakeUIGdbmi(FakeGdbmi):
         if rest == "the_kind_of__ui_element__current":
             el = self._current_el_data()
             return str(el.get("kind", 9)) if el else "9"
-
-        # top-level scanner fields (from the captured struct repr)
-        if rest in self.top_fields:
-            return self.top_fields[rest]
-        return "0x0"
-        rest = expr[len("$debug_ui_scanner."):]
-
-        # p_ui_manager__current — the pointer to the current manager.
-        if rest == "p_ui_manager__current":
-            return self._current_mgr_ptr() or "0x0"
-
-        # p_ptr_ui_element__current — the pointer-to-pointer slot.
-        if rest == "p_ptr_ui_element__current":
-            return self._current_el_ptr or "0x0"
-
-        # Manager field: p_ui_manager__current-><dotted>
-        m = re.match(r"p_ui_manager__current->(.+)$", rest)
-        if m:
-            field = m.group(1)
-            mgr = self._current_mgr_data() or {}
-            fields = mgr.get("fields", {})
-            return fields.get(field, "0x0")
 
         # top-level scanner fields (from the captured struct repr)
         if rest in self.top_fields:
@@ -484,10 +489,21 @@ def test_ui_scanner():
     # field list mirrors debug_ui.h
     assert DEBUG_UI_SCANNER_FIELDS == (
         "p_ui_context", "p_ui_manager__current", "p_ptr_ui_element__current",
+        "p_ui_element__current",
         "m_next_manager", "m_next_element", "m_refresh",
         "array_of__quantity_of__elements_in__all_managers__u32",
         "uuid_of__ui_manager__current", "uuid_of__ui_element__current",
         "max_quantity_of__ui_managers__u32", "the_kind_of__ui_element__current",
+        "m_ui_clicked_handler__current",
+        "m_ui_dragged_handler__current",
+        "m_ui_dropped_handler__current",
+        "m_ui_receive_drop_handler__current",
+        "m_ui_held_handler__current",
+        "m_ui_typed_handler__current",
+        "m_ui_transformed_handler__current",
+        "m_ui_compose_handler__current",
+        "m_ui_dispose_handler__current",
+        "p_parent__current", "p_child__current", "p_next__current",
     )
 
     # get_scanner: push_main_frame, set $var = debug_get_ui_scanner(&game), pop
@@ -504,17 +520,28 @@ def test_ui_scanner():
     assert table["m_next_element"] == "0x5555555551c3 <adv_element>"
     assert ex.get_fields() == [
         "p_ui_context", "p_ui_manager__current", "p_ptr_ui_element__current",
+        "p_ui_element__current",
         "m_next_manager", "m_next_element", "m_refresh",
         "array_of__quantity_of__elements_in__all_managers__u32",
         "uuid_of__ui_manager__current", "uuid_of__ui_element__current",
         "max_quantity_of__ui_managers__u32", "the_kind_of__ui_element__current",
+        "m_ui_clicked_handler__current",
+        "m_ui_dragged_handler__current",
+        "m_ui_dropped_handler__current",
+        "m_ui_receive_drop_handler__current",
+        "m_ui_held_handler__current",
+        "m_ui_typed_handler__current",
+        "m_ui_transformed_handler__current",
+        "m_ui_compose_handler__current",
+        "m_ui_dispose_handler__current",
+        "p_parent__current", "p_child__current", "p_next__current",
         "ui_managers",
     ]
 
     # only allocated managers are mapped, keyed by pointer
     assert set(table["ui_managers"].keys()) == {_MGR0_PTR, _MGR3_PTR}
 
-    # manager 0 (first in iteration order)
+    # manager 0
     mgr0 = table["ui_managers"][_MGR0_PTR]
     assert mgr0["uuid"] == "0xAAAA"
     assert mgr0["quantity_of__ui_elements"] == 2
@@ -526,7 +553,7 @@ def test_ui_scanner():
     assert mgr0["ui_elements"]["0x2100"]["kind"] == "UI_Element_Kind__Slider"
 
     # manager 1
-    mgr3 = table["ui_managers"][_MGR3_PTR]
+    mgr3 = table["ui_managers"][_MGR3_PTR]  # mgr3 = 0x5000
     assert mgr3["uuid"] == "0xBBBB"
     assert mgr3["quantity_of__ui_elements"] == 1
     assert mgr3["ui_elements"]["0x7000"]["uuid"] == "0xE1000"
@@ -539,14 +566,15 @@ def test_ui_scanner():
 
     # find_demeters: every "...uuid" key, in document order (includes top-level
     # scanner fields like uuid_of__ui_manager__current).
+    # Note: mock cycles managers, so mgr3 appears before mgr0 in the batch output.
     assert ex.find_demeters("uuid") == [
         "uuid_of__ui_manager__current",
         "uuid_of__ui_element__current",
+        f"ui_managers.{_MGR3_PTR}.uuid",
+        f"ui_managers.{_MGR3_PTR}.ui_elements.0x7000.uuid",
         f"ui_managers.{_MGR0_PTR}.uuid",
         f"ui_managers.{_MGR0_PTR}.ui_elements.0x2000.uuid",
         f"ui_managers.{_MGR0_PTR}.ui_elements.0x2100.uuid",
-        f"ui_managers.{_MGR3_PTR}.uuid",
-        f"ui_managers.{_MGR3_PTR}.ui_elements.0x7000.uuid",
     ]
 
     # Liskov invariant: the table is JSON-parsable
@@ -567,45 +595,198 @@ def test_ui_scanner():
 
 # ---- Entity scanner -------------------------------------------------------- #
 
+# ---- Entity scanner fake ----------------------------------------------------- #
+
+class FakeEntityGdbmi(FakeGdbmi):
+    """A stub gdbmi that models the entity scanner's function-pointer iteration.
+
+    ``entities`` maps an entity pointer to:
+        {"uuid": hex_uuid, "kind": int}
+
+    The fake tracks which entity the scanner is currently positioned at.
+    """
+
+    def __init__(self, top_fields, entities, level=3):
+        super().__init__(fields={}, level=level)
+        self.top_fields = dict(top_fields)
+        self.entities = entities
+        self._entity_keys = list(entities.keys())
+        self._current_ent_idx: int | None = None
+
+    def _current_ent_ptr(self) -> str | None:
+        if self._current_ent_idx is None:
+            return None
+        return self._entity_keys[self._current_ent_idx]
+
+    def _current_ent_data(self) -> dict | None:
+        ptr = self._current_ent_ptr()
+        if ptr is None:
+            return None
+        return self.entities.get(ptr, {})
+
+    def _struct_repr(self):
+        ent_ptr = self._current_ent_ptr() or "0x0"
+        ent = self._current_ent_data()
+        ent_uuid = ent.get("uuid", _IDENT_UNKNOWN__U32) if ent else _IDENT_UNKNOWN__U32
+        ent_kind = str(ent.get("kind", 0)) if ent else "0"
+
+        parts = dict(self.top_fields)
+        parts["p_entity_manager"] = self.top_fields.get("p_entity_manager", "0x1000")
+        parts["p_entity__current"] = ent_ptr
+        parts["m_refresh"] = self.top_fields.get("m_refresh", "0x0")
+        parts["m_next_entity"] = self.top_fields.get("m_next_entity", "0x0")
+        parts["quantity_of__entities"] = self.top_fields.get("quantity_of__entities", "2")
+        parts["uuid_of__entity__current"] = ent_uuid
+        parts["the_kind_of__entity__current"] = ent_kind
+        return "{" + ", ".join(f"{k} = {v}" for k, v in parts.items()) + "}"
+
+    def _advance_entity(self) -> None:
+        if not self._entity_keys:
+            return
+        if self._current_ent_idx is None:
+            self._current_ent_idx = 0
+        else:
+            self._current_ent_idx = (self._current_ent_idx + 1) % len(self._entity_keys)
+
+    def _handle_batch_call(self, cmd: str) -> list:
+        import re as _re
+        calls = _re.findall(r"m_next_entity\)\(\)", cmd)
+
+        start_idx = self._current_ent_idx
+        positions: list[str] = []
+        for _ in calls:
+            self._advance_entity()
+            positions.append(self._struct_repr())
+
+        self._current_ent_idx = start_idx
+
+        if not positions:
+            struct_array = "$1 = {}"
+        else:
+            struct_array = "$1 = {" + ", ".join(positions) + "}"
+        return [{"type": "console", "payload": struct_array + "\n"}]
+
+    def write(self, cmd):
+        if ("call " in cmd and "{" in cmd and "interpreter-exec console" in cmd
+                and "m_next_entity" in cmd):
+            self.commands.append(cmd)
+            return self._handle_batch_call(cmd)
+
+        if "m_next_entity" in cmd and "interpreter-exec console" in cmd:
+            self.commands.append(cmd)
+            self._advance_entity()
+            return [{"type": "result", "message": "done"}]
+
+        if "-interpreter-exec console \"set $debug_entity_scanner = debug_get_entity_scanner" in cmd:
+            self.commands.append(cmd)
+            self._current_ent_idx = 0
+            return [{"type": "result", "message": "done"}]
+
+        return super().write(cmd)
+
+    def _eval(self, expr):
+        if expr == "$debug_entity_scanner":
+            return self._struct_repr()
+
+        if not expr.startswith("$debug_entity_scanner."):
+            return "0x0"
+        rest = expr[len("$debug_entity_scanner."):]
+
+        if rest == "p_entity__current":
+            return self._current_ent_ptr() or "0x0"
+
+        if rest == "uuid_of__entity__current":
+            ent = self._current_ent_data()
+            return ent.get("uuid", _IDENT_UNKNOWN__U32) if ent else _IDENT_UNKNOWN__U32
+
+        if rest == "the_kind_of__entity__current":
+            ent = self._current_ent_data()
+            return str(ent.get("kind", 0)) if ent else "0"
+
+        if rest in self.top_fields:
+            return self.top_fields[rest]
+        return "0x0"
+
+
+# ---- Entity scanner test ----------------------------------------------------- #
+
 def test_entity_scanner():
-    fields = {
+    _ENTITY0_PTR = "0x2000"
+    _ENTITY1_PTR = "0x2100"
+
+    _ENT_TOP = {
         "p_entity_manager": "0x1000",
-        "p_entity__current": "0x2000",
+        "m_refresh": "0x555555555350 <refresh>",
         "m_next_entity": "0x555555555100 <adv_entity>",
+        "quantity_of__entities": "2",
     }
-    g = FakeGdbmi(fields)
+
+    def _entities():
+        return {
+            _ENTITY0_PTR: {"uuid": "0xE0001", "kind": 0},  # Entity_Kind__None
+            _ENTITY1_PTR: {"uuid": "0xE0002", "kind": 1},  # Entity_Kind__Unknown
+        }
+
+    g = FakeEntityGdbmi(_ENT_TOP, _entities())
     ex = DebugEntityScanner(g)
 
     # field list mirrors debug_entity.h
     assert DEBUG_ENTITY_SCANNER_FIELDS == (
-        "p_entity_manager",
-        "p_entity__current",
-        "m_next_entity",
+        "p_entity_manager", "p_entity__current",
+        "m_refresh", "m_next_entity",
+        "quantity_of__entities",
+        "uuid_of__entity__current",
+        "the_kind_of__entity__current",
     )
 
-    # get_scanner: push_main_frame, set $var, pop
+    # get_scanner
     repr_s = ex.get_scanner()
-    assert repr_s is not None and "p_entity__current = 0x2000" in repr_s
+    assert repr_s is not None and "p_entity_manager = 0x1000" in repr_s
     assert g.commands[0] == "-stack-info-frame"
     assert g.commands[1] == "-stack-select-frame 0"
     assert g.commands[2] == '-interpreter-exec console "set $debug_entity_scanner = debug_get_entity_scanner(&game)"'
     assert g.commands[3] == "-stack-select-frame 3"
 
-    # flat table: top-level fields only (no enrichment)
+    # table with entities sub-map (batched)
     table = ex.get_table()
-    assert table == {
-        "p_entity_manager": "0x1000",
-        "p_entity__current": "0x2000",
-        "m_next_entity": "0x555555555100 <adv_entity>",
+    assert table["p_entity_manager"] == "0x1000"
+    assert ex.get_fields() == [
+        "p_entity_manager", "p_entity__current",
+        "m_refresh", "m_next_entity",
+        "quantity_of__entities",
+        "uuid_of__entity__current",
+        "the_kind_of__entity__current",
+        "entities",
+    ]
+
+    # only allocated entities are mapped, keyed by pointer
+    assert set(table["entities"].keys()) == {_ENTITY0_PTR, _ENTITY1_PTR}
+    assert table["entities"][_ENTITY0_PTR] == {
+        "uuid": "0xE0001", "kind": "Entity_Kind__None",
     }
-    assert ex.get_fields() == list(DEBUG_ENTITY_SCANNER_FIELDS)
-    assert ex.get_field("p_entity_manager") == "0x1000"
-    assert ex.get_field("m_next_entity") == "0x555555555100 <adv_entity>"
-    assert ex.find_demeters("manager") == ["p_entity_manager"]
+    assert table["entities"][_ENTITY1_PTR] == {
+        "uuid": "0xE0002", "kind": "Entity_Kind__Unknown",
+    }
+
+    # navigate via demeter dot-paths
+    assert ex.get_field(f"entities.{_ENTITY0_PTR}.uuid") == "0xE0001"
+    assert ex.get_field(f"entities.{_ENTITY1_PTR}.kind") == "Entity_Kind__Unknown"
+
+    # find_demeters
+    assert f"entities.{_ENTITY0_PTR}.uuid" in ex.find_demeters("uuid")
+    assert f"entities.{_ENTITY1_PTR}.uuid" in ex.find_demeters("uuid")
+
+    # Liskov invariant
     assert json.loads(ex.table_json()) == table
 
+    # caching
+    before = sum(c.startswith("-data-evaluate-expression") for c in g.commands)
+    ex.get_table()
+    after = sum(c.startswith("-data-evaluate-expression") for c in g.commands)
+    assert before == after, "get_table must be cached"
+
     # next_entity issues the cast-and-call exec
-    g3 = FakeGdbmi(fields)
+    g3 = FakeEntityGdbmi(_ENT_TOP, _entities())
     ex3 = DebugEntityScanner(g3)
     ex3.next_entity()
     assert g3.commands[2] == '-interpreter-exec console "set $debug_entity_scanner = ((m_DEBUG_Entity_Scanner_Func)$debug_entity_scanner.m_next_entity)()"', g3.commands[2]
@@ -619,56 +800,196 @@ def test_entity_scanner():
 
 # ---- Scene scanner --------------------------------------------------------- #
 
+# ---- Scene scanner fake ------------------------------------------------------ #
+
+class FakeSceneGdbmi(FakeGdbmi):
+    """A stub gdbmi that models the scene scanner's function-pointer iteration.
+
+    ``scenes`` maps a scene pointer to:
+        {"kind": int}
+    """
+
+    def __init__(self, top_fields, scenes, level=3):
+        super().__init__(fields={}, level=level)
+        self.top_fields = dict(top_fields)
+        self.scenes = scenes
+        self._scene_keys = list(scenes.keys())
+        self._current_scene_idx: int | None = None
+
+    def _current_scene_ptr(self) -> str | None:
+        if self._current_scene_idx is None:
+            return None
+        return self._scene_keys[self._current_scene_idx]
+
+    def _current_scene_data(self) -> dict | None:
+        ptr = self._current_scene_ptr()
+        if ptr is None:
+            return None
+        return self.scenes.get(ptr, {})
+
+    def _struct_repr(self):
+        scene_ptr = self._current_scene_ptr() or "0x0"
+        scene = self._current_scene_data()
+        scene_kind = str(scene.get("kind", 0)) if scene else "0"
+
+        parts = dict(self.top_fields)
+        parts["p_scene_manager"] = self.top_fields.get("p_scene_manager", "0x3000")
+        parts["p_scene__running"] = self.top_fields.get("p_scene__running", "0x4000")
+        parts["p_scene__current_in__scan"] = scene_ptr
+        parts["m_refresh"] = self.top_fields.get("m_refresh", "0x0")
+        parts["m_iterate_scene"] = self.top_fields.get("m_iterate_scene", "0x0")
+        parts["m_go_to__scene"] = self.top_fields.get("m_go_to__scene", "0x0")
+        parts["quantity_of__scenes"] = self.top_fields.get("quantity_of__scenes", "2")
+        parts["the_kind_of__scene"] = scene_kind
+        return "{" + ", ".join(f"{k} = {v}" for k, v in parts.items()) + "}"
+
+    def _advance_scene(self) -> None:
+        if not self._scene_keys:
+            return
+        if self._current_scene_idx is None:
+            self._current_scene_idx = 0
+        else:
+            self._current_scene_idx = (self._current_scene_idx + 1) % len(self._scene_keys)
+
+    def _handle_batch_call(self, cmd: str) -> list:
+        import re as _re
+        calls = _re.findall(r"m_iterate_scene\)\(\)", cmd)
+
+        start_idx = self._current_scene_idx
+        positions: list[str] = []
+        for _ in calls:
+            self._advance_scene()
+            positions.append(self._struct_repr())
+
+        self._current_scene_idx = start_idx
+
+        if not positions:
+            struct_array = "$1 = {}"
+        else:
+            struct_array = "$1 = {" + ", ".join(positions) + "}"
+        return [{"type": "console", "payload": struct_array + "\n"}]
+
+    def write(self, cmd):
+        if ("call " in cmd and "{" in cmd and "interpreter-exec console" in cmd
+                and "m_iterate_scene" in cmd):
+            self.commands.append(cmd)
+            return self._handle_batch_call(cmd)
+
+        if "m_iterate_scene" in cmd and "interpreter-exec console" in cmd:
+            self.commands.append(cmd)
+            self._advance_scene()
+            return [{"type": "result", "message": "done"}]
+
+        if "m_go_to__scene" in cmd and "interpreter-exec console" in cmd:
+            self.commands.append(cmd)
+            return [{"type": "result", "message": "done"}]
+
+        if "-interpreter-exec console \"set $debug_scene_scanner = debug_get_scene_scanner" in cmd:
+            self.commands.append(cmd)
+            self._current_scene_idx = 0
+            return [{"type": "result", "message": "done"}]
+
+        return super().write(cmd)
+
+    def _eval(self, expr):
+        if expr == "$debug_scene_scanner":
+            return self._struct_repr()
+
+        if not expr.startswith("$debug_scene_scanner."):
+            return "0x0"
+        rest = expr[len("$debug_scene_scanner."):]
+
+        if rest == "p_scene__current_in__scan":
+            return self._current_scene_ptr() or "0x0"
+
+        if rest == "the_kind_of__scene":
+            scene = self._current_scene_data()
+            return str(scene.get("kind", 0)) if scene else "0"
+
+        if rest in self.top_fields:
+            return self.top_fields[rest]
+        return "0x0"
+
+
+# ---- Scene scanner test ------------------------------------------------------ #
+
 def test_scene_scanner():
-    fields = {
+    _SCENE0_PTR = "0x4000"
+    _SCENE1_PTR = "0x5000"
+
+    _SCENE_TOP = {
         "p_scene_manager": "0x3000",
         "p_scene__running": "0x4000 <scene_a>",
-        "p_scene__current_in__scan": "0x5000 <scene_b>",
+        "m_refresh": "0x555555555350 <refresh>",
         "m_iterate_scene": "0x555555555300 <iterate>",
         "m_go_to__scene": "0x555555555400 <go_to>",
+        "quantity_of__scenes": "2",
     }
-    g = FakeGdbmi(fields)
+
+    def _scenes():
+        return {
+            _SCENE0_PTR: {"kind": 0},  # Scene_Kind__None
+            _SCENE1_PTR: {"kind": 1},  # Scene_Kind__Unknown
+        }
+
+    g = FakeSceneGdbmi(_SCENE_TOP, _scenes())
     ex = DebugSceneScanner(g)
 
     # field list mirrors debug_scene.h
     assert DEBUG_SCENE_SCANNER_FIELDS == (
-        "p_scene_manager",
-        "p_scene__running",
-        "p_scene__current_in__scan",
-        "m_iterate_scene",
-        "m_go_to__scene",
+        "p_scene_manager", "p_scene__running", "p_scene__current_in__scan",
+        "m_refresh", "m_iterate_scene", "m_go_to__scene",
+        "quantity_of__scenes", "the_kind_of__scene",
     )
 
     # get_scanner
     repr_s = ex.get_scanner()
-    assert repr_s is not None and "p_scene__running = 0x4000 <scene_a>" in repr_s
+    assert repr_s is not None and "p_scene_manager = 0x3000" in repr_s
     assert g.commands[0] == "-stack-info-frame"
     assert g.commands[1] == "-stack-select-frame 0"
     assert g.commands[2] == '-interpreter-exec console "set $debug_scene_scanner = debug_get_scene_scanner(&game)"'
     assert g.commands[3] == "-stack-select-frame 3"
 
-    # flat table: top-level fields only (no enrichment)
+    # table with scenes sub-map (batched)
     table = ex.get_table()
-    assert table == {
-        "p_scene_manager": "0x3000",
-        "p_scene__running": "0x4000 <scene_a>",
-        "p_scene__current_in__scan": "0x5000 <scene_b>",
-        "m_iterate_scene": "0x555555555300 <iterate>",
-        "m_go_to__scene": "0x555555555400 <go_to>",
-    }
-    assert ex.get_fields() == list(DEBUG_SCENE_SCANNER_FIELDS)
-    assert ex.get_field("p_scene_manager") == "0x3000"
-    assert ex.get_field("p_scene__running") == "0x4000 <scene_a>"
-    assert ex.find_demeters("scene__running") == ["p_scene__running"]
+    assert table["p_scene_manager"] == "0x3000"
+    assert table["p_scene__running"] == "0x4000 <scene_a>"
+    assert ex.get_fields() == [
+        "p_scene_manager", "p_scene__running", "p_scene__current_in__scan",
+        "m_refresh", "m_iterate_scene", "m_go_to__scene",
+        "quantity_of__scenes", "the_kind_of__scene",
+        "scenes",
+    ]
+
+    # only allocated scenes are mapped, keyed by pointer
+    assert set(table["scenes"].keys()) == {_SCENE0_PTR, _SCENE1_PTR}
+    assert table["scenes"][_SCENE0_PTR] == {"kind": "Scene_Kind__None"}
+    assert table["scenes"][_SCENE1_PTR] == {"kind": "Scene_Kind__Unknown"}
+
+    # navigate via demeter dot-paths
+    assert ex.get_field(f"scenes.{_SCENE0_PTR}.kind") == "Scene_Kind__None"
+    assert ex.get_field(f"scenes.{_SCENE1_PTR}.kind") == "Scene_Kind__Unknown"
+
+    # find_demeters
+    assert f"scenes.{_SCENE0_PTR}.kind" in ex.find_demeters("kind")
+    assert f"scenes.{_SCENE1_PTR}.kind" in ex.find_demeters("kind")
+
+    # Liskov invariant
     assert json.loads(ex.table_json()) == table
 
+    # caching
+    before = sum(c.startswith("-data-evaluate-expression") for c in g.commands)
+    ex.get_table()
+    after = sum(c.startswith("-data-evaluate-expression") for c in g.commands)
+    assert before == after, "get_table must be cached"
+
     # iterate_scene / go_to__scene issue the cast-and-call exec
-    g3 = FakeGdbmi(fields)
+    g3 = FakeSceneGdbmi(_SCENE_TOP, _scenes())
     ex3 = DebugSceneScanner(g3)
     ex3.iterate_scene()
     assert g3.commands[2] == '-interpreter-exec console "set $debug_scene_scanner = ((m_DEBUG_Scene_Scanner_Func)$debug_scene_scanner.m_iterate_scene)()"', g3.commands[2]
 
-    g4 = FakeGdbmi(fields)
+    g4 = FakeSceneGdbmi(_SCENE_TOP, _scenes())
     ex4 = DebugSceneScanner(g4)
     ex4.go_to__scene()
     assert g4.commands[2] == '-interpreter-exec console "set $debug_scene_scanner = ((m_DEBUG_Scene_Scanner_Func)$debug_scene_scanner.m_go_to__scene)()"', g4.commands[2]

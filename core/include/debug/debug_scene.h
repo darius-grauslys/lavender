@@ -27,6 +27,10 @@ typedef struct DEBUG_Scene_Scanner_t {
     Scene *p_scene__running;
     Scene *p_scene__current_in__scan;
     ///
+    /// Updates scanner state to reflect game engine state.
+    ///
+    m_DEBUG_Scene_Scanner_Func m_refresh;
+    ///
     /// Moves p_scene__current_in__scan through available scenes in the manager,
     ///
     m_DEBUG_Scene_Scanner_Func m_iterate_scene;
@@ -35,6 +39,15 @@ typedef struct DEBUG_Scene_Scanner_t {
     /// in p_scene__current_in__scan.
     ///
     m_DEBUG_Scene_Scanner_Func m_go_to__scene;
+
+    /// 
+    /// Module post condition:
+    /// The following fields are always updated to reflect
+    /// current game engine state after the conclusion of
+    /// every module fuction and the m_ funcs.
+    ///
+    Quantity__u32 quantity_of__scenes;
+    Scene_Kind the_kind_of__scene;
 } DEBUG_Scene_Scanner;
 
 DEBUG_Scene_Scanner debug_get_scene_scanner(Game *p_game);

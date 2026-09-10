@@ -40,8 +40,28 @@ Harness tooling shortcuts:
     scanner scene
         Create / reuse the DebugSceneScanner and print its table.
 
+    ui utils <subcommand> [args...]
+        Drive UI element handler fields (requires frame: poll_ui_manager__update).
+        Examples:
+            ui utils refresh
+            ui utils list
+            ui utils clicked 0x2000
+            ui utils typed 0x2000 A
+            ui utils receive_drop 0x2000 0x2100
+            ui utils transformed 0x2000  (stub — not implemented)
+        Precondition: the current gdb frame MUST be poll_ui_manager__update,
+        where p_game and p_gfx_window are local variables.
+
     demeters <substring>
         Run find_demeters on the last-used scanner table.
+
+    nav step [func] [timeout]
+        Step to the end of a frame by setting a temporary breakpoint
+        at `func` (default: manage_game__post_render) and running until
+        it fires. Default timeout is 5 seconds (use 10-15s for SDL2 builds
+        that need GL context initialization). Returns OK if the breakpoint
+        was hit, or TIMEOUT if the target wasn't reached (catches infinite
+        loops / breakpoint storms / game exit).
 
 The scanner subcommands print a JSON table and the demeter paths; the
 ``input driver`` subcommand lets you try the input helpers against the live
@@ -66,6 +86,8 @@ from .debug_input_driver import DebugInputDriver
 from .debug_scanner_ui import DebugUIScanner
 from .debug_scanner_entity import DebugEntityScanner
 from .debug_scanner_scene import DebugSceneScanner
+from .debug_ui_utils import DebugUIUtils
+from .gdb_nav_utils import step_frame
 from .lavender_debug import Input_Flags__u32
 
 # --- gdb launch flags --------------------------------------------------------- #
@@ -132,6 +154,7 @@ class VerifyCLI:
         self._fc = GDBFrameController(gdbmi)
         self._input_driver: DebugInputDriver | None = None
         self._current_scanner = None
+        self._ui_utils: DebugUIUtils | None = None
         self._program = program
 
     # -- gdb plumbing --------------------------------------------------------- #
@@ -272,6 +295,22 @@ class VerifyCLI:
             import traceback
             traceback.print_exc()
 
+    def do_ui_utils(self, args: list[str]) -> None:
+        """Drive UI element handler fields via DebugUIUtils."""
+        if self._ui_utils is None:
+            self._ui_utils = DebugUIUtils(self._gdbmi)
+        try:
+            handled = self._ui_utils.do_command(args)
+            if not handled:
+                print(f"  unknown ui utils subcommand: {args[0]!r}")
+        except RuntimeError as e:
+            print(f"  [error] {e}")
+        except ValueError as e:
+            print(f"  [error] {e}")
+        except Exception:
+            import traceback
+            traceback.print_exc()
+
     def do_get_field(self, args: list[str]) -> None:
         """Get a field by demeter dot-path from the current scanner."""
         if self._current_scanner is None:
@@ -306,12 +345,14 @@ Commands:
   delete <n>               Delete breakpoint n
   watch <expr>             Set a watchpoint
   gdb <cmd>                Send a raw MI command
-  input driver ...         Drive the input driver (see sub-commands)
-  scanner <ui|entity|scene>  Create a scanner and print its table
-  demeters <substring>       find_demeters on the current scanner
-  getfield <demeter>         get_field by dot-path on the current scanner
-  help                     Show this help
-  quit                     Detach and exit
+    input driver ...         Drive the input driver (see sub-commands)
+    scanner <ui|entity|scene>  Create a scanner and print its table
+    ui utils <subcommand> ...  Drive UI element handlers (see sub-commands)
+    demeters <substring>       find_demeters on the current scanner
+    nav step [func] [timeout]   Step to end of frame (default: manage_game__post_render)
+    getfield <demeter>         get_field by dot-path on the current scanner
+    help                     Show this help
+    quit                     Detach and exit
 """)
 
     def run_loop(self) -> None:
@@ -426,11 +467,43 @@ Commands:
                 else:
                     print(f"  unknown input subcommand: {args[0]!r}")
 
+            elif cmd == "ui":
+                # subcommand: utils ...
+                if not args:
+                    print("  usage: ui utils <subcommand> [args...]")
+                    continue
+                if args[0].lower() == "utils":
+                    self.do_ui_utils(args[1:])
+                else:
+                    print(f"  unknown ui subcommand: {args[0]!r}")
+
             elif cmd == "scanner":
                 self.do_scanner(args)
 
             elif cmd == "demeters":
                 self.do_demeters(args)
+
+            elif cmd == "nav":
+                if not args:
+                    print("  usage: nav step [func] [timeout]")
+                    print("    step <func> <timeout>  step to end-of-frame breakpoint")
+                    continue
+                subcmd = args[0].lower()
+                if subcmd == "step":
+                    func_name = args[1] if len(args) > 1 else "manage_game__post_render"
+                    timeout = float(args[2]) if len(args) > 2 else 5.0
+                    print(f">>> nav step: breakpoint at {func_name}, timeout {timeout}s")
+                    try:
+                        ok = step_frame(self._gdbmi, func_name, timeout)
+                        if ok:
+                            print(f"  OK — stopped at {func_name}")
+                        else:
+                            print(f"  TIMEOUT — did not reach {func_name} within {timeout}s")
+                    except Exception:
+                        import traceback
+                        traceback.print_exc()
+                else:
+                    print(f"  unknown nav subcommand: {subcmd!r}")
 
             elif cmd == "getfield":
                 self.do_get_field(args)

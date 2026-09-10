@@ -1,0 +1,10 @@
+{
+  "config": {
+    "session": {
+      "executable": "${LAVENDER_DIR}/build/sdl/Lavender_Dev"
+    },
+    "core": {
+      "dump-location": "/tmp/lav-core-dump/"
+    }
+  }
+}

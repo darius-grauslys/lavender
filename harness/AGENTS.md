@@ -57,6 +57,38 @@ build bitmasks without parsing C headers. `Vector__3i32` args are passed as C
 compound literals, e.g. `(Vector__3i32){10, 20, 5}` (a bare brace initializer
 isn't valid as a C function argument).
 
+## GDB navigation utilities (`gdb_nav_utils`)
+`harness/gdb_nav_utils.py` provides high-level gdb navigation helpers that abstract
+away raw MI3 command sequences. The first (and currently only) public API is:
+
+### `step_frame(breakpoint_func: str, timeout: float = 5.0) -> bool`
+Advances execution to a specific frame in the game loop, with infinite-loop
+and breakpoint-storm protection.
+
+Behavior:
+1. Sets a temporary breakpoint at the given function (e.g.
+   `manage_game__post_render`) using MI3 `-break-insert -t`.
+2. Issues `continue` to run gdb **without reading any response** (`read_response=False`).
+   This is critical: pygdbmi's `write()` with `read_response=True` can consume
+   the `*stopped` (breakpoint-hit) notify record if it arrives within pygdbmi's
+   0.2s additional-output-check window. On sequential frame steps (game loop
+   already running), *running* and *stopped* can arrive in the same output chunk.
+3. Polls for breakpoint-hit responses — `_poll_for_stops` is the sole consumer
+   of gdb responses, correctly ignoring `*running` and other non-breakpoint-hit
+   records.
+4. If the hit is the expected breakpoint, returns `True`.
+5. If a *different* breakpoint fires, continues running (tracking elapsed time
+   against the timeout).
+6. If the timeout expires before hitting the expected breakpoint, returns `False`
+   — this catches:
+   - **Infinite loops**: the expected frame never fires because the loop never
+     returns.
+   - **Breakpoint storms**: too many unexpected breakpoints firing, exhausting
+     the time budget.
+
+This abstracts the "step to end of frame" pattern where the game is run until
+`manage_game__post_render` executes, ensuring the full scene loop has completed.
+
 ## Debug-ui helpers (`DebugUIScannerExplorer`)
 Implements your "inspect UI via `debug_get_ui_scanner`" workflow:
 
@@ -95,9 +127,21 @@ Things to know:
 
 ## Verifying changes
 ```
-python3 -m py_compile harness/harness_qa.py
+python3 -m py_compile harness/gdb_nav_utils.py harness/verify_gdb_nav.py
+python3 harness/verify_gdb_nav.py  # unit tests of response coordination (mock gdbmi)
 python3 harness/verify_driver.py   # stub unit tests of frame stack + helpers
+python3 harness/verify_sdl_lav.py  # integration test against real SDL2 binary
 ```
+
+`verify_gdb_nav.py` tests the response-coordination fix (sequential
+`step_frame` calls, batched `*running`+`*stopped` responses, `read_response=False`
+usage) using a mock gdbmi controller. It does not require a display or a real
+binary.
+
+`verify_sdl_lav.py` launches the real `build/sdl/Lavender_Dev` executable
+under gdb and exercises `step_frame()` against the live game loop.
+It requires a display (`DISPLAY=:0`) for SDL2/GL initialization and sets it
+automatically.
 A real gdb + a binary mirroring the target header is the strongest check
 (`verify_driver.py` asserts the exact gdb command strings; extend it when
 adding signatures).

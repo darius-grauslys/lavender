@@ -7,6 +7,93 @@
 
 DEBUG_Scene_Scanner __DEBUG_scene_scanner = {0};
 
+///
+/// Precondition: __DEBUG_scene_scanner.p_scene_manager != 0.
+///
+void __debug_resolve_scene_in__scanner() {
+    Scene_Manager *p_scene_manager =
+        __DEBUG_scene_scanner
+        .p_scene_manager
+        ;
+
+    if (!__DEBUG_scene_scanner.p_scene__current_in__scan) {
+        __DEBUG_scene_scanner.p_scene__current_in__scan =
+            p_scene_manager
+            ->scenes
+            ;
+    } else {
+        Index__u32 index_of__scene__current_in__scan =
+            __DEBUG_scene_scanner
+            .p_scene__current_in__scan
+            - p_scene_manager
+            ->scenes
+            ;
+        if (index_of__scene__current_in__scan >= Scene_Kind__Unknown) {
+            debug_warning("[DEBUG] __debug_resolve_scene_in__scanner, p_scene__current_in__scan out of bounds.");
+            debug_warning("[DEBUG] resetting pointer to start of scene array.");
+            debug_warning("[DEBUG] memory might be corrupted!");
+            __DEBUG_scene_scanner.p_scene__current_in__scan =
+                &p_scene_manager
+                ->scenes[0]
+                ;
+        }
+    }
+
+    if (!__DEBUG_scene_scanner.p_scene__running) {
+        __DEBUG_scene_scanner.p_scene__running =
+            __DEBUG_scene_scanner
+            .p_scene_manager
+            ->p_active_scene
+            ;
+    } else {
+        Index__u32 index_of__active_scene =
+            __DEBUG_scene_scanner
+            .p_scene__running
+            - __DEBUG_scene_scanner
+            .p_scene_manager
+            ->scenes
+            ;
+
+        if (index_of__active_scene >= Scene_Kind__Unknown) {
+            debug_warning("[DEBUG] __debug_resolve_scene_in__scanner, p_scene__running out of bounds.");
+            debug_warning("[DEBUG] syncing pointer with manager (might be compromised.)");
+            debug_warning("[DEBUG] memory might be corrupted!");
+            __DEBUG_scene_scanner.p_scene__running =
+                &p_scene_manager
+                ->scenes[0]
+                ;
+        }
+    }
+}
+
+DEBUG_Scene_Scanner _m_debug_scene_Scanner__refresh() {
+    if (!__DEBUG_scene_scanner.p_scene_manager) {
+        debug_warning("[DEBUG] _m_debug_scene_scanner__iterate_scene, p_scene_manager == 0.");
+        debug_warning("[DEBUG] call debug_get_ui_scanner at least once.");
+        goto error;
+    }
+
+    __debug_resolve_scene_in__scanner();
+
+    __DEBUG_scene_scanner.quantity_of__scenes = Scene_Kind__Unknown;
+    __DEBUG_scene_scanner.the_kind_of__scene = 
+        (Scene_Kind)(
+                __DEBUG_scene_scanner
+                .p_scene__current_in__scan
+                - __DEBUG_scene_scanner
+                .p_scene_manager
+                ->scenes)
+        ;
+
+exit:
+    return __DEBUG_scene_scanner;
+error:
+    __DEBUG_scene_scanner.p_scene_manager = 0;
+    __DEBUG_scene_scanner.p_scene__current_in__scan = 0;
+    __DEBUG_scene_scanner.the_kind_of__scene = Scene_Kind__Unknown;
+    return (DEBUG_Scene_Scanner){0};
+}
+
 DEBUG_Scene_Scanner _m_debug_scene_scanner__iterate_scene() {
     if (!__DEBUG_scene_scanner.p_scene_manager) {
         debug_warning("[DEBUG] _m_debug_scene_scanner__iterate_scene, p_scene_manager == 0.");
@@ -28,7 +115,7 @@ DEBUG_Scene_Scanner _m_debug_scene_scanner__iterate_scene() {
 
         __DEBUG_scene_scanner.p_scene__current_in__scan =
             __DEBUG_scene_scanner.p_scene_manager->scenes;
-        goto finish;
+        goto exit;
     }
 
     Scene *p_scene = 0;
@@ -50,9 +137,11 @@ DEBUG_Scene_Scanner _m_debug_scene_scanner__iterate_scene() {
 
     __DEBUG_scene_scanner.p_scene__current_in__scan = p_scene;
 
-finish:
+exit:
+    _m_debug_scene_Scanner__refresh(); // Module post condition
     return __DEBUG_scene_scanner;
 error:
+    _m_debug_scene_Scanner__refresh(); // Module post condition
     return (DEBUG_Scene_Scanner){0};
 }
 
@@ -84,16 +173,18 @@ DEBUG_Scene_Scanner _m_debug_scene_scanner__go_to__scene() {
 
         __DEBUG_scene_scanner.p_scene__current_in__scan =
             __DEBUG_scene_scanner.p_scene_manager->scenes;
-        goto finish;
+        goto exit;
     }
 
     set_active_scene_for__scene_manager(
             __DEBUG_scene_scanner.p_scene_manager, 
             index_of__scene);
 
-finish:
+exit:
+    _m_debug_scene_Scanner__refresh(); // Module post condition
     return __DEBUG_scene_scanner;
 error:
+    _m_debug_scene_Scanner__refresh(); // Module post condition
     return (DEBUG_Scene_Scanner){0};
 }
 
@@ -114,10 +205,14 @@ DEBUG_Scene_Scanner debug_get_scene_scanner(Game *p_game) {
     __DEBUG_scene_scanner.p_scene_manager = p_scene_manager;
     __DEBUG_scene_scanner.p_scene__running = p_scene_manager->p_active_scene;
     __DEBUG_scene_scanner.p_scene__current_in__scan = p_scene_manager->scenes;
+
+    __DEBUG_scene_scanner.m_refresh = _m_debug_scene_Scanner__refresh;
     __DEBUG_scene_scanner.m_iterate_scene = _m_debug_scene_scanner__iterate_scene;
     __DEBUG_scene_scanner.m_go_to__scene = _m_debug_scene_scanner__go_to__scene;
 
+    _m_debug_scene_Scanner__refresh(); // Module post condition
     return __DEBUG_scene_scanner;
 error:
+    _m_debug_scene_Scanner__refresh(); // Module post condition
     return (DEBUG_Scene_Scanner){0};
 }

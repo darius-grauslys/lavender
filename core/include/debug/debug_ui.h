@@ -28,6 +28,7 @@ typedef struct DEBUG_UI_Scanner_t {
     UI_Context *p_ui_context;
     UI_Manager *p_ui_manager__current;
     UI_Element **p_ptr_ui_element__current;
+    UI_Element *p_ui_element__current;
 
     ///
     /// Gets the next manager.
@@ -50,6 +51,19 @@ typedef struct DEBUG_UI_Scanner_t {
     ///
     Quantity__u32 array_of__quantity_of__elements_in__all_managers__u32[
         MAX_QUANTITY_OF__UI_MANAGERS];
+
+    m_UI_Clicked            m_ui_clicked_handler__current;
+    m_UI_Dragged            m_ui_dragged_handler__current;
+    m_UI_Dropped            m_ui_dropped_handler__current;
+    m_UI_Receive_Drop       m_ui_receive_drop_handler__current;
+    m_UI_Held               m_ui_held_handler__current;
+    m_UI_Typed              m_ui_typed_handler__current;
+    m_UI_Transformed        m_ui_transformed_handler__current;
+    m_UI_Compose            m_ui_compose_handler__current;
+    m_UI_Dispose            m_ui_dispose_handler__current;
+
+    UI_Element *p_parent__current, *p_child__current, *p_next__current;
+
     Identifier__u32 uuid_of__ui_manager__current;
     Identifier__u32 uuid_of__ui_element__current;
     Quantity__u32 max_quantity_of__ui_managers__u32;

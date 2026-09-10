@@ -36,6 +36,7 @@ DEBUG_UI_SCANNER_FIELDS = (
     "p_ui_context",
     "p_ui_manager__current",
     "p_ptr_ui_element__current",
+    "p_ui_element__current",
     "m_next_manager",
     "m_next_element",
     "m_refresh",
@@ -44,6 +45,20 @@ DEBUG_UI_SCANNER_FIELDS = (
     "uuid_of__ui_element__current",
     "max_quantity_of__ui_managers__u32",
     "the_kind_of__ui_element__current",
+    # Handler function pointers (set per-element when scanning).
+    "m_ui_clicked_handler__current",
+    "m_ui_dragged_handler__current",
+    "m_ui_dropped_handler__current",
+    "m_ui_receive_drop_handler__current",
+    "m_ui_held_handler__current",
+    "m_ui_typed_handler__current",
+    "m_ui_transformed_handler__current",
+    "m_ui_compose_handler__current",
+    "m_ui_dispose_handler__current",
+    # Tree navigation pointers (parent/child/next in UI element hierarchy).
+    "p_parent__current",
+    "p_child__current",
+    "p_next__current",
 )
 
 # Sentinel for a deallocated serialization header (defines.h).
@@ -137,10 +152,22 @@ class DebugUIScanner(DebugScannerBase):
             console_records,
             [
                 "p_ui_manager__current",
-                "p_ptr_ui_element__current",
+                "p_ui_element__current",
                 "uuid_of__ui_manager__current",
                 "uuid_of__ui_element__current",
                 "the_kind_of__ui_element__current",
+                "m_ui_clicked_handler__current",
+                "m_ui_dragged_handler__current",
+                "m_ui_dropped_handler__current",
+                "m_ui_receive_drop_handler__current",
+                "m_ui_held_handler__current",
+                "m_ui_typed_handler__current",
+                "m_ui_transformed_handler__current",
+                "m_ui_compose_handler__current",
+                "m_ui_dispose_handler__current",
+                "p_parent__current",
+                "p_child__current",
+                "p_next__current",
             ]
         )
 
@@ -195,7 +222,9 @@ class DebugUIScanner(DebugScannerBase):
                     managers[mgr_key] = current_mgr_data
 
             # If this position has an element, add it.
-            el_ptr = pos.get("p_ptr_ui_element__current")
+            # p_ui_element__current is a UI_Element * (single indirection).
+            # The table key is the element address.
+            el_ptr = pos.get("p_ui_element__current")
             el_uuid = pos.get("uuid_of__ui_element__current")
             el_kind = pos.get("the_kind_of__ui_element__current")
 
@@ -212,11 +241,34 @@ class DebugUIScanner(DebugScannerBase):
                         current_mgr_data["ui_elements"][el_key] = {
                             "uuid": self._normalize_uuid(el_uuid),
                             "kind": kind_name,
-                        }
-                    if el_key not in current_mgr_data["ui_elements"]:
-                        current_mgr_data["ui_elements"][el_key] = {
-                            "uuid": parse_hex(el_uuid),
-                            "kind": kind_name,
+                            # Handler function pointers (may be None if not set).
+                            "handlers": {
+                                "clicked": self._normalize_handler_ptr(
+                                    pos.get("m_ui_clicked_handler__current")),
+                                "dragged": self._normalize_handler_ptr(
+                                    pos.get("m_ui_dragged_handler__current")),
+                                "dropped": self._normalize_handler_ptr(
+                                    pos.get("m_ui_dropped_handler__current")),
+                                "receive_drop": self._normalize_handler_ptr(
+                                    pos.get("m_ui_receive_drop_handler__current")),
+                                "held": self._normalize_handler_ptr(
+                                    pos.get("m_ui_held_handler__current")),
+                                "typed": self._normalize_handler_ptr(
+                                    pos.get("m_ui_typed_handler__current")),
+                                "transformed": self._normalize_handler_ptr(
+                                    pos.get("m_ui_transformed_handler__current")),
+                                "compose": self._normalize_handler_ptr(
+                                    pos.get("m_ui_compose_handler__current")),
+                                "dispose": self._normalize_handler_ptr(
+                                    pos.get("m_ui_dispose_handler__current")),
+                            },
+                            # Tree navigation pointers (UI_Element *).
+                            "p_parent": self._normalize_ptr(
+                                pos.get("p_parent__current")),
+                            "p_child": self._normalize_ptr(
+                                pos.get("p_child__current")),
+                            "p_next": self._normalize_ptr(
+                                pos.get("p_next__current")),
                         }
                     current_mgr_data["quantity_of__ui_elements"] = len(
                         current_mgr_data["ui_elements"]
@@ -250,10 +302,22 @@ class DebugUIScanner(DebugScannerBase):
         """Read post-condition fields from the current scanner position."""
         fields = [
             "p_ui_manager__current",
-            "p_ptr_ui_element__current",
+            "p_ui_element__current",
             "uuid_of__ui_manager__current",
             "uuid_of__ui_element__current",
             "the_kind_of__ui_element__current",
+            "m_ui_clicked_handler__current",
+            "m_ui_dragged_handler__current",
+            "m_ui_dropped_handler__current",
+            "m_ui_receive_drop_handler__current",
+            "m_ui_held_handler__current",
+            "m_ui_typed_handler__current",
+            "m_ui_transformed_handler__current",
+            "m_ui_compose_handler__current",
+            "m_ui_dispose_handler__current",
+            "p_parent__current",
+            "p_child__current",
+            "p_next__current",
         ]
         pos: dict = {}
         for field in fields:
@@ -331,6 +395,49 @@ class DebugUIScanner(DebugScannerBase):
             pass
         return text
 
+    @staticmethod
+    def _normalize_handler_ptr(value: str | None) -> str | None:
+        """Normalize a function pointer value.
+
+        Returns the pointer address as a hex string, or None if the
+        handler is not set (null/zero).
+        """
+        if not value:
+            return None
+        text = value.strip()
+        if not text or text == "0" or text == "0x0":
+            return None
+        # Extract the address from gdb's output format:
+        # "0x555555570740 <__m_debug_ui_scanner__n..."
+        addr_match = re.match(r"(0x[0-9a-fA-F]+)", text)
+        if addr_match:
+            return addr_match.group(1)
+        # Already a clean hex address?
+        if text.startswith("0x"):
+            return text
+        return text if text else None
+
+    @staticmethod
+    def _normalize_ptr(value: str | None) -> str | None:
+        """Normalize a UI_Element * pointer value.
+
+        Returns the pointer address as a hex string, or None if the
+        pointer is null/zero.
+        """
+        if not value:
+            return None
+        text = value.strip()
+        if not text or text == "0" or text == "0x0":
+            return None
+        # Extract the address from gdb's output format:
+        # "0x555555814030" or "0x555555813030 <some_symbol>"
+        addr_match = re.match(r"(0x[0-9a-fA-F]+)", text)
+        if addr_match:
+            return addr_match.group(1)
+        if text.startswith("0x"):
+            return text
+        return text if text else None
+
     def _parse_batch_structs(
         self, console_records: list, fields: list[str]
     ) -> list[dict]:
@@ -342,7 +449,6 @@ class DebugUIScanner(DebugScannerBase):
 
         Each struct has fields like ``p_ui_manager__current = 0x...``.
         """
-        print(f"--------------- {console_records} ---------------")
         text = ""
         for rec in console_records:
             text += rec.get("payload", "") or ""
