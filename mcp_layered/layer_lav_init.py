@@ -44,9 +44,12 @@ class LavSession:
         """
         self.config = config if config is not None else default_config()
         self.gdb = gdb if gdb is not None else GDBSession(
-            command=[self.config.gdb_path] + self.config.gdb_args
+            command=[self.config.gdb_path] + self.config.gdb_args,
+            timeout_sec=15.0,
+            log_file=self.config.log_file,
         )
         self._started = False
+        self._breakpoint_hooks_registered = False
 
     # -- Command routing -- #
 
@@ -97,6 +100,75 @@ class LavSession:
     def get_gdb(self) -> GDBSession:
         """Return the GDB session."""
         return self.gdb
+
+    # -- Breakpoint hook registration -- #
+
+    def _register_breakpoint_hooks(self) -> None:
+        """Register breakpoint hooks for key game functions.
+
+        These hooks fire when GDB hits a breakpoint at a specific function.
+        """
+        _register_breakpoint_hooks_for_gdb(self.gdb)
+
+
+def _register_breakpoint_hooks_for_gdb(gdb: GDBSession) -> None:
+    """Register breakpoint hooks on a GDBSession for key game functions.
+
+    Breakpoints are set on:
+    1. remove_process_from__process_table → log process removal
+    2. add_process_to__process_table → log process addition
+    3. initialize_ui_manager → log UI manager initialization
+    4. receive_game_action_for__client → log game action receipt (TODO: Game_Action scanner)
+    5. dispatch_game_action_for__client → log game action dispatch
+
+    Only registers once per GDBSession (idempotent).
+    """
+    registered = getattr(gdb, '_breakpoint_hooks_registered', False)
+    if registered:
+        return
+    gdb._breakpoint_hooks_registered = True
+
+    from mcp_layered.debug_response import DebugResponse
+
+    # Hook 1: remove_process_from__process_table
+    def on_remove_process(responses: list[DebugResponse]) -> list[DebugResponse]:
+        for r in responses:
+            if r.is_breakpoint_hit() and r.frame and r.frame.func:
+                print(f"\n[breakpoint] remove_process_from__process_table hit")
+        return responses
+    gdb.register_breakpoint_hook("remove_process_from__process_table", on_remove_process)
+
+    # Hook 2: add_process_to__process_table
+    def on_add_process(responses: list[DebugResponse]) -> list[DebugResponse]:
+        for r in responses:
+            if r.is_breakpoint_hit() and r.frame and r.frame.func:
+                print(f"\n[breakpoint] add_process_to__process_table hit")
+        return responses
+    gdb.register_breakpoint_hook("add_process_to__process_table", on_add_process)
+
+    # Hook 3: initialize_ui_manager
+    def on_init_ui(responses: list[DebugResponse]) -> list[DebugResponse]:
+        for r in responses:
+            if r.is_breakpoint_hit() and r.frame and r.frame.func:
+                print(f"\n[breakpoint] initialize_ui_manager triggered")
+        return responses
+    gdb.register_breakpoint_hook("initialize_ui_manager", on_init_ui)
+
+    # Hook 4: receive_game_action_for__client
+    def on_receive_action(responses: list[DebugResponse]) -> list[DebugResponse]:
+        for r in responses:
+            if r.is_breakpoint_hit() and r.frame and r.frame.func:
+                print(f"\n[breakpoint] receive_game_action_for__client triggered")
+        return responses
+    gdb.register_breakpoint_hook("receive_game_action_for__client", on_receive_action)
+
+    # Hook 5: dispatch_game_action_for__client
+    def on_dispatch_action(responses: list[DebugResponse]) -> list[DebugResponse]:
+        for r in responses:
+            if r.is_breakpoint_hit() and r.frame and r.frame.func:
+                print(f"\n[breakpoint] dispatch_game_action_for__client triggered")
+        return responses
+    gdb.register_breakpoint_hook("dispatch_game_action_for__client", on_dispatch_action)
 
 
 def create_session(
@@ -199,6 +271,9 @@ def _register_builtin_drivers() -> None:
         _session_state.running = True
         _session_state.halted = True
 
+        # Register breakpoint hooks now that the executable is loaded
+        _register_breakpoint_hooks_for_gdb(gdb)
+
         # Refresh backtrace (quick — game is halted at start)
         try:
             responses = gdb.write("-stack-list-frames", timeout_sec=5.0)
@@ -261,7 +336,73 @@ def _register_builtin_drivers() -> None:
     # -- navigation drivers -- #
     # These bridge to mcp/ logic using the raw gdbmi via GDBSession.gdbmi
 
-    from mcp.gdb_nav_utils import step_frame
+    from mcp.gdb_nav_utils import step_frame, step_frame_detailed
+
+    def _get_signal_info(gdb: GDBSession) -> str:
+        """Get signal info from the current stopped state.
+
+        Returns a string with the signal name, full backtrace, and any
+        relevant context about the crash (e.g., faulting address for SIGSEGV).
+        """
+        try:
+            # Get full backtrace using -stack-list-frames
+            backtrace_lines = []
+            try:
+                responses = gdb.write("-stack-list-frames")
+                for r in responses:
+                    if r.type.value == "result" and r.raw.get("message") == "done":
+                        payload = r.raw.get("payload") or {}
+                        frames = payload.get("stack", [])
+                        for i, frame in enumerate(frames):
+                            if isinstance(frame, dict):
+                                func = frame.get("func", "?")
+                                file = frame.get("file", "")
+                                line = frame.get("line", "")
+                                pc = frame.get("pc", "")
+                                if file and line:
+                                    loc = f"{file}:{line}"
+                                elif file:
+                                    loc = file
+                                elif pc:
+                                    loc = pc
+                                else:
+                                    loc = "???"
+                                bt_line = f"#{i} {func} at {loc}"
+                                backtrace_lines.append(bt_line)
+                        break
+            except Exception:
+                pass
+
+            # Fallback: if -stack-list-frames failed, use -stack-info-frame for current frame
+            if not backtrace_lines:
+                try:
+                    responses = gdb.write("-stack-info-frame")
+                    for r in responses:
+                        if r.type.value == "result" and r.raw.get("message") == "done":
+                            payload = r.raw.get("payload") or {}
+                            frame_obj = payload.get("frame", {})
+                            if isinstance(frame_obj, dict):
+                                pc = frame_obj.get("pc", "?")
+                                func = frame_obj.get("func", "?")
+                                file = frame_obj.get("file", "")
+                                line = frame_obj.get("line", "")
+                                if file and line:
+                                    loc = f"{file}:{line}"
+                                elif file:
+                                    loc = file
+                                else:
+                                    loc = f"pc={pc}"
+                                backtrace_lines.append(f"#0 {func} at {loc}")
+                            break
+                except Exception:
+                    pass
+
+            if backtrace_lines:
+                return "\n".join(backtrace_lines)
+
+            return "(no frame info available)"
+        except Exception as e:
+            return f"(could not get signal info: {e})"
 
     def step_driver(gdb: GDBSession, config: LavConfig, kwargs: dict) -> str:
         """Advance one or more game frames."""
@@ -270,25 +411,81 @@ def _register_builtin_drivers() -> None:
             return "ERROR: count must be >= 1."
         try:
             for i in range(count):
-                hit = step_frame(gdb.gdbmi, "manage_game__post_render", timeout=15.0)
+                hit, stop_reason = step_frame_detailed(
+                    gdb.gdbmi, "manage_game__post_render", timeout=15.0
+                )
                 if not hit:
+                    if stop_reason and stop_reason.startswith("signal_"):
+                        sig = stop_reason[7:]  # Remove "signal_" prefix
+                        sig_info = _get_signal_info(gdb)
+                        return (
+                            f"ERROR: Game crashed with {sig} "
+                            f"on step {i+1}/{count}.\n{sig_info}"
+                        )
                     return (
                         f"ERROR: timed out waiting for manage_game__post_render "
                         f"on step {i+1}/{count}."
                     )
-                gdb.gdbmi.write("-exec-finish")
+                gdb.write("-exec-finish")
             return f"Stepped {count} game frame(s) to post-render."
         except Exception as e:
             return f"ERROR stepping frame: {type(e).__name__}: {e}"
 
     def navigate_source_driver(gdb: GDBSession, config: LavConfig, kwargs: dict) -> str:
-        """Print backtrace and source of current frame."""
+        """Print full backtrace and source of current frame."""
         try:
-            responses = gdb.write("-stack-info-frame")
-            frame_info = "\n".join(
-                f"#{i} {r.raw}" for i, r in enumerate(responses)
-            )
-            return f"Backtrace:\n{frame_info}"
+            responses = gdb.write("-stack-list-frames")
+            frame_lines = []
+            current_found = False
+            for r in responses:
+                if r.type.value == "result" and r.raw.get("message") == "done":
+                    payload = r.raw.get("payload") or {}
+                    frames = payload.get("stack", [])
+                    for i, frame in enumerate(frames):
+                        if isinstance(frame, dict):
+                            level = frame.get("level", str(i))
+                            func = frame.get("func", "?")
+                            file = frame.get("file", "")
+                            line = frame.get("line", "")
+                            addr = frame.get("addr", "")
+                            if file and line:
+                                loc = f"{file}:{line}"
+                            elif addr:
+                                loc = f"addr {addr}"
+                            else:
+                                loc = "???"
+                            bt_line = f"#{level} {func} at {loc}"
+                            frame_lines.append(bt_line)
+                            # Also get source context for current frame (level 0)
+                            if level == "0" or level == 0:
+                                current_found = True
+                    break
+
+            # Fallback: if -stack-list-frames didn't work, use -stack-info-frame
+            if not frame_lines:
+                responses = gdb.write("-stack-info-frame")
+                for r in responses:
+                    if r.type.value == "result" and r.raw.get("message") == "done":
+                        payload = r.raw.get("payload") or {}
+                        frame_obj = payload.get("frame", {})
+                        if isinstance(frame_obj, dict):
+                            level = frame_obj.get("level", "0")
+                            func = frame_obj.get("func", "?")
+                            file = frame_obj.get("file", "")
+                            line = frame_obj.get("line", "")
+                            addr = frame_obj.get("addr", "")
+                            if file and line:
+                                loc = f"{file}:{line}"
+                            elif addr:
+                                loc = f"addr {addr}"
+                            else:
+                                loc = "???"
+                            frame_lines.append(f"#{level} {func} at {loc}")
+                        break
+
+            if frame_lines:
+                return f"Backtrace:\n" + "\n".join(frame_lines)
+            return "Backtrace: (no frames available)"
         except Exception as e:
             return f"ERROR: {type(e).__name__}: {e}"
 

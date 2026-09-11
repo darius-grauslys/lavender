@@ -207,6 +207,49 @@ def _get_breakpoint_location(mi_record: dict | None) -> str | None:
     return None
 
 
+def _get_signal_from_stopped(record: dict) -> str | None:
+    """Extract signal name from a *stopped (signal-received) record.
+
+    Returns the signal name (e.g. 'SIGABRT', 'SIGSEGV') if this is a
+    signal-received stop, otherwise None.
+    """
+    if not isinstance(record, dict):
+        return None
+    if record.get("type") != "notify" or record.get("message") != "stopped":
+        return None
+
+    payload = record.get("payload") or {}
+    if not isinstance(payload, dict):
+        return None
+
+    reason = payload.get("reason", "")
+    if reason != "signal-received":
+        return None
+
+    signal = payload.get("signal-name", "")
+    if signal:
+        return signal
+
+    # Fallback: signal number → name mapping
+    sig = payload.get("signal", "")
+    if sig:
+        sig_map = {
+            "6": "SIGABRT",
+            "11": "SIGSEGV",
+            "8": "SIGFPE",
+            "4": "SIGILL",
+            "7": "SIGBUS",
+            "13": "SIGPIPE",
+            "1": "SIGHUP",
+            "15": "SIGTERM",
+            "2": "SIGINT",
+            "9": "SIGKILL",
+        }
+        return sig_map.get(str(sig), f"SIG{sig}")
+
+    return None
+
+
 def _add_temporary_breakpoint(gdb: "GdbController", func_name: str, timeout: float) -> int:
     """Set a temporary breakpoint at the given function.
 
@@ -326,7 +369,16 @@ def _poll_for_stops(
     """
     # Use short poll intervals so we don't exceed the deadline by much.
     poll_interval = min(timeout, 0.5)
+
+    # If the GdbController has our hook wrapper, skip hooks during the
+    # timeout-bounded get_gdb_response call, then process them separately
+    # so hook overhead doesn't eat into our timeout budget.
+    has_hook_wrapper = hasattr(gdb, '_skip_hooks')
+    has_hook_processor = hasattr(gdb, 'process_hooks_on_raw')
+
     while time.monotonic() < deadline:
+        if has_hook_wrapper:
+            gdb._skip_hooks = True
         try:
             resp = gdb.get_gdb_response(timeout_sec=poll_interval)
         except Exception:
@@ -335,10 +387,17 @@ def _poll_for_stops(
             if time.monotonic() >= deadline:
                 return False, "timeout"
             continue
+        finally:
+            if has_hook_wrapper:
+                gdb._skip_hooks = False
 
         if resp is None:
             # gdb exited or no response available.
             return False, "gdb_no_response"
+
+        # Process hooks separately (outside the timeout boundary)
+        if has_hook_processor:
+            gdb.process_hooks_on_raw(resp)
 
         for record in _normalize_resp(resp):
             if _is_breakpoint_hit_response(record):
@@ -350,15 +409,27 @@ def _poll_for_stops(
                     # Unexpected breakpoint — caller should continue.
                     return False, "unexpected_bp"
 
+            # Detect signal-received stops (SIGABRT, SIGSEGV, etc.)
+            signal = _get_signal_from_stopped(record)
+            if signal:
+                return False, f"signal_{signal}"
+
     return False, "timeout"
 
 
-def step_frame(
+def step_frame_detailed(
     gdb: "GdbController",
     breakpoint_func: str = "manage_game__post_render",
     timeout: float = 5.0,
-) -> bool:
+) -> tuple[bool, str | None]:
     """Advance execution to a specific frame in the game loop.
+
+    Returns a tuple of (hit_target, stop_reason):
+        - (True, None): Target breakpoint was hit.
+        - (False, "timeout"): Timeout expired.
+        - (False, "signal_SIGABRT"): Game crashed with a signal (SIGABRT, SIGSEGV, etc.)
+        - (False, "unexpected_bp"): Unexpected breakpoint fired (then timeout).
+        - (False, "gdb_no_response"): GDB exited or no response.
 
     Sets a temporary breakpoint at *breakpoint_func* using MI3
     ``-break-insert -t``, then runs gdb until that breakpoint fires or
@@ -376,18 +447,18 @@ def step_frame(
         timeout: Maximum seconds to wait for the target breakpoint.
             Defaults to 5.0.
 
-    Returns:
-        True if the target breakpoint was hit (execution is now stopped
-        there), False if the timeout expired.
-
     Example:
         >>> from pygdbmi.gdbcontroller import GdbController
-        >>> from mcp.gdb_nav_utils import step_frame
+        >>> from mcp.gdb_nav_utils import step_frame_detailed
         >>> gdb = GdbController()
         >>> # ... load and run to main ...
-        >>> if step_frame(gdb, "manage_game__post_render", timeout=5.0):
+        >>> hit, reason = step_frame_detailed(gdb, "manage_game__post_render", timeout=5.0)
+        >>> if hit:
         ...     # We're stopped at the end of the scene loop
         ...     pass
+        ... elif reason and reason.startswith("signal_"):
+        ...     # Game crashed with a signal
+        ...     print(f"Game crashed: {reason[7:]}")
         ... else:
         ...     # Timeout — something's wrong (infinite loop, etc.)
         ...     pass
@@ -418,18 +489,20 @@ def step_frame(
             hit_target, detail = _poll_for_stops(gdb, target_bpnum, deadline, timeout)
 
             if hit_target:
-                return True
+                return True, None
 
             if detail == "unexpected_bp":
                 # An unexpected breakpoint fired. Continue running to try
                 # to reach our target before the timeout.
                 continue
             elif detail == "timeout":
-                return False
+                return False, "timeout"
             elif detail == "gdb_no_response":
-                return False
+                return False, "gdb_no_response"
+            elif detail and detail.startswith("signal_"):
+                return False, detail
             else:
-                return False
+                return False, detail
     finally:
         # Clean up: delete the breakpoint if it wasn't auto-deleted.
         # (tbreak auto-deletes on hit, but we want to clean up on timeout too.)
@@ -438,4 +511,26 @@ def step_frame(
         except Exception:
             pass  # best-effort cleanup
 
-    return False
+    return False, "timeout"
+
+
+def step_frame(
+    gdb: "GdbController",
+    breakpoint_func: str = "manage_game__post_render",
+    timeout: float = 5.0,
+) -> bool:
+    """Advance execution to a specific frame in the game loop.
+
+    Wrapper around step_frame_detailed() that returns just the boolean
+    hit/miss result for backward compatibility.
+
+    Args:
+        gdb: A ``GdbController`` instance with a binary loaded.
+        breakpoint_func: The C function name to break at.
+        timeout: Maximum seconds to wait for the target breakpoint.
+
+    Returns:
+        True if the target breakpoint was hit, False if timeout/crashed.
+    """
+    hit, _ = step_frame_detailed(gdb, breakpoint_func, timeout)
+    return hit

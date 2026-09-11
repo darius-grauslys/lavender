@@ -232,8 +232,12 @@ class MCPAdapter:
         self._time = time  # Store time module reference
 
     def set_log_file(self, log_file: str | None) -> None:
-        """Set the log file for MCP tool calls."""
+        """Set the log file for MCP tool calls and GDB response logging."""
         self._log_file = log_file
+        # Also propagate to GDBSession for GDB response logging
+        if log_file and hasattr(self._session, 'gdb'):
+            self._session.gdb._log_file = log_file
+            self._session.gdb._log_all_responses = True
 
     @property
     def session(self) -> LavSession:

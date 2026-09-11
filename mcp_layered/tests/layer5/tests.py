@@ -37,6 +37,7 @@ class TestToolDefinitions(unittest.TestCase):
         """Tools can be looked up by name in _TOOL_BY_NAME."""
         self.assertIn("session_start", _TOOL_BY_NAME)
         self.assertIn("navigate_step", _TOOL_BY_NAME)
+        self.assertIn("navigate_source", _TOOL_BY_NAME)
         self.assertIn("ui_invoke", _TOOL_BY_NAME)
 
     def test_expected_tool_names_present(self):
