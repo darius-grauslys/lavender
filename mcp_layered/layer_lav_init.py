@@ -337,6 +337,7 @@ def _register_builtin_drivers() -> None:
     # These bridge to mcp/ logic using the raw gdbmi via GDBSession.gdbmi
 
     from mcp.gdb_nav_utils import step_frame, step_frame_detailed
+    from mcp_layered.layer_pygdbmi import detect_signal
 
     def _get_signal_info(gdb: GDBSession) -> str:
         """Get signal info from the current stopped state.
@@ -411,8 +412,12 @@ def _register_builtin_drivers() -> None:
             return "ERROR: count must be >= 1."
         try:
             for i in range(count):
+                # Use unbounded overall timeout (0) with idle timeout from
+                # the GDBSession. This allows long-running operations like
+                # world loading with many process spawns to complete, while
+                # still detecting infinite loops via the idle timeout.
                 hit, stop_reason = step_frame_detailed(
-                    gdb.gdbmi, "manage_game__post_render", timeout=15.0
+                    gdb.gdbmi, "manage_game__post_render"
                 )
                 if not hit:
                     if stop_reason and stop_reason.startswith("signal_"):
@@ -426,7 +431,17 @@ def _register_builtin_drivers() -> None:
                         f"ERROR: timed out waiting for manage_game__post_render "
                         f"on step {i+1}/{count}."
                     )
-                gdb.write("-exec-finish")
+
+                # Check for signal during -exec-finish (detected in layer_pygdbmi)
+                finish_responses = gdb.write("-exec-finish")
+                sig = detect_signal(finish_responses)
+                if sig:
+                    sig_info = _get_signal_info(gdb)
+                    return (
+                        f"ERROR: Game crashed with {sig} "
+                        f"on step {i+1}/{count}.\n{sig_info}"
+                    )
+
             return f"Stepped {count} game frame(s) to post-render."
         except Exception as e:
             return f"ERROR stepping frame: {type(e).__name__}: {e}"

@@ -428,6 +428,101 @@ class TestGDBSessionHookFactories(unittest.TestCase):
 
 
 # --------------------------------------------------------------------------- #
+# Activity Timeout Tests
+# --------------------------------------------------------------------------- #
+
+
+class TestSignalDetection(unittest.TestCase):
+    """Tests for unified signal detection in layer_pygdbmi."""
+
+    def test_detect_signal_from_debug_response(self):
+        """detect_signal returns signal name from DebugResponse.is_signal()."""
+        from mcp_layered.layer_pygdbmi import detect_signal
+        from mcp_layered.debug_response import DebugResponse
+
+        # Create a signal-received DebugResponse
+        resp = DebugResponse.from_dict({
+            "type": "notify",
+            "message": "stopped",
+            "payload": {
+                "reason": "signal-received",
+                "signal-name": "SIGABRT",
+                "frame": {"func": "abort"},
+            }
+        })
+
+        sig = detect_signal([resp])
+        self.assertEqual(sig, "SIGABRT")
+
+    def test_detect_signal_no_signal(self):
+        """detect_signal returns None when no signal in responses."""
+        from mcp_layered.layer_pygdbmi import detect_signal
+        from mcp_layered.debug_response import DebugResponse
+
+        resp = DebugResponse.from_dict({
+            "type": "result",
+            "message": "done",
+            "payload": {}
+        })
+
+        sig = detect_signal([resp])
+        self.assertIsNone(sig)
+
+    def test_detect_signal_mixed_responses(self):
+        """detect_signal finds signal in mixed response list."""
+        from mcp_layered.layer_pygdbmi import detect_signal
+        from mcp_layered.debug_response import DebugResponse
+
+        normal = DebugResponse.from_dict({
+            "type": "result", "message": "done", "payload": {}
+        })
+        signal_resp = DebugResponse.from_dict({
+            "type": "notify", "message": "stopped",
+            "payload": {"reason": "signal-received", "signal-name": "SIGSEGV"}
+        })
+
+        sig = detect_signal([normal, signal_resp])
+        self.assertEqual(sig, "SIGSEGV")
+
+
+class TestActivityTimeout(unittest.TestCase):
+    """Tests for activity-based timeout logic in GDBSession."""
+
+    @patch("mcp_layered.layer_pygdbmi.GdbController")
+    def test_poll_returns_none_on_idle_timeout(self, mock_gdb_controller_cls):
+        """poll_with_activity_timeout returns None when no response arrives."""
+        mock_gdb = MagicMock()
+        mock_gdb_controller_cls.return_value = mock_gdb
+
+        from mcp_layered.layer_pygdbmi import GDBSession
+        gdb = GDBSession(timeout_sec=1, activity_timeout=False)
+        gdb._orig_get_response = MagicMock(return_value=None)
+
+        result = gdb.poll_with_activity_timeout(
+            overall_timeout=0.5, idle_timeout=0.5, call_timeout=0.1
+        )
+        self.assertIsNone(result)
+
+    @patch("mcp_layered.layer_pygdbmi.GdbController")
+    def test_poll_resets_idle_on_response(self, mock_gdb_controller_cls):
+        """poll_with_activity_timeout resets idle timer on each response."""
+        mock_gdb = MagicMock()
+        mock_gdb_controller_cls.return_value = mock_gdb
+
+        from mcp_layered.layer_pygdbmi import GDBSession
+        gdb = GDBSession(timeout_sec=1, activity_timeout=False)
+        # First returns None, second returns a response
+        gdb._orig_get_response = MagicMock(side_effect=[
+            None, [{"type": "notify", "message": "stopped"}]
+        ])
+
+        result = gdb.poll_with_activity_timeout(
+            overall_timeout=5.0, idle_timeout=1.0, call_timeout=0.1
+        )
+        self.assertIsNotNone(result)
+
+
+# --------------------------------------------------------------------------- #
 # Integration Tests (require GDB)
 # --------------------------------------------------------------------------- #
 

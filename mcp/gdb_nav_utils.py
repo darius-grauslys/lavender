@@ -234,16 +234,37 @@ def _get_signal_from_stopped(record: dict) -> str | None:
     sig = payload.get("signal", "")
     if sig:
         sig_map = {
-            "6": "SIGABRT",
-            "11": "SIGSEGV",
-            "8": "SIGFPE",
-            "4": "SIGILL",
-            "7": "SIGBUS",
-            "13": "SIGPIPE",
             "1": "SIGHUP",
-            "15": "SIGTERM",
             "2": "SIGINT",
+            "3": "SIGQUIT",
+            "4": "SIGILL",
+            "5": "SIGTRAP",
+            "6": "SIGABRT",
+            "7": "SIGBUS",
+            "8": "SIGFPE",
             "9": "SIGKILL",
+            "10": "SIGUSR1",
+            "11": "SIGSEGV",
+            "12": "SIGUSR2",
+            "13": "SIGPIPE",
+            "14": "SIGALRM",
+            "15": "SIGTERM",
+            "16": "SIGSTKFLT",
+            "17": "SIGCHLD",
+            "18": "SIGCONT",
+            "19": "SIGSTOP",
+            "20": "SIGTSTP",
+            "21": "SIGTTIN",
+            "22": "SIGTTOU",
+            "23": "SIGURG",
+            "24": "SIGXCPU",
+            "25": "SIGXFSZ",
+            "26": "SIGVTALRM",
+            "27": "SIGPROF",
+            "28": "SIGWINCH",
+            "29": "SIGIO",
+            "30": "SIGPWR",
+            "31": "SIGSYS",
         }
         return sig_map.get(str(sig), f"SIG{sig}")
 
@@ -368,7 +389,8 @@ def _poll_for_stops(
         only ``breakpoint-hit`` stops are acted upon.
     """
     # Use short poll intervals so we don't exceed the deadline by much.
-    poll_interval = min(timeout, 0.5)
+    # When timeout=0 (unbounded), use a reasonable default poll interval.
+    poll_interval = min(timeout, 0.5) if timeout > 0 else 0.5
 
     # If the GdbController has our hook wrapper, skip hooks during the
     # timeout-bounded get_gdb_response call, then process them separately
@@ -392,7 +414,9 @@ def _poll_for_stops(
                 gdb._skip_hooks = False
 
         if resp is None:
-            # gdb exited or no response available.
+            # No response available — could be idle timeout or gdb exit
+            if time.monotonic() >= deadline:
+                return False, "timeout"
             return False, "gdb_no_response"
 
         # Process hooks separately (outside the timeout boundary)
@@ -420,7 +444,7 @@ def _poll_for_stops(
 def step_frame_detailed(
     gdb: "GdbController",
     breakpoint_func: str = "manage_game__post_render",
-    timeout: float = 5.0,
+    timeout: float = 0.0,  # 0 = unbounded (no overall timeout)
 ) -> tuple[bool, str | None]:
     """Advance execution to a specific frame in the game loop.
 
@@ -464,7 +488,8 @@ def step_frame_detailed(
         ...     pass
     """
     start_time = time.monotonic()
-    deadline = start_time + timeout
+    # timeout=0 means unbounded (no overall deadline)
+    deadline = start_time + timeout if timeout > 0 else float('inf')
 
     # Set a temporary breakpoint at the target function.
     target_bpnum = _add_temporary_breakpoint(gdb, breakpoint_func, timeout)

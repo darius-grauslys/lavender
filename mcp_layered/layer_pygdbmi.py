@@ -23,6 +23,42 @@ from .debug_response import DebugResponse, ResponseType, parse
 # Hook type: receives list of DebugResponse, returns (possibly modified) list
 GDBHook = Callable[[list[DebugResponse]], list[DebugResponse]]
 
+# Signal name → signal number mapping (POSIX standard signals 1-31)
+_SIGNAL_NUM_TO_NAME = {
+    "1": "SIGHUP", "2": "SIGINT", "3": "SIGQUIT", "4": "SIGILL",
+    "5": "SIGTRAP", "6": "SIGABRT", "7": "SIGBUS", "8": "SIGFPE",
+    "9": "SIGKILL", "10": "SIGUSR1", "11": "SIGSEGV", "12": "SIGUSR2",
+    "13": "SIGPIPE", "14": "SIGALRM", "15": "SIGTERM", "16": "SIGSTKFLT",
+    "17": "SIGCHLD", "18": "SIGCONT", "19": "SIGSTOP", "20": "SIGTSTP",
+    "21": "SIGTTIN", "22": "SIGTTOU", "23": "SIGURG", "24": "SIGXCPU",
+    "25": "SIGXFSZ", "26": "SIGVTALRM", "27": "SIGPROF", "28": "SIGWINCH",
+    "29": "SIGIO", "30": "SIGPWR", "31": "SIGSYS",
+}
+
+
+def detect_signal(responses: list[DebugResponse]) -> str | None:
+    """Detect if any response is a signal-received stop.
+
+    Returns the signal name (e.g. 'SIGABRT') if a signal was received,
+    otherwise None.
+
+    This is the unified signal detection logic in layer_pygdbmi. All layers
+    above should use this function instead of implementing their own.
+    """
+    for r in responses:
+        if r.is_signal():
+            # is_signal() returns True for DebugResponse objects where
+            # type==NOTIFY, reason=='signal-received'
+            # The signal name is stored in signal_name field
+            sig_name = r.signal_name
+            if sig_name:
+                return sig_name
+            # Fallback: try signal number → name mapping from raw payload
+            sig_num = r.raw.get("payload", {}).get("signal", "")
+            if sig_num:
+                return _SIGNAL_NUM_TO_NAME.get(str(sig_num), f"SIG{sig_num}")
+    return None
+
 
 class GDBSession:
     """Middleware wrapper around pygdbmi.GdbController.
@@ -41,8 +77,10 @@ class GDBSession:
     def __init__(
         self,
         command: list[str] | None = None,
-        timeout_sec: float = 15.0,
+        timeout_sec: float = 0.0,  # 0 means no overall timeout (unbounded)
         log_file: str | None = None,
+        activity_timeout: bool = True,
+        idle_timeout: float = 5.0,  # Reset on each response; kills idle loops
     ):
         if not _HAS_PYGDBMI:
             raise RuntimeError("pygdbmi is not installed. Cannot create GDBSession.")
@@ -61,10 +99,13 @@ class GDBSession:
 
         self._hooks: list[GDBHook] = []
         self._closed = False
-        self._timeout_sec = timeout_sec
+        self._timeout_sec = timeout_sec  # 0 = unbounded (no overall timeout)
+        self._activity_timeout = activity_timeout  # Use activity-based polling
+        self._idle_timeout = idle_timeout  # Reset on each response; kills idle loops
         self._log_file = log_file
         self._log_all_responses = log_file is not None  # Log ALL responses if file is set
         self._log_error_responses = True  # Always log errors before hooks
+        self._last_signal: str | None = None  # Last detected signal (e.g. 'SIGABRT')
 
         # Store time module for logging timestamps
         import time
@@ -88,6 +129,39 @@ class GDBSession:
                 self.process_hooks_on_raw(raw)
             return raw
 
+        def _activity_timeout_get_gdb_response(*args, **kwargs):
+            """get_gdb_response with activity-based timeout.
+
+            If _activity_timeout is enabled on the session, this polls
+            with the unified timeout logic instead of returning immediately.
+
+            The timeout_sec kwarg is used as the call_timeout (pygdbmi timeout
+            per individual get_gdb_response call). The overall deadline is
+            controlled by idle_timeout (which resets on each response).
+            """
+            if not self._activity_timeout:
+                return _hooked_get_gdb_response(*args, **kwargs)
+
+            # timeout_sec from caller is treated as call_timeout (per-response wait)
+            call_timeout = kwargs.get("timeout_sec", 0.5)
+            idle_timeout = kwargs.get("idle_timeout", None) or self._idle_timeout
+
+            # Poll with activity-based timeout:
+            # - overall_timeout=0 (unbounded): no total deadline, world loading ok
+            # - idle_timeout: resets on each response, catches infinite loops
+            # - call_timeout: how long to wait for each individual pygdbmi response
+            raw = self.poll_with_activity_timeout(
+                overall_timeout=0,  # 0 = unbounded
+                idle_timeout=idle_timeout,
+                call_timeout=call_timeout,
+            )
+
+            # Run hooks if not skipped
+            if raw and not getattr(self._gdbmi, '_skip_hooks', False):
+                self.process_hooks_on_raw(raw)
+
+            return raw
+
         def _hooked_write(*args, **kwargs):
             """Route GdbController.write() through GDBSession's processing
             so that error logging and hooks fire even when external code
@@ -99,7 +173,10 @@ class GDBSession:
             """
             # Extract command from args (first positional arg)
             command = args[0] if args else kwargs.get("command", "")
-            timeout_sec = kwargs.get("timeout_sec", self._timeout_sec)
+            timeout_sec = kwargs.get("timeout_sec")
+            if timeout_sec is None or timeout_sec == 0:
+                # 0 = unbounded, but pygdbmi needs a positive timeout
+                timeout_sec = self._timeout_sec if self._timeout_sec > 0 else 15.0
             read_response = kwargs.get("read_response", True)
             # Call the original pygdbmi write directly, then parse/hook/log
             try:
@@ -131,10 +208,17 @@ class GDBSession:
 
         # Expose hook control methods on the GdbController so external code
         # can skip/process hooks without needing a GDBSession reference.
-        self._gdbmi.get_gdb_response = _hooked_get_gdb_response
+        # Use activity-based timeout get_gdb_response if enabled, otherwise
+        # use the basic hooked version.
+        if self._activity_timeout:
+            self._gdbmi.get_gdb_response = _activity_timeout_get_gdb_response
+        else:
+            self._gdbmi.get_gdb_response = _hooked_get_gdb_response
         self._gdbmi._skip_hooks = False
         self._gdbmi.process_hooks_on_raw = self.process_hooks_on_raw
         self._gdbmi.write = _hooked_write
+        # Expose activity-based timeout polling method
+        self._gdbmi.poll_with_activity_timeout = self.poll_with_activity_timeout
 
     @property
     def gdb_path(self) -> str:
@@ -148,6 +232,15 @@ class GDBSession:
     def gdbmi(self):
         """Raw pygdbmi GdbController (for backward compat with mcp/ drivers)."""
         return self._gdbmi
+
+    @property
+    def last_signal(self) -> str | None:
+        """The last detected signal (e.g. 'SIGABRT'), or None if no signal."""
+        return self._last_signal
+
+    def reset_signal_state(self) -> None:
+        """Clear the last detected signal state."""
+        self._last_signal = None
 
     def add_hook(self, hook: GDBHook) -> None:
         """Register a hook to be called on every GDB response.
@@ -180,10 +273,95 @@ class GDBSession:
         for r in responses:
             if r.is_error() and self._log_error_responses:
                 self._log_error_response("poll", r)
+        # Track signal detection
+        sig = detect_signal(responses)
+        if sig:
+            self._last_signal = sig
         # Run hooks
         for hook in self._hooks:
             responses = hook(responses)
         return responses
+
+    def poll_with_activity_timeout(
+        self,
+        overall_timeout: float | None = None,
+        idle_timeout: float | None = None,
+        call_timeout: float = 0.5,
+    ) -> list | None:
+        """Poll for GDB responses with activity-based timeout.
+
+        This is the unified timeout logic used by all layer_pygdbmi operations.
+        The idle timeout resets each time a non-None response is received, so
+        long-running operations that produce periodic output don't time out.
+
+        Args:
+            overall_timeout: Maximum total time to wait. None or 0 means
+                unbounded (no overall deadline). Uses session's _timeout_sec
+                by default.
+            idle_timeout: Maximum time to wait without any response before
+                giving up. Each response resets this timer. Uses session's
+                _idle_timeout by default.
+            call_timeout: How long to wait for each individual get_gdb_response()
+                call before retrying.
+
+        Returns:
+            The raw response from get_gdb_response(), or None if timed out.
+
+        The logic:
+        1. Set overall deadline (overall_timeout from now), or no deadline if 0/None.
+        2. Set idle deadline (idle_timeout from now).
+        3. Call get_gdb_response with call_timeout.
+        4. If we get a non-None response, reset the idle deadline.
+        5. If we get None or an exception, don't reset idle deadline.
+        6. Continue until idle deadline is exceeded (or overall deadline if set).
+        """
+        import time
+        if overall_timeout is None:
+            overall_timeout = self._timeout_sec  # 0 = unbounded
+        if idle_timeout is None:
+            idle_timeout = self._idle_timeout
+
+        start_time = time.monotonic()
+        has_deadline = overall_timeout > 0
+        deadline = start_time + overall_timeout if has_deadline else None
+        idle_deadline = start_time + idle_timeout
+
+        while True:
+            # Check overall deadline
+            if has_deadline and time.monotonic() >= deadline:
+                return None
+
+            # Wait up to the lesser of idle time and call_timeout
+            remaining_idle = idle_deadline - time.monotonic()
+            current_timeout = min(call_timeout, remaining_idle)
+            if current_timeout <= 0:
+                break
+
+            try:
+                # Use the original (unwrapped) get_gdb_response to avoid
+                # recursion through the activity timeout wrapper
+                raw = self._orig_get_response(timeout_sec=current_timeout)
+            except Exception:
+                # Timeout on get_gdb_response — check idle deadline
+                if time.monotonic() >= idle_deadline:
+                    return None
+                if has_deadline and time.monotonic() >= deadline:
+                    return None
+                continue
+
+            if raw is None:
+                # No response available
+                if time.monotonic() >= idle_deadline:
+                    return None
+                if has_deadline and time.monotonic() >= deadline:
+                    return None
+                continue
+
+            # Got a response — reset idle deadline
+            idle_deadline = time.monotonic() + idle_timeout
+            return raw
+
+        return None
 
     def _log_responses_to_file(self, context: str, responses: list[DebugResponse]) -> None:
         """Log ALL responses to the log file as JSONL.
@@ -307,7 +485,10 @@ class GDBSession:
             raise RuntimeError("GDBSession is closed.")
         # Use provided timeout or default
         if timeout_sec is None:
-            timeout_sec = self._timeout_sec
+            # For write(), use the session's timeout (which may be 0 = unbounded)
+            # or a default of 15s if the session timeout is 0 (unbounded).
+            # The activity-based timeout in get_gdb_response handles long polling.
+            timeout_sec = self._timeout_sec if self._timeout_sec > 0 else 15.0
 
         # pygdbmi write() returns the response list directly.
         # Always use _orig_write (the pygdbmi/patched write, not _hooked_write)
@@ -343,6 +524,11 @@ class GDBSession:
         for r in responses:
             if r.is_error():
                 self._log_error_response(command, r)
+
+        # Track signal detection (layer_pygdbmi unified logic)
+        sig = detect_signal(responses)
+        if sig:
+            self._last_signal = sig
 
         # Run hooks (middleware) on the parsed responses
         for hook in self._hooks:
