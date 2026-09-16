@@ -89,6 +89,19 @@ class GDBFrameController:
         # Filter for console stream records (the struct array is printed here).
         return [rec for rec in resp if rec.get("type") == "console"]
 
+    def _console_print(self, expr: str) -> str:
+        """Run ``print {expr}`` on the console; return the raw console text.
+
+        GDB prints the **entire** brace-list (``$N = {v1, v2, ...}``), so N
+        reads collapse into one round-trip (each round-trip has a high fixed
+        cost). Note: ``-data-evaluate-expression`` *rejects* brace-lists, so the
+        console channel is required for this. The caller parses the ``{...}``
+        (see ``DebugScannerBase._parse_value_array``).
+        """
+        resp = self._gdbmi.write(f'-interpreter-exec console "print {{{expr}}}"')
+        return "".join(rec.get("payload") or "" for rec in resp
+                       if rec.get("type") == "console")
+
     def _exec(self, stmt: str) -> list:
         """Run an arbitrary gdb console statement (e.g. ``set $x = ...``)."""
         return self._gdbmi.write(f'-interpreter-exec console "{stmt}"')

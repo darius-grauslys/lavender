@@ -39,9 +39,6 @@ void *allocate_pV_hitbox_from__hitbox_context(
         Identifier__u32 uuid_of__hitbox_manager__u32,
         Identifier__u32 uuid_of__hitbox__u32);
 
-#define OPAQUE_HITBOX_ACCESS__SET (true)
-#define OPAQUE_HITBOX_ACCESS__GET (false)
-
 ///
 /// If is setting, the opaque callback handler will try
 /// and read pV ptrs as the expected format (see Hitbox_Manager_Instance)
@@ -60,6 +57,7 @@ bool opaque_access_to__hitbox(
         void *pV_OPTIONAL_velocity,
         void *pV_OPTIONAL_acceleration,
         Hitbox_Flags__u8 *p_OPTIONAL_hitbox_flags__u8,
+        Hitbox_Flags__u8 *p_OPTIONAL_hitbox_flags__mask__u8,
         bool is_setting_or__getting);
 
 ///
@@ -95,5 +93,12 @@ void *get_pV_hitbox_manager_from__hitbox_context(
         ->pVM_hitbox_manager
         ;
 }
+
+// TODO: ensure this is used throughout core for hitbox manager
+// acquisition.
+#define GET_P_HITBOX_MANAGER(p_game, UUID, TYPE) \
+        (TYPE*)get_pV_hitbox_manager_from__hitbox_context(\
+                get_p_hitbox_context_from__game(p_game),\
+                GET_UUID_P(get_p_world_from__game(p_game)));
 
 #endif

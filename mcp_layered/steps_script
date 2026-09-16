@@ -1,0 +1,1 @@
+start; trace; step; ui list; ui invoke clicked [idx=0]; step 2; ui list; ui invoke clicked [idx=1,type=*Button]; step 2; ui list; ui invoke clicked [idx=1,type=*Button]; step 102

@@ -15,8 +15,12 @@ void initialize_collision_node(
 bool add_entry_to__collision_node(
         Collision_Node_Pool *p_collision_node_pool,
         Collision_Node *p_collision_node,
-        Chunk_Vector__3i32 gsv__3i32,
         Identifier__u32 uuid_u32_of__entry);
+
+Collision_Node_Entry *get_entry_from__collision_node(
+        Collision_Node_Pool *p_collision_node_pool,
+        Collision_Node *p_collision_node,
+        Identifier__u32 uuid__u32);
 
 void remove_entry_from__collision_node(
         Collision_Node_Pool *p_collision_node_pool,
@@ -57,5 +61,16 @@ bool is_collision_node__allocated(
         Collision_Node *p_collision_node) {
     return !is_serialized_struct__deallocated__uuid_64(
             &p_collision_node->_serialization_header);
+}
+
+static inline
+bool is_collision_node_entry__present(
+        Collision_Node_Pool *p_collision_node_pool,
+        Collision_Node *p_collision_node,
+        Identifier__u32 uuid__u32) {
+    return get_entry_from__collision_node(
+            p_collision_node_pool, p_collision_node, uuid__u32)
+        != 0
+        ;
 }
 #endif

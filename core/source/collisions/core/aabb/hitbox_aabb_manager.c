@@ -103,6 +103,7 @@ bool f_hitbox_manager__opaque_property_access_of__hitbox_AABB(
         void *pV_OPTIONAL_velocity, 
         void *pV_OPTIONAL_acceleration, 
         Hitbox_Flags__u8 *p_OPTIONAL_hitbox_flags__u8, 
+        Hitbox_Flags__u8 *p_OPTIONAL_hitbox_flags__mask__u8, 
         bool is_setting_or__getting) {
     if (!pV_hitbox) {
         debug_error("f_hitbox_manager__opaque_property_access_of__hitbox_AABB, pV_hitbox == 0.");
@@ -113,8 +114,14 @@ bool f_hitbox_manager__opaque_property_access_of__hitbox_AABB(
 
     if (is_setting_or__getting) {
         // Set values of the hitbox
-        if (p_OPTIONAL_hitbox_flags__u8)
-            p_hitbox_aabb->hitbox_aabb_flags__u8 = *p_OPTIONAL_hitbox_flags__u8;
+        if (p_OPTIONAL_hitbox_flags__u8
+                && p_OPTIONAL_hitbox_flags__mask__u8) {
+            p_hitbox_aabb->hitbox_aabb_flags__u8 &=
+                ~*p_OPTIONAL_hitbox_flags__mask__u8;
+            p_hitbox_aabb->hitbox_aabb_flags__u8 |=
+                *p_OPTIONAL_hitbox_flags__u8
+                & *p_OPTIONAL_hitbox_flags__mask__u8;
+        }
 
         if (pV_OPTIONAL_dimensions) {
             u32 *p_dimentions = pV_OPTIONAL_dimensions;
@@ -136,8 +143,12 @@ bool f_hitbox_manager__opaque_property_access_of__hitbox_AABB(
         set_hitbox_flags_as__dirty(&p_hitbox_aabb->hitbox_aabb_flags__u8);
     } else {
         // Get values of the hitbox
-        if (p_OPTIONAL_hitbox_flags__u8)
-            *p_OPTIONAL_hitbox_flags__u8 = p_hitbox_aabb->hitbox_aabb_flags__u8;
+        if (p_OPTIONAL_hitbox_flags__u8 
+                && p_OPTIONAL_hitbox_flags__mask__u8) {
+            *p_OPTIONAL_hitbox_flags__u8 = 
+                p_hitbox_aabb->hitbox_aabb_flags__u8
+                & *p_OPTIONAL_hitbox_flags__mask__u8;
+        }
 
         if (pV_OPTIONAL_dimensions) {
             u32 *p_dimensions = pV_OPTIONAL_dimensions;
@@ -282,24 +293,6 @@ void release_hitbox_aabb_from__hitbox_aabb_manager(
                     ->index_of__next_hitbox_aabb_in__records] = 0;
             break;
         }
-    }
-
-    Global_Space *p_global_space =
-        (is_world_allocated_for__game(p_game))
-        ? get_p_global_space_from__global_space_manager(
-                get_p_global_space_manager_from__game(p_game), 
-                vector_3i32F4_to__chunk_vector_3i32(
-                    p_hitbox_aabb->position__3i32F4))
-        : 0
-        ;
-
-    if (p_global_space) {
-        remove_entry_from__collision_node(
-                get_p_collision_node_pool_from__world(
-                    get_p_world_from__game(p_game)), 
-                get_p_collision_node_from__global_space(
-                    p_global_space), 
-                GET_UUID_P(p_hitbox_aabb));
     }
 
     initialize_hitbox_aabb(p_hitbox_aabb);

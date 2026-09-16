@@ -24,7 +24,6 @@ void initialize_collision_node(
 bool add_entry_to__collision_node(
         Collision_Node_Pool *p_collision_node_pool,
         Collision_Node *p_collision_node,
-        Chunk_Vector__3i32 gsv__3i32,
         Identifier__u32 uuid_u32_of__entry) {
 #ifndef NDEBUG
     if (!p_collision_node_pool) {
@@ -60,13 +59,16 @@ bool add_entry_to__collision_node(
     return true;
 }
 
-void remove_entry_from__collision_node(
+Collision_Node_Entry *get_entry_and_parent_from__collision_node(
         Collision_Node_Pool *p_collision_node_pool,
         Collision_Node *p_collision_node,
-        Identifier__u32 uuid__u32) {
+        Identifier__u32 uuid__u32,
+        Collision_Node **p_ptr_OUT_collision_node__parent) {
+    if (p_ptr_OUT_collision_node__parent)
+        *p_ptr_OUT_collision_node__parent = 0;
     if (!p_collision_node) {
-        debug_error("remove_entry_from__collision_node, p_collision_node == 0.");
-        return;
+        debug_error("get_entry_and_parent_from__collision_node, p_collision_node == 0.");
+        return 0;
     }
     Collision_Node_Entry *p_collision_node_entry =
         p_collision_node->p_linked_list__collision_node_entries__tail;
@@ -82,6 +84,45 @@ void remove_entry_from__collision_node(
         p_collision_node_entry =
             p_collision_node_entry->p_previous_entry;
     }
+
+    if (p_ptr_OUT_collision_node__parent) {
+        *p_ptr_OUT_collision_node__parent =
+            p_collision_node_entry__parent;
+    }
+
+    return p_collision_node_entry;
+}
+
+Collision_Node_Entry *get_entry_from__collision_node(
+        Collision_Node_Pool *p_collision_node_pool,
+        Collision_Node *p_collision_node,
+        Identifier__u32 uuid__u32) {
+    if (!p_collision_node) {
+        debug_error("get_entry_from__collision_node, p_collision_node == 0.");
+        return 0;
+    }
+    return get_entry_and_parent_from__collision_node(
+            p_collision_node_pool, 
+            p_collision_node, 
+            uuid__u32, 
+            0);
+}
+
+void remove_entry_from__collision_node(
+        Collision_Node_Pool *p_collision_node_pool,
+        Collision_Node *p_collision_node,
+        Identifier__u32 uuid__u32) {
+    if (!p_collision_node) {
+        debug_error("remove_entry_from__collision_node, p_collision_node == 0.");
+        return;
+    }
+    Collision_Node_Entry *p_collision_node_entry__parent = 0;
+    Collision_Node_Entry *p_collision_node_entry =
+        get_entry_and_parent_from__collision_node(
+                p_collision_node_pool, 
+                p_collision_node, 
+                uuid__u32,
+                &p_collision_node_entry__parent);
 
     if (!p_collision_node_entry) {
         debug_error("remove_entry_from__collision_node, uuid__u32 not present in node.");

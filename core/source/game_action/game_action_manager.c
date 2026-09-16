@@ -118,3 +118,17 @@ Game_Action *get_p_game_action_by__uuid_from__game_action_manager(
 
     return p_game_action__responded_to;
 }
+
+Quantity__u32 get_quantity_of__game_actions_in__game_action_manager(
+        Game_Action_Manager *p_game_action_manager) {
+    Quantity__u32 quantity_of__game_actions__u32 = 0;
+    for (Index__u32 index_of__game_action = 0;
+            index_of__game_action < MAX_QUANTITY_OF__GAME_ACTIONS;
+            index_of__game_action++) {
+        if (is_game_action__allocated(
+                    &p_game_action_manager->game_actions[index_of__game_action])) {
+            quantity_of__game_actions__u32++;
+        }
+    }
+    return quantity_of__game_actions__u32;
+}

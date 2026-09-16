@@ -428,6 +428,316 @@ class TestGDBSessionHookFactories(unittest.TestCase):
 
 
 # --------------------------------------------------------------------------- #
+# delete_breakpoint + BreakpointHook (encapsulated, toggleable breakpoint)
+#
+# Note: GDBSession.__init__ runs patch_gdbmi_timeouts(), which reassigns
+# mock_gdb.write to a thin wrapper (capturing the original MagicMock). So we
+# capture `orig_write = mock_gdb.write` BEFORE constructing the session, and
+# assert on that original mock's call list (the wrapper forwards to it).
+# --------------------------------------------------------------------------- #
+
+
+def _bp_done(bp_number="3"):
+    return [{"type": "result", "message": "done",
+             "payload": {"bkpt": {"number": bp_number}}}]
+
+
+def _cmds(orig_write):
+    """First positional arg (the MI command) of each recorded write() call."""
+    return [c[0][0] for c in orig_write.call_args_list if c[0]]
+
+
+class TestGDBSessionDeleteBreakpoint(unittest.TestCase):
+    """Test GDBSession.delete_breakpoint (the inverse of set_breakpoint)."""
+
+    @patch("mcp_layered.layer_pygdbmi.GdbController")
+    def test_delete_sends_break_delete(self, mock_cls):
+        mock_gdb = MagicMock()
+        mock_gdb.write.return_value = [{"type": "result", "message": "done",
+                                        "payload": {}}]
+        orig_write = mock_gdb.write
+        mock_cls.return_value = mock_gdb
+
+        from mcp_layered.layer_pygdbmi import GDBSession
+        gdb = GDBSession()
+        self.assertTrue(gdb.delete_breakpoint(3))
+        self.assertIn("-break-delete 3", _cmds(orig_write))
+        gdb.close()
+
+    @patch("mcp_layered.layer_pygdbmi.GdbController")
+    def test_delete_none_is_noop(self, mock_cls):
+        mock_gdb = MagicMock()
+        mock_gdb.write.return_value = []
+        orig_write = mock_gdb.write
+        mock_cls.return_value = mock_gdb
+
+        from mcp_layered.layer_pygdbmi import GDBSession
+        gdb = GDBSession()
+        self.assertFalse(gdb.delete_breakpoint(None))
+        orig_write.assert_not_called()
+        gdb.close()
+
+    @patch("mcp_layered.layer_pygdbmi.GdbController")
+    def test_delete_error_returns_false(self, mock_cls):
+        mock_gdb = MagicMock()
+        mock_gdb.write.return_value = [
+            {"type": "result", "message": "error",
+             "payload": {"msg": "No such breakpoint"}}
+        ]
+        mock_cls.return_value = mock_gdb
+
+        from mcp_layered.layer_pygdbmi import GDBSession
+        gdb = GDBSession()
+        self.assertFalse(gdb.delete_breakpoint(99))
+        gdb.close()
+
+
+class TestBreakpointHook(unittest.TestCase):
+    """Test the encapsulated BreakpointHook (enable/disable toggles the bp)."""
+
+    def _gdb(self, mock_cls, bp_number="3"):
+        """Build a GDBSession over a mock controller whose write ^done carries
+        a bkpt number. ``mock_cls`` is the GdbController mock supplied by the
+        caller's @patch decorator. Returns (gdb, orig_write) where orig_write
+        is the original mock write (captured before the session patched it)."""
+        mock_gdb = MagicMock()
+        mock_gdb.write.return_value = _bp_done(bp_number)
+        orig_write = mock_gdb.write
+        mock_cls.return_value = mock_gdb
+        from mcp_layered.layer_pygdbmi import GDBSession
+        return GDBSession(), orig_write
+
+    @patch("mcp_layered.layer_pygdbmi.GdbController")
+    def test_enable_sets_bp_and_registers_hook(self, mock_cls):
+        gdb, orig_write = self._gdb(mock_cls)
+        from mcp_layered.layer_pygdbmi import BreakpointHook
+        hook = BreakpointHook(gdb, "test", "my_func", lambda r: r)
+        self.assertFalse(hook.enabled)
+        self.assertTrue(hook.enable())
+        self.assertTrue(hook.enabled)
+        self.assertEqual(hook.bp_number, "3")
+        self.assertIn("-break-insert my_func", _cmds(orig_write))
+        self.assertEqual(len(gdb._hooks), 1)
+        gdb.close()
+
+    @patch("mcp_layered.layer_pygdbmi.GdbController")
+    def test_disable_deletes_bp_and_removes_hook(self, mock_cls):
+        gdb, orig_write = self._gdb(mock_cls)
+        from mcp_layered.layer_pygdbmi import BreakpointHook
+        hook = BreakpointHook(gdb, "test", "my_func", lambda r: r)
+        hook.enable()
+        orig_write.call_args_list.clear()
+        hook.disable()
+        self.assertFalse(hook.enabled)
+        self.assertIsNone(hook.bp_number)
+        self.assertIn("-break-delete 3", _cmds(orig_write))
+        self.assertEqual(len(gdb._hooks), 0)
+        gdb.close()
+
+    @patch("mcp_layered.layer_pygdbmi.GdbController")
+    def test_enable_idempotent(self, mock_cls):
+        gdb, _ = self._gdb(mock_cls)
+        from mcp_layered.layer_pygdbmi import BreakpointHook
+        hook = BreakpointHook(gdb, "test", "my_func", lambda r: r)
+        hook.enable()
+        n = len(gdb._hooks)
+        hook.enable()
+        self.assertEqual(len(gdb._hooks), n)
+        self.assertTrue(hook.enabled)
+        gdb.close()
+
+    @patch("mcp_layered.layer_pygdbmi.GdbController")
+    def test_disable_idempotent_when_never_enabled(self, mock_cls):
+        gdb, orig_write = self._gdb(mock_cls)
+        from mcp_layered.layer_pygdbmi import BreakpointHook
+        hook = BreakpointHook(gdb, "test", "my_func", lambda r: r)
+        hook.disable()
+        self.assertFalse(hook.enabled)
+        self.assertIsNone(hook.bp_number)
+        orig_write.assert_not_called()
+        gdb.close()
+
+    @patch("mcp_layered.layer_pygdbmi.GdbController")
+    def test_enable_failure_stays_disabled(self, mock_cls):
+        """If the symbol can't be broken on, enable() returns False, no hook."""
+        mock_gdb = MagicMock()
+        mock_gdb.write.return_value = [
+            {"type": "result", "message": "error", "payload": {"msg": "No symbol"}}
+        ]
+        mock_cls.return_value = mock_gdb
+        from mcp_layered.layer_pygdbmi import GDBSession, BreakpointHook
+        gdb = GDBSession()
+        hook = BreakpointHook(gdb, "test", "no_such_func", lambda r: r)
+        self.assertFalse(hook.enable())
+        self.assertFalse(hook.enabled)
+        self.assertEqual(len(gdb._hooks), 0)
+        gdb.close()
+
+    @patch("mcp_layered.layer_pygdbmi.GdbController")
+    def test_hook_fires_on_matching_function(self, mock_cls):
+        gdb, _ = self._gdb(mock_cls)
+        from mcp_layered.layer_pygdbmi import BreakpointHook
+        fired = []
+        hook = BreakpointHook(
+            gdb, "process.add", "add_process_to__process_table",
+            lambda r: fired.append(1) or r)
+        hook.enable()
+        bp_hit = parse([{
+            "type": "notify", "message": "stopped",
+            "payload": {"reason": "breakpoint-hit", "bkptno": "3",
+                        "frame": {"func": "add_process_to__process_table",
+                                  "file": "x.c", "line": "50"}},
+        }])
+        for h in gdb._hooks:
+            h(bp_hit)
+        self.assertEqual(len(fired), 1)
+        gdb.close()
+
+    @patch("mcp_layered.layer_pygdbmi.GdbController")
+    def test_hook_ignores_other_function(self, mock_cls):
+        gdb, _ = self._gdb(mock_cls)
+        from mcp_layered.layer_pygdbmi import BreakpointHook
+        fired = []
+        hook = BreakpointHook(
+            gdb, "process.add", "add_process_to__process_table",
+            lambda r: fired.append(1) or r)
+        hook.enable()
+        other = parse([{
+            "type": "notify", "message": "stopped",
+            "payload": {"reason": "breakpoint-hit", "bkptno": "7",
+                        "frame": {"func": "some_other_func",
+                                  "file": "y.c", "line": "9"}},
+        }])
+        for h in gdb._hooks:
+            h(other)
+        self.assertEqual(len(fired), 0)
+        gdb.close()
+
+    @patch("mcp_layered.layer_pygdbmi.GdbController")
+    def test_line_target_hook_fires_on_file_line(self, mock_cls):
+        """A file:line target matches on frame file:line, not function name."""
+        gdb, _ = self._gdb(mock_cls)
+        from mcp_layered.layer_pygdbmi import BreakpointHook
+        fired = []
+        hook = BreakpointHook(gdb, "line", "game.c:702",
+                              lambda r: fired.append(1) or r)
+        hook.enable()
+        hit = parse([{
+            "type": "notify", "message": "stopped",
+            "payload": {"reason": "breakpoint-hit", "bkptno": "3",
+                        "frame": {"func": "manage_game",
+                                  "file": "/path/game.c", "line": "702"}},
+        }])
+        for h in gdb._hooks:
+            h(hit)
+        self.assertEqual(len(fired), 1)
+        gdb.close()
+
+
+class TestBreakpointHookCapture(unittest.TestCase):
+    """Test the gated capture: GDB-I/O runs only in a safe, non-nested context,
+    accumulates in captured_events, and is drained by consume_events()."""
+
+    def _gdb(self, mock_cls):
+        mock_gdb = MagicMock()
+        mock_gdb.write.return_value = _bp_done("3")
+        orig_write = mock_gdb.write
+        mock_cls.return_value = mock_gdb
+        from mcp_layered.layer_pygdbmi import GDBSession
+        return GDBSession(), orig_write
+
+    def _bp_hit(self, func="add_process_to__process_table"):
+        return parse([{
+            "type": "notify", "message": "stopped",
+            "payload": {"reason": "breakpoint-hit", "bkptno": "3",
+                        "frame": {"func": func, "file": "x.c", "line": "50"}},
+        }])
+
+    @patch("mcp_layered.layer_pygdbmi.GdbController")
+    def test_capture_runs_in_safe_context(self, mock_cls):
+        gdb, _ = self._gdb(mock_cls)
+        from mcp_layered.layer_pygdbmi import BreakpointHook
+        hook = BreakpointHook(gdb, "p", "add_process_to__process_table",
+                              capture=lambda g, r: {"func": r[0].frame.func})
+        hook.enable()
+        gdb._in_nested_read = False  # safe (stopped) context
+        for h in gdb._hooks:
+            h(self._bp_hit())
+        self.assertEqual(len(hook.captured_events), 1)
+        evts = hook.consume_events()
+        self.assertEqual(evts, [{"func": "add_process_to__process_table"}])
+        self.assertEqual(hook.captured_events, [])  # drained
+        gdb.close()
+
+    @patch("mcp_layered.layer_pygdbmi.GdbController")
+    def test_capture_skipped_in_nested_context(self, mock_cls):
+        gdb, _ = self._gdb(mock_cls)
+        from mcp_layered.layer_pygdbmi import BreakpointHook
+        calls = []
+        hook = BreakpointHook(gdb, "p", "add_process_to__process_table",
+                              capture=lambda g, r: calls.append(1) or {"func": "x"})
+        hook.enable()
+        gdb._in_nested_read = True  # nested (deadlock) context
+        for h in gdb._hooks:
+            h(self._bp_hit())
+        self.assertEqual(calls, [])  # capture must NOT run
+        self.assertEqual(hook.captured_events, [])
+        gdb.close()
+
+    @patch("mcp_layered.layer_pygdbmi.GdbController")
+    def test_capture_failure_is_contained(self, mock_cls):
+        """A capture exception is swallowed; the driver is not broken, no event."""
+        gdb, _ = self._gdb(mock_cls)
+        from mcp_layered.layer_pygdbmi import BreakpointHook
+        def bad(g, r):
+            raise RuntimeError("boom")
+        hook = BreakpointHook(gdb, "p", "add_process_to__process_table",
+                              capture=bad)
+        hook.enable()
+        gdb._in_nested_read = False
+        for h in gdb._hooks:
+            h(self._bp_hit())  # must not raise
+        self.assertEqual(hook.captured_events, [])
+        gdb.close()
+
+    @patch("mcp_layered.layer_pygdbmi.GdbController")
+    def test_handler_fires_even_when_capture_gated(self, mock_cls):
+        """The lightweight handler fires in any context; only the capture is gated."""
+        gdb, _ = self._gdb(mock_cls)
+        from mcp_layered.layer_pygdbmi import BreakpointHook
+        fired, calls = [], []
+        hook = BreakpointHook(
+            gdb, "p", "add_process_to__process_table",
+            handler=lambda r: fired.append(1) or r,
+            capture=lambda g, r: calls.append(1) or {"x": 1})
+        hook.enable()
+        gdb._in_nested_read = True  # nested
+        for h in gdb._hooks:
+            h(self._bp_hit())
+        self.assertEqual(fired, [1])  # handler fired
+        self.assertEqual(calls, [])  # capture skipped
+        gdb.close()
+
+    @patch("mcp_layered.layer_pygdbmi.GdbController")
+    def test_multiple_events_accumulate(self, mock_cls):
+        """Multiple hits accumulate; consume_events returns all and clears."""
+        gdb, _ = self._gdb(mock_cls)
+        from mcp_layered.layer_pygdbmi import BreakpointHook
+        hook = BreakpointHook(gdb, "p", "add_process_to__process_table",
+                              capture=lambda g, r: {"func": r[0].frame.func})
+        hook.enable()
+        gdb._in_nested_read = False
+        for _ in range(3):
+            for h in gdb._hooks:
+                h(self._bp_hit())
+        self.assertEqual(len(hook.captured_events), 3)
+        evts = hook.consume_events()
+        self.assertEqual(len(evts), 3)
+        self.assertEqual(hook.consume_events(), [])  # second drain is empty
+        gdb.close()
+
+
+# --------------------------------------------------------------------------- #
 # Activity Timeout Tests
 # --------------------------------------------------------------------------- #
 

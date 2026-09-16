@@ -5,6 +5,13 @@
 #include "serialization/serialization_header.h"
 #include <defines.h>
 
+void f_object_handler__entity__activate(
+        Game *p_game,
+        Identifier__u32 uuid_of__object__u32);
+void f_object_handler__entity__deactivate(
+        Game *p_game,
+        Identifier__u32 uuid_of__object__u32);
+
 void initialize_entity(
         Entity *p_entity, 
         enum Entity_Kind kind_of_entity);

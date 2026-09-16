@@ -1,4 +1,4 @@
-#include "world/local_space_manager.h"
+#include <world/local_space_manager.h>
 #include "defines.h"
 #include "defines_weak.h"
 #include "game.h"
@@ -308,6 +308,7 @@ void set_center_of__local_space_manager(
                 p_local_space_manager
                 ->center_of__local_space_manager__3i32, 
                 center_of__local_space_manager__3i32)) {
+        // Idempotent short circuit
         return;
     }
     
@@ -323,30 +324,19 @@ void set_center_of__local_space_manager(
 
     // this boolean logic works because u32(-1) + 1 == 0. (wrap around)
     // and we are checking a range of -1 to 1 in each axis.
-    if ((u32)distance_manhattan__3i32.x__i32 + 1 < 3
-            && (u32)distance_manhattan__3i32.y__i32 + 1 < 3
-            && (u32)distance_manhattan__3i32.z__i32 + 1 < 3) {
-        Direction__u8 direction = DIRECTION__NONE;
-        if (distance_manhattan__3i32.x__i32 < 0)
-            direction |= DIRECTION__WEST;
-        else if (distance_manhattan__3i32.x__i32 > 0)
-            direction |= DIRECTION__EAST;
-
-        if (distance_manhattan__3i32.y__i32 < 0)
-            direction |= DIRECTION__SOUTH;
-        else if (distance_manhattan__3i32.y__i32 > 0)
-            direction |= DIRECTION__NORTH;
-
-        if (distance_manhattan__3i32.z__i32 < 0)
-            direction |= DIRECTION__DOWNWARDS;
-        else if (distance_manhattan__3i32.z__i32 > 0)
-            direction |= DIRECTION__UPWARDS;
-
-        move_local_space_manager(
+    if ((u32)distance_manhattan__3i32.x__i32 
+            + GFX_CONTEXT__RENDERING_WIDTH__IN_CHUNKS
+            <= GFX_CONTEXT__RENDERING_WIDTH__IN_CHUNKS<<1
+            && (u32)distance_manhattan__3i32.y__i32
+            + GFX_CONTEXT__RENDERING_HEIGHT__IN_CHUNKS
+            <= GFX_CONTEXT__RENDERING_HEIGHT__IN_CHUNKS<<1
+            && (u32)distance_manhattan__3i32.z__i32
+            + GFX_CONTEXT__RENDERING_DEPTH__IN_CHUNKS
+            <= GFX_CONTEXT__RENDERING_DEPTH__IN_CHUNKS<<1) {
+        slide_local_space_manager(
                 p_local_space_manager, 
                 p_game, 
-                direction);
-
+                center_of__local_space_manager__3i32);
         return;
     }
 
@@ -915,15 +905,15 @@ Tile *get_p_tile_by__3i32F4_from__local_space_manager(
             local_tile_vector__3u8);
 }
 
-void poll_local_space_for__scrolling(
+void slide_local_space_manager(
         Local_Space_Manager *p_local_space_manager,
         Game *p_game,
-        Global_Space_Manager *p_global_space_manager,
         Global_Space_Vector__3i32 global_space_vector__center__3i32) {
     if (is_vectors_3i32__equal(
                 global_space_vector__center__3i32, 
                 p_local_space_manager
                 ->center_of__local_space_manager__3i32)) {
+        // Idempotent short circuit
         return;
     }
 

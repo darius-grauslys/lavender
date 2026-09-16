@@ -12,6 +12,7 @@ Options:
     --executable, -e   Game executable path
     --config           Path to config JSON file
     --log              Log file/directory for MCP tool calls
+    --script           File of ';' separated CLI commands to run before the REPL
     --no-session-routing  Use single shared session
     --help, -h         Show this help message
 
@@ -66,6 +67,9 @@ def parse_args():
                         help="Path to config JSON file")
     parser.add_argument("--log", default="/tmp/lav-log/",
                         help="Log file/directory for MCP tool calls")
+    parser.add_argument("--script", default=None,
+                        help="File of ';' separated CLI commands to run "
+                             "before entering the REPL")
     parser.add_argument("--no-session-routing", action="store_true",
                         help="Use single shared session")
     parser.add_argument("-h", "--help", action="store_true",
@@ -81,8 +85,10 @@ Commands:
   start              → session_start  (launch game under GDB)
   status             → session_status (check running/halted/crashed)
   stop               → session_stop   (exit GDB)
+  trace              → trace          (toggle Process + receive-marker hooks; ON by default)
+  trace ga           → trace          (toggle deep Game_Action dispatch trace; OFF by default)
 
-  step [count]       → navigate_step  (advance one or more game frames)
+  step [count] [T]   → navigate_step  (advance frames; T=watchdog secs, -1=unbounded)
   bt                 → navigate_source (backtrace + source)
 
   core dump          → core_dump      (extract coredump)
@@ -97,6 +103,17 @@ Commands:
 
   ui list            → ui_list        (list all UI elements across managers)
   ui invoke <handler> <ptr> [extra_args...] → ui_invoke (invoke UI element handler)
+
+  client list        → client_list    (connected clients + local-space center)
+  client actions [dir] → client_actions (tally a client's game-action queue by kind)
+
+  Syntax:
+    Separate commands with ';' to run them in one line, e.g.:
+      start; step; ui list; ui invoke clicked [type=*Button,n=1]
+    `[]` selectors name a UI element from the most recent `ui list` instead of
+    a raw ptr (space-free): [type=*Button,n=2] = 2nd Button, [idx=0] = 1st.
+    CLI option `--script FILE` reads FILE using the same ';' grammar, runs it,
+    then yields control to this REPL.
 
   screenshot [path]  → graphics_screenshot (capture screenshot)
 
@@ -119,49 +136,61 @@ def resolve_log_file(args):
         return str(p)
 
 
-def run_repl(args, session_manager, call_tool):
-    """Run the interactive REPL loop."""
-    print(f"=== verify_cli (Layered MCP) ===")
-    if args.executable:
-        print(f"Executable: {args.executable}")
-    if args.config:
-        print(f"Config: {args.config}")
-    print(f"Single session: {args.no_session_routing}")
-    print("Type 'help' for commands.")
+def split_commands(cmdline: str) -> list[str]:
+    """Split a CLI line into sub-commands on ';' (each run in sequence).
 
-    while True:
-        try:
-            cmdline = input("mcp> ").strip()
-        except (EOFError, KeyboardInterrupt):
-            print("\nquit")
-            break
+    Naive split on ';'. This is safe for the supported grammar: `[]` selectors
+    are space-free and contain no ';', and command arguments do not embed ';'.
+    (A future bracket/quote-aware splitter could relax that.) Whitespace-only
+    fragments are dropped.
+    """
+    return [s.strip() for s in cmdline.split(";") if s.strip()]
 
-        if not cmdline:
-            continue
 
-        parts = cmdline.split()
-        cmd = parts[0].lower()
-        args_list = parts[1:]
+def _dispatch(cmdline: str, call_tool) -> bool:
+    """Dispatch one (already ';'-split) command line.
 
-        if cmd == "quit" or cmd == "exit":
-            break
-        elif cmd == "help":
-            show_help()
-        elif cmd == "start":
-            _call_and_print("session_start", call_tool)
-        elif cmd == "status":
-            _call_and_print("session_status", call_tool)
-        elif cmd == "stop":
-            _call_and_print("session_stop", call_tool)
-        elif cmd == "step":
-            count = int(args_list[0]) if args_list else 1
-            _call_and_print("navigate_step", call_tool, {"count": count})
-        elif cmd == "bt":
-            _call_and_print("navigate_source", call_tool)
-        elif cmd == "core":
-            if len(args_list) < 1:
-                print("  usage: core dump|load <uuid>|reset")
-                continue
+    Returns False if the line is quit/exit (the caller stops the loop), True
+    otherwise.
+    """
+    parts = cmdline.split()
+    if not parts:
+        return True
+    cmd = parts[0].lower()
+    args_list = parts[1:]
+
+    if cmd == "quit" or cmd == "exit":
+        return False
+    elif cmd == "help":
+        show_help()
+    elif cmd == "start":
+        _call_and_print("session_start", call_tool)
+    elif cmd == "status":
+        _call_and_print("session_status", call_tool)
+    elif cmd == "stop":
+        _call_and_print("session_stop", call_tool)
+    elif cmd == "trace":
+        # `trace` (no arg) toggles the Process + receive-marker hooks (ON by
+        # default); `trace ga` toggles the deep Game_Action dispatch trace
+        # (OFF by default).
+        kwargs = {}
+        if args_list:
+            kwargs["target"] = args_list[0]
+        _call_and_print("trace", call_tool, kwargs)
+    elif cmd == "step":
+        count = int(args_list[0]) if args_list else 1
+        kwargs = {"count": count}
+        # Optional watchdog timeout: `step N T`. Omitted = default (30s);
+        # T=-1 (or 0) disables the watchdog (unbounded step).
+        if len(args_list) >= 2:
+            kwargs["timeout"] = float(args_list[1])
+        _call_and_print("navigate_step", call_tool, kwargs)
+    elif cmd == "bt":
+        _call_and_print("navigate_source", call_tool)
+    elif cmd == "core":
+        if len(args_list) < 1:
+            print("  usage: core dump|load <uuid>|reset")
+        else:
             sub = args_list[0]
             if sub == "dump":
                 _call_and_print("core_dump", call_tool)
@@ -171,25 +200,25 @@ def run_repl(args, session_manager, call_tool):
                 _call_and_print("core_reset", call_tool)
             else:
                 print(f"  unknown core subcommand: {sub}")
-        elif cmd == "processes":
-            _call_and_print("process_list", call_tool)
-        elif cmd == "process" and len(args_list) >= 2:
-            if args_list[0] == "watch":
-                _call_and_print("process_watch", call_tool, {"process_ptr": args_list[1]})
-        elif cmd == "input":
-            if len(args_list) < 1:
-                print("  usage: input read|write <flag> <drive|drop>")
-                continue
+    elif cmd == "processes":
+        _call_and_print("process_list", call_tool)
+    elif cmd == "process" and len(args_list) >= 2:
+        if args_list[0] == "watch":
+            _call_and_print("process_watch", call_tool, {"process_ptr": args_list[1]})
+    elif cmd == "input":
+        if len(args_list) < 1:
+            print("  usage: input read|write <flag> <drive|drop>")
+        else:
             sub = args_list[0]
             if sub == "read":
                 _call_and_print("input_read", call_tool)
             elif sub == "write" and len(args_list) >= 3:
                 _call_and_print("input_write", call_tool,
                                 {"flag": args_list[1], "action": args_list[2]})
-        elif cmd == "ui":
-            if len(args_list) < 1:
-                print("  usage: ui list|invoke <handler> <ptr> [extra_args]")
-                continue
+    elif cmd == "ui":
+        if len(args_list) < 1:
+            print("  usage: ui list|invoke <handler> <ptr> [extra_args]")
+        else:
             sub = args_list[0]
             if sub == "list":
                 _call_and_print("ui_list", call_tool)
@@ -204,12 +233,83 @@ def run_repl(args, session_manager, call_tool):
                 elif handler == "typed" and len(args_list) >= 4:
                     kwargs["symbol"] = args_list[3]
                 _call_and_print("ui_invoke", call_tool, kwargs)
-        elif cmd == "screenshot":
-            path = args_list[0] if args_list else None
-            _call_and_print("graphics_screenshot", call_tool,
-                            {"output_path": path} if path else None)
+    elif cmd == "client":
+        if len(args_list) < 1:
+            print("  usage: client list | client actions [outbound|inbound]")
         else:
-            print(f"  unknown command: '{cmd}' (type 'help')")
+            sub = args_list[0]
+            if sub == "list":
+                _call_and_print("client_list", call_tool)
+            elif sub == "actions":
+                direction = args_list[1] if len(args_list) >= 2 else "outbound"
+                _call_and_print("client_actions", call_tool,
+                                {"direction": direction})
+            else:
+                print(f"  unknown client subcommand: {sub} "
+                      f"(list | actions)")
+    elif cmd == "screenshot":
+        path = args_list[0] if args_list else None
+        _call_and_print("graphics_screenshot", call_tool,
+                        {"output_path": path} if path else None)
+    else:
+        print(f"  unknown command: '{cmd}' (type 'help')")
+    return True
+
+
+def run_script(script_path, call_tool):
+    """Run a file of ';' separated CLI commands.
+
+    The file is read as one command string and split with split_commands(),
+    so the same grammar as the REPL applies. Returns True on success, False if
+    the script contains an explicit quit/exit command, and None if the script
+    could not be read.
+    """
+    try:
+        with open(script_path, "r") as f:
+            cmdline = f.read()
+    except OSError as e:
+        print(f"ERROR: cannot read script {script_path}: {e}")
+        return None
+
+    if not cmdline.strip():
+        return True
+
+    print(f"=== running script {script_path} ===")
+    for sub_cmd in split_commands(cmdline):
+        if not _dispatch(sub_cmd, call_tool):
+            return False
+    return True
+
+
+def run_repl(args, session_manager, call_tool):
+    """Run the interactive REPL loop."""
+    print(f"=== verify_cli (Layered MCP) ===")
+    if args.executable:
+        print(f"Executable: {args.executable}")
+    if args.config:
+        print(f"Config: {args.config}")
+    print(f"Single session: {args.no_session_routing}")
+    print("Type 'help' for commands. Separate commands with ';' to run in sequence.")
+
+    while True:
+        try:
+            cmdline = input("mcp> ").strip()
+        except (EOFError, KeyboardInterrupt):
+            print("\nquit")
+            break
+
+        if not cmdline:
+            continue
+
+        # Support ';' as a command separator: run each sub-command in order.
+        # A sub-command that is quit/exit stops the whole loop.
+        for sub_cmd in split_commands(cmdline):
+            if not _dispatch(sub_cmd, call_tool):
+                print("\nquit")
+                break
+        else:
+            continue
+        break
 
     # Cleanup
     session_manager.close()
@@ -248,6 +348,16 @@ def main():
 
     # Create the tool client (wrapping dispatch_tool)
     call_tool = make_tool_client(session_manager)
+
+    # Optionally run a script before yielding to the interactive REPL.
+    if args.script:
+        script_result = run_script(args.script, call_tool)
+        if script_result is None:
+            session_manager.close()
+            return 1
+        if script_result is False:
+            session_manager.close()
+            return 0
 
     # Run the REPL
     try:

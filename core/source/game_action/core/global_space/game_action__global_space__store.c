@@ -7,6 +7,7 @@
 #include "game_action/game_action_logic_table.h"
 #include "process/game_action_process.h"
 #include "process/process.h"
+#include "process/process_manager.h"
 #include "world/chunk_pool.h"
 #include "world/global_space.h"
 #include "world/global_space_manager.h"
@@ -61,6 +62,14 @@ void m_process__game_action__global_space__store(
     }
 
     complete_process(p_this_process);
+    // TODO: This is breaking the process_manager post condition that
+    // processes do not release themselves in case they have a process
+    // enqueued behind them. By releasing like this we might orphan
+    // processes enqueued.
+    release_process_from__process_manager(
+            p_game, 
+            get_p_process_manager_from__game(p_game), 
+            p_this_process);
 }
 
 void register_game_action__global_space__store(

@@ -4,6 +4,7 @@
 #include "defines.h"
 #include "defines_weak.h"
 #include "serialization/hashing.h"
+#include <collisions/hitbox_context.h>
 
 void *f_hitbox_manager__allocator_AABB(
         Hitbox_Manager_Type the_type_of__hitbox_manager_to__allocate,
@@ -20,6 +21,7 @@ bool f_hitbox_manager__opaque_property_access_of__hitbox_AABB(
         void *pV_OPTIONAL_velocity,
         void *pV_OPTIONAL_acceleration,
         Hitbox_Flags__u8 *p_OPTIONAL_hitbox_flags__u8,
+        Hitbox_Flags__u8 *p_OPTIONAL_hitbox_flags__mask__u8,
         bool is_setting_or__getting);
 
 void initialize_hitbox_aabb_manager(
@@ -68,5 +70,13 @@ Hitbox_AABB *get_p_hitbox_aabb_by__index_from__hitbox_aabb_manager(
         ->pM_ptr_array_of__hitbox_records[
         index_of__hitbox];
 }
+
+#define GET_P_HITBOX_AABB_MANAGER(p_game, UUID) \
+    GET_P_HITBOX_MANAGER(p_game, UUID, Hitbox_AABB_Manager)
+
+#define GET_P_HITBOX_AABB_MANAGER_FROM__GAME_WORLD(p_game) \
+    GET_P_HITBOX_MANAGER(p_game, \
+            GET_UUID_P(get_p_world_from__game(p_game)), \
+            Hitbox_AABB_Manager)
 
 #endif

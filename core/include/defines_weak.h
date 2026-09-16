@@ -5,6 +5,8 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+#define EXPAND(x) x
+
 /// Forward declarations to various types
 /// within define.h
 
@@ -546,6 +548,35 @@ typedef struct Chunk_Manager_t Chunk_Manager;
 typedef struct Chunk_t Chunk;
 typedef struct Chunk_Manager__Chunk_Map_Node_t Chunk_Manager__Chunk_Map_Node;
 typedef struct Tile_t Tile;
+
+#define DECLARE_TILE_FIELD(type, bit_size, name)\
+    type name : bit_size
+#define _DECLARE_TILE_FIELD__0(type, bit_size, name, ...) \
+    DECLARE_TILE_FIELD(type, bit_size, name)
+
+#define _DECLARE_TILE_FIELD__1(type, bit_size, name, ...) \
+    _DECLARE_TILE_FIELD__0(type, bit_size, name); \
+    _DECLARE_TILE_FIELD__0(type, bit_size, __VA_ARGS__)
+
+#define _DECLARE_TILE_FIELD__2(type, bit_size, name, ...) \
+    _DECLARE_TILE_FIELD__0(type, bit_size, name); \
+    _DECLARE_TILE_FIELD__1(type, bit_size, __VA_ARGS__)
+
+#define _DECLARE_TILE_FIELD__3(type, bit_size, name, ...) \
+    _DECLARE_TILE_FIELD__0(type, bit_size, name); \
+    _DECLARE_TILE_FIELD__2(type, bit_size, __VA_ARGS__)
+
+#define _DECLARE_TILE_FIELD__4(type, bit_size, name, ...) \
+    _DECLARE_TILE_FIELD__0(type, bit_size, name); \
+    _DECLARE_TILE_FIELD__3(type, bit_size, __VA_ARGS__)
+
+#define _DECLARE_TILE_FIELD__5(type, bit_size, name, ...) \
+    _DECLARE_TILE_FIELD__0(type, bit_size, name); \
+    _DECLARE_TILE_FIELD__4(type, bit_size, __VA_ARGS__)
+
+#define _DECLARE_TILE_FIELD__MACRO_SELECT(_1, _2, _3, _4, _5, NAME, ...) NAME
+#define DECLARE_TILE_LAYER(type, bit_size, name, ...) \
+    union { EXPAND(_DECLARE_TILE_FIELD__MACRO_SELECT(__VA_ARGS__, _DECLARE_TILE_FIELD__5, _DECLARE_TILE_FIELD__4, _DECLARE_TILE_FIELD__3, _DECLARE_TILE_FIELD__2, _DECLARE_TILE_FIELD__1, _DECLARE_TILE_FIELD__0)(type, bit_size, name, ##__VA_ARGS__)) }
 
 typedef uint8_t Tile_Flags__u8;
 typedef uint16_t Tile_Logic_Flags__u16;

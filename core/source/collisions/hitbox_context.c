@@ -241,6 +241,7 @@ bool opaque_access_to__hitbox(
         void *pV_OPTIONAL_velocity,
         void *pV_OPTIONAL_acceleration,
         Hitbox_Flags__u8 *p_OPTIONAL_hitbox_flags__u8,
+        Hitbox_Flags__u8 *p_OPTIONAL_hitbox_flags__mask__u8,
         bool is_setting_or__getting) {
     Hitbox_Manager_Instance *p_hitbox_manager_instance =
         get_p_hitbox_manager_instance_using__uuid_from__hitbox_context(
@@ -270,6 +271,7 @@ bool opaque_access_to__hitbox(
                     pV_OPTIONAL_velocity,
                     pV_OPTIONAL_acceleration,
                     p_OPTIONAL_hitbox_flags__u8,
+                    p_OPTIONAL_hitbox_flags__mask__u8,
                     is_setting_or__getting);
 
     return true;

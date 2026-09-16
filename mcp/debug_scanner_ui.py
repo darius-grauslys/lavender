@@ -96,6 +96,59 @@ class DebugUIScanner(DebugScannerBase):
     _GET_SCANNER_EXPR = "debug_get_ui_scanner(&game)"
     _TOP_LEVEL_FIELDS = DEBUG_UI_SCANNER_FIELDS
 
+    # Type-homogeneous groups of the top-level fields for batched reads. GDB
+    # prints a whole brace-list in one round-trip but REJECTS mixed-type lists,
+    # so each group casts its elements to one type. Within a group, field order
+    # must match the printed value order. Single-field groups (the enum and the
+    # u32[8] qty-array, which can't share a scalar brace-list) are read with one
+    # -data-evaluate-expression. See PLANS/ui_scan_latency.md.
+    _FIELD_GROUPS = (
+        ("void*", ("p_ui_context", "p_ui_manager__current",
+                   "p_ptr_ui_element__current", "p_ui_element__current",
+                   "p_parent__current", "p_child__current", "p_next__current")),
+        ("void*", ("m_next_manager", "m_next_element", "m_refresh",
+                   "m_ui_clicked_handler__current",
+                   "m_ui_dragged_handler__current",
+                   "m_ui_dropped_handler__current",
+                   "m_ui_receive_drop_handler__current",
+                   "m_ui_held_handler__current",
+                   "m_ui_typed_handler__current",
+                   "m_ui_transformed_handler__current",
+                   "m_ui_compose_handler__current",
+                   "m_ui_dispose_handler__current")),
+        ("unsigned int", ("uuid_of__ui_manager__current",
+                          "uuid_of__ui_element__current",
+                          "max_quantity_of__ui_managers__u32")),
+        (None, ("the_kind_of__ui_element__current",)),
+        (None, ("array_of__quantity_of__elements_in__all_managers__u32",)),
+    )
+
+    def _build_top_level_table(self) -> dict:
+        """Read the 24 top-level fields in ~5 round-trips instead of 24.
+
+        Multi-field groups go through one console ``print {…}`` (GDB prints the
+        whole brace-list); single-field groups use one ``-data-evaluate-
+        expression``. This is the bulk of the ui-scan latency win (see
+        PLANS/ui_scan_latency.md): ~4.9 s of per-field reads collapses to ~1 s.
+        """
+        out: dict = {}
+        for cast, fields in self._FIELD_GROUPS:
+            if len(fields) == 1:
+                f = fields[0]
+                expr = (f"({cast}){self.SCANNER_VAR}.{f}" if cast
+                        else f"{self.SCANNER_VAR}.{f}")
+                out[f] = self._eval(expr)
+                continue
+            if cast:
+                inner = ", ".join(
+                    f"({cast}){self.SCANNER_VAR}.{f}" for f in fields)
+            else:
+                inner = ", ".join(f"{self.SCANNER_VAR}.{f}" for f in fields)
+            values = self._parse_value_array(self._console_print(inner))
+            for f, v in zip(fields, values):
+                out[f] = v
+        return out
+
     # -- enrichment: batched iteration --------------------------------------- #
 
     def _enrich_table(self, table: dict) -> None:
@@ -399,23 +452,22 @@ class DebugUIScanner(DebugScannerBase):
     def _normalize_handler_ptr(value: str | None) -> str | None:
         """Normalize a function pointer value.
 
-        Returns the pointer address as a hex string, or None if the
-        handler is not set (null/zero).
+        Returns the pointer value as gdb printed it — the hex address **plus
+        its ``<symbol>`` annotation when present** (e.g. ``0x555555562f90
+        <m_ui_button__clicked_handler__singleplayer>``) — or None if the
+        handler is not set (null/zero). Keeping the annotation is deliberate:
+        it carries the handler's function name for free, so callers do not
+        need an extra GDB round-trip to resolve it (see
+        PLANS/ui_scan_latency.md).
         """
         if not value:
             return None
         text = value.strip()
         if not text or text == "0" or text == "0x0":
             return None
-        # Extract the address from gdb's output format:
-        # "0x555555570740 <__m_debug_ui_scanner__n..."
-        addr_match = re.match(r"(0x[0-9a-fA-F]+)", text)
-        if addr_match:
-            return addr_match.group(1)
-        # Already a clean hex address?
-        if text.startswith("0x"):
-            return text
-        return text if text else None
+        if re.match(r"0x[0-9a-fA-F]+", text):
+            return text  # "0xADDR" or "0xADDR <symbol>"
+        return text
 
     @staticmethod
     def _normalize_ptr(value: str | None) -> str | None:

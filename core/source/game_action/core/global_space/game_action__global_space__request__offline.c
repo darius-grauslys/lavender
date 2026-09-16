@@ -8,6 +8,7 @@
 #include "platform_defines.h"
 #include "process/game_action_process.h"
 #include "process/process.h"
+#include "process/process_manager.h"
 #include "serialization/serialization_header.h"
 #include "world/global_space.h"
 #include "world/global_space_manager.h"
@@ -20,8 +21,6 @@ void m_process__game_action__global_space__request__outbound_offline(
         (Game_Action*)p_this_process->p_process_data;
     Vector__3i32 gsv__3i32 =
         get_gsv_3i32_from__ga_global_space__request(p_game_action);
-    // TODO: this early complete looks wrong
-    complete_process(p_this_process);
 
     Global_Space *p_global_space =
         get_p_global_space_from__global_space_manager(
@@ -45,6 +44,8 @@ void m_process__game_action__global_space__request__outbound_offline(
     dispatch_game_action__global_space__resolve(
             p_game, 
             gsv__3i32);
+
+    complete_process(p_this_process);
 }
 
 void register_game_action__global_space__request_for__offline(

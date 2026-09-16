@@ -12,11 +12,6 @@ void manage_world(Game *p_game);
 
 void manage_world__entities(Game *p_game);
 
-Entity *allocate_entity_into__world(
-        Game *p_game,
-        enum Entity_Kind the_kind_of_entity,
-        Vector__3i32F4 position__3i32F4);
-
 bool poll_world_for__scrolling(
         Game *p_game,
         World *p_world,

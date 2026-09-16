@@ -6,6 +6,13 @@
 #include "game_action/game_action_manager.h"
 #include "serialization/serialized_field.h"
 
+void f_object_handler__client__activate(
+        Game *p_game,
+        Identifier__u32 uuid_of__object__u32);
+void f_object_handler__client__deactivate(
+        Game *p_game,
+        Identifier__u32 uuid_of__object__u32);
+
 void initialize_client(
         Client *p_client,
         Identifier__u32 uuid__u32,
@@ -21,10 +28,26 @@ bool dispatch_game_action_for__client(
         Game_Action *p_game_action,
         Process **p_ptr_OUT_process);
 
+///
+/// Manages local_space_manager movements of the client.
+///
+void poll_client_for__local_space_movement(
+        Game *p_game,
+        Client *p_client);
+
+///
+/// Attempts to dispatch a teleportation process, if it fails
+/// nullptr is returned, otherwise the process pointer is returned.
+///
+/// If the process is dispatched, the client is disabled to keep
+/// subsequent calls to teleport_client idempotent while
+/// teleportation is still resolving.
+///
 Process *teleport_client(
         Game *p_game,
         Client *p_client,
         Vector__3i32F4 position__3i32F4);
+
 
 ///
 /// Logcially handle an inbound allocated game_action.

@@ -8,6 +8,7 @@
 #include "game_action/game_action_logic_table.h"
 #include "process/game_action_process.h"
 #include "process/process.h"
+#include "process/process_manager.h"
 #include "serialization/serialization_header.h"
 #include "world/chunk_generator_table.h"
 #include "world/chunk_pool.h"
@@ -138,7 +139,7 @@ void m_process__game_action__global_space__resolve(
         get_default_chunk_generator_process(
                 get_p_chunk_generation_table_from__game(p_game));
     if (!m_process__chunk_generator) {
-        debug_error("null");
+        debug_error("m_process__game_action__global_space__resolve, m_process__chunk_generator == 0.");
         memset(&get_p_chunk_from__global_space(p_global_space)
                 ->chunk_data,
                 0,
@@ -146,6 +147,7 @@ void m_process__game_action__global_space__resolve(
         complete_process(p_this_process);
         return;
     }
+    // Mutate the current process into a chunk generation process.
     p_this_process->m_process_dispose__handler(
             p_this_process,
             p_game);

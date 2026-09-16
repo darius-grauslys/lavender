@@ -1,6 +1,7 @@
 #include "world/chunk_generator_table.h"
 #include "defines_weak.h"
 #include "platform_defines.h"
+#include "process/process.h"
 #include "world/chunk.h"
 #include "world/global_space.h"
 #include "defines.h"
@@ -44,6 +45,7 @@ static void _m_chunk_generator__default(
 #if CHUNK__DEPTH > 1
     }
 #endif
+    complete_process(p_this_process);
 }
 
 void initialize_chunk_generator_table(

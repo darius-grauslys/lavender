@@ -14,7 +14,9 @@ is raised as an exception.
 from __future__ import annotations
 
 import os
+import re
 import sys
+from fnmatch import fnmatch
 from typing import Any, Callable
 
 # We import the existing scanner drivers and command implementations from
@@ -84,6 +86,12 @@ def invoke(alias: str, gdb: GDBSession, config: LavConfig, **kwargs: Any) -> str
         raise CommandError(f"Unknown scanner driver alias: '{alias}'. "
                           f"Registered: {list_drivers()}")
 
+    # Resolve any `[]` selectors in string kwargs against the session's cached
+    # scanner table (see resolve_value) before dispatching. Non-string kwargs
+    # pass through untouched. This is the single seam: a future path-query DSL
+    # extends resolve_value, never the dispatch call sites.
+    kwargs = {k: resolve_value(gdb, v) for k, v in kwargs.items()}
+
     try:
         return driver(gdb, config, kwargs)
     except CommandError:
@@ -104,6 +112,8 @@ COMMAND_ALIASES = {
     "session_start": "session_start",
     "session_status": "session_status",
     "session_stop": "session_stop",
+    # Trace toggle
+    "trace": "trace",
     # Navigation commands
     "navigate_step": "step",  # MCP tool name -> driver alias
     "step": "step",            # CLI shorthand
@@ -117,6 +127,11 @@ COMMAND_ALIASES = {
     # Process commands
     "process_list": "process_list",
     "process_watch": "process_watch",
+    "process_handler": "process_handler",
+    "process_pool": "process_pool",
+    # Client commands
+    "client_list": "client_list",
+    "client_actions": "client_actions",
     # Input commands
     "input_read": "input_read",
     "input_write": "input_write",
@@ -147,3 +162,118 @@ def get_required_kwargs(alias: str) -> list[str]:
     # In the full implementation, this would be metadata from the driver.
     # For now, return empty list (no required kwargs).
     return []
+
+
+# -- `[]` selector resolution (pointer delimiters) --------------------------- #
+#
+# A command argument may embed a `[...]` selector to name a scanner-table entry
+# by a stable property instead of a raw pointer, e.g.:
+#     ui invoke clicked [type=*Button,n=2]
+# The selector is resolved against the session's cached scanner table
+# (GDBSession._ui_cache, populated by ui_list and cleared by the
+# initialize_ui_manager hook) and substituted for the raw pointer before the
+# driver runs.
+#
+# The UI's element pointers are stable pool-slot addresses (they do not dangle
+# across a UI rebuild), so a cached entry stays address-valid; only its
+# contents (kind/handlers) can change, which `ui list` + the init hook refresh.
+#
+# FORWARD-COMPATIBLE SEAM: `invoke()` only ever calls resolve_value(). A future
+# full path-query DSL ("a.b.c.[idx=2].e.f.[type=*X]") extends
+# parse_selector()/select_from()/resolve_value() to walk dotted paths; the
+# dispatch call sites do not change.
+
+# A `[...]` selector: the body contains no nested brackets (space-free tokens).
+_SELECTOR_RE = re.compile(r"\[([^\[\]]*)\]")
+
+
+def parse_selector(body: str) -> dict:
+    """Parse a selector body into a dict.
+
+    Supported now:
+      - 'type'  wildcard (fnmatch) matched against an item's 'kind'
+      - 'n'     1-based ordinal within the type-matched set (n=1 is "first")
+      - 'idx'   0-based positional index into the (filtered) set
+    Unknown keys are preserved verbatim so a future DSL extends parsing without
+    breaking existing selectors.
+    """
+    sel: dict = {}
+    for part in body.split(","):
+        part = part.strip()
+        if not part:
+            continue
+        if "=" in part:
+            k, v = part.split("=", 1)
+            k, v = k.strip(), v.strip()
+        else:
+            k, v = part, ""
+        if k in ("n", "idx"):
+            sel[k] = int(v) if v.isdigit() else None
+        else:
+            sel[k] = v
+    return sel
+
+
+def _flatten_ui_elements(cache) -> list:
+    """Flatten a ui_list table into an ordered list of element items.
+
+    Order matches ui_list's display order (managers sorted by ptr, then
+    elements sorted by ptr), so "first/second" are deterministic across
+    re-lists of an unchanged UI. Each item: {'ptr','kind','uuid','manager'}.
+    """
+    items: list = []
+    if not cache:
+        return items
+    for mgr_ptr, mgr in sorted((cache.get("ui_managers") or {}).items()):
+        for el_ptr, info in sorted(((mgr or {}).get("ui_elements") or {}).items()):
+            items.append({
+                "ptr": el_ptr,
+                "kind": (info or {}).get("kind", ""),
+                "uuid": (info or {}).get("uuid"),
+                "manager": mgr_ptr,
+            })
+    return items
+
+
+def select_from(items: list, sel: dict):
+    """Apply a selector to a flat item list; return the matching item or None.
+
+    'type' filters by fnmatch on the item's 'kind'; 'n' picks the 1-based
+    ordinal within the filtered set; 'idx' picks the 0-based position. With no
+    n/idx, a single candidate is returned, else None (ambiguous/no match).
+    """
+    cands = list(items)
+    if sel.get("type"):
+        cands = [it for it in cands
+                 if fnmatch(str(it.get("kind", "")), sel["type"])]
+    if sel.get("n") is not None:
+        i = sel["n"] - 1
+        return cands[i] if 0 <= i < len(cands) else None
+    if sel.get("idx") is not None:
+        return cands[sel["idx"]] if 0 <= sel["idx"] < len(cands) else None
+    return cands[0] if len(cands) == 1 else None
+
+
+def resolve_value(gdb, value):
+    """Resolve any `[...]` selector(s) in a string value against the
+    per-session UI cache, substituting each matched element's pointer.
+
+    This is the single seam the dispatcher uses for all `[]` resolution; a
+    future path-query DSL extends it here (parse dotted paths, walk the table)
+    rather than touching call sites. Non-string values and strings with no
+    `[...]` are returned unchanged.
+    """
+    if not isinstance(value, str) or not _SELECTOR_RE.search(value):
+        return value
+    items = _flatten_ui_elements(getattr(gdb, "_ui_cache", None))
+
+    def _sub(match):
+        sel = parse_selector(match.group(1))
+        item = select_from(items, sel)
+        if item is None:
+            raise CommandError(
+                f"selector '{match.group(0)}' matched no UI element "
+                f"(run `ui list` to refresh the cache first)")
+        return str(item.get("ptr"))
+
+    return _SELECTOR_RE.sub(_sub, value)

@@ -145,7 +145,7 @@ class DebugScannerBase(GDBFrameController):
         Must be called after :meth:`get_scanner`.
         """
         if self._table_cache is None:
-            table = self._read_struct(self.SCANNER_VAR, self._TOP_LEVEL_FIELDS)
+            table = self._build_top_level_table()
             self._enrich_table(table)
             self._table_cache = table
         return self._table_cache
@@ -232,6 +232,50 @@ class DebugScannerBase(GDBFrameController):
         for field in fields:
             _set_path(out, field, self._eval(f"{expr}.{field}"))
         return out
+
+    def _build_top_level_table(self) -> dict:
+        """Build the top-level field table. Default reads each field with one
+        ``-data-evaluate-expression`` (one round-trip per field). Subclasses
+        whose fields are type-groupable may override this to read several
+        fields per round-trip (e.g. ``DebugUIScanner`` batches them into
+        console brace-lists). The returned dict has one key per top-level
+        field (same shape as :meth:`_read_struct`).
+        """
+        return self._read_struct(self.SCANNER_VAR, self._TOP_LEVEL_FIELDS)
+
+    def _parse_value_array(self, text: str) -> list:
+        """Parse a console ``$N = {v1, v2, ...}`` value array into a list.
+
+        Splits on top-level commas (respecting nested braces). Returns a list
+        of raw value strings. If no brace array is found, returns a single
+        element list holding the (``$N = ``-stripped) value, so callers can
+        treat both forms uniformly.
+        """
+        text = text or ""
+        m = re.search(r"=\s*\{(.*)\}\s*$", text, re.DOTALL)
+        if not m:
+            stripped = text.strip()
+            if "=" in stripped:
+                stripped = stripped.split("=", 1)[1].strip()
+            return [stripped] if stripped else []
+        parts: list[str] = []
+        depth = 0
+        cur = ""
+        for ch in m.group(1):
+            if ch == "{":
+                depth += 1
+                cur += ch
+            elif ch == "}":
+                depth -= 1
+                cur += ch
+            elif ch == "," and depth == 0:
+                parts.append(cur.strip())
+                cur = ""
+            else:
+                cur += ch
+        if cur.strip():
+            parts.append(cur.strip())
+        return parts
 
     @staticmethod
     def _is_null(value: str | None) -> bool:

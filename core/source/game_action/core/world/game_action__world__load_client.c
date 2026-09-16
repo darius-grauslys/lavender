@@ -1,3 +1,4 @@
+#include "collisions/collision_utils.h"
 #include <game_action/core/world/game_action__world__load_client.h>
 #include <client.h>
 #include <collisions/hitbox_context.h>
@@ -117,6 +118,10 @@ void m_process__game_action__world__load_client__outbound(
         } else {
             if (p_hitbox_aabb)
                 set_hitbox_aabb_as__active(p_hitbox_aabb);
+            attach_object_to__collision_system(
+                    p_game, 
+                    get_p_world_from__game(p_game), 
+                    GET_UUID_P(p_client));
             set_client_as__active(p_client);
             complete_process(p_this_process);
             return;

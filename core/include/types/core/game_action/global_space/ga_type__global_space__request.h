@@ -77,7 +77,7 @@ Timer__u32 *get_p_timeout_timer_u32_from__ga_global_space__request(
     return &GET_P_GAME_ACTION_PAYLOAD_AS_P(
             p_game_action, 
             GA_Global_Space__Request)
-        ->gsv_3i32
+        ->timeout__timer_u32
         ;
 }
 

@@ -408,10 +408,10 @@ landed_on_ground:;
     Tile *p_tile = get_p_tile_by__3i32F4_from__local_space_manager(
             p_local_space_manager, 
             get_position_3i32F4_of__hitbox_aabb(p_hitbox_aabb));
-    if (!poll__is_tile__without_ground(
+    if ((!p_tile || !poll__is_tile__without_ground(
                 get_p_tile_logic_context_from__world(
                     get_p_world_from__game(p_game)),
-                p_tile)
+                p_tile))
             && (p_hitbox_aabb->position__3i32F4.z__i32F4
             & MASK(TILE__WIDTH_AND__HEIGHT__BIT_SHIFT 
                 + FRACTIONAL_PERCISION_4__BIT_SIZE)) >= TILE_STAIR_HEIGHT) {
@@ -439,8 +439,8 @@ landed_on_ground:;
         Tile_Logic_Context *p_tile_logic_context =
             get_p_tile_logic_context_from__world(
                     get_p_world_from__game(p_game));
-        if (!poll__is_tile__unpassable(p_tile_logic_context, p_tile)
-                && !poll__is_tile__without_ground(p_tile_logic_context, p_tile)) {
+        if (!p_tile || (!poll__is_tile__unpassable(p_tile_logic_context, p_tile)
+                && !poll__is_tile__without_ground(p_tile_logic_context, p_tile))) {
             dispatch_game_action__hitbox(
                     p_game, 
                     GET_UUID_P(p_hitbox_aabb), 
@@ -498,7 +498,7 @@ landed_on_ground:;
 
         // TODO: rename unpassable to something else,
         // as this is just polling for touch-tile logic.
-        if (poll__is_tile__unpassable(
+        if (!p_tile || poll__is_tile__unpassable(
                     get_p_tile_logic_context_from__world(
                         get_p_world_from__game(p_game)), 
                     p_tile)) {

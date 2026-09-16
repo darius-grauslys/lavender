@@ -92,7 +92,7 @@ bool poll__is_tile__without_ground(
                 p_tile_logic_context, 
                 Tile_Layer__Default__Is_With_Ground,
                 get_tile_kind_from__tile(p_tile));
-    return is_tile_logic_record__without_ground(p_tile_logic_context);
+    return is_tile_logic_record__without_ground(p_tile_logic_record);
 }
 
 static inline
@@ -103,8 +103,12 @@ i32F4 poll__tile_height(
         get_p_tile_logic_record_from__tile_logic_context(
                 p_tile_logic_context, 
                 Tile_Layer__Default__Height,
-                get_tile_kind_from__tile(p_tile));
-    return p_tile_logic_record->tile_height__i32F4;
+                p_tile->Tile_Layer__Default__Height);
+    return 
+        (p_tile_logic_record)
+        ? p_tile_logic_record->tile_height__i32F4
+        : 0
+        ;
 }
 
 #endif

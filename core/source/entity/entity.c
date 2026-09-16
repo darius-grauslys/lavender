@@ -1,5 +1,6 @@
 #include "entity/entity.h"
 #include "client.h"
+#include "collisions/collision_utils.h"
 #include "collisions/core/aabb/hitbox_aabb.h"
 #include "collisions/core/aabb/hitbox_aabb_manager.h"
 #include "collisions/hitbox_context.h"
@@ -17,6 +18,38 @@
 #include "rendering/sprite_manager.h"
 #include "rendering/graphics_window.h"
 #include "world/world.h"
+
+void f_object_handler__entity__activate(
+        Game *p_game,
+        Identifier__u32 uuid_of__object__u32) {
+    Entity *p_entity = 
+        get_p_entity_by__uuid_from__entity_manager(
+                get_p_entity_manager_from__game(p_game), 
+                uuid_of__object__u32);
+
+    if (!p_entity) {
+        // short circuit
+        return;
+    }
+
+    set_entity_as__enabled(p_entity);
+}
+
+void f_object_handler__entity__deactivate(
+        Game *p_game,
+        Identifier__u32 uuid_of__object__u32) {
+    Entity *p_entity = 
+        get_p_entity_by__uuid_from__entity_manager(
+                get_p_entity_manager_from__game(p_game), 
+                uuid_of__object__u32);
+
+    if (!p_entity) {
+        // short circuit
+        return;
+    }
+
+    set_entity_as__disabled(p_entity);
+}
 
 void m_entity_dispose_handler__default(
         Entity *p_this_entity,
@@ -56,6 +89,10 @@ void m_entity_dispose_handler__default(
                 p_this_entity);
 
     if (p_hitbox_aabb) {
+        detach_object_from__collision_system(
+                p_game, 
+                get_p_world_from__game(p_game), 
+                GET_UUID_P(p_this_entity));
         release_hitbox_aabb_from__hitbox_aabb_manager(
                 p_game,
                 p_hitbox_aabb_manager, 

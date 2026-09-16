@@ -1,4 +1,4 @@
-#include "client.h"
+#include <client.h>
 #include "collisions/collision_node.h"
 #include "collisions/collision_node_pool.h"
 #include "collisions/collision_resolver_aabb.h"
@@ -92,9 +92,7 @@ void manage_world(
         get_p_world_from__game(p_game);
 
     Hitbox_AABB_Manager *p_hitbox_aabb_manager =
-        (Hitbox_AABB_Manager*)get_pV_hitbox_manager_from__hitbox_context(
-                get_p_hitbox_context_from__game(p_game), 
-                GET_UUID_P(p_world));
+        GET_P_HITBOX_AABB_MANAGER_FROM__GAME_WORLD(p_game);
 
     poll_collision_resolver_aabb(
             p_game, 
@@ -114,33 +112,18 @@ void manage_world(
             index_of__client
             < get_quantity_of__clients_connect_to__game(p_game);
             index_of__client++) {
-#warning TODO: this must do local_space_manager scrolling based off of client HITBOX, and not the local camera, of which in multiplayer, the server will lack and even if it didn't, it would need one camera per player...
         Client *p_client = 
             get_p_client_by__index_from__game(
                     p_game, 
                     index_of__client);
 
-        if (!p_client) {
+        if (!p_client || !is_client__active(p_client)) {
             continue;
         }
 
-        Hitbox_AABB *p_hitbox_aabb =
-            get_p_hitbox_aabb_by__uuid_u32_from__hitbox_aabb_manager(
-                    p_hitbox_aabb_manager, 
-                    GET_UUID_P(p_client));
-
-        if (!p_hitbox_aabb) {
-            continue;
-        }
-
-        poll_local_space_for__scrolling(
-                get_p_local_space_manager_from__client(p_client), 
+        poll_client_for__local_space_movement(
                 p_game, 
-                get_p_global_space_manager_from__world(
-                    get_p_world_from__game(p_game)), 
-                vector_3i32F4_to__chunk_vector_3i32(
-                    get_position_3i32F4_of__hitbox_aabb(
-                        p_hitbox_aabb)));
+                p_client);
     }
 }
 
@@ -389,7 +372,6 @@ bool poll_for_collision_node_update(
                         p_game)), 
                 get_p_collision_node_from__global_space(
                     p_global_space__new), 
-                gsv__current__3i32,
                 uuid_u32_of__entry);
     }
     return true;

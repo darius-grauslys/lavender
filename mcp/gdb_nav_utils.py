@@ -360,6 +360,7 @@ def _poll_for_stops(
     target_bpnum: int,
     deadline: float,
     timeout: float,
+    heartbeat_func: str | None = None,
 ) -> tuple[bool, str | None]:
     """Poll gdb responses until we hit the target breakpoint, timeout, or EOF.
 
@@ -368,11 +369,19 @@ def _poll_for_stops(
         target_bpnum: The breakpoint number we're waiting for.
         deadline: Absolute time by which we must give up.
         timeout: pygdbmi response timeout in seconds for each get_gdb_response call.
+        heartbeat_func: If set, a breakpoint hit whose frame function is this
+             name is reported as detail "heartbeat" instead of
+             "unexpected_bp". Callers pass a frame-boundary function (e.g.
+             reset__game_tick_timer, called once per game frame) so the step
+             watchdog is extended ONLY on real frame progress — never on
+             bursty hook hits (process/game-action/debug_error), which a
+             stuck game can produce without ever reaching the target frame.
 
     Returns:
         A tuple of (hit_target, last_stop_func):
         - If the target breakpoint was hit, returns (True, func_name).
         - If timeout, returns (False, reason_description).
+        - If a heartbeat breakpoint was hit, returns (False, "heartbeat").
         - If an unexpected breakpoint was hit, returns (False, "unexpected_bp").
 
     Note:
@@ -429,9 +438,12 @@ def _poll_for_stops(
                 func = _get_breakpoint_location(record)
                 if bpnum == target_bpnum:
                     return True, func
-                else:
-                    # Unexpected breakpoint — caller should continue.
-                    return False, "unexpected_bp"
+                if heartbeat_func is not None and func == heartbeat_func:
+                    # Frame boundary crossed — the game is alive. The caller
+                    # extends its watchdog and continues.
+                    return False, "heartbeat"
+                # Unexpected breakpoint — caller should continue.
+                return False, "unexpected_bp"
 
             # Detect signal-received stops (SIGABRT, SIGSEGV, etc.)
             signal = _get_signal_from_stopped(record)
@@ -444,32 +456,48 @@ def _poll_for_stops(
 def step_frame_detailed(
     gdb: "GdbController",
     breakpoint_func: str = "manage_game__post_render",
-    timeout: float = 0.0,  # 0 = unbounded (no overall timeout)
+    timeout: float = 0.0,  # 0 = unbounded (no watchdog)
+    heartbeat_func: str | None = None,
 ) -> tuple[bool, str | None]:
     """Advance execution to a specific frame in the game loop.
 
     Returns a tuple of (hit_target, stop_reason):
         - (True, None): Target breakpoint was hit.
-        - (False, "timeout"): Timeout expired.
+        - (False, "timeout"): Watchdog expired (see *timeout*).
         - (False, "signal_SIGABRT"): Game crashed with a signal (SIGABRT, SIGSEGV, etc.)
-        - (False, "unexpected_bp"): Unexpected breakpoint fired (then timeout).
+        - (False, "heartbeat"): A frame-boundary (heartbeat) breakpoint fired;
+          the caller continues (the watchdog was extended by this function).
+        - (False, "unexpected_bp"): Unexpected breakpoint fired (then continue).
         - (False, "gdb_no_response"): GDB exited or no response.
 
     Sets a temporary breakpoint at *breakpoint_func* using MI3
-    ``-break-insert -t``, then runs gdb until that breakpoint fires or
-    *timeout* seconds elapse. If an unexpected breakpoint fires during the
-    run, gdb is continued again (the timeout keeps ticking), which guards
-    against breakpoint storms and infinite loops that never reach the
-    target frame.
+    ``-break-insert -t``, then runs gdb until that breakpoint fires. If an
+    unexpected breakpoint fires during the run, gdb is continued again.
+
+    Watchdog semantics (*timeout* > 0): the deadline is NOT a fixed cap on
+    the whole step — it is "seconds allowed since the last frame-boundary
+    (*heartbeat_func*) crossing". Every heartbeat hit extends the deadline
+    again, so as long as the game keeps crossing frame boundaries (i.e. it
+    is game-looping), the step never times out — however long each frame
+    takes. Hook hits that do NOT cross a frame boundary (process
+    add/remove, game-action dispatch, debug_error — all of which can fire
+    in tight bursts, including an infinite non-fatal error loop) never
+    extend the deadline, so a game that is alive but stuck inside one
+    frame is detected after *timeout* seconds instead of hanging the step
+    forever (a bp storm keeps the GDB idle-timeout alive, so the idle
+    timeout alone cannot catch it). *timeout* = 0 restores the legacy
+    unbounded behavior (no watchdog).
 
     Args:
         gdb: A ``GdbController`` instance with a binary loaded and
-            execution paused at ``main`` (or similar starting point).
+             execution paused at ``main`` (or similar starting point).
         breakpoint_func: The C function name to break at. Defaults to
             ``manage_game__post_render``, the canonical "end of scene loop"
             frame.
-        timeout: Maximum seconds to wait for the target breakpoint.
-            Defaults to 5.0.
+        timeout: Watchdog in seconds (0 = unbounded / legacy).
+        heartbeat_func: Frame-boundary function whose bp hit extends the
+            watchdog (e.g. ``reset__game_tick_timer``); None = no
+            heartbeat-aware extension.
 
     Example:
         >>> from pygdbmi.gdbcontroller import GdbController
@@ -488,8 +516,10 @@ def step_frame_detailed(
         ...     pass
     """
     start_time = time.monotonic()
-    # timeout=0 means unbounded (no overall deadline)
+    # timeout=0 means unbounded (no watchdog / no overall deadline)
     deadline = start_time + timeout if timeout > 0 else float('inf')
+    # The watchdog anchors to the last frame-boundary (heartbeat) crossing.
+    last_boundary = start_time
 
     # Set a temporary breakpoint at the target function.
     target_bpnum = _add_temporary_breakpoint(gdb, breakpoint_func, timeout)
@@ -511,14 +541,25 @@ def step_frame_detailed(
             _continue(gdb, timeout)
 
             # Poll for stop events — _poll_for_stops consumes all responses.
-            hit_target, detail = _poll_for_stops(gdb, target_bpnum, deadline, timeout)
+            hit_target, detail = _poll_for_stops(
+                gdb, target_bpnum, deadline, timeout,
+                heartbeat_func=heartbeat_func)
 
             if hit_target:
                 return True, None
 
-            if detail == "unexpected_bp":
-                # An unexpected breakpoint fired. Continue running to try
-                # to reach our target before the timeout.
+            if detail == "heartbeat":
+                # A frame boundary was crossed — the game is game-looping.
+                # Extend the watchdog (no-op when timeout=0 / unbounded).
+                if timeout > 0:
+                    last_boundary = time.monotonic()
+                    deadline = last_boundary + timeout
+                continue
+            elif detail == "unexpected_bp":
+                # An unexpected (non-frame-boundary) breakpoint fired.
+                # Continue running to try to reach our target. NOTE: this
+                # deliberately does NOT extend the watchdog — only frame
+                # progress counts as the game being alive.
                 continue
             elif detail == "timeout":
                 return False, "timeout"

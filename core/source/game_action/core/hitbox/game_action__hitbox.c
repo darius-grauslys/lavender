@@ -68,7 +68,8 @@ void m_process__game_action__hitbox(
                     0,
                     0,
                     0,
-                    OPAQUE_HITBOX_ACCESS__GET);
+                    0,
+                    OPAQUE_ACCESS__HITBOX__IS_GETTING);
 
             opaque_access_to__hitbox(
                     get_p_hitbox_context_from__game(p_game), 
@@ -79,7 +80,8 @@ void m_process__game_action__hitbox(
                     &velocity_of__hitbox__3i32F4,
                     &acceleration_of__hitbox__3i16F8,
                     0,
-                    OPAQUE_HITBOX_ACCESS__SET);
+                    0,
+                    OPAQUE_ACCESS__HITBOX__IS_SETTING);
             break;
         case Hitbox_Kind__AABB:
             ;

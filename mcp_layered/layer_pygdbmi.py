@@ -23,6 +23,13 @@ from .debug_response import DebugResponse, ResponseType, parse
 # Hook type: receives list of DebugResponse, returns (possibly modified) list
 GDBHook = Callable[[list[DebugResponse]], list[DebugResponse]]
 
+# Error records are deduplicated per (command, error): only the first
+# GDB_ERROR_LOG_LIMIT occurrences of each distinct pair are written to the
+# log; repeats are counted and summarized once at close(). A single
+# repeatedly-failing command (e.g. an unsupported MI command retried by a
+# bursty hook) must not be able to flood the session log.
+GDB_ERROR_LOG_LIMIT = 3
+
 # Signal name → signal number mapping (POSIX standard signals 1-31)
 _SIGNAL_NUM_TO_NAME = {
     "1": "SIGHUP", "2": "SIGINT", "3": "SIGQUIT", "4": "SIGILL",
@@ -105,7 +112,17 @@ class GDBSession:
         self._log_file = log_file
         self._log_all_responses = log_file is not None  # Log ALL responses if file is set
         self._log_error_responses = True  # Always log errors before hooks
+        # (command, error) -> occurrences seen. Dedupes the gdb_error records
+        # (see _log_error_response / GDB_ERROR_LOG_LIMIT); repeats are
+        # summarized once in close().
+        self._error_log_counts: dict[tuple[str, str], int] = {}
         self._last_signal: str | None = None  # Last detected signal (e.g. 'SIGABRT')
+        # True while hooks are being run from *inside* a get_gdb_response/write
+        # (a nested read). A hook that issues GDB commands while nested deadlocks
+        # the connection, so hooks that need GDB I/O must check this and defer.
+        # The timeout-critical poll path (_poll_for_stops) runs hooks via
+        # process_hooks_on_raw() with this flag False = a safe (stopped) context.
+        self._in_nested_read = False
 
         # Store time module for logging timestamps
         import time
@@ -126,7 +143,13 @@ class GDBSession:
             # Check the GdbController's _skip_hooks flag (not self._skip_hooks)
             # so external code can control hook behavior on the controller itself.
             if raw and not getattr(self._gdbmi, '_skip_hooks', False):
-                self.process_hooks_on_raw(raw)
+                # Nested read: hooks run inside get_gdb_response. Flag it so any
+                # hook doing GDB I/O can defer (a nested GDB command deadlocks).
+                self._in_nested_read = True
+                try:
+                    self.process_hooks_on_raw(raw)
+                finally:
+                    self._in_nested_read = False
             return raw
 
         def _activity_timeout_get_gdb_response(*args, **kwargs):
@@ -158,7 +181,11 @@ class GDBSession:
 
             # Run hooks if not skipped
             if raw and not getattr(self._gdbmi, '_skip_hooks', False):
-                self.process_hooks_on_raw(raw)
+                self._in_nested_read = True
+                try:
+                    self.process_hooks_on_raw(raw)
+                finally:
+                    self._in_nested_read = False
 
             return raw
 
@@ -198,10 +225,15 @@ class GDBSession:
                 for r in responses:
                     if r.is_error():
                         self._log_error_response(command, r)
-                # Run hooks if not skipped
+                # Run hooks if not skipped (nested context: a write that reads a
+                # response; flag it so GDB-I/O hooks can defer).
                 if not getattr(self._gdbmi, '_skip_hooks', False):
-                    for hook in self._hooks:
-                        responses = hook(responses)
+                    self._in_nested_read = True
+                    try:
+                        for hook in self._hooks:
+                            responses = hook(responses)
+                    finally:
+                        self._in_nested_read = False
                 # Return raw dicts for backward compatibility
                 return raw
             return raw
@@ -405,6 +437,41 @@ class GDBSession:
         except Exception:
             pass  # Logging must never fail the operation
 
+    def _resolve_log_path(self) -> str | None:
+        """The JSONL file this session logs to (None if unconfigured).
+
+        Mirrors the resolution in _log_responses_to_file: a directory becomes
+        <dir>/gdb_responses.jsonl; a file path is used as-is (the per-session
+        jsonl set via set_log_file)."""
+        import os
+        if not self._log_file:
+            return None
+        log_path = self._log_file
+        if os.path.isdir(log_path):
+            log_path = os.path.join(log_path, "gdb_responses.jsonl")
+        return log_path
+
+    def log_record(self, entry: dict) -> bool:
+        """Append one structured record to the session's JSONL log — the SAME file
+        that carries the GDB-response records — so higher-layer derived data (e.g.
+        a process create/remove/error trace) lives alongside the raw GDB audit
+        trail and is greppable in one place. The record is written verbatim as one
+        JSON line. Returns True if written. Never raises."""
+        import json
+        import os
+        path = self._resolve_log_path()
+        if not path:
+            return False
+        try:
+            d = os.path.dirname(path)
+            if d:
+                os.makedirs(d, exist_ok=True)
+            with open(path, "a") as f:
+                f.write(json.dumps(entry) + "\n")
+            return True
+        except Exception:
+            return False
+
     def remove_hook(self, hook: GDBHook) -> None:
         """Remove a previously registered hook."""
         if hook in self._hooks:
@@ -435,6 +502,28 @@ class GDBSession:
         except Exception:
             pass
         return None
+
+    def delete_breakpoint(self, number) -> bool:
+        """Delete a breakpoint by number (the inverse of set_breakpoint).
+
+        Args:
+            number: The breakpoint number (int or str) returned by set_breakpoint.
+
+        Returns:
+            True if GDB acknowledged the deletion (^done), False otherwise
+            (including when *number* is None — a no-op).
+        """
+        if number is None:
+            return False
+        cmd = f"-break-delete {number}"
+        try:
+            responses = self.write(cmd)
+            for r in responses:
+                if r.type == ResponseType.RESULT and r.raw.get("message") == "done":
+                    return True
+        except Exception:
+            pass
+        return False
 
     def register_breakpoint_hook(
         self,
@@ -537,8 +626,19 @@ class GDBSession:
         return responses
 
     def _log_error_response(self, command: str, response: DebugResponse) -> None:
-        """Log an error response to the log file if one is configured."""
+        """Log an error response to the log file if one is configured.
+
+        Deduplicated per (command, error): only the first GDB_ERROR_LOG_LIMIT
+        occurrences of each distinct pair are written; repeats are counted in
+        self._error_log_counts and summarized once by _log_suppressed_errors()
+        at close(). Logging is best-effort.
+        """
         if self._log_file is None:
+            return
+        key = (command, response.reason)
+        count = self._error_log_counts.get(key, 0) + 1
+        self._error_log_counts[key] = count
+        if count > GDB_ERROR_LOG_LIMIT:
             return
         try:
             import json
@@ -556,6 +656,33 @@ class GDBSession:
             with open(log_path, "a") as f:
                 f.write(json.dumps(record) + "\n")
                 f.flush()
+        except Exception:
+            pass  # logging is best-effort
+
+    def _log_suppressed_errors(self) -> None:
+        """Write one summary record per (command, error) pair whose repeats
+        were suppressed by _log_error_response's dedupe (best-effort)."""
+        if self._log_file is None:
+            return
+        try:
+            import json
+            import os
+            log_path = self._log_file
+            if os.path.isdir(log_path):
+                log_path = os.path.join(log_path, "gdb_responses.jsonl")
+            with open(log_path, "a") as f:
+                for (command, error), count in sorted(self._error_log_counts.items()):
+                    suppressed = count - GDB_ERROR_LOG_LIMIT
+                    if suppressed > 0:
+                        f.write(json.dumps({
+                            "type": "gdb_error",
+                            "timestamp": self._time.time(),
+                            "command": command,
+                            "error": error,
+                            "suppressed_repeats": suppressed,
+                            "total": count,
+                        }) + "\n")
+                        f.flush()
         except Exception:
             pass  # logging is best-effort
 
@@ -586,6 +713,7 @@ class GDBSession:
         if self._closed:
             return 0
         self._closed = True
+        self._log_suppressed_errors()
         return self._gdbmi.exit()
 
     @property
@@ -620,3 +748,165 @@ def on_breakpoint_hook_factory(
                 break
         return responses
     return hook
+
+
+class BreakpointHook:
+    """A named GDB breakpoint paired with a reaction hook, with enable/disable.
+
+    Encapsulates "a breakpoint + the thing that reacts to it" as one toggleable
+    unit:
+
+    - ``enable()``  sets the GDB breakpoint (``-break-insert``) and registers the
+      reaction hook (fired only for this breakpoint's hits).
+    - ``disable()`` deletes the breakpoint (``-break-delete``) and unregisters the
+      hook. While disabled the game neither stops here nor reacts.
+
+    This is what makes verbose tracking (e.g. a hit on *every* process
+    create/remove) cheap to switch off: a disabled hook has no effect on the
+    running game. A future MCP toggle (``trace process on|off``) just calls
+    ``enable``/``disable``.
+
+    Two kinds of reaction are supported:
+    - ``handler`` (a plain GDBHook, ``responses -> responses``): a lightweight
+      reaction fired on every matching hit. It must NOT issue GDB commands.
+    - ``capture`` (a callable ``gdb, responses -> event``): a reaction that MAY
+      issue GDB commands (e.g. read the callee ``-stack-list-frames`` and the hit
+      frame's args). It is run **only in a safe, non-deadlocking context** — the
+      object checks ``GDBSession._in_nested_read`` and skips it while hooks run
+      nested inside a ``get_gdb_response``/``write`` (where a GDB command would
+      deadlock the connection). Its return value is appended to
+      :attr:`captured_events`, to be drained by :meth:`consume_events` from a
+      safe point (e.g. the step driver's post-work).
+
+    This is how a time-sensitive value (the callee stack, which is gone once the
+    transient stop is continued past) is captured *at the hit* yet consumed from
+    a guaranteed-safe section.
+
+    ``target`` may be a function name or a ``file:line`` location.
+
+    Example:
+        hook = BreakpointHook(gdb, "process.add",
+                              "add_process_to__process_table",
+                              capture=capture_process_event)
+        hook.enable()              # on by default
+        ...  # later, at a safe point:
+        for event in hook.consume_events():
+            log(event)
+        hook.disable()             # turn the tracking off
+    """
+
+    def __init__(self, gdb, name: str, target: str,
+                 handler: GDBHook | None = None,
+                 capture: Callable | None = None):
+        """
+        Args:
+            gdb: The GDBSession to attach to.
+            name: A short human label (for logs / diagnostics).
+            target: A function name, or a "file:line" location, to break at.
+            handler: Optional lightweight reaction (``responses -> responses``),
+                fired on every matching hit. Must not issue GDB commands.
+            capture: Optional ``gdb, responses -> event`` reaction that may issue
+                GDB commands; run only in a safe context, result -> captured_events.
+        """
+        self._gdb = gdb
+        self.name = name
+        self._target = target
+        self._handler = handler
+        self._capture = capture
+        self._bp_number = None
+        self._hook: GDBHook | None = None
+        self._enabled = False
+        self.captured_events: list = []
+
+    @property
+    def enabled(self) -> bool:
+        return self._enabled
+
+    @property
+    def bp_number(self):
+        """The GDB breakpoint number while enabled, else None."""
+        return self._bp_number
+
+    @property
+    def target(self) -> str:
+        return self._target
+
+    def _match(self, r: DebugResponse) -> bool:
+        """True if this bp-hit response is at our target (function or file:line)."""
+        target = self._target
+        if r.frame is not None:
+            func, file, line = r.frame.func, r.frame.file, r.frame.line
+        else:
+            fr = (r.payload or {}).get("frame", {}) or {}
+            func, file, line = fr.get("func"), fr.get("file"), fr.get("line")
+        if ":" not in target:
+            # function target: match on the frame function name
+            return bool(func) and (target in func)
+        # file:line target: match on frame file:line
+        file_part, _, line_part = target.rpartition(":")
+        return (file is not None and str(line) == str(line_part) and file_part in file)
+
+    def _react(self, responses: list[DebugResponse]) -> list[DebugResponse]:
+        """Run the reactions for a matching hit: handler (always) + capture (only
+        in a safe, non-nested context)."""
+        if self._handler is not None:
+            responses = self._handler(responses)
+        if self._capture is not None and not self._gdb._in_nested_read:
+            try:
+                event = self._capture(self._gdb, responses)
+            except Exception:
+                event = None  # a capture failure must never break the driver
+            if event is not None:
+                self.captured_events.append(event)
+        return responses
+
+    def _make_hook(self) -> GDBHook:
+        """Build the reaction hook for the target (function or file:line)."""
+        def hook(responses: list[DebugResponse]) -> list[DebugResponse]:
+            for r in responses:
+                if r.is_breakpoint_hit() and self._match(r):
+                    return self._react(responses)
+            return responses
+        return hook
+
+    def consume_events(self) -> list:
+        """Drain and return the events captured since the last call (safe point).
+
+        Call this from a safe, non-deadlocking section (e.g. the step driver's
+        post-work) to read the stack traces / args captured at the hits without
+        issuing any GDB command here.
+        """
+        events, self.captured_events = self.captured_events, []
+        return events
+
+    def enable(self) -> bool:
+        """Set the breakpoint + register the hook. Idempotent.
+
+        Returns True if the breakpoint is active after the call; False if it could
+        not be set (e.g. the symbol is absent/inlined, so no bp was created).
+        """
+        if self._enabled:
+            return True
+        self._bp_number = self._gdb.set_breakpoint(self._target)
+        if self._bp_number is None:
+            return False  # leave disabled
+        self._hook = self._make_hook()
+        self._gdb.add_hook(self._hook)
+        self._enabled = True
+        return True
+
+    def disable(self) -> None:
+        """Delete the breakpoint + unregister the hook. Idempotent."""
+        if not self._enabled:
+            return
+        if self._hook is not None:
+            self._gdb.remove_hook(self._hook)
+            self._hook = None
+        if self._bp_number is not None:
+            self._gdb.delete_breakpoint(self._bp_number)
+            self._bp_number = None
+        self._enabled = False
+
+    def __repr__(self) -> str:
+        state = "enabled" if self._enabled else "disabled"
+        return f"BreakpointHook(name={self.name!r}, target={self._target!r}, {state})"

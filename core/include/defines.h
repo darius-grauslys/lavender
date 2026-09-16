@@ -422,7 +422,11 @@ typedef bool (*f_Hitbox_Manager__Opaque_Property_Access_Of__Hitbox)(
         void *pV_OPTIONAL_velocity,
         void *pV_OPTIONAL_acceleration,
         Hitbox_Flags__u8 *p_OPTIONAL_hitbox_flags__u8,
+        Hitbox_Flags__u8 *p_OPTIONAL_hitbox_flags__mask__u8,
         bool is_setting_or__getting);
+
+#define OPAQUE_ACCESS__HITBOX__IS_SETTING (true)
+#define OPAQUE_ACCESS__HITBOX__IS_GETTING (false)
 
 typedef void *(*f_Hitbox_Manager__Allocate_Hitbox)(
         void *pV_hitbox_manager,
@@ -2423,7 +2427,7 @@ typedef struct Client_t {
     Game_Action_Manager game_action_manager__inbound;
     Game_Action_Manager game_action_manager__outbound;
     Local_Space_Manager local_space_manager;
-    Input input_of__client;
+    Input input_of__client; // TODO: remove game.input, use per client.
     Client_Flags__u16 client_flags__u16;
 } Client;
 
@@ -2543,6 +2547,10 @@ typedef u32 Game_Flags__u32;
 #define GAME_FLAG__IS_SERVER_OR__CLIENT BIT(0)
 
 #define GAME_FLAGS__NONE 0
+
+typedef void (*f_Object_Handler)(
+        Game *p_game,
+        Identifier__u32 uuid_of__object__u32);
 
 typedef struct Game_t {
     Input input; // TODO: should memory condense these fields later

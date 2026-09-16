@@ -1,3 +1,4 @@
+#include "object.h"
 #include <client.h>
 #include <collisions/collision_node.h>
 #include <collisions/hitbox_context.h>
@@ -23,6 +24,38 @@
 #include <world/local_space.h>
 #include <world/local_space_manager.h>
 #include <world/world.h>
+
+void f_object_handler__client__activate(
+        Game *p_game,
+        Identifier__u32 uuid_of__object__u32) {
+    Client *p_client = 
+        get_p_client_by__uuid_from__game(
+                p_game, 
+                uuid_of__object__u32);
+
+    if (!p_client) {
+        // short circuit
+        return;
+    }
+
+    set_client_as__active(p_client);
+}
+
+void f_object_handler__client__deactivate(
+        Game *p_game,
+        Identifier__u32 uuid_of__object__u32) {
+    Client *p_client = 
+        get_p_client_by__uuid_from__game(
+                p_game, 
+                uuid_of__object__u32);
+
+    if (!p_client) {
+        // short circuit
+        return;
+    }
+
+    set_client_as__inactive(p_client);
+}
 
 void initialize_client(
         Client *p_client,
@@ -98,9 +131,6 @@ void m_process__teleport_client(
             get_p_collision_node_pool_from__world(
                 get_p_world_from__game(p_game)), 
             get_p_collision_node_from__local_space(p_local_space), 
-            vector_3i32F4_to__chunk_vector_3i32(
-                get_position_3i32F4_of__hitbox_aabb(
-                    p_hitbox_of__client)),
             GET_UUID_P(p_hitbox_of__client));
 
     if (success) {
@@ -117,6 +147,11 @@ Process *teleport_client(
         Game *p_game,
         Client *p_client,
         Vector__3i32F4 position__3i32F4) {
+    if (!is_client__active(p_client)) {
+        debug_warning("teleport_client, client is disabled.");
+        return 0;
+    }
+
     Hitbox_AABB_Manager *p_hitbox_aabb_manager =
         (Hitbox_AABB_Manager*)get_pV_hitbox_manager_from__hitbox_context(
                 get_p_hitbox_context_from__game(p_game), 
@@ -159,8 +194,27 @@ Process *teleport_client(
                 PROCESS_PRIORITY__0_MAXIMUM,
                 PROCESS_FLAG__IS_CRITICAL);
 
+    if (!p_process) {
+        debug_error("teleport_client, failed to dispatch teleportation process.");
+        return 0;
+    }
+
     p_process->process_valueA__i32 =
         GET_UUID_P(p_client);
+
+    Process *p_process__teleport_object__wrapper_process =
+        teleport_object(p_game, 
+                GET_UUID_P(p_client), 
+                p_process);
+
+    if (!p_process__teleport_object__wrapper_process) {
+        debug_error("teleport_client, failed to dispatch teleportation wrapper process.");
+        release_process_from__process_manager(
+                p_game, 
+                get_p_process_manager_from__game(p_game), 
+                p_process);
+        return 0;
+    }
 
     return p_process;
 }
@@ -528,4 +582,26 @@ void m_process__serialize_client__default(
     
     complete_process(p_this_process);
     return;
+}
+
+void poll_client_for__local_space_movement(
+        Game *p_game,
+        Client *p_client) {
+    Hitbox_AABB_Manager *p_hitbox_aabb_manager =
+        GET_P_HITBOX_AABB_MANAGER_FROM__GAME_WORLD(p_game);
+
+    Hitbox_AABB *p_hitbox_aabb =
+        get_p_hitbox_aabb_by__uuid_u32_from__hitbox_aabb_manager(
+                p_hitbox_aabb_manager, 
+                GET_UUID_P(p_client));
+
+    if (!p_hitbox_aabb) {
+        return;
+    }
+
+    set_center_of__local_space_manager(
+            get_p_local_space_manager_from__client(p_client), 
+            p_game, 
+            vector_3i32F4_to__chunk_vector_3i32(
+                p_hitbox_aabb->position__3i32F4));
 }
