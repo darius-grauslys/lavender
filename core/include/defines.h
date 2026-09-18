@@ -1301,6 +1301,7 @@ typedef struct Process_t {
                 sizeof(i32)*2];
         };
     };
+    Timer__u32 process_timer__ticks_u32F10;
     Process_Status_Kind the_kind_of_status__this_process_has;
     Process_Kind the_kind_of__process_this__process_is;
     Process_Flags__u8 process_flags__u8;
@@ -1309,6 +1310,10 @@ typedef struct Process_t {
 
 #ifndef PROCESS_MAX_QUANTITY_OF
 #define PROCESS_MAX_QUANTITY_OF 512
+#endif
+
+#ifndef PROCESS_TICK_TIMEOUT_U32F10
+#define PROCESS_TICK_TIMEOUT_U32F10 BIT(28)
 #endif
 
 #ifndef PROCESS_MAX_PRIORITY_LEVEL

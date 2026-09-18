@@ -28,14 +28,15 @@ void m_process__game_action__global_space__request__outbound_offline(
                 gsv__3i32);
 
     if (!p_global_space) {
-        debug_error("m_process__game_action__global_space__request__outbound_offline, failed to find p_global_space.");
-        fail_process(p_this_process);
-        return;
+        debug_warning("m_process__game_action__global_space__request__outbound_offline, failed to find p_global_space.");
+        goto error;
     }
 
     if (is_global_space__deconstructing(p_global_space)) {
-        // TODO: impl timeout
-#warning TODO: impl timeout
+        if (is_process_timed_out(p_this_process)) {
+            debug_warning("m_process__game_action__global_space__request__outbound_offline, timeout.");
+            goto error;
+        }
         return;
     }
 
@@ -46,6 +47,10 @@ void m_process__game_action__global_space__request__outbound_offline(
             gsv__3i32);
 
     complete_process(p_this_process);
+    return;
+error:
+    debug_error("m_process__game_action__global_space__request__outbound_offline, error.");
+    fail_process(p_this_process);
 }
 
 void register_game_action__global_space__request_for__offline(

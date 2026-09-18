@@ -30,6 +30,12 @@ void m_process__game_action__tcp_connect__begin(
                 get_p_tcp_socket_manager_from__game(p_game), 
                 get_uuid_u32_of__session_token_player_uuid_u64(
                     session_token));
+
+    if (is_process_timed_out(p_this_process)) {
+        debug_warning("m_process__game_action__tcp_connect__begin: timeout.");
+        goto error;
+    }
+
     switch (get_state_of__tcp_socket(p_tcp_socket)) {
         default:
             break;
@@ -44,7 +50,6 @@ void m_process__game_action__tcp_connect__begin(
                         p_tcp_socket)) {
                 break;
             }
-            // TODO: timeout on silence or non-sense packets
             TCP_DELIVERY(Game_Action, ga_response) delivery;
 
             get_latest__delivery_from__tcp_socket(
@@ -54,12 +59,8 @@ void m_process__game_action__tcp_connect__begin(
                 default:
                     break;
                 case Game_Action_Kind__TCP_Connect__Reject:
-                    debug_error("m_process__game_action__tcp_connect__begin: failed to connect. (reject)");
-                    close_socket_on__tcp_socket_manager__ipv4(
-                            get_p_tcp_socket_manager_from__game(p_game), 
-                            p_tcp_socket);
-                    fail_process(p_this_process);
-                    break;
+                    debug_warning("m_process__game_action__tcp_connect__begin: failed to connect. (reject)");
+                    goto error;
                 case Game_Action_Kind__TCP_Connect__Accept:
                     debug_info("m_process__game_action__tcp_connect__begin: connected."); 
                     set_state_of__tcp_socket(
@@ -85,13 +86,16 @@ void m_process__game_action__tcp_connect__begin(
             break;
         case TCP_Socket_State__Disconnected:
         case TCP_Socket_State__Unknown:
-            debug_error("m_process__game_action__tcp_connect__begin: failed to connect. (bad state)");
-            close_socket_on__tcp_socket_manager__ipv4(
-                    get_p_tcp_socket_manager_from__game(p_game), 
-                    p_tcp_socket);
-            fail_process(p_this_process);
-            break;
+            debug_warning("m_process__game_action__tcp_connect__begin: failed to connect. (bad state)");
+            goto error;
     }
+    return;
+error:
+    debug_error("m_process__game_action__tcp_connect__begin: error.");
+    close_socket_on__tcp_socket_manager__ipv4(
+            get_p_tcp_socket_manager_from__game(p_game), 
+            p_tcp_socket);
+    fail_process(p_this_process);
 }
 
 void m_process__game_action__tcp_connect__begin__init(

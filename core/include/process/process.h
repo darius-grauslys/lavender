@@ -77,6 +77,18 @@ void fail_process(
 }
 
 static inline
+Timer__u16 *get_p_process_timer__ticks_u32F10(
+        Process *p_process) {
+    return &p_process->process_timer__ticks_u32F10;
+}
+
+static inline
+bool is_process_timed_out(
+        Process *p_process) {
+    return is_timer_u32__elapsed(get_p_process_timer__ticks_u32F10(p_process));
+}
+
+static inline
 enum Process_Status_Kind get_process_status(
         Process *p_process) {
 #ifndef NDEBUG
@@ -340,4 +352,5 @@ Process_Priority__u8 get_process_priorty_of__process(
         Process *p_process) {
     return p_process->process_priority__u8;
 }
+
 #endif

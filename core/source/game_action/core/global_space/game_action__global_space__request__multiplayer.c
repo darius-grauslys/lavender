@@ -1,5 +1,6 @@
 #include "client.h"
 #include "collisions/collision_node_pool.h"
+#include "debug/debug.h"
 #include "game_action/core/game_action__bad_request.h"
 #include "game_action/core/global_space/game_action__global_space__request.h"
 #include "defines.h"
@@ -45,31 +46,22 @@ void m_process__game_action__global_space__request__outbound_server(
                 *p_gsv__3i32);
 
     if (!p_global_space) {
-        dispatch_game_action__bad_request(
-                p_game, 
-                p_game_action, 
-                0);
-        debug_error("m_process__game_action__global_space__request__outbound_server, failed to find global_space.");
-        fail_process(p_this_process);
-        return;
+        debug_warning("m_process__game_action__global_space__request__outbound_server, failed to find global_space.");
+        goto error;
     }
 
     if (is_global_space__deconstructing(
                 p_global_space)) {
-        // TODO: impl timeout,
-#warning TODO: impl timeout
-        return;
+        if (is_process_timed_out(p_this_process)) {
+            debug_warning("m_process__game_action__global_space__request__outbound_server, timed out.");
+            goto error;
+        }
     }
 
     if (is_global_space__constructing(
                 p_global_space)) {
-        dispatch_game_action__bad_request(
-                p_game, 
-                p_game_action, 
-                0);
-        debug_error("m_process__game_action__global_space__request__outbound_server, global_space is already being constructed`.");
-        fail_process(p_this_process);
-        return;
+        debug_warning("m_process__game_action__global_space__request__outbound_server, global_space is already being constructed`.");
+        goto error;
     }
 
     hold_global_space(p_global_space);
@@ -79,6 +71,14 @@ void m_process__game_action__global_space__request__outbound_server(
     dispatch_game_action__global_space__resolve(
             p_game, 
             get_gsv_3i32_from__ga_global_space__request(p_game_action));
+    return;
+error:
+    dispatch_game_action__bad_request(
+            p_game, 
+            p_game_action, 
+            0);
+    debug_error("m_process__game_action__global_space__request__outbound_server, failed.");
+    fail_process(p_this_process);
 }
 
 void m_process__game_action__global_space__request__inbound_server(
@@ -116,9 +116,8 @@ void m_process__game_action__global_space__request__inbound_server(
                 p_game, 
                 p_game_action, 
                 0);
-        debug_error("m_process__game_action__global_space__request__inbound_server, failed to find global_space.");
-        fail_process(p_this_process);
-        return;
+        debug_warning("m_process__game_action__global_space__request__inbound_server, failed to find global_space.");
+        goto error;
     }
 
     if (is_global_space__deconstructing(
@@ -127,12 +126,15 @@ void m_process__game_action__global_space__request__inbound_server(
                 p_game, 
                 p_game_action, 
                 1);
-        debug_error("m_process__game_action__global_space__request__inbound_server, global space is deconstructing.");
-        fail_process(p_this_process);
-        return;
+        debug_warning("m_process__game_action__global_space__request__inbound_server, global space is deconstructing.");
+        goto error;
     }
 
     if (is_global_space__constructing(p_global_space)) {
+        if (is_process_timed_out(p_this_process)) {
+            debug_warning("m_process__game_action__global_space__request__inbound_server, timeout.");
+            goto error;
+        }
         return;
     }
 
@@ -150,12 +152,15 @@ void m_process__game_action__global_space__request__inbound_server(
         case PLATFORM_Write_File_Error__System_Busy:
             return;
         default:
-            debug_error("m_process__game_action__global_space__request__inbound_server, failed to send packets.");
-            fail_process(p_this_process);
-            return;
+            debug_warning("m_process__game_action__global_space__request__inbound_server, failed to send packets.");
+            goto error;
     }
 
     complete_process(p_this_process);
+    return;
+error:
+    debug_error("m_process__game_action__global_space__request__inbound_server, error.");
+    fail_process(p_this_process);
 }
 
 void m_process__game_action__global_space__request__inbound_server__init(

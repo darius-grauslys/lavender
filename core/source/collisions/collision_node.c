@@ -172,6 +172,12 @@ Hitbox_AABB *get_p_hitbox_aabb_at__vector_3i32F4_from__collision_node(
 
 Quantity__u32 get_quantity_of__entries_in__collision_node(
         const Collision_Node *p_collision_node) {
+#ifndef NDEBUG
+    if (!p_collision_node) {
+        debug_error("get_quantity_of__entries_in__collision_node, p_collision_node == 0.");
+        return 0;
+    }
+#endif
     Collision_Node_Entry *p_collision_node__entry =
         p_collision_node
         ->p_linked_list__collision_node_entries__tail;

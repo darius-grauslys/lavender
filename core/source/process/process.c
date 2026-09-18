@@ -29,4 +29,7 @@ void initialize_process(
         p_process_data;
     p_process->process_sub_state__u8 = 0;
     p_process->process_flags__u8 = process_flags__u8;
+    initialize_timer_u32(
+            get_p_process_timer__ticks_u32F10(p_process), 
+            PROCESS_TICK_TIMEOUT_U32F10);
 }

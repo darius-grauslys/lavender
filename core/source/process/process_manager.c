@@ -156,11 +156,20 @@ Quantity__u32 poll_process_manager(
     begin_polling_of__process_table(&p_process_manager->process_table);
     p_process_manager->p_process__latest = 0;
     Process *p_process = 0;
-    Quantity__u32 ticks_elapsed = 0;
+    Timer__u32 timer_process_manager_poll__u32F20 =
+        get_timer__u32(PROCESS_TICK_TIMEOUT_U32F10);
+    progress_timer__guard_restart__u32(
+            &timer_process_manager_poll__u32F20, 
+            get_elapsed_ticks__u32F20_of__game(p_game), 
+            PROCESS_TIMER_GUARD__IS_NOT_RESTARTING);
+    debug_info("poll_process_manager, proc #: %d", get_quantity_of__processes_in__process_manager(p_process_manager));
     while ((p_process = poll_next_p_process_from__process_table(
                     &p_process_manager->process_table))
             && (is_process__critical(p_process)
-            || !ticks_elapsed)) {
+            || (
+                (get_time_elapsed_from__timer_u32(
+                        &timer_process_manager_poll__u32F20) >> 12)
+                < 32))) {
         if (!p_process)
             break;
         if (is_process__finished(p_process)) {
@@ -185,6 +194,14 @@ Quantity__u32 poll_process_manager(
         p_process->m_process_run__handler(
                 p_process,
                 p_game);
+        progress_timer__guard_restart__u32(
+                &timer_process_manager_poll__u32F20, 
+                poll_elapsed_time__u32F20_of__game(p_game), 
+                PROCESS_TIMER_GUARD__IS_NOT_RESTARTING);
+        progress_timer__guard_restart__u32(
+                get_p_process_timer__ticks_u32F10(p_process), 
+                poll_elapsed_time__u32F20_of__game(p_game) >> 10, 
+                PROCESS_TIMER_GUARD__IS_NOT_RESTARTING);
     }
     return get_elapsed_ticks__u32F20_of__game(p_game);
 }
