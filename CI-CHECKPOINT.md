@@ -14,37 +14,45 @@ the transcript artifact (job 19).
 - **Sandbox** (`docker/sandbox/`, image `lav-sandbox-agent`):
   - Ubuntu with LLVM 21 and SDL2. Clones the project from GitLab at start.
   - iron-proxy is the only network route out. It injects the GitLab token and
-    `ANUKET_API_KEY` (from `~/.config/lavender/llm.env`), so the sandbox
+    `LLM_API_KEY` (from `~/.config/lavender/llm.env`), so the sandbox
     holds no secrets.
   - No `git push`. `lav-gitlab mr` uses the GitLab commits API, then opens
     an MR.
   - Headless graphics: Xvfb `:99` + Mesa llvmpipe (GL 4.5). The SDL build
     runs at ~60 fps. `lav-screenshot` captures the display.
-  - opencode 1.18.19 (pinned + sha256). Config `docker/sandbox/opencode.json`
-    is anuket only, generated from live `http://anuket:8080/v1/models`.
-  - Default model `anuket-local/ternary-bonsai-qwen3.8-27B-PQ2_0-XTX`. The
-    non-XTX variant crashes on anuket's side.
+  - opencode 1.18.19 (pinned + sha256). Since 2026-10-25 the repo is
+    host-neutral: `docker/sandbox/opencode.json` is generic, and the LLM
+    host/port/model come from `~/.config/lavender/host.env` (default: an
+    OpenAI-compatible server on the Docker host, port 8080). See
+    `docker/AGENTS.md`.
+  - This host's `host.env` points at anuket by its full MagicDNS name, with
+    the full anuket model list in `~/.config/lavender/opencode.json`. The
+    default model is `ternary-bonsai-qwen3.8-27B-PQ2_0-XTX`; the non-XTX
+    variant crashes on anuket's side. `llm.env` holds both `LLM_API_KEY` and
+    the old `ANUKET_API_KEY`; drop the old one once the runner clone has
+    pulled the host-neutral compose.
   - Details: `docker/README.md`.
 - **Orchestration:** GitLab Runner. Sortie was rejected: it needs opencode
   2.x and has no sandboxing.
-- **Ops project:** live as `dgrauslys/test-issue-ops` (no "s" after "issue"),
-  to be renamed `dgrauslys/lav-agent-ops` (step 1).
-  - Cloned at `~/Projects/test-issue-ops`.
-  - Live (pushed): `agent.yml`, the full job config, which runs
-    `/tmp/lav-agent-ci/solve.sh`. test-issues' CI/CD configuration file is
-    `agent.yml@dgrauslys/test-issue-ops`.
-  - Staged locally, not pushed: `agent.yml` replaced by per-target stubs
-    `test-issues.yml` and `lavender.yml`, plus a real README. See step 1.
+- **Ops project:** `dgrauslys/lav-agent-ops` (ID 11; renamed from
+  `test-issue-ops` on 2026-10-25). Cloned at `~/Projects/lav-agent-ops`.
+  - Holds one stub per target: `test-issues.yml` (includes
+    `docker/runner/agent.yml` from lavender `doc-gen`, trial only) and
+    `lavender.yml` (includes it from `master`; not wired up yet).
+  - test-issues' CI/CD configuration file is
+    `test-issues.yml@dgrauslys/lav-agent-ops`.
+  - The job itself: `docker/runner/agent.yml` (see `docker/README.md` →
+    *Runner*). `workflow: rules` allow only schedule and web triggers.
 - **Runner:** `lav-agent-host`, GitLab runner id 2.
   - Shell executor, tag `lav-agent`, protected, untagged jobs off.
-  - It was registered on test-issue-ops, so it was also enabled on test-issues
+  - It was registered on the ops project, so it was also enabled on test-issues
     (`POST projects/10/runners`). Without that, jobs stayed pending forever.
     The instance runner `runner001` (id 1) can't take these jobs because it
     lacks the tag.
   - `~/.gitlab-runner/config.toml`:
     - `concurrent = 1`, `limit = 1`: one sandbox, so one LLM session at a time;
     - `environment` sets the podman `DOCKER_HOST`, `XDG_RUNTIME_DIR` and
-      `LAV_RUNNER_DIR` (the last added 2026-10-25, unused until step 1 lands);
+      `LAV_RUNNER_DIR=~/.local/lib/lav-agent/lavender/docker/runner`;
     - backups: `config.toml.bak` (original), `config.toml.bak2` (before
       `LAV_RUNNER_DIR`).
   - It runs as the runit user service `~/.config/service/gitlab-runner`.
@@ -53,8 +61,11 @@ the transcript artifact (job 19).
   - The UI's "Run pipeline" button is now labelled **New pipeline**.
   - Runs with no `agent-todo` issue exit in seconds ("No open agent-todo
     issues.").
-- **`solve.sh`** (live copy still `/tmp/lav-agent-ci/solve.sh`; the repo
-  copy is `docker/runner/solve.sh`, see step 1):
+- **Runner checkout:** `~/.local/lib/lav-agent/lavender`, a clone used only
+  by the runner, currently on `doc-gen`. Update it deliberately
+  (`git -C ~/.local/lib/lav-agent/lavender pull`); it is what runs, not
+  your working tree. Switch it to `master` once `docker/runner/` is merged.
+- **`solve.sh`** (`docker/runner/solve.sh`, run from the checkout above):
   1. claims the oldest `agent-todo` issue under `flock`;
   2. relabels it `agent-doing`;
   3. starts the sandbox stack with `-p lav-agent-10-<iid>`;
@@ -155,26 +166,13 @@ changes where he wants them), then closes it.
 Build order for the plan above: 1 → 3 → poller (new step 6) → step 2 and
 housekeeping.
 
-1. **Make the runner portable (in progress).** The job now lives in this
-   repo; see `docker/README.md` → *Runner* for the design and setup.
-   - Done locally (2026-10-25):
-     - `docker/runner/agent.yml` (generic job) and `docker/runner/solve.sh`
-       (now requires `LAV_PROJECT_ENV`; finds `sandbox/` next to itself);
-     - ops repo: stubs `test-issues.yml` (includes from `doc-gen`, trial
-       only) and `lavender.yml` (includes from `master`), README;
-     - runner `config.toml`: `LAV_RUNNER_DIR=~/.local/lib/lav-agent/lavender/docker/runner`.
-   - Remaining, in order:
-     1. human: commit `docker/runner/` (and the doc changes) on `doc-gen`
-        and push `doc-gen` to the `gitlab` remote;
-     2. clone `~/.local/lib/lav-agent/lavender` (on `doc-gen` for the
-        trial; switch it to `master` once `docker/runner/` is merged);
-     3. rename the ops project to `lav-agent-ops`, commit and push the stubs;
-     4. set test-issues' CI/CD configuration file to
-        `test-issues.yml@dgrauslys/lav-agent-ops`;
-     5. play the schedule once to confirm;
-     6. delete `/tmp/lav-agent-ci` and its backup.
-   - Steps 3 and 4 leave a short window where scheduled runs fail; harmless
-     with no `agent-todo` issues open.
+1. **Make the runner portable: done 2026-10-25.** Pipeline 157 (schedule)
+   ran `solve.sh` from the runner checkout and succeeded ("No open agent-todo
+   issues."). A run that actually solves an issue hasn't gone through the new
+   path yet. `/tmp/lav-agent-ci` and its backup are deleted.
+   - Small follow-up: `solve.sh` doesn't clear `agent-run/` at start. With
+     `GIT_STRATEGY: none` the build dir persists, so pipeline 157 re-uploaded
+     5 old files as its artifacts.
 2. **Branch restriction for the agent.** The Developer token's commits API can
    write any unprotected branch. Options:
    - protect `*` plus a per-run branch rule;
@@ -189,11 +187,23 @@ housekeeping.
    - prune dangling images;
    - retire or rebuild `lav-sandbox-debug` (`harness/Dockerfile`), ~1 GB;
    - disk is at ~9 GB free (2026-10-25), so state the space cost before any build.
-5. **Roll out to Lavender:** apply the same setup to `dgrauslys/lavender`
-   (ID 6): merge `docker/runner/` to master, point the master clone at
-   master, set lavender's CI/CD configuration file to
-   `lavender.yml@dgrauslys/lav-agent-ops`, enable runner 2 on lavender, and
-   add a schedule. `lavender.env` and its token already exist (check).
+5. **Roll out to Lavender, on anuket (in progress).** The Lavender runner
+   runs on anuket (Ubuntu 24.04, Docker Engine, user `gitlab-runner`), not
+   this host. Walkthrough: Part A (machine setup + manual smoke test) and
+   Part B (register, wire up) as given in chat on 2026-10-25.
+   - Part A found that `anuket` resolves to `127.0.1.1` on anuket itself,
+     which iron-proxy refuses. That led to the host-neutral config
+     (`docker/AGENTS.md`). On anuket the default `host.docker.internal`
+     should work if llama-swap listens beyond 127.0.0.1; otherwise
+     `LAV_LLM_HOST=<full MagicDNS name>`. It also needs `LLM_API_KEY` in
+     `llm.env` and `LAV_LLM_MODEL` (llama-swap needs a real model name).
+   - Before Part B: merge `docker/runner/` + `docker/sandbox/` to master, and
+     `solve.sh` must use `Agent-<uuid>` branches (AGENTS.md only lifts the
+     no-edit rule there).
+   - Part B: runner registered on lavender itself (tag `lav-agent`,
+     protected), `config.toml` `concurrent`/`limit` = 1 and `LAV_RUNNER_DIR`;
+     the runner clone on master; lavender CI config
+     `lavender.yml@dgrauslys/lav-agent-ops`; `agent-*` labels; schedule.
 6. **Poller:**
    - write `lav-agent-watch` and its runit service;
    - create a pipeline trigger token on test-issues;
@@ -216,10 +226,3 @@ housekeeping.
   Cancel it and re-trigger.
 - Pipelines triggered via the API (`POST /pipeline`) have source `api`, which
   `workflow: rules` reject. Trigger by playing the schedule instead.
-
-## Appendix: trial file backup
-
-The live pipeline still runs `/tmp/lav-agent-ci/solve.sh`. A copy is in
-`~/.config/lavender/lav-agent-ci-backup/`; if `/tmp` was wiped, restore it with
-`cp -r ~/.config/lavender/lav-agent-ci-backup /tmp/lav-agent-ci`. Delete both
-once step 1 is confirmed.

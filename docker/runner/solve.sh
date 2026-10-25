@@ -11,6 +11,8 @@ SANDBOX_DIR=${LAV_SANDBOX_DIR:-$(realpath "$(dirname "$0")/../sandbox")}
 # Set by the ops stub, e.g. lavender.env; a bare name is looked up in SANDBOX_DIR.
 PROJECT_ENV=${LAV_PROJECT_ENV:?LAV_PROJECT_ENV not set (the ops stub sets it)}
 [[ $PROJECT_ENV == */* ]] || PROJECT_ENV=$SANDBOX_DIR/$PROJECT_ENV
+# This machine's LLM settings, if any (see docker/AGENTS.md).
+HOST_ENV=${LAV_HOST_ENV:-$HOME/.config/lavender/host.env}
 AGENT_TIMEOUT=${AGENT_TIMEOUT:-45m}
 OUT=${CI_PROJECT_DIR:-$PWD}/agent-run
 ARTIFACTS_URL=${CI_JOB_URL:+$CI_JOB_URL/artifacts/browse/agent-run/}
@@ -48,6 +50,7 @@ jq . <<<"$issue" >"$OUT/issue.json"
 # --- sandbox ----------------------------------------------------------------
 C=(docker compose -p "lav-agent-$GITLAB_PROJECT_ID-$iid"
    -f "$SANDBOX_DIR/compose.yml" --env-file "$PROJECT_ENV")
+[ -f "$HOST_ENV" ] && C+=(--env-file "$HOST_ENV")
 trap '"${C[@]}" down >/dev/null 2>&1 || true' EXIT
 "${C[@]}" up -d --quiet-pull 2>&1 | tail -n 2
 # The entrypoint logs this once the clone is complete.

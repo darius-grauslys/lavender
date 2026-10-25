@@ -16,8 +16,11 @@ image) builds `FROM localhost/lav-sandbox`; build that tag with
 
 ```
 sandbox ──(internal network, no route out)──> iron-proxy ──> git.graslocal.com
-                                                         └──> anuket (llama-swap, LLMs)
+                                                         └──> LLM server (default: this machine)
 ```
+
+Host-specific settings (which LLM server and model, API key) live outside the
+repo, in `~/.config/lavender/`; see `AGENTS.md` in this directory.
 
 - The sandbox holds **no secrets**. iron-proxy adds the credentials itself, and
   only for the allowlisted paths (`configs.proxy_yaml` in `sandbox/compose.yml`):
@@ -25,12 +28,12 @@ sandbox ──(internal network, no route out)──> iron-proxy ──> git.gra
   clone/fetch, and a Bearer key for LLM servers that need one. Every other
   request gets a 403.
 - The agent harness is **opencode** (pinned in the Dockerfile). Its config,
-  `sandbox/opencode.json`, has one provider, anuket's llama-swap (model list
-  taken from `http://anuket:8080/v1/models`; default
-  `ternary-bonsai-qwen3.8-27B-PQ2_0-XTX`), with no API key. It speaks plain
-  HTTP over Tailscale, through the proxy (`HTTP_PROXY`). A
-  provider added there also needs an allowlist rule in `compose.yml`, plus a
-  secrets rule if it takes a key. opencode tries to fetch from
+  `sandbox/opencode.json`, has one OpenAI-compatible provider whose host, port
+  and model come from `LAV_LLM_HOST`, `LAV_LLM_PORT` and `LAV_LLM_MODEL`
+  (defaults: this machine, `8080`, `default`; set them in
+  `~/.config/lavender/host.env`, see `AGENTS.md`). It has no API key and
+  speaks plain HTTP through the proxy (`HTTP_PROXY`), which allows only that
+  host and adds `LLM_API_KEY` if one is set. opencode tries to fetch from
   `registry.npmjs.org` at start; the proxy refuses that, and opencode carries on.
 - **Headless graphics.** The entrypoint starts Xvfb on `:99` (1280x720,
   `LAV_XVFB_SCREEN` to change, `LAV_XVFB=0` to skip). Mesa's llvmpipe renders
@@ -91,12 +94,16 @@ sandbox ──(internal network, no route out)──> iron-proxy ──> git.gra
 4. **Proxy CA.** Run `sh docker/sandbox/gen-ca.sh`. This writes
    `~/.config/lavender/iron-proxy/ca.{crt,key}`.
 5. **LLM keys.** Put keys for the LLM servers in `~/.config/lavender/llm.env`
-   (chmod 600), e.g. `ANUKET_API_KEY=...`. Only iron-proxy reads it.
+   (chmod 600), as `LLM_API_KEY=...`. Only iron-proxy reads it.
+6. **LLM server.** If it isn't an OpenAI-compatible server on this machine at
+   port 8080, write `~/.config/lavender/host.env`; see `AGENTS.md`.
 
 ### Use
 
 ```sh
 C="docker compose -f docker/sandbox/compose.yml --env-file docker/sandbox/lavender.env"
+# with a host.env (compose fails if a named env file is missing):
+C="$C --env-file ~/.config/lavender/host.env"
 $C up -d --build
 $C exec sandbox bash
 
