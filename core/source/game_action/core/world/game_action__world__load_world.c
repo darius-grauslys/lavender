@@ -48,8 +48,10 @@ void m_process__game_action__world__load_world(
         default:
             break;
         case 1:
-            goto load_world_data;
+            goto load_world_header;
         case 2:
+            goto load_world_data;
+        case 3:
             goto poll_world_data;
     }
     // TODO: yield process on each IO op
@@ -68,6 +70,43 @@ void m_process__game_action__world__load_world(
 
     p_this_process->process_valueA__i16 = 1;
     return;
+load_world_header:
+    ;
+    // Only deserialize the world header if a saved world
+    // already exists on disk. A brand new world has no
+    // header file and skips straight to loading world data.
+    IO_path path_to__world_header;
+    memset(path_to__world_header, 0, sizeof(IO_path));
+    Index__u32 index_of__path_to__world_header =
+        stat_world_header_file(
+                get_p_PLATFORM_file_system_context_from__game(p_game),
+                get_p_world_from__game(p_game),
+                path_to__world_header);
+    if (!index_of__path_to__world_header) {
+        p_this_process->process_valueA__i16 = 2;
+        return;
+    }
+
+    Process *p_process__deserialize_world =
+        dispatch_process__deserialize_world_header(
+                p_game, 
+                get_p_world_from__game(p_game));
+
+    if (!p_process__deserialize_world) {
+        if (is_process_timed_out(p_this_process)) {
+            debug_error("m_process__game_action__world__load_world, timeout.");
+            fail_process(p_this_process);
+            return;
+        }
+        return;
+    }
+
+    enqueue_process(
+            p_this_process, 
+            p_process__deserialize_world);
+
+    p_this_process->process_valueA__i16 = 2;
+    return;
 load_world_data:
     ;
 
@@ -81,7 +120,7 @@ load_world_data:
             p_game, 
             gsv__3i32);
 
-    p_this_process->process_valueA__i16 = 2;
+    p_this_process->process_valueA__i16 = 3;
     return;
 poll_world_data:
 

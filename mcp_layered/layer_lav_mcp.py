@@ -22,8 +22,25 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
     # ---- session ----
     {
         "name": "session_start",
-        "description": "Start the Lavender game under GDB if not already running.",
-        "inputSchema": {"type": "object", "properties": {}, "required": []},
+        "description": (
+            "Start the Lavender game under GDB if not already running. "
+            "Fails with a clear error if the executable does not exist."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "executable": {
+                    "type": "string",
+                    "description": (
+                        "Optional path to the game executable. Overrides the "
+                        "session's configured executable (--executable/-e or "
+                        "config.json) for this session. Supports ~ and $VAR "
+                        "expansion."
+                    ),
+                },
+            },
+            "required": [],
+        },
     },
     {
         "name": "session_status",

@@ -269,6 +269,8 @@ typedef struct Input_t Input;
 /// SECTION_process
 ///
 
+typedef u8 Process_Register__u4;
+
 typedef enum Process_Status_Kind {
     Process_Status_Kind__None = 0,
     Process_Status_Kind__Stopped,
@@ -278,7 +280,7 @@ typedef enum Process_Status_Kind {
     Process_Status_Kind__Enqueued,
     Process_Status_Kind__Complete,
     Process_Status_Kind__Fail,
-    Process_Status_Kind__Unknown
+    Process_Status_Kind__Unknown = 15 // Max value u4
 } Process_Status_Kind;
 
 typedef enum Process_Kind {

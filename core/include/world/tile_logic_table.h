@@ -14,6 +14,9 @@ bool allocate_tile_logic_table__tile_logic_entries(
 void release_tile_logic_table__tile_logic_entries(
         Tile_Logic_Table *p_tile_logic_table);
 
+
+void release_tile_logic_context(Tile_Logic_Context *p_tile_logic_context);
+
 static inline
 Tile_Logic_Record *get_p_tile_logic_record_from__tile_logic_table(
         Tile_Logic_Table *p_tile_logic_table,

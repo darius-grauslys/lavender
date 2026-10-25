@@ -116,8 +116,25 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
     # ---- session ----
     {
         "name": "session_start",
-        "description": "Start the Lavender game under GDB if not already running.",
-        "inputSchema": {"type": "object", "properties": {}, "required": []},
+        "description": (
+            "Start the Lavender game under GDB if not already running. "
+            "Fails with a clear error if the executable does not exist."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "executable": {
+                    "type": "string",
+                    "description": (
+                        "Optional path to the game executable. Overrides the "
+                        "session's configured executable (--executable/-e or "
+                        "config.json) for this session. Supports ~ and $VAR "
+                        "expansion."
+                    ),
+                },
+            },
+            "required": [],
+        },
     },
     {
         "name": "session_status",
@@ -459,6 +476,24 @@ class LavMcpSession:
             self._gl_harness = GLDebugHarness(self._ensure_gdb())
         return self._gl_harness
 
+    # -- executable validation ------------------------------------------------ #
+
+    def _executable_missing_message(self) -> str | None:
+        """Return an error message if the session's executable does not exist.
+
+        Returns None when the executable exists (or is a plain string that
+        os.path.exists can resolve).  The session is *created* without
+        requiring the executable — only commands that need it to exist
+        (session_start, core_load) fail with this message.
+        """
+        if os.path.exists(self._executable):
+            return None
+        return (
+            f"ERROR: executable not found: {self._executable}\n"
+            "Build the game first, or provide a valid executable via "
+            "session_start(executable=...) (or --executable / config)."
+        )
+
     # -- session state helpers ------------------------------------------------ #
 
     def _set_halted(self, halted: bool = True) -> None:
@@ -612,21 +647,35 @@ class LavMcpSession:
     #  Tool: session                                                    #
     # ------------------------------------------------------------------ #
 
-    def session_start(self) -> str:
+    def session_start(self, executable: str | None = None) -> str:
         """Start the Lavender game under GDB if not already running.
 
         Steps:
-        1. If already running, return early.
-        2. Start Xvfb display if needed.
-        3. Launch GDB with the configured executable.
-        4. Run to ``main`` so the game is initialized but paused.
-        5. Configure signal handling for SDL/PulseAudio.
+        1. If *executable* is given, override the session's executable
+           (from --executable/-e or config.json) with it.
+        2. If already running, return early.
+        3. Verify the executable exists (fail cleanly if not).
+        4. Launch GDB with the configured executable.
+        5. Run to ``main`` so the game is initialized but paused.
+        6. Configure signal handling for SDL/PulseAudio.
+
+        Args:
+            executable: Optional path to the game executable. Overrides the
+                session's configured executable for subsequent commands in
+                this session. Supports ``~`` and ``$VAR`` expansion.
         """
+        if executable:
+            self._executable = os.path.expandvars(os.path.expanduser(str(executable)))
+
         if self._gdbmi is not None and self.is_running:
             return (
                 f"Game already running (executable={self._executable}). "
                 f"Use session_status for details."
             )
+
+        missing = self._executable_missing_message()
+        if missing:
+            return missing
 
         if not _HAS_PYGDBMI:
             return (
@@ -686,10 +735,14 @@ class LavMcpSession:
         4. The current backtrace.
         """
         if self._gdbmi is None:
-            return (
+            message = (
                 "Game has NOT started.\n"
                 "Use session_start to launch the game."
             )
+            missing = self._executable_missing_message()
+            if missing:
+                message += f"\n{missing}"
+            return message
 
         if self.state.crashed:
             return (
@@ -921,6 +974,10 @@ class LavMcpSession:
                 f"ERROR: core dump not found at {dump_path}\n"
                 f"Use core_dump to create one, or check the UUID."
             )
+
+        missing = self._executable_missing_message()
+        if missing:
+            return missing
 
         try:
             # Stop the game if running.

@@ -1,0 +1,46 @@
+# Agent CI job, shared by every target project. Target projects don't use this
+# file directly: each one's CI/CD configuration file is a stub in the ops
+# project (dgrauslys/lav-agent-ops), e.g. lavender.yml@dgrauslys/lav-agent-ops,
+# which includes this file from a protected ref and names its env file:
+#
+#   include:
+#     - project: dgrauslys/lavender
+#       ref: master
+#       file: docker/runner/agent.yml
+#   variables:
+#     LAV_PROJECT_ENV: lavender.env
+#
+# The job runs on the host (shell executor), so whoever can edit this file can
+# run commands there. That is why it is only ever included from a ref the
+# agent's token cannot write to, and never from the target project itself
+# (GitLab would read that from the pipeline's branch).
+#
+# A pipeline schedule (or "New pipeline") starts it. Each solve job claims the
+# oldest open issue labelled agent-todo and works it in its own sandbox.
+
+workflow:
+  rules:
+    # Never on pushes: agent branches and MRs get no pipelines at all.
+    - if: $CI_PIPELINE_SOURCE == "schedule" || $CI_PIPELINE_SOURCE == "web"
+
+solve:
+  # Only the protected host runner carries this tag.
+  tags: [lav-agent]
+  # Issues claimed per pipeline. The runner's `limit` caps how many sandboxes
+  # run at once; extra jobs wait as pending.
+  parallel: 1
+  timeout: 2h
+  variables:
+    # Don't check the repo out on the host; the sandbox clones it itself.
+    GIT_STRATEGY: none
+    # How long opencode may work on one issue.
+    AGENT_TIMEOUT: 45m
+  script:
+    # LAV_RUNNER_DIR comes from the runner's config.toml. It points at a
+    # dedicated master checkout, never a working tree, so checking out an
+    # agent branch for review can't change what runs here.
+    - '"${LAV_RUNNER_DIR:?set LAV_RUNNER_DIR in the runner config.toml}/solve.sh"'
+  artifacts:
+    when: always
+    expire_in: 90 days
+    paths: [agent-run/]

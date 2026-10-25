@@ -99,6 +99,6 @@ void *get_pV_hitbox_manager_from__hitbox_context(
 #define GET_P_HITBOX_MANAGER(p_game, UUID, TYPE) \
         (TYPE*)get_pV_hitbox_manager_from__hitbox_context(\
                 get_p_hitbox_context_from__game(p_game),\
-                GET_UUID_P(get_p_world_from__game(p_game)));
+                GET_UUID_P(get_p_world_from__game(p_game)))
 
 #endif

@@ -155,11 +155,13 @@ enum PLATFORM_Write_File_Error PLATFORM_write_file(
 #endif
 
     FILE *p_file = p_file_handler;
+    // TODO: have length_of__data be p_OUT, and write back out size_of__write.
     Quantity__u32 size_of__write = fwrite(
             source,
             length_of__data,
             quantity_of__writes,
             p_file);
+    fflush(p_file);
 
     return PLATFORM_Write_File_Error__None;
 }

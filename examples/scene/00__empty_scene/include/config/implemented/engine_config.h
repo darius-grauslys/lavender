@@ -1,0 +1,255 @@
+#ifndef ENGINE_CONFIG_H
+#define ENGINE_CONFIG_H
+
+#include "platform_defines.h"
+
+#ifndef MAX_LENGTH_OF__IO_PATH
+//#define MAX_LENGTH_OF__IO_PATH 128
+#endif
+
+#ifndef PATH_SEPERATOR
+//#define PATH_SEPERATOR "/"
+#endif
+
+#ifndef PROCESS_MAX_QUANTITY_OF
+//#define PROCESS_MAX_QUANTITY_OF 512
+#endif
+
+#ifndef PROCESS_TICK_TIMEOUT_U32F10
+//#define PROCESS_TICK_TIMEOUT_U32F10 BIT(28) // 26 ~ 1 minute.
+#endif
+
+#ifndef MAX_QUANTITY_OF__GAME_ACTIONS
+//#define MAX_QUANTITY_OF__GAME_ACTIONS 512
+#endif
+
+#ifndef MAX_QUANTITY_OF__TCP_SOCKETS
+//#define MAX_QUANTITY_OF__TCP_SOCKETS 1
+#endif
+
+///
+/// MAX_SIZE_OF__TCP_PACKET >>MUST<< be a power of 2!
+/// So you should always express it as BIT(n) and likely
+/// n >= 5 for most applications.
+///
+/// If it is not a power of 2 (BIT(n)) then
+/// game_action__tcp_delivery will fail to operate.
+/// Things such as global_space delivery, inventory, EVERYTHING
+/// will fail to properly send over TCP, and will NEVER do
+/// so reliably. It relies on MASK(n) logic, dervied from
+/// the size, so BIT(n)-1 == MASK(n). non BIT(n) values will
+/// result in bad bit masks.
+///
+/// USE BIT(n)
+///
+#ifndef MAX_SIZE_OF__TCP_PACKET
+//#define MAX_SIZE_OF__TCP_PACKET BIT(9)
+#endif
+
+///
+/// >>MUST<< be a power of 2!
+///
+#ifndef MAX_QUANTITY_OF__TCP_PACKETS_PER__SOCKET
+//#define MAX_QUANTITY_OF__TCP_PACKETS_PER__SOCKET BIT(8)
+#endif
+
+///
+/// Destination has run out of space. Need more space
+/// to finish sending packet.
+///
+#ifndef TCP_ERROR__DESTINATION_OVERFLOW
+//#define TCP_ERROR__DESTINATION_OVERFLOW (-1)
+#endif
+
+///
+/// The socket queue is full, read the contents before
+/// acquiring more.
+///
+#ifndef TCP_ERROR__QUEUE_FULL
+//#define TCP_ERROR__QUEUE_FULL (-2)
+#endif
+
+#ifndef CAMERA_FULCRUM__WIDTH
+//#define CAMERA_FULCRUM__WIDTH 256
+#endif
+#ifndef CAMERA_FULCRUM__HEIGHT
+//#define CAMERA_FULCRUM__HEIGHT 196
+#endif
+
+#ifndef MAX_QUANTITY_OF__TEXTURES
+//#define MAX_QUANTITY_OF__TEXTURES 128
+#endif
+
+#ifndef GFX_CONTEXT__RENDERING_WIDTH__IN_CHUNKS
+//#define GFX_CONTEXT__RENDERING_WIDTH__IN_CHUNKS 4
+#endif
+#ifndef GFX_CONTEXT__RENDERING_HEIGHT__IN_CHUNKS
+//#define GFX_CONTEXT__RENDERING_HEIGHT__IN_CHUNKS 3
+#endif
+#ifndef GFX_CONTEXT__RENDERING_DEPTH__IN_CHUNKS
+//#define GFX_CONTEXT__RENDERING_DEPTH__IN_CHUNKS 1
+#endif
+
+#ifndef TILE__WIDTH_AND__HEIGHT__BIT_SHIFT
+//#define TILE__WIDTH_AND__HEIGHT__BIT_SHIFT 3
+#endif
+
+#ifndef TILE__WIDTH_AND__HEIGHT_IN__PIXELS
+/* #define TILE__WIDTH_AND__HEIGHT_IN__PIXELS \
+ *     BIT(TILE__WIDTH_AND__HEIGHT__BIT_SHIFT)
+ */
+#endif
+
+#ifndef CHUNK__WIDTH__AND_HEIGHT__BIT_SHIFT
+//#define CHUNK__WIDTH__AND_HEIGHT__BIT_SHIFT 3
+#endif
+#ifndef CHUNK__DEPTH__BIT_SHIFT
+//#define CHUNK__DEPTH__BIT_SHIFT 1
+#endif
+
+#ifndef CHUNK__WIDTH
+//#define CHUNK__WIDTH BIT(CHUNK__WIDTH__AND_HEIGHT__BIT_SHIFT)
+#endif
+#ifndef CHUNK__HEIGHT
+//#define CHUNK_HEIGHT BIT(CHUNK__WIDTH__AND_HEIGHT__BIT_SHIFT)
+#endif
+#ifndef CHUNK__DEPTH
+//#define CHUNK__DEPTH (CHUNK__DEPTH__BIT_SHIFT)
+#endif
+
+#ifndef CHUNK__QUANTITY_OF_TILES
+/* #define CHUNK__QUANTITY_OF__TILES \
+ *     (CHUNK__WIDTH * CHUNK__HEIGHT * CHUNK__DEPTH)
+ */
+#endif
+
+#ifndef LOCAL_SPACE__WIDTH_AND__HEIGHT_IN__TILES__BIT_SHIFT
+//#define LOCAL_SPACE__WIDTH_AND__HEIGHT_IN__TILES__BIT_SHIFT 3
+#endif
+
+#ifndef LOCAL_SPACE__WIDTH_AND__HEIGHT_IN__PIXELS__BIT_SHIFT
+/* #define LOCAL_SPACE__WIDTH_AND__HEIGHT_IN__PIXELS__BIT_SHIFT \
+ *   (TILE__WIDTH_AND__HEIGHT__BIT_SHIFT\
+ *    + LOCAL_SPACE__WIDTH_AND__HEIGHT_IN__TILES__BIT_SHIFT)
+ */
+#endif
+
+#ifndef LOCAL_SPACE_MANAGER__WIDTH
+//#define LOCAL_SPACE_MANAGER__WIDTH 8
+#endif
+#ifndef LOCAL_SPACE_MANAGER__HEIGHT
+//#define LOCAL_SPACE_MANAGER__HEIGHT 8
+#endif
+#ifndef LOCAL_SPACE_MANAGER__DEPTH
+//#define LOCAL_SPACE_MANAGER__DEPTH 1
+#endif
+#ifndef VOLUME_OF__LOCAL_SPACE_MANAGER
+/* #define VOLUME_OF__LOCAL_SPACE_MANAGER\
+ *     (LOCAL_SPACE_MANAGER__WIDTH\
+ *     * LOCAL_SPACE_MANAGER__HEIGHT\
+ *    * LOCAL_SPACE_MANAGER__DEPTH)
+ */
+#endif
+
+#ifndef MAX_QUANTITY_OF__CLIENTS
+//#define MAX_QUANTITY_OF__CLIENTS 4
+#endif
+
+#ifndef QUANTITY_OF__GLOBAL_SPACE
+/* #define QUANTITY_OF__GLOBAL_SPACE\
+ *     (VOLUME_OF__LOCAL_SPACE_MANAGER\
+ *    * MAX_QUANTITY_OF__CLIENTS)
+ */
+#endif
+
+#ifndef MAX_QUANTITY_OF__ENTITIES
+//#define MAX_QUANTITY_OF__ENTITIES 128
+#endif
+
+#ifndef MAX_QUANTITY_OF__SPRITES
+//#define MAX_QUANTITY_OF__SPRITES 256
+#endif
+
+#ifndef QUANTITY_OF__INPUTS
+//#define QUANTITY_OF__INPUTS 14
+#endif
+
+#ifndef PLATFORM_INPUT
+//#define INPUT_CODE_NONE 0
+//#define INPUT_CODE_FORWARD (1+0)
+//#define INPUT_CODE_LEFT (INPUT_CODE_FORWARD+1)
+//#define INPUT_CODE_RIGHT (INPUT_CODE_LEFT+1)
+//#define INPUT_CODE_BACKWARD (INPUT_CODE_RIGHT+1)
+
+//#define INPUT_CODE_GAME_SETTINGS (INPUT_CODE_BACKWARD+1)
+//#define INPUT_CODE_LOCKON (INPUT_CODE_GAME_SETTINGS+1)
+//#define INPUT_CODE_USE (INPUT_CODE_LOCKON+1)
+//#define INPUT_CODE_USE_SECONDARY (INPUT_CODE_USE+1)
+//#define INPUT_CODE_EXAMINE (INPUT_CODE_USE_SECONDARY+1)
+//#define INPUT_CODE_CONSUME (INPUT_CODE_EXAMINE+1)
+//#define INPUT_CODE_TURN_RIGHT (INPUT_CODE_CONSUME+1)
+//#define INPUT_CODE_TURN_LEFT (INPUT_CODE_TURN_RIGHT+1)
+//#define INPUT_CODE_CLICK (INPUT_CODE_TURN_LEFT+1)
+
+//#define INPUT_NONE 0
+//#define INPUT_FORWARD (1<<0)
+//#define INPUT_LEFT (INPUT_FORWARD<<1)
+//#define INPUT_RIGHT (INPUT_LEFT<<1)
+//#define INPUT_BACKWARD (INPUT_RIGHT<<1)
+
+//#define INPUT_GAME_SETTINGS (INPUT_BACKWARD<<1)
+//#define INPUT_LOCKON (INPUT_GAME_SETTINGS<<1)
+//#define INPUT_USE (INPUT_LOCKON<<1)
+//#define INPUT_USE_SECONDARY (INPUT_USE<<1)
+//#define INPUT_EXAMINE (INPUT_USE_SECONDARY<<1)
+//#define INPUT_CONSUME (INPUT_EXAMINE<<1)
+//#define INPUT_TURN_RIGHT (INPUT_CONSUME<<1)
+//#define INPUT_TURN_LEFT (INPUT_TURN_RIGHT<<1)
+//#define INPUT_CLICK (INPUT_TURN_LEFT<<1)
+#endif
+
+#ifndef UI_TILE__WIDTH_AND__HEIGHT__BIT_SHIFT
+//#define UI_TILE__WIDTH_AND__HEIGHT__BIT_SHIFT 3
+#endif
+
+#ifndef UI_TILE__WIDTH_AND__HEIGHT_IN__PIXELS
+/* #define UI_TILE__WIDTH_AND__HEIGHT_IN__PIXELS \
+ *   BIT(UI_TILE__WIDTH_AND__HEIGHT__BIT_SHIFT)
+ */
+#endif
+
+#ifndef UI_TILE_MAP__SMALL__MAX_QUANTITY_OF
+//#define UI_TILE_MAP__SMALL__MAX_QUANTITY_OF 32
+#endif
+#ifndef UI_TILE_MAP__SMALL__WIDTH
+//#define UI_TILE_MAP__SMALL__WIDTH 8
+#endif
+#ifndef UI_TILE_MAP__SMALL__HEIGHT
+//#define UI_TILE_MAP__SMALL__HEIGHT 8
+#endif
+
+#ifndef UI_TILE_MAP__MEDIUM__MAX_QUANTITY_OF
+//#define UI_TILE_MAP__MEDIUM__MAX_QUANTITY_OF 16
+#endif
+#ifndef UI_TILE_MAP__MEDIUM__WIDTH
+//#define UI_TILE_MAP__MEDIUM__WIDTH 16
+#endif
+#ifndef UI_TILE_MAP__MEDIUM__HEIGHT
+//#define UI_TILE_MAP__MEDIUM__HEIGHT 16
+#endif
+
+#ifndef UI_TILE_MAP__LARGE__MAX_QUANTITY_OF
+//#define UI_TILE_MAP__LARGE__MAX_QUANTITY_OF 8
+#endif
+#ifndef UI_TILE_MAP__LARGE__WIDTH
+//#define UI_TILE_MAP__LARGE__WIDTH 32
+#endif
+#ifndef UI_TILE_MAP__LARGE__HEIGHT
+//#define UI_TILE_MAP__LARGE__HEIGHT 32
+#endif
+
+#ifndef PLATFORM__GFX_WINDOW__MAX_QUANTITY_OF
+//#define PLATFORM__GFX_WINDOW__MAX_QUANTITY_OF 1
+#endif
+
+#endif

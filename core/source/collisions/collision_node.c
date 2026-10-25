@@ -9,7 +9,6 @@
 #include "game.h"
 #include "serialization/identifiers.h"
 #include "serialization/serialization_header.h"
-#include "world/world.h"
 
 void initialize_collision_node(
         Collision_Node *p_collision_node,
@@ -63,7 +62,7 @@ Collision_Node_Entry *get_entry_and_parent_from__collision_node(
         Collision_Node_Pool *p_collision_node_pool,
         Collision_Node *p_collision_node,
         Identifier__u32 uuid__u32,
-        Collision_Node **p_ptr_OUT_collision_node__parent) {
+        Collision_Node_Entry **p_ptr_OUT_collision_node__parent) {
     if (p_ptr_OUT_collision_node__parent)
         *p_ptr_OUT_collision_node__parent = 0;
     if (!p_collision_node) {

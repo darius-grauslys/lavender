@@ -162,7 +162,6 @@ Quantity__u32 poll_process_manager(
             &timer_process_manager_poll__u32F20, 
             get_elapsed_ticks__u32F20_of__game(p_game), 
             PROCESS_TIMER_GUARD__IS_NOT_RESTARTING);
-    debug_info("poll_process_manager, proc #: %d", get_quantity_of__processes_in__process_manager(p_process_manager));
     while ((p_process = poll_next_p_process_from__process_table(
                     &p_process_manager->process_table))
             && (is_process__critical(p_process)
@@ -176,6 +175,10 @@ Quantity__u32 poll_process_manager(
             if (p_process->p_enqueued_process) {
                 set_process_as__dequeued(
                         p_process->p_enqueued_process);
+                if (is_process__failed(p_process)) {
+                    set_process_register_as__dequeued_on_failure(
+                            p_process->p_enqueued_process);
+                }
             }
             release_process_from__process_manager(
                     p_game,

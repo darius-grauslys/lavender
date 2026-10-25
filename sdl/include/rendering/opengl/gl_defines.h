@@ -5,6 +5,7 @@
 #include "platform_defaults.h"
 #include "rendering/gfx_context.h"
 #include "rendering/opengl/glad/glad.h"
+#include "types/implemented/world/tile_layer.h"
 #include <cglm/types.h>
 #include <defines.h>
 #include <cglm/mat4.h>
@@ -80,12 +81,8 @@ typedef struct GL_Framebuffer_Manager_t {
     Index__u32 index_of__framebuffer_on__stack;
 } GL_Framebuffer_Manager;
 
-#ifndef GL_MAX_QUANTITY_OF__CHUNK_TEXTURES
-#define GL_MAX_QUANTITY_OF__CHUNK_TEXTURES 3
-#endif
-
 typedef struct GL_Chunk_Texture_Entry_t {
-    Texture chunk_textures[GL_MAX_QUANTITY_OF__CHUNK_TEXTURES];
+    Texture chunk_textures[Tile_Layer__Unknown];
     Identifier__u64 uuid_of__chunk__u64;
     u32 local__z_index;
 } GL_Chunk_Texture_Entry;

@@ -1257,6 +1257,23 @@ typedef void (*m_Process)(
         Process *p_this_process,
         Game *p_game);
 
+///
+/// A 4 bit "register" of transient state bits for a process,
+/// shared with the process manager and visible to handlers.
+///
+typedef u8 Process_Register__u4;
+#define PROCESS_REGISTER__EMPTY 0
+/// If set, then this process was dequeued and the process
+/// proceeding it has failed.
+#define PROCESS_REGISTER__BIT__IS_DEQUEUED_ON_FAILURE BIT(0)
+/// If set, the m_process_run__handler implementor is expected
+/// to check for this and gracefully shutdown on its next poll.
+#define PROCESS_REGISTER__BIT__SIGNAL_KILL BIT(1)
+/// Reserved for future use.
+#define PROCESS_REGISTER__BIT__RESERVED_1 BIT(2)
+/// Reserved for future use.
+#define PROCESS_REGISTER__BIT__RESERVED_2 BIT(3)
+
 typedef uint8_t Process_Flags__u8;
 
 #define PROCESS_FLAG__IS_CRITICAL BIT(0)
@@ -1302,7 +1319,8 @@ typedef struct Process_t {
         };
     };
     Timer__u32 process_timer__ticks_u32F10;
-    Process_Status_Kind the_kind_of_status__this_process_has;
+    Process_Status_Kind the_kind_of_status__this_process_has :4;
+    Process_Register__u4 process_register__u4 : 4;
     Process_Kind the_kind_of__process_this__process_is;
     Process_Flags__u8 process_flags__u8;
     Process_Priority__u8 process_priority__u8;

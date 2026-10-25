@@ -741,6 +741,24 @@ void manage_game__pre_render(Game *p_game) {
 }
 
 void manage_game__post_render(Game *p_game) {
+    for (Index__u32 index_of__client = 0;
+            index_of__client
+            < get_quantity_of__clients_connect_to__game(p_game);
+            index_of__client++) {
+        Client *p_client = 
+            get_p_client_by__index_from__game(
+                    p_game, 
+                    index_of__client);
+
+        if (!p_client || !is_client__active(p_client)) {
+            continue;
+        }
+
+        poll_client_for__local_space_movement(
+                p_game, 
+                p_client);
+    }
+
     poll_input(
             p_game,
             get_p_input_from__game(p_game));
@@ -883,13 +901,31 @@ bool m_game_action_handler__resolve__multiplayer(
             p_game_action);
 }
 
-void allocate_world_for__game(
+bool allocate_world_for__game(
         Game *p_game) {
     if (get_p_world_from__game(p_game)) {
         debug_error("allocate_world_for__game, pM_world != 0 (already allocated.)");
-        return;
+        return false;
     }
 
     p_game->pM_world =
         malloc(sizeof(World));
+
+    return (bool)p_game->pM_world;
+}
+
+void release_world_from__game(
+        Game *p_game) {
+    if (!get_p_world_from__game(p_game)) {
+        debug_error("release_world_from__game, pM_world == 0.");
+        return;
+    }
+
+    // TODO: need to complete release_object and initialize_object
+    // in object.h/object.c and use those function handler tables
+    // to holisitically remove arbitrary number of components.
+    debug_abort("release_world_from__game, not impl");
+
+    // free(p_game->pM_world);
+    // p_game->pM_world = 0;
 }

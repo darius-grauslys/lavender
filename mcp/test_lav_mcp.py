@@ -706,6 +706,114 @@ def test_session_stop_without_start() -> None:
     )
 
 
+def test_session_start_missing_executable() -> None:
+    """Test that session_start fails cleanly when the executable is absent."""
+    _section("Session Start (Missing Executable)")
+
+    session = LavMcpSession(executable="/fake/path/game")
+    result = session.session_start()
+    _check(
+        "returns 'executable not found' error",
+        "executable not found" in result.lower(),
+        f"got: {result}",
+    )
+    _check("gdb was NOT started", session._gdbmi is None)
+    _check("session not marked running", session.is_running is False)
+    _check("session not marked crashed", session.is_crashed is False)
+
+
+def test_session_start_executable_override() -> None:
+    """Test that session_start(executable=...) overrides the configured path."""
+    _section("Session Start (Executable Override)")
+
+    import mcp.lav_mcp as lav_mcp_mod
+
+    session = LavMcpSession(executable="/fake/path/game")
+    real_file = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "lav_mcp.py"
+    )
+
+    # Replace GdbController so no real gdb process is spawned.
+    orig_controller = lav_mcp_mod.GdbController
+    lav_mcp_mod.GdbController = lambda *a, **kw: FakeGdbmi()
+    try:
+        result = session.session_start(executable=real_file)
+    finally:
+        lav_mcp_mod.GdbController = orig_controller
+
+    _check(
+        "no 'executable not found' error after override",
+        "executable not found" not in result.lower(),
+        f"got: {result}",
+    )
+    _check(
+        "session executable updated to override",
+        session.executable == real_file,
+        f"got: {session.executable}",
+    )
+    _check("gdb was started", session._gdbmi is not None)
+
+    # Override with a ~ path: expanduser must be applied.
+    session2 = LavMcpSession(executable="/fake/path/game")
+    result = session2.session_start(executable="~/definitely-missing-game")
+    _check(
+        "~ path expanded and reported as missing",
+        "executable not found" in result.lower(),
+        f"got: {result}",
+    )
+    _check(
+        "session executable holds expanded ~ path",
+        session2.executable == os.path.expanduser("~/definitely-missing-game"),
+        f"got: {session2.executable}",
+    )
+
+
+def test_core_load_missing_executable() -> None:
+    """Test that core_load fails cleanly when the executable is absent."""
+    _section("Core Load (Missing Executable)")
+
+    import tempfile
+    tmpdir = tempfile.mkdtemp()
+    try:
+        session = LavMcpSession(
+            executable="/fake/path/game", dump_location=tmpdir
+        )
+        # Create a fake core dump so the dump-existence check passes.
+        with open(os.path.join(tmpdir, "core-test-uuid"), "w") as f:
+            f.write("fake")
+        fake = FakeGdbmi()
+        session._gdbmi = fake
+
+        result = session.core_load("test-uuid")
+        _check(
+            "returns 'executable not found' error",
+            "executable not found" in result.lower(),
+            f"got: {result}",
+        )
+        _check(
+            "no gdb commands issued",
+            len(fake.commands) == 0,
+            f"commands: {fake.commands}",
+        )
+    finally:
+        import shutil
+        shutil.rmtree(tmpdir, ignore_errors=True)
+
+
+def test_session_status_missing_executable() -> None:
+    """Test that session_status mentions a missing executable."""
+    _section("Session Status (Missing Executable)")
+
+    session = LavMcpSession(executable="/fake/path/game")
+    result = session.session_status()
+    _check("mentions not started", "NOT started" in result, f"got: {result}")
+    _check(
+        "mentions executable not found",
+        "executable not found" in result.lower(),
+        f"got: {result}",
+    )
+
+
 # --------------------------------------------------------------------------- #
 #  Main
 # --------------------------------------------------------------------------- #
@@ -734,6 +842,10 @@ def main() -> int:
     test_pygdbmi_timeout_patch()
     test_session_dump_location()
     test_session_stop_without_start()
+    test_session_start_missing_executable()
+    test_session_start_executable_override()
+    test_core_load_missing_executable()
+    test_session_status_missing_executable()
 
     print("\n" + "=" * 60)
     print(f"Results: {_PASS} passed, {_FAIL} failed")

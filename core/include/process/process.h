@@ -77,7 +77,7 @@ void fail_process(
 }
 
 static inline
-Timer__u16 *get_p_process_timer__ticks_u32F10(
+Timer__u32 *get_p_process_timer__ticks_u32F10(
         Process *p_process) {
     return &p_process->process_timer__ticks_u32F10;
 }
@@ -351,6 +351,63 @@ static inline
 Process_Priority__u8 get_process_priorty_of__process(
         Process *p_process) {
     return p_process->process_priority__u8;
+}
+
+///
+/// Clears all bits of the process register.
+///
+static inline
+void clear_process_register(
+        Process *p_process) {
+    p_process->process_register__u4 = PROCESS_REGISTER__EMPTY;
+}
+
+///
+/// True if this process was dequeued because the process
+/// it was enqueued behind has failed.
+///
+static inline
+bool is_process_register__dequeued_on_failure(
+        Process *p_process) {
+    return p_process->process_register__u4
+        & PROCESS_REGISTER__BIT__IS_DEQUEUED_ON_FAILURE
+        ;
+}
+
+///
+/// Marks this process as having been dequeued because the
+/// process it was enqueued behind has failed.
+///
+static inline
+bool set_process_register_as__dequeued_on_failure(
+        Process *p_process) {
+    return p_process->process_register__u4 |=
+        PROCESS_REGISTER__BIT__IS_DEQUEUED_ON_FAILURE
+        ;
+}
+
+///
+/// True if a kill has been signaled to this process.
+///
+static inline
+bool is_process_register__signaled_kill(
+        Process *p_process) {
+    return p_process->process_register__u4
+        & PROCESS_REGISTER__BIT__SIGNAL_KILL 
+        ;
+}
+
+///
+/// It is the responsibility of the m_process_run__handler
+/// implementor to check for signaled kill and gracefully
+/// shutdown.
+///
+static inline
+bool set_process_register_as__signaled_kill(
+        Process *p_process) {
+    return p_process->process_register__u4 |=
+        PROCESS_REGISTER__BIT__SIGNAL_KILL 
+        ;
 }
 
 #endif

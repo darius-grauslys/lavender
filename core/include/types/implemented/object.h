@@ -18,4 +18,7 @@ extern const f_Object_Handler array_of__object_handlers__deactivate_object[];
 extern const f_Object_Handler array_of__object_handlers__pre_teleport_object[];
 extern const f_Object_Handler array_of__object_handlers__post_teleport_object[];
 
+extern const f_Object_Handler array_of__object_handlers__initialize_object[];
+extern const f_Object_Handler array_of__object_handlers__release_object[];
+
 #endif

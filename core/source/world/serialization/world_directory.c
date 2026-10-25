@@ -79,6 +79,11 @@ Index__u32 stat_world_directory(
         IO_path p_path) {
     Index__u32 index_of__path_append = 0;
 
+    if (strnlen(p_world->name, WORLD_NAME_MAX_SIZE_OF) == 0) {
+        debug_error("stat_world_directory, world name is empty.");
+        return 0;
+    }
+
     PLATFORM_append_base_directory_to__path(
             p_PLATFORM_file_system_context,
             p_path, 
@@ -363,8 +368,13 @@ Index__u32 stat_world_header_file(
         PLATFORM_closedir(p_dir);
     }
 
-    buffer[index_of__path_append++] = PATH_SEPERATOR;
-    buffer[index_of__path_append++] = 'h';
+    // NOTE: must match the file name used by
+    // dispatch_process__serialize_world_header /
+    // dispatch_process__deserialize_world_header ("header").
+    append_path(
+            buffer, 
+            "header");
+    index_of__path_append += sizeof("header");
 
     if (PLATFORM_access(buffer, IO_Access_Kind__File)) {
         return false;

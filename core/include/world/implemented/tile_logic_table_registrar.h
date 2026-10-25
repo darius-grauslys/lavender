@@ -7,6 +7,7 @@ void register_tile_logic_tables(
         Game *p_game,
         Tile_Logic_Context *p_tile_logic_context);
 
+static inline
 u8 get_tile_logic_index_by__tile_layer_from__tile(
         Tile *p_tile,
         Tile_Layer the_tile_layer) {
@@ -26,6 +27,7 @@ u8 get_tile_logic_index_by__tile_layer_from__tile(
     // GET-LOGIC-END
 }
 
+static inline
 u8 get_tile_animation_index_by__tile_layer_from__tile(
         Tile *p_tile,
         Tile_Layer the_tile_layer) {

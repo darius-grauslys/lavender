@@ -13,7 +13,6 @@
 #include "world/chunk_vectors.h"
 #include "world/global_space.h"
 #include "world/global_space_manager.h"
-#include "world/world.h"
 #include <string.h>
 
 static inline

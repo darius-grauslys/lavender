@@ -109,6 +109,7 @@ void m_process__game_action__world__load_client__outbound(
                     get_center_of__local_space_manager(get_p_local_space_manager_from__client(p_client)), 
                     gsv__3i32)) {
             // TODO: timeout/retry this code path.
+            set_client_as__active(p_client);
             Process *p_process__teleport_client =
                 teleport_client(p_game, p_client, get_position_3i32F4_of__hitbox_aabb(p_hitbox_aabb));
             enqueue_process(

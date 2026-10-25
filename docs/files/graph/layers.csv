@@ -1,0 +1,9 @@
+# Layers of the architecture (hand-written), lowest rank at the bottom.
+# A node may only depend on nodes whose layer rank is <= its own; an edge that
+# points to a higher rank is drawn red as a violation. Nodes with an empty
+# layer, and exempt nodes, are never judged. Assign layers in nodes.csv.
+id,rank,label,color,description
+support,0,Support,#8a8f98,"Unlayered leaves used everywhere (math, strings, debug)."
+L1,1,L1 core services,#3b82c4,"Core services (input, persistence/io)."
+L2,2,L2 engine services,#8e5bd0,"Engine services (engine loop, game actions, processes, clients, scenes)."
+backend,3,Backends,#c9762c,"Platform backends that implement the platform contract."

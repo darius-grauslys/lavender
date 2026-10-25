@@ -34,3 +34,20 @@ const f_Object_Handler array_of__object_handlers__pre_teleport_object[] = {
 const f_Object_Handler array_of__object_handlers__post_teleport_object[] = {
     0
 };
+
+const f_Object_Handler array_of__object_handlers__initialize_object[] = {
+    // f_object_handler__hitbox__initialize,
+    // f_object_handler__entity__initialize,
+    // f_object_handler__client__initialize,
+    0
+};
+
+const f_Object_Handler array_of__object_handlers__release_object[] = {
+    // f_object_handler__hitbox__release,
+    // f_object_handler__entity__release,
+    // f_object_handler__client__release,
+    // f_object_handler__graphics_window__release,
+    // f_object_handler__hitbox_manager__release,
+    // f_object_handler__ui_manager__release,
+    0
+};

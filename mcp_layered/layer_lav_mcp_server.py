@@ -11,14 +11,20 @@ It wraps the Layer 5 adapter in a session-aware envelope.
 
 from __future__ import annotations
 
+import argparse
+import json
+import logging
 import os
 import sys
 import threading
 import uuid
+from pathlib import Path
 from typing import Any, Callable
 
 from mcp_layered.layer_lav_init import LavSession, create_session, default_session
 from mcp_layered.layer_lav_mcp import MCPAdapter, TOOL_DEFINITIONS
+
+logger = logging.getLogger("mcp_layered.server")
 
 
 class SessionRegistry:
@@ -240,3 +246,236 @@ class SessionManager:
 
     def __exit__(self, *args) -> None:
         self.close()
+
+
+# --------------------------------------------------------------------------- #
+#  MCP JSON-RPC helpers (stdio transport)                                     #
+# --------------------------------------------------------------------------- #
+def _make_response(request_id: Any, result: dict[str, Any] | str) -> str:
+    """Build a JSON-RPC 2.0 success response.
+
+    Plain strings are wrapped in MCP content form.
+    """
+    if isinstance(result, str):
+        result = {"content": [{"type": "text", "text": result}]}
+    return json.dumps({
+        "jsonrpc": "2.0",
+        "id": request_id,
+        "result": result,
+    })
+
+
+def _make_error(
+    request_id: Any, code: int, message: str, data: str | None = None
+) -> str:
+    """Build a JSON-RPC 2.0 error response."""
+    error: dict[str, Any] = {"code": code, "message": message}
+    if data:
+        error["data"] = data
+    return json.dumps({
+        "jsonrpc": "2.0",
+        "id": request_id,
+        "error": error,
+    })
+
+
+def _write_stdout(line: str) -> None:
+    """Write one line to stdout and flush (stdio MCP transport)."""
+    sys.stdout.write(line + "\n")
+    sys.stdout.flush()
+
+
+def _handle_mcp_request(
+    request: dict[str, Any],
+    manager: SessionManager,
+) -> str:
+    """Process a single MCP JSON-RPC request and return the response string.
+
+    Handles:
+      - "initialize" — server capabilities handshake
+      - "tools/list" — return available tool definitions
+      - "tools/call" — invoke a tool on the (single) stdio session
+      - "prompts/list" / "resources/list" — (empty)
+      - "initialized" / "notifications/progress" — notifications (no response)
+    """
+    method = request.get("method", "")
+    params = request.get("params", {}) or {}
+    req_id = request.get("id")
+
+    if method == "initialize":
+        return _make_response(req_id, {
+            "protocolVersion": "2024-11-05",
+            "capabilities": {
+                "tools": {},
+                "prompts": {},
+                "resources": {},
+            },
+            "serverInfo": {
+                "name": "lavender-debug-mcp",
+                "version": "0.2.0",
+                "description": (
+                    "MCP server for debugging the Lavender game engine "
+                    "(layered architecture)."
+                ),
+            },
+        })
+
+    if method == "tools/list":
+        return _make_response(req_id, {"tools": manager.list_tools()})
+
+    if method == "tools/call":
+        tool_name = params.get("name", "")
+        arguments = params.get("arguments", {}) or {}
+        logger.info("Tool call: %s args=%s", tool_name, arguments)
+        try:
+            # session_id=None: single-session mode (the stdio session).
+            result = manager.dispatch_tool(None, tool_name, arguments)
+            return _make_response(req_id, result)
+        except Exception as e:
+            logger.exception("Tool call failed: %s", e)
+            return _make_error(
+                req_id, -32000, "Tool execution failed", str(e)
+            )
+
+    if method == "prompts/list":
+        return _make_response(req_id, {"prompts": []})
+
+    if method == "resources/list":
+        return _make_response(req_id, {"resources": []})
+
+    if method in ("initialized", "notifications/progress"):
+        return ""  # notification — no response
+
+    return _make_error(req_id, -32601, f"Method not found: {method}")
+
+
+def run_stdio(manager: SessionManager) -> None:
+    """Run the MCP server in stdio mode (JSON-RPC 2.0 over stdin/stdout).
+
+    Reads one JSON-RPC request per line from stdin and writes one response
+    per line to stdout.  All logging goes to stderr so stdout stays a clean
+    protocol channel.
+    """
+    logger.info("MCP server (layered) running in stdio mode")
+    while True:
+        line = sys.stdin.readline()
+        if not line:
+            break  # EOF
+        line = line.strip()
+        if not line:
+            continue
+
+        try:
+            request = json.loads(line)
+        except json.JSONDecodeError:
+            _write_stdout(
+                _make_error(None, -32700, "Parse error", "Invalid JSON")
+            )
+            continue
+
+        # Handle batch requests (array of requests).
+        if isinstance(request, list):
+            responses = [
+                resp
+                for resp in (_handle_mcp_request(r, manager) for r in request)
+                if resp
+            ]
+            if responses:
+                _write_stdout(json.dumps(responses))
+        else:
+            response = _handle_mcp_request(request, manager)
+            if response:
+                _write_stdout(response)
+
+
+# --------------------------------------------------------------------------- #
+#  CLI entry point                                                            #
+# --------------------------------------------------------------------------- #
+def _resolve_stdio_log_file(log_arg: str | None) -> str | None:
+    """Resolve a --log argument into a concrete file path (or None).
+
+    If the argument is a directory (or has no file extension), a
+    UUID-named log file is created inside it.  If it's a concrete file
+    path, the parent directory is ensured and the path is used as-is.
+    """
+    if not log_arg:
+        return None
+    p = Path(log_arg).expanduser()
+    if p.suffix == "" or p.is_dir():
+        p.mkdir(parents=True, exist_ok=True)
+        return str(p / f"{uuid.uuid4().hex}.jsonl")
+    p.parent.mkdir(parents=True, exist_ok=True)
+    return str(p)
+
+
+def main() -> int:
+    """CLI entry point: python3 -m mcp_layered.layer_lav_mcp_server [--stdio]."""
+    parser = argparse.ArgumentParser(
+        description=(
+            "Lavender Layered MCP Server — debug the Lavender game engine "
+            "via MCP (layered architecture)."
+        ),
+    )
+    parser.add_argument(
+        "--stdio", action="store_true",
+        help="Run in stdio mode (JSON-RPC over stdin/stdout). "
+             "This is the only supported transport.",
+    )
+    parser.add_argument(
+        "--config", default=None,
+        help="Path to config.json (see layer_lav_config).",
+    )
+    parser.add_argument(
+        "--executable", "-e", default=None,
+        help="Override the game executable path (overwrites config). "
+             "The executable may not exist at startup; commands that need "
+             "it (session_start) fail with a clear error.",
+    )
+    parser.add_argument(
+        "--verbose", "-v", action="store_true",
+        help="Enable verbose logging.",
+    )
+    parser.add_argument(
+        "--log", default="/tmp/lav-log/",
+        help="Enable MCP tool call/response logging (JSON lines format). "
+             "If a directory is given, a UUID-named log file is created "
+             "inside it. Default: /tmp/lav-log/ (always enabled).",
+    )
+
+    args = parser.parse_args()
+
+    if not args.stdio:
+        parser.error("only stdio mode is supported (use --stdio)")
+
+    logging.basicConfig(
+        level=logging.DEBUG if args.verbose else logging.INFO,
+        stream=sys.stderr,
+        format="%(asctime)s [%(name)s] %(levelname)s: %(message)s",
+    )
+
+    # CLI executable override takes precedence over config.
+    executable: str | None = None
+    if args.executable:
+        executable = os.path.expandvars(os.path.expanduser(args.executable))
+        logger.info(
+            "Executable overridden via CLI: %s -> %s", args.executable, executable
+        )
+
+    log_file = _resolve_stdio_log_file(args.log)
+
+    # stdio mode: one shared session for the connection.
+    manager = SessionManager(
+        use_single_session=True,
+        default_config_path=args.config,
+        default_executable=executable,
+        log_file=log_file,
+    )
+    try:
+        run_stdio(manager)
+    finally:
+        manager.close()
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

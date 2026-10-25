@@ -1,0 +1,213 @@
+# Lavender agent sandbox: the sandbox container plus an iron-proxy egress
+# gateway, for one GitLab project at a time. See docker/README.md for setup.
+#
+#   C="docker compose -f docker/sandbox/compose.yml --env-file docker/sandbox/lavender.env"
+#   $C up -d --build
+#   $C exec sandbox bash
+#
+# The env file picks the project (and its token); see lavender.env.
+#
+# Network layout:
+#   sandbox ──(sandbox_net, internal: no route out)──> iron-proxy ──(egress)──> GitLab
+#                                                                         └──> LLM servers
+# The sandbox has no other route out, so it can't bypass the proxy.
+#
+# Requires container DNS (podman: the netavark backend + aardvark-dns), so
+# the sandbox can reach the proxy by its service name.
+
+x-required:
+  - &project_id ${GITLAB_PROJECT_ID:?run with --env-file docker/sandbox/<project>.env}
+  - &project_path ${GITLAB_PROJECT_PATH:?run with --env-file docker/sandbox/<project>.env}
+
+services:
+  iron-proxy:
+    image: docker.io/ironsh/iron-proxy:0.53.0
+    command: ["-config", "/etc/iron-proxy/proxy.yaml"]
+    env_file:
+      # Holds GITLAB_TOKEN=... (chmod 600). Only this container sees it.
+      - ${GITLAB_TOKEN_FILE:?set GITLAB_TOKEN_FILE in the project env file}
+      # LLM server keys for opencode (ANUKET_API_KEY=...), chmod 600.
+      - path: ${HOME}/.config/lavender/llm.env
+        required: false
+    configs:
+      - source: proxy_yaml
+        target: /etc/iron-proxy/proxy.yaml
+    volumes:
+      - ${HOME}/.config/lavender/iron-proxy/ca.crt:/etc/iron-proxy/ca.crt:ro
+      - ${HOME}/.config/lavender/iron-proxy/ca.key:/etc/iron-proxy/ca.key:ro
+    networks: [sandbox_net, egress]
+    restart: unless-stopped
+
+  sandbox:
+    image: lav-sandbox-agent:latest
+    build:
+      context: .
+      target: agent
+    depends_on: [iron-proxy]
+    working_dir: /work/repo
+    environment:
+      HTTPS_PROXY: http://iron-proxy:8080
+      https_proxy: http://iron-proxy:8080
+      # The LLM servers speak plain HTTP.
+      HTTP_PROXY: http://iron-proxy:8080
+      http_proxy: http://iron-proxy:8080
+      NO_PROXY: localhost,127.0.0.1
+      no_proxy: localhost,127.0.0.1
+      # The clone is both engine and game (make -e PLATFORM=sdl).
+      LAVENDER_DIR: /work/repo
+      GITLAB_URL: https://${GITLAB_HOST}
+      GITLAB_PROJECT_ID: *project_id
+      # Cloned to /work/repo at start. Set LAV_REPO_BRANCH to pick a branch
+      # other than the project's default.
+      LAV_REPO_URL: https://${GITLAB_HOST}/${GITLAB_PROJECT_PATH}.git
+      LAV_REPO_BRANCH: ${LAV_REPO_BRANCH:-}
+      GIT_AUTHOR_NAME: lavender-agent
+      GIT_AUTHOR_EMAIL: lavender-agent@localhost
+      GIT_COMMITTER_NAME: lavender-agent
+      GIT_COMMITTER_EMAIL: lavender-agent@localhost
+    volumes:
+      # Public CA cert only. The key stays with iron-proxy.
+      - ${HOME}/.config/lavender/iron-proxy/ca.crt:/etc/lav-proxy/ca.crt:ro
+    configs:
+      # Providers point at the LLM servers; no API keys (the proxy adds them).
+      - source: opencode_json
+        target: /root/.config/opencode/opencode.json
+    networks: [sandbox_net]
+    mem_limit: 8g
+    cpus: 4
+    pids_limit: 1024
+    cap_drop: [ALL]
+    cap_add: [CHOWN, DAC_OVERRIDE, FOWNER, SETUID, SETGID]
+    security_opt: ["no-new-privileges:true"]
+
+networks:
+  sandbox_net:
+    internal: true
+  egress: {}
+
+configs:
+  opencode_json:
+    file: ./opencode.json
+
+  # iron-proxy config, filled in from the project env file.
+  # Reference: https://github.com/ironsh/iron-proxy/blob/main/iron-proxy.example.yaml
+  #
+  # Default-deny egress. The sandbox may only:
+  #   - clone/fetch the project over git HTTPS (no push), and
+  #   - use the GitLab API for that one project, as listed below, and
+  #   - call the OpenAI-compatible API of the LLM servers in opencode.json.
+  # GitLab permissions are the real limit; these rules are a second layer. The
+  # commits API can target any branch, so the token should be a Developer-role
+  # project access token, which a protected default branch rejects.
+  proxy_yaml:
+    content: |
+      dns:
+        # Clients reach us via HTTPS_PROXY, not DNS redirection.
+        enabled: false
+
+      proxy:
+        http_listen: ":80"
+        https_listen: ":443"
+        # CONNECT listener used by the sandbox's HTTPS_PROXY.
+        tunnel_listen: ":8080"
+        # Commits-API bodies carry whole files, base64-encoded.
+        max_request_body_bytes: 16777216
+
+      tls:
+        mode: "mitm"
+        ca_cert: "/etc/iron-proxy/ca.crt"
+        ca_key: "/etc/iron-proxy/ca.key"
+
+      transforms:
+        - name: allowlist
+          config:
+            rules:
+              # Opening the HTTPS_PROXY tunnel. The CONNECT itself has no
+              # path; the requests inside it are checked against the rules
+              # below (mitm).
+              - host: "${GITLAB_HOST}"
+                methods: ["CONNECT"]
+              # git clone / fetch. git-receive-pack (push) is not listed.
+              - host: "${GITLAB_HOST}"
+                methods: ["GET"]
+                paths: ["/${GITLAB_PROJECT_PATH}.git/info/refs"]
+              - host: "${GITLAB_HOST}"
+                methods: ["POST"]
+                paths: ["/${GITLAB_PROJECT_PATH}.git/git-upload-pack"]
+              # Read anything in the project (MRs, issues, files, commits, ...).
+              - host: "${GITLAB_HOST}"
+                methods: ["GET"]
+                paths:
+                  - "/api/v4/projects/${GITLAB_PROJECT_ID}"
+                  - "/api/v4/projects/${GITLAB_PROJECT_ID}/*"
+              # Create a branch + commit (lav-gitlab mr).
+              - host: "${GITLAB_HOST}"
+                methods: ["POST"]
+                paths: ["/api/v4/projects/${GITLAB_PROJECT_ID}/repository/commits"]
+              # Open MRs and issues, and comment on them.
+              - host: "${GITLAB_HOST}"
+                methods: ["POST"]
+                paths:
+                  - "/api/v4/projects/${GITLAB_PROJECT_ID}/merge_requests"
+                  - "/api/v4/projects/${GITLAB_PROJECT_ID}/merge_requests/*/notes"
+                  - "/api/v4/projects/${GITLAB_PROJECT_ID}/issues"
+                  - "/api/v4/projects/${GITLAB_PROJECT_ID}/issues/*/notes"
+              # LLM server (llama-swap on anuket over Tailscale, plain HTTP),
+              # for opencode. Keep in sync with the providers in opencode.json.
+              - host: "anuket"
+                methods: ["GET", "POST"]
+                paths: ["/v1/*"]
+
+        - name: secrets
+          config:
+            secrets:
+              # API calls authenticate with the PRIVATE-TOKEN header.
+              - source:
+                  type: env
+                  var: GITLAB_TOKEN
+                inject:
+                  header: "PRIVATE-TOKEN"
+                rules:
+                  - host: "${GITLAB_HOST}"
+                    paths:
+                      - "/api/v4/projects/${GITLAB_PROJECT_ID}"
+                      - "/api/v4/projects/${GITLAB_PROJECT_ID}/*"
+              # git over HTTPS takes the token as a Basic-auth password.
+              - source:
+                  type: env
+                  var: GITLAB_TOKEN
+                inject:
+                  header: "Authorization"
+                  formatter: 'Basic {{ base64 "oauth2:" .Value }}'
+                rules:
+                  - host: "${GITLAB_HOST}"
+                    paths: ["/${GITLAB_PROJECT_PATH}.git/*"]
+              # anuket's llama-server wants an API key.
+              - source:
+                  type: env
+                  var: ANUKET_API_KEY
+                inject:
+                  header: "Authorization"
+                  formatter: "Bearer {{ .Value }}"
+                rules:
+                  - host: "anuket"
+                    paths: ["/v1/*"]
+
+        # Strip anything else the sandbox sends (e.g. Cookie headers). Runs
+        # after secrets so the injected credentials survive.
+        - name: header_allowlist
+          config:
+            headers:
+              - "PRIVATE-TOKEN"
+              - "Authorization"
+              - "Content-Type"
+              - "Content-Length"
+              - "Content-Encoding"
+              - "Accept"
+              - "Accept-Encoding"
+              - "User-Agent"
+              # git protocol v2 negotiation
+              - "Git-Protocol"
+
+      log:
+        level: "info"

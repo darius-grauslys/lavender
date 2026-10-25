@@ -55,6 +55,25 @@ Then you should be able to run the following from the project's base directory:
 make clean nds
 ```
 
+# Documentation
+
+Docs live in `docs/` and are built with [MkDocs](https://www.mkdocs.org/) and the
+[Material theme](https://squidfunk.github.io/mkdocs-material/).
+
+- `docs/files/` — the Markdown source. The tree mirrors the engine source tree;
+  nav is generated from it automatically.
+- `docs/site/` — built output. Open `docs/site/index.html` in a browser
+  (works over plain `file://`).
+
+To rebuild (from the repo root):
+
+```bash
+docs/.venv/bin/mkdocs build
+```
+
+To add or move documentation, just add or move `.md` files in `docs/files/` —
+there is no nav config to maintain. See `AGENTS.md` for details.
+
 # Contributing
 Older git commits have code style instructions, but the older READMEs felt a bit manifesto-like with my rants about OOP. So I will be updating the code style soon. For now, if you make a pull request I'll just refactor things as needed.
 

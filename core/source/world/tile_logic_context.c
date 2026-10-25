@@ -1,5 +1,7 @@
 #include "world/tile_logic_context.h"
 #include "defines.h"
+#include "defines_weak.h"
+#include "types/implemented/world/tile_layer.h"
 #include "world/tile_logic_table.h"
 
 void initialize_tile_logic_context(
@@ -76,4 +78,20 @@ void release_tile_logic_table_from__tile_logic_context(
 
     p_tile_logic_context->array_of__pM_tile_logic_tables[
         the_tile_layer_to__release] = 0;
+}
+
+void release_tile_logic_context(Tile_Logic_Context *p_tile_logic_context) {
+    for (Tile_Layer tile_layer = 0;
+            tile_layer < Tile_Layer__Unknown;
+            tile_layer++) {
+        Tile_Logic_Table *p_tile_logic_table =
+            p_tile_logic_context->array_of__pM_tile_logic_tables[
+            tile_layer];
+        if (!p_tile_logic_table)
+            continue;
+
+        release_tile_logic_table_from__tile_logic_context(
+                p_tile_logic_context, 
+                tile_layer);
+    }
 }

@@ -21,12 +21,22 @@ Usage:
   python3 -m mcp.lav_mcp_server --stdio \\
       --config /path/to/config.json
 
-  # Override the executable from config with a CLI argument:
-  python3 -m mcp.lav_mcp_server --executable /path/to/game \\
-      --stdio
+   # Override the executable from config with a CLI argument:
+   python3 -m mcp.lav_mcp_server --executable /path/to/game \\
+       --stdio
 
-  # Run a single session per HTTP connection (no session ID in URL):
-  python3 -m mcp.lav_mcp_server --port 8890 --no-session-routing
+   # Run a single session per HTTP connection (no session ID in URL):
+   python3 -m mcp.lav_mcp_server --port 8890 --no-session-routing
+
+Executable resolution order (highest precedence first):
+   1. session_start(executable=...)  — per-session tool argument
+   2. --executable / -e              — CLI argument
+   3. config.json "session.executable"
+   4. built-in fallback
+
+A missing executable is accepted at server/session init time; commands that
+need it (session_start, core_load) fail with a clear "executable not found"
+error.
 """
 
 from __future__ import annotations
@@ -38,6 +48,7 @@ import os
 import sys
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
 from typing import Any
 
 from .lav_mcp import LavMcpSession, TOOL_DEFINITIONS

@@ -1,0 +1,655 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lavender architecture graph</title>
+<!--
+  Architecture graph viewer. Data comes from graph-data.js, which the MkDocs
+  hook docs/hooks/graph_data.py generates from layers.csv / nodes.csv /
+  edges.csv in this directory (nodes/edges are themselves generated from the
+  source by docs/scripts/graph_from_sources.py). Edit the CSVs, not this file,
+  to change the graph.
+
+  Cycles and depths are computed here, live, over whatever edges the current
+  filters show, so toggling e.g. "header includes only" re-checks the hierarchy.
+-->
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1d1d20; --muted: #6b6f78; --line: #d9dbe0;
+    --panel: #f7f7f9; --accent: #7e56c2; --edge: #9aa0aa;
+    --bad: #d33a3a; --cycle: #e08a1e; --node-l: 48%;
+  }
+  :root[data-theme="dark"] {
+    --bg: #1e2129; --fg: #e3e4e8; --muted: #9a9fab; --line: #353a46;
+    --panel: #262a34; --accent: #b39ae6; --edge: #6c7280;
+    --bad: #ff6b6b; --cycle: #f0a33c; --node-l: 62%;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--bg); color: var(--fg);
+    font: 14px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    display: flex; flex-direction: column;
+  }
+  header {
+    display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center;
+    padding: 8px 12px; border-bottom: 1px solid var(--line);
+  }
+  header label { display: inline-flex; gap: 5px; align-items: center; color: var(--muted); white-space: nowrap; }
+  header input[type="search"], header select, header input[type="number"] {
+    font: inherit; color: var(--fg); background: var(--panel);
+    border: 1px solid var(--line); border-radius: 4px; padding: 3px 6px;
+  }
+  header input[type="number"] { width: 4.5em; }
+  .legend { display: inline-flex; flex-wrap: wrap; gap: 12px; color: var(--muted); font-size: 12px; }
+  .legend i { display: inline-block; width: 18px; height: 0; vertical-align: middle; margin-right: 4px; border-top: 2px solid var(--edge); }
+  .legend i.bad { border-color: var(--bad); }
+  .legend i.cycle { border-color: var(--cycle); }
+  .legend i.dashed { border-top-style: dashed; }
+  .legend i.dotted { border-top-style: dotted; }
+  #stats { color: var(--muted); font-size: 12px; margin-left: auto; }
+  main { flex: 1; display: flex; min-height: 0; }
+  #cy { flex: 1; min-width: 0; }
+  aside {
+    width: 380px; max-width: 45vw; overflow-y: auto; padding: 12px 14px;
+    border-left: 1px solid var(--line); background: var(--panel);
+  }
+  aside h2 { margin: 0 0 4px; font-size: 18px; word-break: break-word; }
+  aside h3 { margin: 16px 0 6px; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+  aside p { margin: 4px 0; }
+  aside ul { list-style: none; margin: 0; padding: 0; }
+  aside li { padding: 4px 0; border-bottom: 1px solid var(--line); }
+  aside a { color: var(--accent); }
+  aside code { font-size: 12px; word-break: break-all; }
+  .chip { display: inline-block; font-size: 12px; padding: 0 6px; border-radius: 9px; border: 1px solid var(--line); color: var(--muted); margin: 0 4px 2px 0; }
+  button.chip { background: none; font: inherit; font-size: 12px; cursor: pointer; }
+  button.chip:hover { border-color: var(--accent); color: var(--accent); }
+  .ref { display: flex; gap: 6px; align-items: center; margin: 4px 0; }
+  .ref code { color: var(--muted); }
+  .meta { color: var(--muted); font-size: 12px; }
+  .ai { font-size: 12px; margin-top: 2px; padding-left: 8px; border-left: 2px solid var(--accent); }
+  .bad { color: var(--bad); }
+  .cycle { color: var(--cycle); }
+  button.link { background: none; border: 0; padding: 0; font: inherit; color: var(--accent); cursor: pointer; text-decoration: underline; text-align: left; word-break: break-all; }
+  .close { float: right; }
+  #error { padding: 24px; }
+</style>
+</head>
+<body>
+<header>
+  <strong>Architecture graph</strong>
+  <label>Find <input id="search" type="search" list="node-names" placeholder="node id or core::uuid" size="28"></label>
+  <datalist id="node-names"></datalist>
+  <label>Tag <input id="tag" type="search" list="tag-names" placeholder="tags column" size="14"></label>
+  <datalist id="tag-names"></datalist>
+  <label>Layout
+    <select id="layout">
+      <option value="depth">By depth</option>
+      <option value="layers">By layer (layers.csv)</option>
+      <option value="force">Force-directed</option>
+    </select>
+  </label>
+  <label>Color
+    <select id="color">
+      <option value="dir">By directory</option>
+      <option value="layer">By layer</option>
+    </select>
+  </label>
+  <label><input id="show-exempt" type="checkbox"> Exempt nodes</label>
+  <label><input id="show-inactive" type="checkbox"> Inactive includes</label>
+  <label><input id="header-only" type="checkbox"> Header includes only</label>
+  <label><input id="show-unreviewed" type="checkbox" checked> Unreviewed</label>
+  <label><input id="only-problems" type="checkbox"> Only problem edges</label>
+  <label>Min weight <input id="min-weight" type="number" min="0" value="0"></label>
+  <span class="legend">
+    <span><i></i>depends on</span>
+    <span><i class="dashed"></i>unreviewed</span>
+    <span><i class="dotted"></i>inactive</span>
+    <span><i class="bad"></i>upward (layer violation)</span>
+    <span><i class="cycle"></i>in a cycle</span>
+  </span>
+  <span id="stats"></span>
+</header>
+<main>
+  <div id="cy"></div>
+  <aside id="panel" hidden></aside>
+</main>
+
+<script src="vendor/cytoscape-3.30.2.min.js"></script>
+<script src="graph-data.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  // ---- theme: follow Material's palette when embedded, else the OS ----
+  function applyTheme() {
+    var dark = window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches;
+    try {
+      var scheme = window.parent.document.body.getAttribute("data-md-color-scheme");
+      if (scheme) dark = scheme === "slate";
+    } catch (e) { /* cross-origin parent (e.g. file://): keep the OS setting */ }
+    document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+  }
+  applyTheme();
+  try {
+    new MutationObserver(function () { applyTheme(); restyle(); })
+      .observe(window.parent.document.body, { attributes: true, attributeFilter: ["data-md-color-scheme"] });
+  } catch (e) { /* not embedded, or not allowed */ }
+
+  var G = window.LAVENDER_GRAPH;
+  if (!G || !window.cytoscape) {
+    document.querySelector("main").innerHTML =
+      '<p id="error">Graph data not found. This page reads <code>graph-data.js</code>, which is ' +
+      'generated by <code>docs/hooks/graph_data.py</code> during <code>mkdocs build</code>. ' +
+      'Open the copy under <code>docs/site/graph/</code>, not the one under <code>docs/files/</code>.</p>';
+    return;
+  }
+
+  // ---- model ----
+  var layerById = {};
+  G.layers.forEach(function (l) { layerById[l.id] = l; });
+  var nodeById = {};
+  G.nodes.concat(G.edges).forEach(function (x) { x.tags = x.tags || []; });
+  G.nodes.forEach(function (n) { nodeById[n.id] = n; n.dir = n.exempt ? "(exempt)" : n.id.split("/")[0]; });
+  var edgeById = {};
+  var byUuid = {}; // uuid -> { type: "node" | "edge", id }
+  G.nodes.forEach(function (n) { byUuid[n.uuid] = { type: "node", id: n.id }; });
+  G.edges.forEach(function (e, i) {
+    e.id = "e" + i;
+    edgeById[e.id] = e;
+    byUuid[e.uuid] = { type: "edge", id: e.id };
+    var ls = layerById[nodeById[e.source].layer], lt = layerById[nodeById[e.target].layer];
+    e.upward = !!(ls && lt) && lt.rank > ls.rank &&
+      !nodeById[e.source].exempt && !nodeById[e.target].exempt;
+  });
+
+  // ---- controls ----
+  function $(id) { return document.getElementById(id); }
+  var ctl = {
+    layout: $("layout"), color: $("color"), exempt: $("show-exempt"), inactive: $("show-inactive"),
+    headerOnly: $("header-only"), unreviewed: $("show-unreviewed"), problems: $("only-problems"),
+    minWeight: $("min-weight"), tag: $("tag")
+  };
+
+  // Tag filter: case-insensitive substring match against the tags column.
+  // Purely visual (fades non-matches), so it never changes cycle analysis.
+  function tagQuery() { return ctl.tag.value.trim().toLowerCase(); }
+  function tagMatch(item, q) {
+    return item.tags.some(function (t) { return t.toLowerCase().indexOf(q) !== -1; });
+  }
+
+  function nodeVisible(n) { return ctl.exempt.checked || !n.exempt; }
+  // Edges that take part in the hierarchy (cycle / depth computation).
+  function edgeInGraph(e) {
+    if (!nodeVisible(nodeById[e.source]) || !nodeVisible(nodeById[e.target])) return false;
+    if (!ctl.inactive.checked && e.kind === "include-inactive") return false;
+    if (ctl.headerOnly.checked && !e.from_header) return false;
+    if (e.status === "stale") return false;
+    return true;
+  }
+  // Edges actually drawn: the above, minus purely visual filters.
+  function edgeVisible(e) {
+    if (!edgeInGraph(e)) return false;
+    if (!ctl.unreviewed.checked && e.status !== "reviewed") return false;
+    if (ctl.problems.checked && !e.upward && !e.cycle) return false;
+    return e.weight >= (parseFloat(ctl.minWeight.value) || 0);
+  }
+
+  // ---- hierarchy analysis: strongly connected components + depth ----
+  // Exempt nodes and the edges into them never form cycles; they are leaves.
+  var scc = {};   // node id -> component index (only for components of size > 1)
+  var sccMembers = [];
+  var depth = {}; // node id -> longest dependency chain below it, over the condensed graph
+
+  function analyse() {
+    var adj = {};
+    G.nodes.forEach(function (n) { adj[n.id] = []; });
+    G.edges.forEach(function (e) {
+      if (edgeInGraph(e) && !nodeById[e.source].exempt && !nodeById[e.target].exempt) adj[e.source].push(e.target);
+    });
+    // Tarjan, iterative.
+    var index = {}, low = {}, onStack = {}, stack = [], counter = 0, comps = [];
+    G.nodes.forEach(function (root) {
+      if (index[root.id] !== undefined) return;
+      var work = [[root.id, 0]];
+      while (work.length) {
+        var top = work[work.length - 1], v = top[0];
+        if (top[1] === 0) { index[v] = low[v] = counter++; stack.push(v); onStack[v] = true; }
+        var ws = adj[v];
+        if (top[1] < ws.length) {
+          var w = ws[top[1]++];
+          if (index[w] === undefined) work.push([w, 0]);
+          else if (onStack[w]) low[v] = Math.min(low[v], index[w]);
+          continue;
+        }
+        work.pop();
+        if (work.length) { var p = work[work.length - 1][0]; low[p] = Math.min(low[p], low[v]); }
+        if (low[v] === index[v]) {
+          var comp = [], x;
+          do { x = stack.pop(); onStack[x] = false; comp.push(x); } while (x !== v);
+          comps.push(comp);
+        }
+      }
+    });
+    var compOf = {};
+    comps.forEach(function (c, i) { c.forEach(function (id) { compOf[id] = i; }); });
+    scc = {}; sccMembers = [];
+    comps.forEach(function (c) {
+      if (c.length > 1) { c.forEach(function (id) { scc[id] = sccMembers.length; }); sccMembers.push(c); }
+    });
+    // Tarjan emits components in reverse topological order (dependencies first).
+    var compDepth = comps.map(function () { return 0; });
+    comps.forEach(function (c, i) {
+      c.forEach(function (id) {
+        adj[id].forEach(function (t) {
+          var j = compOf[t];
+          if (j !== i) compDepth[i] = Math.max(compDepth[i], compDepth[j] + 1);
+        });
+      });
+    });
+    depth = {};
+    G.nodes.forEach(function (n) { depth[n.id] = n.exempt ? -1 : compDepth[compOf[n.id]]; });
+    G.edges.forEach(function (e) {
+      e.cycle = scc[e.source] !== undefined && scc[e.source] === scc[e.target];
+    });
+  }
+
+  // ---- colors ----
+  var dirs = Array.from(new Set(G.nodes.map(function (n) { return n.dir; }))).sort();
+  function dirColor(dir) {
+    if (dir === "(exempt)") return "hsl(220, 6%, 60%)";
+    var i = dirs.indexOf(dir);
+    var hue = Math.round((i * 360 / dirs.length + 15) % 360);
+    return "hsl(" + hue + ", 55%, " + css("--node-l") + ")";
+  }
+  function nodeColor(n) {
+    if (ctl.color.value === "layer") {
+      var l = layerById[n.layer];
+      return l && l.color ? l.color : "#9aa0aa";
+    }
+    return dirColor(n.dir);
+  }
+
+  // ---- cytoscape ----
+  function css(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+
+  function styles() {
+    return [
+      { selector: "node", style: {
+        "label": "data(label)", "font-size": 11, "color": css("--fg"),
+        "text-valign": "bottom", "text-margin-y": 3, "min-zoomed-font-size": 7,
+        "width": 22, "height": 22, "background-color": "data(color)",
+        "border-width": 1, "border-color": css("--bg") } },
+      { selector: "node[kind = 'h']", style: { "shape": "round-rectangle" } },
+      { selector: "node[kind = 'c']", style: { "shape": "diamond" } },
+      { selector: "node[kind = 'external']", style: { "shape": "hexagon" } },
+      { selector: "node.band", style: {
+        "label": "data(label)", "background-opacity": 0, "border-width": 0,
+        "color": css("--muted"), "font-size": 14, "font-weight": "bold",
+        "text-valign": "center", "text-halign": "left", "events": "no" } },
+      { selector: "edge", style: {
+        "width": "data(w)", "line-color": css("--edge"), "target-arrow-color": css("--edge"),
+        "target-arrow-shape": "triangle", "arrow-scale": 0.7, "curve-style": "bezier", "opacity": 0.45 } },
+      { selector: "edge[status != 'reviewed']", style: { "line-style": "dashed" } },
+      { selector: "edge[kind = 'include-inactive']", style: { "line-style": "dotted" } },
+      { selector: "edge.cycle", style: { "line-color": css("--cycle"), "target-arrow-color": css("--cycle") } },
+      { selector: "edge.upward", style: { "line-color": css("--bad"), "target-arrow-color": css("--bad"), "opacity": 0.8 } },
+      { selector: ".faded", style: { "opacity": 0.06, "text-opacity": 0.12 } },
+      { selector: "node:selected", style: { "border-width": 3, "border-color": css("--accent") } },
+      { selector: "edge:selected", style: { "width": 4, "opacity": 1 } },
+      { selector: ".hl", style: { "opacity": 1 } }
+    ];
+  }
+
+  var elements = [];
+  G.nodes.forEach(function (n) {
+    elements.push({ group: "nodes", data: { id: n.id, label: n.label, kind: n.kind } });
+  });
+  G.edges.forEach(function (e) {
+    elements.push({ group: "edges", data: { id: e.id, source: e.source, target: e.target,
+      status: e.status, kind: e.kind, w: 0.8 + Math.log2(1 + e.weight) },
+      classes: e.upward ? "upward" : "" });
+  });
+
+  var cy = cytoscape({ container: $("cy"), elements: elements, style: styles(),
+    wheelSensitivity: 0.3, minZoom: 0.05, maxZoom: 3 });
+
+  function restyle() {
+    cy.batch(function () {
+      G.nodes.forEach(function (n) { cy.getElementById(n.id).data("color", nodeColor(n)); });
+    });
+    cy.style(styles());
+  }
+
+  // ---- layouts ----
+  // Banded layout: one horizontal band per key, highest band on top. Wide bands
+  // wrap into several rows. Inside a band, nodes are ordered by the mean x of
+  // their neighbours (a few barycenter sweeps) so edges cross less.
+  var DX = 105, DY = 95, PER_ROW = 22;
+
+  function bandedLayout(bands) {
+    cy.remove(".band");
+    var shown = cy.nodes().filter(function (n) { return n.style("display") !== "none"; });
+    var x = {};
+    bands.forEach(function (b) { b.ids.forEach(function (id, i) { x[id] = i * DX; }); });
+    for (var pass = 0; pass < 6; pass++) {
+      bands.forEach(function (b) {
+        var bary = {};
+        b.ids.forEach(function (id) {
+          var xs = [];
+          cy.getElementById(id).connectedEdges().forEach(function (ed) {
+            if (ed.style("display") === "none") return;
+            var other = ed.source().id() === id ? ed.target().id() : ed.source().id();
+            if (x[other] !== undefined) xs.push(x[other]);
+          });
+          bary[id] = xs.length ? xs.reduce(function (a, c) { return a + c; }, 0) / xs.length : x[id];
+        });
+        b.ids.sort(function (p, q) { return bary[p] - bary[q]; });
+        var cols = Math.min(b.ids.length, PER_ROW);
+        b.ids.forEach(function (id, i) { x[id] = ((i % PER_ROW) - (cols - 1) / 2) * DX; });
+      });
+    }
+    var pos = {}, y = 0, left = -((PER_ROW - 1) / 2) * DX - DX * 0.6;
+    bands.forEach(function (b) {
+      var rows = Math.ceil(b.ids.length / PER_ROW);
+      b.ids.forEach(function (id, i) {
+        // stagger wrapped rows so labels in a tall band don't line up into a wall
+        pos[id] = { x: x[id] + (Math.floor(i / PER_ROW) % 2 ? DX / 2 : 0), y: y + Math.floor(i / PER_ROW) * DY * 0.7 };
+      });
+      cy.add({ group: "nodes", classes: "band", data: { id: "band:" + b.key, label: b.label },
+        position: { x: left, y: y + (rows - 1) * DY * 0.35 }, selectable: false, grabbable: false });
+      y += rows * DY * 0.7 + DY;
+    });
+    shown.layout({ name: "preset", positions: pos, fit: false, animate: false }).run();
+    cy.fit(undefined, 30);
+  }
+
+  function shownIds() {
+    return G.nodes.filter(nodeVisible).map(function (n) { return n.id; });
+  }
+
+  function depthLayout() {
+    var byDepth = {};
+    shownIds().forEach(function (id) { (byDepth[depth[id]] = byDepth[depth[id]] || []).push(id); });
+    var keys = Object.keys(byDepth).map(Number).sort(function (a, b) { return b - a; });
+    bandedLayout(keys.map(function (d) {
+      var ids = byDepth[d];
+      var label = d < 0 ? "exempt" : "depth " + d;
+      if (ids.some(function (id) { return scc[id] !== undefined; })) label += " ⟳";
+      return { key: "d" + d, label: label + "  (" + ids.length + ")", ids: ids };
+    }));
+  }
+
+  function layerLayout() {
+    var bands = G.layers.slice().sort(function (a, b) { return b.rank - a.rank; })
+      .map(function (l) { return { key: l.id, label: l.label, ids: [] }; });
+    var unassigned = { key: "", label: "Unassigned", ids: [] };
+    bands.unshift(unassigned);
+    var bandOf = {};
+    bands.forEach(function (b) { bandOf[b.key] = b; });
+    shownIds().forEach(function (id) { (bandOf[nodeById[id].layer] || unassigned).ids.push(id); });
+    bands = bands.filter(function (b) { return b.ids.length; });
+    bands.forEach(function (b) { b.label += "  (" + b.ids.length + ")"; });
+    bandedLayout(bands);
+  }
+
+  function forceLayout() {
+    cy.remove(".band");
+    cy.elements().filter(function (el) { return el.style("display") !== "none"; })
+      .layout({ name: "cose", animate: false, nodeRepulsion: function () { return 9000; },
+        idealEdgeLength: function () { return 90; }, randomize: true, numIter: 1500 }).run();
+    cy.fit(undefined, 30);
+  }
+
+  function runLayout() {
+    ({ depth: depthLayout, layers: layerLayout, force: forceLayout })[ctl.layout.value]();
+    applyFocus();
+  }
+
+  // ---- filters ----
+  function refresh(relayout) {
+    analyse();
+    cy.batch(function () {
+      G.nodes.forEach(function (n) { cy.getElementById(n.id).style("display", nodeVisible(n) ? "element" : "none"); });
+      G.edges.forEach(function (e) {
+        var el = cy.getElementById(e.id);
+        el.style("display", edgeVisible(e) ? "element" : "none");
+        el.toggleClass("cycle", !!e.cycle);
+      });
+    });
+    var shownEdges = G.edges.filter(edgeVisible).length;
+    var cycEdges = G.edges.filter(function (e) { return edgeInGraph(e) && e.cycle; }).length;
+    var biggest = sccMembers.reduce(function (m, c) { return Math.max(m, c.length); }, 0);
+    $("stats").textContent = shownIds().length + " nodes · " + shownEdges + " edges · " +
+      sccMembers.length + " cycle group(s)" + (biggest ? ", largest " + biggest + " nodes, " + cycEdges + " edges" : "");
+    var q = tagQuery();
+    if (q) {
+      var tn = G.nodes.filter(function (n) { return nodeVisible(n) && tagMatch(n, q); }).length;
+      var te = G.edges.filter(function (e) { return edgeVisible(e) && tagMatch(e, q); }).length;
+      $("stats").textContent += " · tag: " + tn + " nodes, " + te + " edges";
+    }
+    if (relayout) runLayout(); else applyFocus();
+    if (focused) (focused.type === "node" ? showNode : showEdge)(focused.id);
+  }
+
+  // ---- focus + side panel ----
+  var focused = null; // { type: "node" | "edge", id }
+  var panel = $("panel");
+
+  function applyFocus() {
+    cy.elements().removeClass("faded hl");
+    if (focused && focused.type === "node") {
+      var n = cy.getElementById(focused.id);
+      var keep = n.closedNeighborhood().filter(function (el) { return el.style("display") !== "none"; });
+      cy.elements(":not(.band)").not(keep).addClass("faded");
+      keep.edges().addClass("hl");
+    }
+    var q = tagQuery();
+    if (!q) return;
+    cy.elements(":not(.band)").forEach(function (ele) {
+      var item = ele.isNode() ? nodeById[ele.id()] : edgeById[ele.id()];
+      if (item && tagMatch(item, q)) { if (!ele.hasClass("faded")) ele.addClass("hl"); }
+      else ele.addClass("faded");
+    });
+  }
+
+  function el(tag, attrs, children) {
+    var e = document.createElement(tag);
+    Object.keys(attrs || {}).forEach(function (k) {
+      if (k === "text") e.textContent = attrs[k]; else e.setAttribute(k, attrs[k]);
+    });
+    (children || []).forEach(function (c) { if (c) e.appendChild(c); });
+    return e;
+  }
+  function nodeLink(id, text) {
+    var b = el("button", { "class": "link", text: text || id });
+    b.addEventListener("click", function () { selectNode(id, true); });
+    return b;
+  }
+  function edgeLink(e, text) {
+    var b = el("button", { "class": "link", text: text });
+    b.addEventListener("click", function () { selectEdge(e.id); });
+    return b;
+  }
+  function edgeFlags(e) {
+    var frag = el("span", {}, [el("span", { "class": "meta",
+      text: " — " + [e.kind, "×" + e.weight, e.status || "no status"].join(", ") })]);
+    if (e.upward) frag.appendChild(el("span", { "class": "bad", text: " · upward" }));
+    if (e.cycle) frag.appendChild(el("span", { "class": "cycle", text: " · cycle" }));
+    return frag;
+  }
+  function edgeList(list, otherEnd) {
+    if (!list.length) return el("p", { "class": "meta", text: "None." });
+    list.sort(function (a, b) { return (b.upward - a.upward) || (b.cycle - a.cycle) || a[otherEnd].localeCompare(b[otherEnd]); });
+    return el("ul", {}, list.map(function (e) {
+      return el("li", {}, [
+        nodeLink(e[otherEnd]), edgeFlags(e), el("span", { text: " " }), edgeLink(e, "details"),
+        e.note ? el("div", { "class": "meta", text: e.note }) : null,
+        e.ai_commentary ? el("div", { "class": "ai", text: e.ai_commentary }) : null
+      ]);
+    }));
+  }
+  function tagChips(item) {
+    if (!item.tags.length) return null;
+    return el("p", {}, item.tags.map(function (t) {
+      var b = el("button", { "class": "chip", title: "Filter by this tag", text: "#" + t });
+      b.addEventListener("click", function () { ctl.tag.value = t; refresh(false); });
+      return b;
+    }));
+  }
+  // "graph::uuid" ref with a copy button; docs/files/graph/lookup.py resolves it.
+  function copyText(text, done) {
+    function fallback() {
+      var ta = el("textarea", { readonly: "" });
+      ta.value = text;
+      ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      var ok = false;
+      try { ok = document.execCommand("copy"); } catch (err) { /* ignore */ }
+      ta.remove();
+      done(ok);
+    }
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(function () { done(true); }, fallback);
+    } else fallback();
+  }
+  function refLine(item) {
+    if (!item.uuid) return null;
+    var ref = (G.graph || "core") + "::" + item.uuid;
+    var b = el("button", { "class": "chip", title: "Copy ref for lookup.py / an agent", text: "copy" });
+    b.addEventListener("click", function () {
+      copyText(ref, function (ok) {
+        b.textContent = ok ? "copied" : "copy failed";
+        setTimeout(function () { b.textContent = "copy"; }, 1200);
+      });
+    });
+    return el("div", { "class": "ref" }, [el("code", { text: ref }), b]);
+  }
+  function closeButton() {
+    var b = el("button", { "class": "link close", text: "close" });
+    b.addEventListener("click", clearSelection);
+    return b;
+  }
+  function docsBlock(n) {
+    if (!n.docs.length) return el("p", { "class": "meta", text: "No docs linked. Add paths to the docs column in nodes.csv." });
+    return el("ul", {}, n.docs.map(function (d) {
+      return el("li", {}, [el("a", { href: d.href, target: "_top", text: d.path })]);
+    }));
+  }
+
+  function showNode(id) {
+    var n = nodeById[id], l = layerById[n.layer];
+    var out = G.edges.filter(function (e) { return e.source === id && edgeVisible(e); });
+    var inc = G.edges.filter(function (e) { return e.target === id && edgeVisible(e); });
+    var hiddenOut = G.edges.filter(function (e) { return e.source === id; }).length - out.length;
+    var hiddenIn = G.edges.filter(function (e) { return e.target === id; }).length - inc.length;
+    var cyc = scc[id] !== undefined ? sccMembers[scc[id]] : null;
+    panel.replaceChildren(
+      closeButton(),
+      el("h2", { text: n.id }),
+      refLine(n),
+      el("p", {}, [
+        el("span", { "class": "chip", text: l ? l.label : "unassigned layer" }),
+        el("span", { "class": "chip", text: n.kind }),
+        n.exempt ? el("span", { "class": "chip", text: "exempt" }) : null,
+        depth[id] >= 0 ? el("span", { "class": "chip", text: "depth " + depth[id] }) : null
+      ]),
+      tagChips(n),
+      n.description ? el("p", { text: n.description }) : null,
+      cyc ? el("p", { "class": "cycle", text: "In a cycle with " + (cyc.length - 1) + " other node(s)." }) : null,
+      el("h3", { text: "Files" }),
+      el("ul", {}, n.files.map(function (f) { return el("li", {}, [el("code", { text: f })]); })),
+      el("h3", { text: "Docs" }), docsBlock(n),
+      el("h3", { text: "Depends on (" + out.length + ")" }),
+      hiddenOut ? el("p", { "class": "meta", text: hiddenOut + " more hidden by the current filters." }) : null,
+      edgeList(out, "target"),
+      el("h3", { text: "Used by (" + inc.length + ")" }),
+      hiddenIn ? el("p", { "class": "meta", text: hiddenIn + " more hidden by the current filters." }) : null,
+      edgeList(inc, "source")
+    );
+    panel.hidden = false;
+    cy.resize();
+  }
+
+  function showEdge(id) {
+    var e = edgeById[id];
+    panel.replaceChildren(
+      closeButton(),
+      el("h2", { text: "Edge" }),
+      refLine(e),
+      el("p", {}, [nodeLink(e.source), el("span", { text: " depends on " }), nodeLink(e.target)]),
+      el("p", {}, [edgeFlags(e)]),
+      tagChips(e),
+      e.upward ? el("p", { "class": "bad", text: "Points from a lower layer to a higher one." }) : null,
+      e.cycle ? el("p", { "class": "cycle", text: "Both ends are in the same cycle group." }) : null,
+      el("h3", { text: "#include sites" }),
+      el("ul", {}, e.sites.map(function (s) { return el("li", {}, [el("code", { text: s })]); })),
+      el("h3", { text: "Note" }),
+      el("p", { "class": e.note ? "" : "meta", text: e.note || "None." }),
+      el("h3", { text: "AI commentary" }),
+      el("p", { "class": e.ai_commentary ? "ai" : "meta", text: e.ai_commentary || "None yet (ai_commentary column in edges.csv)." })
+    );
+    panel.hidden = false;
+    cy.resize();
+  }
+
+  function selectNode(id, center) {
+    if (!nodeVisible(nodeById[id])) { ctl.exempt.checked = true; refresh(true); }
+    focused = { type: "node", id: id };
+    cy.elements().unselect();
+    var n = cy.getElementById(id).select();
+    if (center) cy.animate({ center: { eles: n }, duration: 250 });
+    applyFocus();
+    showNode(id);
+  }
+  function selectEdge(id) {
+    focused = { type: "edge", id: id };
+    cy.elements().unselect();
+    cy.getElementById(id).select();
+    applyFocus();
+    showEdge(id);
+  }
+  function clearSelection() {
+    focused = null;
+    cy.elements().unselect();
+    panel.hidden = true;
+    cy.resize();
+    applyFocus();
+  }
+
+  cy.on("tap", "node", function (evt) { selectNode(evt.target.id(), false); });
+  cy.on("tap", "edge", function (evt) { selectEdge(evt.target.id()); });
+  cy.on("tap", function (evt) { if (evt.target === cy) clearSelection(); });
+
+  var dl = $("node-names");
+  G.nodes.forEach(function (n) { dl.appendChild(el("option", { value: n.id })); });
+  var tagSet = {};
+  G.nodes.concat(G.edges).forEach(function (x) { x.tags.forEach(function (t) { tagSet[t] = true; }); });
+  Object.keys(tagSet).sort().forEach(function (t) { $("tag-names").appendChild(el("option", { value: t })); });
+  $("search").addEventListener("change", function () {
+    var v = this.value.trim();
+    var hit = byUuid[v.split("::").pop()];
+    if (nodeById[v]) selectNode(v, true);
+    else if (hit && hit.type === "node") selectNode(hit.id, true);
+    else if (hit) selectEdge(hit.id);
+  });
+  ctl.layout.addEventListener("change", runLayout);
+  ctl.color.addEventListener("change", restyle);
+  [ctl.exempt, ctl.inactive, ctl.headerOnly].forEach(function (c) {
+    c.addEventListener("change", function () { refresh(true); });
+  });
+  [ctl.unreviewed, ctl.problems, ctl.minWeight, ctl.tag].forEach(function (c) {
+    c.addEventListener(c === ctl.tag ? "input" : "change", function () { refresh(false); });
+  });
+
+  // #node-id in the URL selects that node, so docs can deep-link into the graph.
+  restyle();
+  refresh(true);
+  var hash = decodeURIComponent(location.hash.slice(1));
+  if (nodeById[hash]) selectNode(hash, true);
+})();
+</script>
+</body>
+</html>

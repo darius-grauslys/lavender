@@ -83,13 +83,18 @@ Quantity__u32 PLATFORM_get_directories(
             continue;
         }
 
+        Quantity__u32 length_of__directory_name =
+            strnlen(
+                    p_directory_entry->d_name, 
+                    max_length_of__directory_name);
+
         strncpy(
                 p_directory_name__buffer
                 + sizeof(char)
                 * max_length_of__directory_name
                 * quantity_of__directories++, 
                 p_directory_entry->d_name, 
-                max_length_of__directory_name);
+                length_of__directory_name);
     }
 
     return quantity_of__directories;

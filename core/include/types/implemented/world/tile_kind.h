@@ -5,12 +5,12 @@
 
 typedef enum Tile_Kind {
     Tile_Kind__None = 0,
-    // GEN-LOGIC-BEGIN
-    // GEN-LOGIC-END
-    Tile_Kind__Logical = Tile_Kind__None,
-
     // GEN-NO-LOGIC-BEGIN
     // GEN-NO-LOGIC-END
+
+    Tile_Kind__Logical, /*Logical tiles can exceed tilesheet index limit*/
+    // GEN-LOGIC-BEGIN
+    // GEN-LOGIC-END
     Tile_Kind__Unknown
 } Tile_Kind;
 

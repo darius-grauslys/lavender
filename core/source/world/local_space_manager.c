@@ -10,7 +10,6 @@
 #include "world/global_space_manager.h"
 #include "world/local_space.h"
 #include "world/tile_vectors.h"
-#include "world/world.h"
 
 static inline
 Local_Space *get_p_local_space_by__local_xyz_from__local_space_manager(

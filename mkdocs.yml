@@ -1,0 +1,59 @@
+# Lavender documentation
+#
+# The docs/ tree mirrors the engine source tree. Navigation is generated
+# automatically from the file structure — to move a page, move the .md file;
+# there is no nav: list to maintain.
+#
+# Build (from the repo root):
+#   docs/.venv/bin/mkdocs build
+# Then open docs/site/index.html in a browser (works over plain file://).
+
+site_name: Lavender
+site_description: Cross-platform multiplayer retro game engine
+
+# Source tree (mirrors the engine source tree) and build output, both under docs/.
+docs_dir: docs/files
+site_dir: docs/site
+
+# Explicit .html links instead of directory URLs (core/index.html, not core/),
+# so the site works when opened straight from the filesystem over file://.
+use_directory_urls: false
+
+# Compiles docs/files/graph/*.csv into the architecture graph viewer's data.
+hooks:
+  - docs/hooks/graph_data.py
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: purple
+      accent: purple
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+    - scheme: slate
+      primary: purple
+      accent: purple
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+  features:
+    # Collapsible sidebar sections — the nav mirrors the source tree.
+    - navigation.sections
+    # Only render the part of the nav tree that is visible on each page. Without
+    # this every page embeds the full ~2k-entry nav (1MB+ per page, GBs per build).
+    - navigation.prune
+    - navigation.top
+    - navigation.path
+    # Right-hand per-page table of contents.
+    - toc
+    # Copy button on code blocks.
+    - content.code.copy
+
+markdown_extensions:
+  - tables
+  - attr_list
+  - md_in_html
+  - toc:
+      permalink: true

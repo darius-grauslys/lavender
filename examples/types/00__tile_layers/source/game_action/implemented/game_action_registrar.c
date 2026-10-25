@@ -1,0 +1,106 @@
+#include "game_action/implemented/game_action_registrar.h"
+#include "game_action/core/game_action__bad_request.h"
+#include "game_action/core/hitbox/game_action__hitbox.h"
+#include "game_action/core/input/game_action__input.h"
+#include "game_action/core/tcp/game_action__tcp_begin_connect.h"
+#include "game_action/core/tcp/game_action__tcp_connect.h"
+#include "game_action/core/tcp/game_action__tcp_connect__accept.h"
+#include "game_action/core/tcp/game_action__tcp_connect__reject.h"
+#include "game_action/core/tcp/game_action__tcp_delivery.h"
+
+#include "game_action/core/global_space/game_action__global_space__store.h"
+#include "game_action/core/global_space/game_action__global_space__request.h"
+#include "game_action/core/global_space/game_action__global_space__resolve.h"
+#include "game_action/core/world/game_action__world__load_client.h"
+#include "game_action/core/world/game_action__world__load_world.h"
+
+void register_game_actions__offline(
+        Game_Action_Logic_Table *p_game_action_logic_table) {
+    register_game_action__global_space__store(
+            p_game_action_logic_table);
+    register_game_action__global_space__resolve(
+            p_game_action_logic_table);
+    register_game_action__global_space__request_for__offline(
+            p_game_action_logic_table);
+    register_game_action__world__load_client(
+            p_game_action_logic_table);
+    register_game_action__world__load_world(
+            p_game_action_logic_table);
+
+    register_game_action__hitbox_for__offline(
+            p_game_action_logic_table);
+
+    register_game_action__input_for__offline(
+            p_game_action_logic_table);
+    // GEN-OFFLINE-BEGIN
+    debug_warning("register_game_actions__offline, impl.");
+    // GEN-OFFLINE-END
+}
+
+void register_game_actions__client(
+        Game_Action_Logic_Table *p_game_action_logic_table) {
+    register_game_action__bad_request(
+            p_game_action_logic_table);
+
+    register_game_action__tcp_connect(
+            p_game_action_logic_table);
+    register_game_action__tcp_connect__begin(
+            p_game_action_logic_table);
+    register_game_action__tcp_connect__accept(
+            p_game_action_logic_table);
+    register_game_action__tcp_connect__reject(
+            p_game_action_logic_table);
+    register_game_action__tcp_delivery(
+            p_game_action_logic_table);
+
+    register_game_action__global_space__resolve(
+            p_game_action_logic_table);
+    register_game_action__global_space__request_for__client(
+            p_game_action_logic_table);
+
+    register_game_action__hitbox_for__client(
+            p_game_action_logic_table);
+
+    register_game_action__input_for__client(
+            p_game_action_logic_table);
+    // GEN-CLIENT-BEGIN
+    debug_warning("register_game_actions__client, impl.");
+    // GEN-CLIENT-END
+}
+
+void register_game_actions__server(
+        Game_Action_Logic_Table *p_game_action_logic_table) {
+    register_game_action__bad_request(
+            p_game_action_logic_table);
+
+    register_game_action__tcp_connect(
+            p_game_action_logic_table);
+    register_game_action__tcp_connect__begin(
+            p_game_action_logic_table);
+    register_game_action__tcp_connect__accept(
+            p_game_action_logic_table);
+    register_game_action__tcp_connect__reject(
+            p_game_action_logic_table);
+    register_game_action__tcp_delivery(
+            p_game_action_logic_table);
+
+    register_game_action__global_space__store(
+            p_game_action_logic_table);
+    register_game_action__global_space__resolve(
+            p_game_action_logic_table);
+    register_game_action__global_space__request_for__server(
+            p_game_action_logic_table);
+    register_game_action__world__load_client(
+            p_game_action_logic_table);
+    register_game_action__world__load_world(
+            p_game_action_logic_table);
+
+    register_game_action__hitbox_for__server(
+            p_game_action_logic_table);
+
+    register_game_action__input_for__server(
+            p_game_action_logic_table);
+    // GEN-SERVER-BEGIN
+    debug_warning("register_game_actions__server, impl.");
+    // GEN-SERVER-END
+}

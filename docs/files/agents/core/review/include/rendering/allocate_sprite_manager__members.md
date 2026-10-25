@@ -1,0 +1,44 @@
+### 1. Header
+- **Function name:** `allocate_sprite_manager__members`
+- **File of origin:** `core/source/rendering/sprite_manager.c`
+
+### 2. Semantic
+Acquires the manager's backing heap pools: allocates a contiguous array of `Sprite` slots and a parallel array of `Sprite_Render_Record` entries both sized by `quantity_of__sprites__u32`, marks every `Sprite` slot as deallocated (zeroed + serialization header set to `IDENTIFIER__UNKNOWN__u32`) so the slots are ready for per-sprite allocation, and configures the manager's tracking fields (`p_sprite_render_record__last`, `max_quantity_of__sprites`). The function does NOT tag the manager's own header with a UUID — that is the caller's responsibility via `ALLOCATE_P` in `allocate_sprite_manager_from__sprite_context`.
+
+### 3. Pre-conditions
+1. `p_sprite_manager` must point to a writable `Sprite_Manager`. The function does not null-check `p_sprite_manager` directly; it delegates to `initialize_sprite_manager`, whose null check is debug-only (`#ifndef NDEBUG`) and returns early rather than preventing the subsequent dereference. In release builds a null `p_sprite_manager` invokes undefined behavior (`memset` through null in `initialize_sprite_manager`, then the malloc-assignment dereference). Per the codebase convention the struct pointer is caller-validated; this is accepted, but the delegated debug check is misleading at this call site.
+2. The `Sprite_Manager` should be in a fresh/deallocated state with no live pool allocations. `initialize_sprite_manager` (the first step) zeroes the entire struct — including any pre-existing `pM_pool_of__sprites` / `pM_sprite_render_records` pointers — without freeing them. Passing an already-allocated manager therefore leaks the old pools; the convention is that the caller only ever passes a deallocated slot (e.g. one selected by `get_next_available__allocation_in__contiguous_array`).
+3. `quantity_of__sprites__u32` is expected to be > 0 to be meaningful. A value of 0 is not rejected: `malloc(0)` is implementation-defined (NULL → returns `false`; a unique pointer → returns `true` with empty pools), so zero-quantity behavior is implementation-defined rather than undefined.
+4. Both `malloc` calls must succeed for the function to return `true`.
+
+### 4. Post-conditions
+1. On success (returns `true`):
+   - `pM_pool_of__sprites` points to a heap array of `quantity_of__sprites__u32` `Sprite` elements, each zeroed and individually stamped as deallocated (`serialization_header.uuid == IDENTIFIER__UNKNOWN__u32`, `size_of__struct == sizeof(Sprite)`) by `initialize_serialization_header__contiguous_array`.
+   - `pM_sprite_render_records` points to a heap array of `quantity_of__sprites__u32` zero-initialized `Sprite_Render_Record` elements (zeroed by the trailing `memset`).
+   - `p_sprite_render_record__last == pM_sprite_render_records` (no sprites added yet — the high-water cursor sits at the start of the render-records array).
+   - `max_quantity_of__sprites == quantity_of__sprites__u32`.
+   - The manager's own `_serialization_header` remains deallocated (`uuid == IDENTIFIER__UNKNOWN__u32`) — intentionally left for the caller to tag via `ALLOCATE_P`; this function only prepares the member pools.
+2. On first-malloc failure (returns `false`): the manager has been zeroed by `initialize_sprite_manager` (deallocated header, all fields NULL/0). No pools are allocated; `pM_pool_of__sprites` is NULL. The slot is left in a clean deallocated state.
+3. On second-malloc failure (returns `false`): `pM_pool_of__sprites` has been `free`d; `pM_sprite_render_records` is NULL; `max_quantity_of__sprites` is 0. **Note:** `pM_pool_of__sprites` is left as a dangling (freed, non-NULL) pointer rather than being set to NULL (see Implementation Correctness). It has no consequence in any reachable flow — the caller (`allocate_sprite_manager_from__sprite_context`) discards the failed slot, and later reuse clears it via `initialize_sprite_manager`'s `memset`.
+
+### 5. Correctness Verdict
+Correct
+
+### 6. Semantic Alignment
+The implementation faithfully realizes its intent: acquire two same-capacity pools, initialize every sprite slot to the deallocated/available state, and wire up the manager's capacity and render-record cursor. The partial-failure handling frees the first pool when the second allocation fails, so there is no leak on partial failure. Leaving the manager's own header deallocated (for the caller to tag) matches the documented contract and the test suite — `sprite_manager__allocate_members__sprites_are_deallocated` verifies each sprite is deallocated, while manager-level tagging is the caller's job.
+
+Lavender initialization semantics: this is a hybrid. `initialize_sprite_manager` performs Lavender-style reset (zeroing the struct + stamping the deallocated header — i.e. pool cleanup), intentionally decoupled from the subsequent genuine OS resource acquisition (`malloc`). This is NOT RAII; initialization (reset) and acquisition are separate steps, consistent with the codebase convention (cf. `f_hitbox_manager__allocator_AABB`, where `initialize_hitbox_aabb_manager` runs only after all mallocs succeed).
+
+### 7. Implementation Correctness
+- **Type compatibility:** `malloc` receives `sizeof(Sprite) * quantity_of__sprites__u32` and `sizeof(Sprite_Render_Record) * quantity_of__sprites__u32`, both `size_t`-compatible (`uint32_t` quantity promotes to `size_t`); arguments match `malloc`'s signature exactly. The `(Serialization_Header *)` casts on `pM_pool_of__sprites` are valid by the first-member aliasing rule (`_serialization_header` is the first member of `Sprite`). `initialize_serialization_header__contiguous_array` is called as `(Serialization_Header*, Quantity__u32, Quantity__u32)`; the third argument `sizeof(Sprite)` (a `size_t`) is implicitly narrowed to `Quantity__u32` (`uint32_t`) — a codebase-wide convention (also in `initialize_sprite_manager`'s `DEALLOCATE_P` usage and `clear_p_sprites_in__sprite_manager`). `Sprite` is small (< 256 bytes), well within `uint32` range, so the narrowing is safe in practice. No other implicit conversions or truncation occur.
+- **Undefined behavior:** No null dereference in normal flow (caller-supplied manager is non-null); render-records cursor logic is bounded by `max_quantity_of__sprites`. `initialize_serialization_header__contiguous_array` and the trailing `memset` operate on freshly allocated, valid buffers. No type punning, no out-of-bounds access, no double-free. The `sizeof * quantity` multiplication can overflow `size_t` only on 32-bit builds with very large quantities — a codebase-wide convention (cf. `f_hitbox_manager__allocator_AABB`, where the identical pattern was accepted as `Correct`) and not introduced by this function's logic.
+- **Validation:** Both `malloc` return values are checked and the first allocation is freed on second-failure — matching the careful convention (contrast the defective `allocate_client_pool_for__game`, which failed to check its mallocs). The one gap is the absence of a direct null check on `p_sprite_manager` (delegated to `initialize_sprite_manager`'s debug-only guard), which per codebase convention is the caller's responsibility. The dangling-pointer-not-NULLed issue on the second-failure path (Post-conditions point 3) is a minor state-cleanliness defect: the freed `pM_pool_of__sprites` should be assigned `NULL` before returning `false`. It has no consequence in any reachable flow (caller discards the slot; reuse clears it), but it deviates from the cleaner local-variable-then-commit pattern used in `f_hitbox_manager__allocator_AABB`.
+
+### 8. Side Effects
+- Calls `initialize_sprite_manager`, which `memset`s the entire `Sprite_Manager` to zero and stamps its `_serialization_header` to the deallocated sentinel (`IDENTIFIER__UNKNOWN__u32`, `size_of__struct = sizeof(Sprite_Manager)`).
+- Performs two `malloc` calls: `pM_pool_of__sprites` (a `Sprite[quantity]` heap array) and `pM_sprite_render_records` (a `Sprite_Render_Record[quantity]` heap array). These are owned by the manager until the member pools are released by the caller.
+- Mutates each `Sprite` element in `pM_pool_of__sprites` via `initialize_serialization_header__contiguous_array` (zeroes the element and sets its deallocated serialization header).
+- Writes `p_sprite_render_record__last = pM_sprite_render_records` and `max_quantity_of__sprites = quantity_of__sprites__u32`.
+- Zero-fills the entire `pM_sprite_render_records` array via `memset`.
+- On the second-malloc-failure path: `free(p_sprite_manager->pM_pool_of__sprites)` releases the first heap block (and leaves the pointer dangling, not NULLed).
+- On failure paths: emits `debug_error` messages but performs no I/O or global-state mutation beyond the above. The manager's own header is left deallocated; no UUID tagging occurs here (the caller performs `ALLOCATE_P`).

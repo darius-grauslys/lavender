@@ -7,6 +7,7 @@
 #include "platform_defines.h"
 #include "rendering/opengl/gl_defines.h"
 #include "rendering/opengl/gl_framebuffer_manager.h"
+#include "types/implemented/world/tile_layer.h"
 #include "world/global_space_manager.h"
 #include "world/local_space.h"
 #include "world/local_space_manager.h"
@@ -140,7 +141,7 @@ bool GL_poll_textures_for__chunk_in__chunk_texture_manager(
         Local_Space *p_local_space,
         Texture *ptr_array_OUT_textures_for__chunk,
         bool *p_OUT_is_chunk__needing_graphics_update) {
-    Texture _tmp[GL_MAX_QUANTITY_OF__CHUNK_TEXTURES];
+    Texture _tmp[Tile_Layer__Unknown];
     if (!ptr_array_OUT_textures_for__chunk)
         ptr_array_OUT_textures_for__chunk = _tmp;
 
@@ -205,7 +206,7 @@ bool GL_poll_textures_for__chunk_in__chunk_texture_manager(
              == IDENTIFIER__UNKNOWN__u64) {
         for (Index__u32 index_of__chunk_texture = 0;
                 index_of__chunk_texture 
-                < GL_MAX_QUANTITY_OF__CHUNK_TEXTURES;
+                < Tile_Layer__Unknown;
                 index_of__chunk_texture++) {
             if (PLATFORM_allocate_texture(
                         get_p_PLATFORM_gfx_context_from__gfx_context(p_gfx_context), 
@@ -229,7 +230,7 @@ bool GL_poll_textures_for__chunk_in__chunk_texture_manager(
 yield_textures:
     for (Index__u32 index_of__chunk_texture = 0;
             index_of__chunk_texture 
-            < GL_MAX_QUANTITY_OF__CHUNK_TEXTURES;
+            < Tile_Layer__Unknown;
             index_of__chunk_texture++) {
         ptr_array_OUT_textures_for__chunk[index_of__chunk_texture]
             = p_GL_chunk_texture_entry

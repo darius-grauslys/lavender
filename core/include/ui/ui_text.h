@@ -67,6 +67,10 @@ void insert_c_str_into__ui_text(
         Quantity__u32 size_of__text,
         Index__u32 index_to__insert_at);
 
+const char *get_p_const_c_str_text_of__ui_text(
+        UI_Element *p_ui_text,
+        Quantity__u32 *p_OUT_size_of__text);
+
 void m_ui_element__compose_handler__text(
         UI_Element *p_this_ui_element,
         Game *p_game,
@@ -92,11 +96,10 @@ void m_ui_element__dispose_handler__text(
         Graphics_Window *p_graphics_window);
 
 static inline
-const char *get_p_const_c_str_text_of__ui_text(
+Quantity__u32 get_length_of__text_in__ui_text(
         UI_Element *p_ui_text,
-        Quantity__u32 *p_OUT_size_of__text) {
-    *p_OUT_size_of__text = p_ui_text->size_of__char_buffer;
-    return p_ui_text->pM_char_buffer;
+        Quantity__u32 max_length__u32) {
+    return strnlen(p_ui_text->pM_char_buffer, max_length__u32);
 }
 
 static inline

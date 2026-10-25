@@ -20,6 +20,7 @@
 #include "rendering/opengl/gl_vertex_object.h"
 #include "rendering/opengl/gl_viewport.h"
 #include "rendering/opengl/glad/glad.h"
+#include "types/implemented/world/tile_layer.h"
 #include "vectors.h"
 #include "world/camera.h"
 #include "world/chunk.h"
@@ -407,7 +408,7 @@ void GL_compose_world(
                         p_local_space__current_sub)) {
                 goto next_local_space;
             }
-            Texture array_of__textures[GL_MAX_QUANTITY_OF__CHUNK_TEXTURES];
+            Texture array_of__textures[Tile_Layer__Unknown];
             bool is_local_space_with__chunk = 
                 get_p_chunk_from__local_space(
                         p_local_space__current_sub);

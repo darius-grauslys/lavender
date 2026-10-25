@@ -89,7 +89,13 @@ Process *dispatch_handler_process_to__save_client(
         IO_path path_to__client_file,
         Client *p_client);
 
-void allocate_world_for__game(
+///
+/// Returns true if successful, otherwise false.
+///
+bool allocate_world_for__game(
+        Game *p_game);
+
+void release_world_from__game(
         Game *p_game);
 
 Process *load_client(

@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import os
 import re
+import sys
 import time
 from typing import Any
 
@@ -228,7 +229,8 @@ def resolve_pending_scene_transitions(gdb) -> str:
         })
         _scene_state["active_kind"] = kind
         _scene_state["active_ptr"] = ptr or _scene_state.get("active_ptr")
-        print(f"\n[scene] transition: {old_kind or 'None'} -> {kind}")
+        print(f"\n[scene] transition: {old_kind or 'None'} -> {kind}",
+              file=sys.stderr)
 
     return format_scene_transitions(count_before)
 
@@ -858,7 +860,11 @@ def _process_trace_log_path(config) -> str | None:
 
 
 def _log_process_event(path: str | None, ev: dict) -> None:
-    """Write one captured process event to the log file (or stdout). Never raises."""
+    """Write one captured process event to the log file (or stderr). Never raises.
+
+    Fallback goes to stderr, never stdout: in stdio MCP mode stdout is the
+    JSON-RPC protocol channel and must stay clean.
+    """
     stack = " ".join(ev.get("stack", [])) or "<no stack>"
     line = (f"[process-trace] {ev['event']} ptr={ev.get('ptr')} "
             f"handler={ev.get('handler')} ts={ev.get('ts'):.3f} stack=[{stack}]")
@@ -868,7 +874,7 @@ def _log_process_event(path: str | None, ev: dict) -> None:
             with open(path, "a") as f:
                 f.write(line + "\n")
         else:
-            print(line)
+            print(line, file=sys.stderr)
     except Exception:
         pass
 
@@ -980,8 +986,12 @@ def _ga_dispatch_trace_log_path(config) -> str | None:
 
 
 def _log_ga_dispatch_event(path: str | None, ev: dict) -> None:
-    """Write one captured game-action dispatch event to the log (or stdout).
-    Never raises."""
+    """Write one captured game-action dispatch event to the log (or stderr).
+    Never raises.
+
+    Fallback goes to stderr, never stdout: in stdio MCP mode stdout is the
+    JSON-RPC protocol channel and must stay clean.
+    """
     stack = " ".join(ev.get("stack", [])) or "<no stack>"
     client = ev.get("client") or {}
     kind = client.get("ga_outbound_kind")
@@ -998,7 +1008,7 @@ def _log_ga_dispatch_event(path: str | None, ev: dict) -> None:
             with open(path, "a") as f:
                 f.write(line + "\n")
         else:
-            print(line)
+            print(line, file=sys.stderr)
     except Exception:
         pass
 
@@ -1687,7 +1697,8 @@ def _register_breakpoint_hooks_for_gdb(gdb: GDBSession) -> None:
     def on_init_ui(responses: list[DebugResponse]) -> list[DebugResponse]:
         for r in responses:
             if r.is_breakpoint_hit() and r.frame and r.frame.func:
-                print(f"\n[breakpoint] initialize_ui_manager triggered")
+                print(f"\n[breakpoint] initialize_ui_manager triggered",
+                      file=sys.stderr)
                 # A UI manager was (re)allocated, so any cached element
                 # contents may be stale. Clear the cache so the next `[]`
                 # selector forces a fresh `ui list`. This is a pure attribute
@@ -1703,7 +1714,8 @@ def _register_breakpoint_hooks_for_gdb(gdb: GDBSession) -> None:
     def on_receive_action(responses: list[DebugResponse]) -> list[DebugResponse]:
         for r in responses:
             if r.is_breakpoint_hit() and r.frame and r.frame.func:
-                print(f"\n[breakpoint] receive_game_action_for__client triggered")
+                print(f"\n[breakpoint] receive_game_action_for__client triggered",
+                      file=sys.stderr)
         return responses
 
     _game_action_trace_state["receive_hook"] = BreakpointHook(
@@ -1753,7 +1765,8 @@ def _register_breakpoint_hooks_for_gdb(gdb: GDBSession) -> None:
                str(f.line) == str(_SCENE_TRANSITION_LINE):
                 _scene_state["dirty"] += 1
                 print(f"\n[scene] transition pending "
-                      f"({_SCENE_TRANSITION_FILE}:{_SCENE_TRANSITION_LINE})")
+                      f"({_SCENE_TRANSITION_FILE}:{_SCENE_TRANSITION_LINE})",
+                      file=sys.stderr)
         return responses
 
     # Set the line breakpoint directly (the function-breakpoint helper can't
@@ -1765,9 +1778,11 @@ def _register_breakpoint_hooks_for_gdb(gdb: GDBSession) -> None:
             if r.type == ResponseType.RESULT and r.raw.get("message") == "error":
                 print(f"\n[scene] WARNING: could not set breakpoint "
                       f"{_SCENE_TRANSITION_FILE}:{_SCENE_TRANSITION_LINE}: "
-                      f"{r.raw.get('msg')}")
+                      f"{r.raw.get('msg')}",
+                      file=sys.stderr)
     except Exception as e:
-        print(f"\n[scene] WARNING: breakpoint setup failed: {e}")
+        print(f"\n[scene] WARNING: breakpoint setup failed: {e}",
+              file=sys.stderr)
     gdb.add_hook(on_scene_transition)
 
 
@@ -1805,6 +1820,22 @@ def default_session() -> LavSession:
 
 
 # -- Driver Registration -- #
+
+def _executable_missing_message(executable: str) -> str | None:
+    """Return a user-facing error message if *executable* does not exist.
+
+    Returns None when the path exists.  The session is created without
+    requiring the executable — only commands that need it to exist
+    (session_start) fail with this message.
+    """
+    if os.path.exists(executable):
+        return None
+    return (
+        f"ERROR: executable not found: {executable}\n"
+        "Build the game first, or provide a valid executable via "
+        "session_start(executable=...) (or --executable / config)."
+    )
+
 
 def _register_builtin_drivers() -> None:
     """Register built-in scanner drivers that bridge to mcp/ logic.
@@ -1848,13 +1879,29 @@ def _register_builtin_drivers() -> None:
 
     # -- session_start driver -- #
     def session_start_driver(gdb: GDBSession, config: LavConfig, kwargs: dict) -> str:
-        """Start the game under GDB."""
+        """Start the game under GDB.
+
+        Accepts an optional ``executable`` kwarg that overrides the
+        configured executable (from --executable/-e or config.json) for
+        this session.  A missing executable is accepted at session init;
+        starting fails with a clear error.
+        """
+        executable = kwargs.get("executable")
+        if executable:
+            config.executable = os.path.expandvars(os.path.expanduser(str(executable)))
+
         if gdb.is_closed:
             return "ERROR: GDB session is closed."
 
         # Check if already running
         if _session_state.running:
             return f"Game already running (executable={config.executable})."
+
+        # Fail cleanly if the executable does not exist (gdb would fail
+        # obscurely on -file-exec-and-symbols / -exec-run).
+        missing = _executable_missing_message(config.executable)
+        if missing:
+            return missing
 
         # Configure GDB for stability
         try:
@@ -1900,10 +1947,14 @@ def _register_builtin_drivers() -> None:
             return "GDB session is closed."
 
         if not _session_state.running:
-            return (
+            message = (
                 "Game has NOT started.\n"
                 "Use session_start to launch the game."
             )
+            missing = _executable_missing_message(config.executable)
+            if missing:
+                message += f"\n{missing}"
+            return message
 
         status_parts = []
         if _session_state.crashed:

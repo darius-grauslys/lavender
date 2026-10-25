@@ -40,16 +40,17 @@ void initialize_ui_element_as__text_with__const_c_str(
             0, 
             UI_Element_Kind__Text, 
             p_ui_text->ui_flags);
-    p_ui_text->pM_char_buffer = malloc(size_of__text);
+    p_ui_text->pM_char_buffer = malloc(size_of__text+1);
     if (!p_ui_text->pM_char_buffer) {
         set_ui_element_as__disabled(p_ui_text);
         p_ui_text->size_of__char_buffer = 0;
         debug_error("initialize_ui_element_as__text_with__const_c_str, failed to allocate pM_char_buffer.");
         return;
     }
+    p_ui_text->size_of__char_buffer = size_of__text + 1;
     memset(p_ui_text->pM_char_buffer,
             0,
-            size_of__text);
+            p_ui_text->size_of__char_buffer);
 
     initialize_typer_with__font(
             get_p_typer_of__ui_text(p_ui_text), 
@@ -375,4 +376,15 @@ void m_ui_element__dispose_handler__text(
             p_this_ui_element, 
             p_game,
             p_graphics_window);
+}
+
+const char *get_p_const_c_str_text_of__ui_text(
+        UI_Element *p_ui_text,
+        Quantity__u32 *p_OUT_size_of__text) {
+    if (p_OUT_size_of__text) {
+        *p_OUT_size_of__text =
+            strnlen(p_ui_text->pM_char_buffer, 
+                    p_ui_text->size_of__char_buffer);
+    }
+    return p_ui_text->pM_char_buffer;
 }

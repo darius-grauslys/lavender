@@ -1,4 +1,7 @@
-build/*
+/build/
+examples/**/build/
+*.o
+*.d
 build_server/*
 build_client/*
 .cache/
@@ -12,3 +15,7 @@ aider_notes/*
 *__pycache__*
 *.log
 .opencode
+
+# docs build output + venv
+docs/site/
+docs/.venv/

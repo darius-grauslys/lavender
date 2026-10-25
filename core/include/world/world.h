@@ -44,6 +44,14 @@ bool poll_for_collision_node_update(
         Vector__3i32F4 position_new__3i32F4,
         Identifier__u32 uuid_u32_of__entry);
 
+Process *dispatch_process__serialize_world_header(
+        Game *p_game,
+        World *p_world);
+
+Process *dispatch_process__deserialize_world_header(
+        Game *p_game,
+        World *p_world);
+
 static inline
 Camera *get_p_camera_from__world(World *p_world) {
     return &p_world->camera;

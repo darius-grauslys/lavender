@@ -1,0 +1,6 @@
+.PHONY: GAME_SETUP
+
+vpath %.c $(SOURCE_GAME)
+
+GAME_SETUP:
+	cp -r $(GAME_DIR)/assets $(BUILD)

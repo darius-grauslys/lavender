@@ -1,5 +1,4 @@
 #include "defines.h"
-#include "defines_weak.h"
 #include "game.h"
 #include "numerics.h"
 #include "vectors.h"
@@ -7,7 +6,6 @@
 #include "collisions/hitbox_context.h"
 #include "collisions/core/aabb/hitbox_aabb_manager.h"
 #include "collisions/core/aabb/hitbox_aabb.h"
-#include "world/world.h"
 
 void m_camera_handler__default(
         Camera *p_this_camera,
