@@ -30,6 +30,12 @@ x-llm:
   - &llm_host ${LAV_LLM_HOST:-host.docker.internal}
   - &llm_port ${LAV_LLM_PORT:-8080}
   - &llm_model ${LAV_LLM_MODEL:-default}
+  # Tokens per request the server accepts (llama-server: -c divided by
+  # --parallel). opencode compacts the session before reaching it; 0 means
+  # unknown, so it compacts only after the server rejects a request, and
+  # `opencode run` then exits 1.
+  - &llm_context ${LAV_LLM_CONTEXT:-0}
+  - &llm_output ${LAV_LLM_OUTPUT:-32000}
 
 services:
   iron-proxy:
@@ -84,6 +90,8 @@ services:
       LAV_LLM_HOST: *llm_host
       LAV_LLM_PORT: *llm_port
       LAV_LLM_MODEL: *llm_model
+      LAV_LLM_CONTEXT: *llm_context
+      LAV_LLM_OUTPUT: *llm_output
       # opencode's bash tool default is 2 min (max 10); builds need longer.
       OPENCODE_EXPERIMENTAL_BASH_DEFAULT_TIMEOUT_MS: "300000"
     volumes:

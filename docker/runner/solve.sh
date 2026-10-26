@@ -45,6 +45,18 @@ iid=$(jq -r .iid <<<"$issue")
 title=$(jq -r .title <<<"$issue")
 relabel agent-todo agent-doing
 flock -u 9
+# Every way out below reports on the issue first and sets reported=1. Any
+# other exit (a command failing under set -e) would leave the issue on
+# agent-doing with no word, so say so here; then tear the sandbox down.
+reported=0
+on_exit() {
+    if [ "$reported" = 0 ]; then
+        note "Agent run for #$iid stopped on an error in solve.sh.${CI_JOB_URL:+ Log: $CI_JOB_URL}" || true
+        relabel agent-doing agent-failed || true
+    fi
+    [ -z "${C+x}" ] || "${C[@]}" down >/dev/null 2>&1 || true
+}
+trap on_exit EXIT
 echo "Claimed #$iid: $title"
 jq . <<<"$issue" >"$OUT/issue.json"
 
@@ -52,7 +64,6 @@ jq . <<<"$issue" >"$OUT/issue.json"
 C=(docker compose -p "lav-agent-$GITLAB_PROJECT_ID-$iid"
    -f "$SANDBOX_DIR/compose.yml" --env-file "$PROJECT_ENV")
 [ -f "$HOST_ENV" ] && C+=(--env-file "$HOST_ENV")
-trap '"${C[@]}" down >/dev/null 2>&1 || true' EXIT
 "${C[@]}" up -d --quiet-pull 2>&1 | tail -n 2
 # The entrypoint logs this once the clone is complete.
 for _ in $(seq 180); do
@@ -106,12 +117,15 @@ progress() {
         else empty end
     ) | gsub("\\s+"; " ") | .[0:240]'
 }
-# In the background, because bash runs a trap only once the foreground
-# command returns, so a cancel (SIGTERM from the runner) would wait for
-# opencode to finish. `wait` returns at once instead; exiting runs the EXIT
-# trap, and tearing the stack down ends opencode.
+# Cancelling: the runner's SIGTERM reaches only the job shell (via su), which
+# waits on this script and never passes it on, so a cancelled job sat in
+# "canceling" until opencode finished. Instead, opencode runs in the
+# background while we poll our own job's status; on cancel, exiting runs the
+# EXIT trap, and tearing the stack down ends opencode. The TERM trap stays
+# for a signal that does arrive (`wait` returns for it at once).
 # A cancelled job uploads no artifacts, so point at the job log instead.
 cancelled() {
+    reported=1
     note "Agent run for #$iid was cancelled.${CI_JOB_URL:+ Log: $CI_JOB_URL}" || true
     relabel agent-doing agent-failed || true
     exit 143
@@ -122,12 +136,24 @@ set +e
 { sx timeout "$AGENT_TIMEOUT" opencode run --auto --format json "$prompt" \
       2>"$OUT/opencode.stderr"; echo $? >"$OUT/opencode.rc"; } \
     | tee "$OUT/events.jsonl" | progress &
-wait $!
+agent=$!
+job_cancelled() {
+    [ -n "${CI_JOB_ID:-}" ] && api GET "/jobs/$CI_JOB_ID" 2>/dev/null \
+        | jq -e '.status == "canceling" or .status == "canceled"' >/dev/null
+}
+while kill -0 "$agent" 2>/dev/null; do
+    sleep 15 & wait $!
+    job_cancelled && cancelled
+done
+wait "$agent"
 rc=$(cat "$OUT/opencode.rc" 2>/dev/null || echo 1)
 set -e
 echo "opencode exited with $rc"
 
-session=$(jq -r 'select(.sessionID) | .sessionID' "$OUT/events.jsonl" 2>/dev/null | head -n 1)
+# first() stops jq itself: piping into `head -n 1` killed jq with SIGPIPE,
+# and pipefail + set -e then ended the script (exit 141) before it reported.
+session=$(jq -Rrn 'first(inputs | fromjson? | .sessionID // empty)' \
+          "$OUT/events.jsonl" 2>/dev/null || true)
 if [ -n "$session" ]; then
     sx opencode export "$session" >"$OUT/transcript.json" 2>/dev/null || true
 fi
@@ -142,6 +168,7 @@ fi
 if [ "$(sx git rev-list --count "$base..HEAD")" -eq 0 ]; then
     note "Agent run for #$iid ended (exit $rc) without changes.${ARTIFACTS_URL:+ Transcript: $ARTIFACTS_URL}"
     relabel agent-doing agent-failed
+    reported=1
     exit 1
 fi
 
@@ -165,3 +192,4 @@ note "$last
 MR: $mr_url${ARTIFACTS_URL:+
 Transcript: $ARTIFACTS_URL}"
 relabel agent-doing agent-review
+reported=1

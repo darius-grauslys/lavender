@@ -171,8 +171,10 @@ target project (schedule) ─> stub <target>.yml in dgrauslys/lav-agent-ops
    executor, protected, and untagged jobs off. Enable it on every target
    project, not only on the project it was registered on; a job queued
    before that stays pending forever.
-2. In `~/.gitlab-runner/config.toml`, set `concurrent = 1` and `limit = 1`
-   (one sandbox, so one LLM session at a time), and:
+2. In `~/.gitlab-runner/config.toml`, set `concurrent` and `limit` to the
+   number of sandboxes to run at once. Each one is an LLM session, so don't
+   go above the slots the LLM server has free for agents (llama-server's
+   `--parallel`). Then add:
 
    ```toml
    environment = ["DOCKER_HOST=unix:///run/user/1000/podman/podman.sock",

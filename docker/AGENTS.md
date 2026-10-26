@@ -39,6 +39,8 @@ C="docker compose -f docker/sandbox/compose.yml --env-file docker/sandbox/lavend
 | `LAV_LLM_HOST` | `host.docker.internal` (this machine) | Host of the OpenAI-compatible LLM server. The proxy allows only this host. |
 | `LAV_LLM_PORT` | `8080` | Its port (llama-server's default). |
 | `LAV_LLM_MODEL` | `default` | The model opencode asks for. llama-server serving one model accepts any name; llama-swap needs a real one. |
+| `LAV_LLM_CONTEXT` | `0` (unknown) | Tokens per request the server accepts: llama-server's `-c` divided by `--parallel` (its `n_ctx` per slot). opencode compacts the session before it gets there. With `0` it compacts only after the server rejects a request, and `opencode run` then exits 1. |
+| `LAV_LLM_OUTPUT` | `32000` | Most tokens per reply. opencode also keeps this much free when deciding to compact. |
 | `LAV_OPENCODE_JSON` | `sandbox/opencode.json` | A replacement opencode config, e.g. listing several models. |
 
 Example, for an LLM server elsewhere on a tailnet:
@@ -46,6 +48,7 @@ Example, for an LLM server elsewhere on a tailnet:
 ```sh
 LAV_LLM_HOST=llm-box.example-tailnet.ts.net
 LAV_LLM_MODEL=qwen3-27b
+LAV_LLM_CONTEXT=131072
 ```
 
 ## Picking `LAV_LLM_HOST`

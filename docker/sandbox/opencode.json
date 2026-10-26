@@ -12,7 +12,11 @@
       },
       "models": {
         "{env:LAV_LLM_MODEL}": {
-          "name": "{env:LAV_LLM_MODEL}"
+          "name": "{env:LAV_LLM_MODEL}",
+          "limit": {
+            "context": {env:LAV_LLM_CONTEXT},
+            "output": {env:LAV_LLM_OUTPUT}
+          }
         }
       }
     }
