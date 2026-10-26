@@ -1,6 +1,7 @@
 #!/bin/bash
 # One CI job: claim the oldest open agent-todo issue, run opencode on it in a
-# fresh sandbox, open an MR ("Closes #N"), and report back on the issue.
+# fresh sandbox on an Agent-<uuid> branch, open a Draft MR (never merged), and
+# report back on the issue.
 # Runs on the host (shell runner). The GitLab token is read here and used
 # only from the host; it is never passed into the sandbox.
 #
@@ -60,7 +61,17 @@ for _ in $(seq 180); do
 done
 sx() { "${C[@]}" exec -T sandbox "$@"; }
 
-branch=agent/issue-$iid
+# Agent-<uuid>: AGENTS.md lets the agent edit .c/.h files only on branches
+# named this way. The UUIDv5 is recomputable from the issue; <gen> moves past
+# branches left by earlier runs, since lav-gitlab mr always creates a branch.
+LAV_AGENT_NS=0941eb87-f57f-41fa-bb04-10621942e787
+uuid5() { python3 -c 'import sys, uuid; print(uuid.uuid5(uuid.UUID(sys.argv[1]), sys.argv[2]))' "$@"; }
+gen=0
+while :; do
+    branch=Agent-$(uuid5 "$LAV_AGENT_NS" "$GITLAB_HOST/$GITLAB_PROJECT_ID/issue/$iid/$gen")
+    api GET "/repository/branches/$branch" >/dev/null 2>&1 || break
+    gen=$((gen + 1))
+done
 sx git checkout -q -b "$branch"
 base=$(sx git rev-parse HEAD)
 
@@ -103,11 +114,14 @@ fi
 
 message=$(sx git log --reverse --format='%B' "$base..HEAD")
 last=$(sx git log -1 --format='%B')
-description="Closes #$iid
+# Agent MRs are never merged: the human reviews them, writes the change
+# himself, then closes the MR. Draft blocks an accidental merge, and the
+# description must not say "Closes", so the issue stays open until then.
+description="For #$iid. Draft for review: never merge, rewrite by hand.
 
 Opened by the lav-agent pipeline (opencode exit $rc).${ARTIFACTS_URL:+
 Transcript: $ARTIFACTS_URL}"
-mr_out=$(sx lav-gitlab mr --branch "$branch" --title "Resolve #$iid: $title" \
+mr_out=$(sx lav-gitlab mr --branch "$branch" --title "Draft: Resolve #$iid: $title" \
          --description "$description" --message "$message")
 echo "$mr_out"
 mr_url=$(grep -o 'https://[^ ]*merge_requests/[0-9]*' <<<"$mr_out" | tail -n 1)
