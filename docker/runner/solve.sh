@@ -87,10 +87,23 @@ go; the last commit message should summarise the whole change. Do not push and
 do not open merge requests; that happens after you finish."
 
 # --- run the agent ----------------------------------------------------------
+# events.jsonl keeps every event; the job log gets one line per tool call or
+# reply, live. -R + fromjson? so a malformed line can't kill jq (and with it
+# the pipe into tee and opencode).
+progress() {
+    jq -R -r --unbuffered 'fromjson? | (
+        if .type == "tool_use" then
+            "[\(.part.tool)] \(.part.state.title // (.part.state.input | tostring))"
+            + (if .part.state.status == "error" then "  (error)" else "" end)
+        elif .type == "text" then "> \(.part.text)"
+        elif .type == "error" then "! \(tostring)"
+        else empty end
+    ) | gsub("\\s+"; " ") | .[0:240]'
+}
 set +e
 sx timeout "$AGENT_TIMEOUT" opencode run --auto --format json "$prompt" \
-    >"$OUT/events.jsonl" 2>"$OUT/opencode.stderr"
-rc=$?
+    2>"$OUT/opencode.stderr" | tee "$OUT/events.jsonl" | progress
+rc=${PIPESTATUS[0]}
 set -e
 echo "opencode exited with $rc"
 
