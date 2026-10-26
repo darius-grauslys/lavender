@@ -204,12 +204,22 @@ housekeeping.
      protected), `config.toml` `concurrent`/`limit` = 1 and `LAV_RUNNER_DIR`;
      the runner clone on master; lavender CI config
      `lavender.yml@dgrauslys/lav-agent-ops`; `agent-*` labels; schedule.
-6. **Poller:**
-   - write `lav-agent-watch` and its runit service;
-   - create a pipeline trigger token on test-issues;
-   - add `trigger` to `workflow: rules`;
-   - create the `agent` label;
-   - slow the schedule to hourly.
+6. **Poller: written 2026-10-25, not deployed.**
+   - Done:
+     - `docker/runner/lav-agent-watch`;
+     - `trigger` added to `workflow: rules`;
+     - service snippets in `docker/README.md` → *Poller*.
+   - Tested read-only against test-issues with a dummy trigger token:
+     - priming and quiet polls work;
+     - bot-only activity is dropped;
+     - a human-opened issue reaches the trigger call.
+   - It finds the bot's user id from the token, so nothing is hard-coded
+     to user 11. Comments count only from Developer+ members.
+   - Still to do:
+     - create the trigger token(s) and the service(s);
+     - create the `agent` label, or use `LAV_WATCH_LABEL=agent-todo` until
+       `solve.sh` reads `ISSUE_IID` (step 2);
+     - slow the schedule to hourly.
 
 ## Gotchas
 

@@ -188,3 +188,65 @@ target project (schedule) ─> stub <target>.yml in dgrauslys/lav-agent-ops
 4. In the target project: set the CI/CD configuration file to
    `<target>.yml@dgrauslys/lav-agent-ops`, then add a pipeline schedule on the
    default branch.
+
+### Poller
+
+`runner/lav-agent-watch` starts runs within about `LAV_WATCH_INTERVAL`
+(20 s) of activity, instead of waiting for the schedule. GitLab can't reach
+the runner host, so it polls over outbound HTTPS instead of taking webhooks.
+Run one instance per target project, as the runner's user, from the same
+master clone.
+
+It triggers a pipeline (with `ISSUE_IID=<iid>`) for an open issue carrying
+the opt-in label (`LAV_WATCH_LABEL`, default `agent`) when a member with
+Developer access or above (`LAV_WATCH_MIN_ACCESS`, default 30) opens it, adds
+the label, or comments on it. The pipeline acts as the project bot, the
+owner of the project env file's GitLab token, so its relabels, comments and
+system notes never trigger a run. On first start it records the existing
+issues and comments without triggering, then saves its cursor to
+`~/.local/state/lav-agent-watch/<project id>.json` after every poll.
+
+`solve.sh` doesn't read `ISSUE_IID` yet: a triggered run claims the oldest
+`agent-todo` issue, the same as a scheduled one. Until that changes, run the
+poller with `LAV_WATCH_LABEL=agent-todo`.
+
+Setup:
+
+1. In the target project, under Settings → CI/CD → Pipeline trigger tokens,
+   create a token as a human maintainer. Triggered pipelines run as the
+   token's owner, who needs read access to `dgrauslys/lav-agent-ops`.
+   Store it as `GITLAB_TRIGGER_TOKEN=...` in
+   `~/.config/lavender/trigger-<project id>.env` (chmod 600), or point
+   `LAV_TRIGGER_TOKEN_FILE` at it.
+2. Run it as a service that restarts it. It exits on any error and
+   resumes from its cursor. With runit, `~/.config/service/lav-agent-watch-<target>/run`:
+
+   ```sh
+   #!/bin/sh
+   exec 2>&1
+   export LAV_PROJECT_ENV=<target>.env
+   sleep 5   # runit restarts at once; don't hammer GitLab while it's down
+   exec "$HOME/.local/lib/lav-agent/lavender/docker/runner/lav-agent-watch"
+   ```
+
+   With systemd, `/etc/systemd/system/lav-agent-watch@.service`, enabled as
+   `lav-agent-watch@<target>`:
+
+   ```ini
+   [Unit]
+   Description=lav-agent-watch for %i
+   Wants=network-online.target
+   After=network-online.target
+
+   [Service]
+   User=<runner user>
+   Environment=LAV_PROJECT_ENV=%i.env
+   ExecStart=/home/<runner user>/.local/lib/lav-agent/lavender/docker/runner/lav-agent-watch
+   Restart=always
+   RestartSec=20
+
+   [Install]
+   WantedBy=multi-user.target
+   ```
+3. Once it has proved itself, slow the pipeline schedule to hourly
+   (`0 * * * *`) as a safety net.

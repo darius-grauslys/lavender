@@ -1,0 +1,154 @@
+#!/bin/bash
+# Poll one GitLab project for agent work and trigger a pipeline for each issue
+# that needs a run. Outbound HTTPS only: GitLab can't reach the runner host, so
+# webhooks are out.
+#
+# An open issue with the opt-in label needs a run when, since the last poll,
+# a member (Developer or above, not the bot):
+#   - opened it,
+#   - added the opt-in label to it, or
+#   - posted a comment on it (system notes and edits don't count).
+# The pipeline acts as the bot (its relabels, its comments, "mentioned in !N"
+# system notes), so its own activity never triggers a run. Extra triggers are
+# harmless: solve.sh works from the issue's current state, not the event.
+#
+# Runs until stopped. Any error exits non-zero and the service manager
+# restarts it. The cursor is saved after each poll, so a restart repeats at
+# most one poll and loses nothing.
+#
+# Usage: LAV_PROJECT_ENV=lavender.env lav-agent-watch
+set -euo pipefail
+shopt -s inherit_errexit
+
+SANDBOX_DIR=${LAV_SANDBOX_DIR:-$(realpath "$(dirname "$0")/../sandbox")}
+# Same project env file as the ops stub gives solve.sh; a bare name is looked
+# up in SANDBOX_DIR.
+PROJECT_ENV=${LAV_PROJECT_ENV:?LAV_PROJECT_ENV not set, e.g. lavender.env}
+[[ $PROJECT_ENV == */* ]] || PROJECT_ENV=$SANDBOX_DIR/$PROJECT_ENV
+INTERVAL=${LAV_WATCH_INTERVAL:-20}
+LABEL=${LAV_WATCH_LABEL:-agent}
+# Comments end up in the agent's prompt, so only members at this access level
+# or above count (30 = Developer).
+MIN_ACCESS=${LAV_WATCH_MIN_ACCESS:-30}
+
+set -a
+. "$PROJECT_ENV"
+. "$GITLAB_TOKEN_FILE"
+set +a
+# GITLAB_TRIGGER_TOKEN=... (the project's pipeline trigger token, chmod 600).
+TRIGGER_FILE=${LAV_TRIGGER_TOKEN_FILE:-$HOME/.config/lavender/trigger-$GITLAB_PROJECT_ID.env}
+. "$TRIGGER_FILE"
+: "${GITLAB_TRIGGER_TOKEN:?no GITLAB_TRIGGER_TOKEN in $TRIGGER_FILE}"
+STATE=${LAV_WATCH_STATE:-$HOME/.local/state/lav-agent-watch/$GITLAB_PROJECT_ID.json}
+mkdir -p "$(dirname "$STATE")"
+
+API=https://$GITLAB_HOST/api/v4
+PROJECT=$API/projects/$GITLAB_PROJECT_ID
+# Cloudflare in front of GitLab rejects some default User-Agents; always set one.
+UA=lav-agent-watch/1
+
+api() {  # api PATH [curl args...]: GET, relative to the project
+    curl -sSf -A "$UA" -H "PRIVATE-TOKEN: $GITLAB_TOKEN" "$PROJECT$1" "${@:2}"
+}
+api_all() {  # api_all PATH [-d/--data-urlencode query...]: every page, as one array
+    local page=1 batch
+    while :; do
+        batch=$(api "$1" -G -d per_page=100 -d page=$page "${@:2}")
+        printf '%s\n' "$batch"
+        [ "$(jq length <<<"$batch")" -eq 100 ] || break
+        page=$((page + 1))
+    done | jq -cs 'add // []'
+}
+
+# The token is the project bot's, which is also who the pipeline acts as.
+BOT_ID=$(curl -sSf -A "$UA" -H "PRIVATE-TOKEN: $GITLAB_TOKEN" "$API/user" | jq -r .id)
+REF=${LAV_WATCH_REF:-$(api "" | jq -r .default_branch)}
+
+access_level() {  # access_level USER_ID: 0 if not a member
+    local out code
+    out=$(curl -sS -A "$UA" -H "PRIVATE-TOKEN: $GITLAB_TOKEN" -w '\n%{http_code}' \
+          "$PROJECT/members/all/$1")
+    code=${out##*$'\n'}
+    case $code in
+        200) jq -r .access_level <<<"${out%$'\n'*}" ;;
+        404) echo 0 ;;
+        *) echo "members/all/$1: HTTP $code" >&2; return 1 ;;
+    esac
+}
+allowed() {  # allowed USER_ID: a human member at MIN_ACCESS or above
+    [ "$1" != "$BOT_ID" ] || return 1
+    # Called from conditions, where set -e is off: fail loudly by hand.
+    [ -n "${ACCESS[$1]+x}" ] || ACCESS[$1]=$(access_level "$1") || exit 1
+    [ "${ACCESS[$1]}" -ge "$MIN_ACCESS" ]
+}
+
+trigger() {  # trigger IID REASON...
+    local url
+    url=$(curl -sSf -A "$UA" --data-urlencode "token=$GITLAB_TRIGGER_TOKEN" \
+          --data-urlencode "ref=$REF" --data-urlencode "variables[ISSUE_IID]=$1" \
+          "$PROJECT/trigger/pipeline" | jq -r .web_url)
+    echo "#$1 (${*:2}): $url"
+}
+
+# One poll. With PRIME=1 it only records what exists, triggering nothing.
+poll() {
+    local -A ACCESS=()
+    local state since seen_issue issues iid id author why events notes cur
+    state=$(cat "$STATE")
+    since=$(jq -r .since <<<"$state")
+    seen_issue=$(jq -r .issue <<<"$state")
+    # updated_after is inclusive; the per-issue id cursors drop repeats.
+    issues=$(api_all /issues -d state=opened --data-urlencode "labels=$LABEL" \
+             --data-urlencode "updated_after=$since" -d order_by=updated_at -d sort=asc)
+
+    while read -r iid id author; do
+        why=()
+        if [ "$id" -gt "$seen_issue" ] && allowed "$author"; then why+=(opened); fi
+
+        # Global ids only grow, so "newer than the last one seen on this issue"
+        # is exact even for events that land while this poll runs.
+        events=$(api_all "/issues/$iid/resource_label_events")
+        cur=$(jq -r --arg i "$iid" '.issues[$i].label // 0' <<<"$state")
+        while read -r uid; do
+            if allowed "$uid"; then why+=(labelled); break; fi
+        done < <(jq -r --argjson c "$cur" --arg l "$LABEL" \
+                 '.[] | select(.id > $c and .action == "add" and .label.name == $l) | .user.id' \
+                 <<<"$events")
+
+        notes=$(api_all "/issues/$iid/notes")
+        cur=$(jq -r --arg i "$iid" '.issues[$i].note // 0' <<<"$state")
+        while read -r uid; do
+            if allowed "$uid"; then why+=(comment); break; fi
+        done < <(jq -r --argjson c "$cur" '.[] | select(.id > $c and (.system | not)) | .author.id' \
+                 <<<"$notes")
+
+        if [ ${#why[@]} -gt 0 ] && [ -z "${PRIME:-}" ]; then trigger "$iid" "${why[@]}"; fi
+
+        # Only ids go in as arguments: a whole thread can exceed the 128 KiB
+        # limit on one argument.
+        state=$(jq -c --arg i "$iid" \
+                --argjson e "$(jq '[.[].id] | max // 0' <<<"$events")" \
+                --argjson n "$(jq '[.[].id] | max // 0' <<<"$notes")" '
+            .issues[$i] = {label: ([.issues[$i].label // 0, $e] | max),
+                           note:  ([.issues[$i].note  // 0, $n] | max)}' <<<"$state")
+    done < <(jq -r '.[] | "\(.iid) \(.id) \(.author.id)"' <<<"$issues")
+
+    state=$(jq -c --argjson id "$(jq '[.[].id] | max // 0' <<<"$issues")" \
+            --arg up "$(jq -r 'last | .updated_at // ""' <<<"$issues")" '
+        .issue = ([.issue, $id] | max)
+        | if $up != "" then .since = $up else . end' <<<"$state")
+    jq . <<<"$state" >"$STATE.tmp"
+    mv "$STATE.tmp" "$STATE"
+}
+
+echo "Watching $GITLAB_PROJECT_PATH: label '$LABEL', ref $REF, every ${INTERVAL}s"
+if [ ! -f "$STATE" ]; then
+    # First start: existing issues and comments are history, not requests.
+    echo '{"since": "1970-01-01T00:00:00Z", "issue": 0, "issues": {}}' >"$STATE"
+    PRIME=1 poll
+    echo "Primed $STATE; triggering only on activity from now on."
+fi
+while :; do
+    poll
+    sleep "$INTERVAL"
+done

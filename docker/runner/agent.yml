@@ -15,13 +15,14 @@
 # agent's token cannot write to, and never from the target project itself
 # (GitLab would read that from the pipeline's branch).
 #
-# A pipeline schedule (or "New pipeline") starts it. Each solve job claims the
-# oldest open issue labelled agent-todo and works it in its own sandbox.
+# lav-agent-watch (a trigger, passing ISSUE_IID), a pipeline schedule, or
+# "New pipeline" starts it. Each solve job claims the oldest open issue
+# labelled agent-todo and works it in its own sandbox.
 
 workflow:
   rules:
     # Never on pushes: agent branches and MRs get no pipelines at all.
-    - if: $CI_PIPELINE_SOURCE == "schedule" || $CI_PIPELINE_SOURCE == "web"
+    - if: $CI_PIPELINE_SOURCE == "trigger" || $CI_PIPELINE_SOURCE == "schedule" || $CI_PIPELINE_SOURCE == "web"
 
 solve:
   # Only the protected host runner carries this tag.
