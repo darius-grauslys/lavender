@@ -156,6 +156,9 @@ target project (schedule) ─> stub <target>.yml in dgrauslys/lav-agent-ops
   this file and sets `LAV_PROJECT_ENV` (an env file in `sandbox/`).
 - `runner/solve.sh` is the job script. It runs **on the host**, not in the
   sandbox, and is the only part that holds the GitLab token.
+- An issue can pick its model and thinking level with `model::<id>` and
+  `thinking::off|low|medium|high|max` labels; see `AGENTS.md` → *Model and
+  thinking level per issue*. opencode gets 4 hours per issue.
 - Because the job runs on the host, nothing the agent can write may change
   what runs:
   - the stub lives in another project, so GitLab reads it from that project's

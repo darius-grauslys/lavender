@@ -6,6 +6,9 @@
 # only from the host; it is never passed into the sandbox.
 #
 # Issue labels: agent-todo -> agent-doing -> agent-review | agent-failed
+# Per-issue settings, also labels (see docker/AGENTS.md):
+#   model::<id>     a model from the host's models.json (default: LAV_LLM_MODEL)
+#   thinking::<lvl> off | low | medium | high | max (default: LAV_LLM_THINKING)
 set -euo pipefail
 
 SANDBOX_DIR=${LAV_SANDBOX_DIR:-$(realpath "$(dirname "$0")/../sandbox")}
@@ -14,15 +17,24 @@ PROJECT_ENV=${LAV_PROJECT_ENV:?LAV_PROJECT_ENV not set (the ops stub sets it)}
 [[ $PROJECT_ENV == */* ]] || PROJECT_ENV=$SANDBOX_DIR/$PROJECT_ENV
 # This machine's LLM settings, if any (see docker/AGENTS.md).
 HOST_ENV=${LAV_HOST_ENV:-$HOME/.config/lavender/host.env}
-AGENT_TIMEOUT=${AGENT_TIMEOUT:-45m}
+# Models an issue may ask for, beyond the host's default one.
+MODELS_JSON=${LAV_MODELS_JSON:-$HOME/.config/lavender/models.json}
+AGENT_TIMEOUT=${AGENT_TIMEOUT:-4h}
 OUT=${CI_PROJECT_DIR:-$PWD}/agent-run
 ARTIFACTS_URL=${CI_JOB_URL:+$CI_JOB_URL/artifacts/browse/agent-run/}
-mkdir -p "$OUT"
+# One file per live run on this host, named <project>-<iid>.<pid>, holding
+# its model. Lets LAV_LLM_ONE_MODEL keep runs on one model at a time.
+RUNS=/tmp/lav-agent-runs
+mkdir -p "$OUT" "$RUNS"
 
+# The same files, in the same order, that compose reads below: solve.sh
+# needs the default model and thinking level too.
 set -a
 . "$PROJECT_ENV"
+[ ! -f "$HOST_ENV" ] || . "$HOST_ENV"
 . "$GITLAB_TOKEN_FILE"
 set +a
+DEFAULT_MODEL=${LAV_LLM_MODEL:-default}
 
 api() {  # api METHOD PATH [curl args...]
     curl -sSf -A lav-agent-ci/1 -H "PRIVATE-TOKEN: $GITLAB_TOKEN" -X "$1" \
@@ -32,18 +44,46 @@ relabel() { api PUT "/issues/$iid" --data-urlencode "add_labels=$2" \
                 --data-urlencode "remove_labels=$1" >/dev/null; }
 note() { api POST "/issues/$iid/notes" --data-urlencode "body=$1" >/dev/null; }
 
+# setting KEY: the issue's KEY::<value> labels, one per line.
+setting() { jq -r --arg p "$1::" '.labels[] | select(startswith($p)) | ltrimstr($p)' <<<"$issue"; }
+# Models of the runs still alive on this host; drops leftovers of dead ones.
+active_models() {
+    local f
+    for f in "$RUNS"/*; do
+        [ -e "$f" ] || continue
+        if kill -0 "${f##*.}" 2>/dev/null; then cat "$f"; else rm -f "$f"; fi
+    done | sort -u
+}
+
 # --- claim (parallel jobs share this host, so a file lock is enough) --------
+# Oldest first. With LAV_LLM_ONE_MODEL=1 (a server that holds one model at a
+# time, e.g. llama-swap swapping big models), skip issues whose model differs
+# from the one already running; a later job takes them once those finish.
 exec 9>/tmp/lav-agent-claim.lock
 flock 9
-issue=$(api GET "/issues?state=opened&labels=agent-todo&order_by=created_at&sort=asc&per_page=1" \
-        | jq -c '.[0] // empty')
+active=
+[ "${LAV_LLM_ONE_MODEL:-0}" != 1 ] || active=$(active_models)
+issue=$(api GET "/issues?state=opened&labels=agent-todo&order_by=created_at&sort=asc&per_page=100" \
+        | jq -c --arg d "$DEFAULT_MODEL" --arg active "$active" '
+            ($active | split("\n") | map(select(. != ""))) as $a
+            | first(.[] | select(($a | length) == 0 or
+                ((first(.labels[] | select(startswith("model::")) | ltrimstr("model::")) // $d)
+                 as $m | $a | any(.[]; . == $m)))) // empty')
 if [ -z "$issue" ]; then
-    echo "No open agent-todo issues."
+    if [ -n "$active" ]; then
+        echo "Open agent-todo issues all need a model other than the running one ($active); leaving them for a later job."
+    else
+        echo "No open agent-todo issues."
+    fi
     exit 0
 fi
 iid=$(jq -r .iid <<<"$issue")
 title=$(jq -r .title <<<"$issue")
+mapfile -t models < <(setting model)
+mapfile -t thinkings < <(setting thinking)
+model=${models[0]:-$DEFAULT_MODEL}
 relabel agent-todo agent-doing
+echo "$model" >"$RUNS/$GITLAB_PROJECT_ID-$iid.$$"
 flock -u 9
 # Every way out below reports on the issue first and sets reported=1. Any
 # other exit (a command failing under set -e) would leave the issue on
@@ -55,10 +95,44 @@ on_exit() {
         relabel agent-doing agent-failed || true
     fi
     [ -z "${C+x}" ] || "${C[@]}" down >/dev/null 2>&1 || true
+    rm -f "$RUNS/$GITLAB_PROJECT_ID-$iid.$$"
 }
 trap on_exit EXIT
-echo "Claimed #$iid: $title"
+# A bad setting label: say what's wrong; fixing it and relabelling agent-todo
+# runs the issue again.
+refuse() {
+    note "Agent run for #$iid not started: $1"
+    relabel agent-doing agent-failed
+    reported=1
+    exit 1
+}
 jq . <<<"$issue" >"$OUT/issue.json"
+
+# --- model and thinking level -----------------------------------------------
+# Any model but the default must be listed in models.json, which also says
+# how much context it has: {"<model id>": {"context": N, "output": N}, ...}.
+# A listed default takes its numbers from there too; otherwise host.env's.
+[ "${#models[@]}" -le 1 ] || refuse "more than one \`model::\` label."
+[ "${#thinkings[@]}" -le 1 ] || refuse "more than one \`thinking::\` label."
+entry=
+[ ! -f "$MODELS_JSON" ] || entry=$(jq -c --arg m "$model" '.[$m] // empty' "$MODELS_JSON")
+if [ -n "$entry" ]; then
+    LAV_LLM_CONTEXT=$(jq -r '.context // 0' <<<"$entry")
+    LAV_LLM_OUTPUT=$(jq -r '.output // 32000' <<<"$entry")
+elif [ "$model" != "$DEFAULT_MODEL" ]; then
+    offered=$(jq -r 'keys | map("`\(.)`") | join(", ")' "$MODELS_JSON" 2>/dev/null || true)
+    refuse "model \`$model\` is not offered by this runner. Offered: \`$DEFAULT_MODEL\` (default)${offered:+, $offered}."
+fi
+export LAV_LLM_MODEL=$model LAV_LLM_CONTEXT LAV_LLM_OUTPUT
+# Each level is a variant in opencode.json; max sends none, leaving thinking
+# unrestricted. opencode ignores an unknown variant, so check it here.
+thinking=${thinkings[0]:-${LAV_LLM_THINKING:-max}}
+case $thinking in
+    off|low|medium|high) variant=(--variant "$thinking") ;;
+    max) variant=() ;;
+    *) refuse "thinking level \`$thinking\` is not one of off, low, medium, high, max." ;;
+esac
+echo "Claimed #$iid: $title (model $model, thinking $thinking)"
 
 # --- sandbox ----------------------------------------------------------------
 C=(docker compose -p "lav-agent-$GITLAB_PROJECT_ID-$iid"
@@ -133,7 +207,8 @@ cancelled() {
 trap cancelled TERM INT
 rm -f "$OUT/opencode.rc"  # the build dir persists between jobs
 set +e
-{ sx timeout "$AGENT_TIMEOUT" opencode run --auto --format json "$prompt" \
+{ sx timeout "$AGENT_TIMEOUT" opencode run --auto --format json \
+      -m "${LAV_LLM_PROVIDER:-local}/$model" "${variant[@]}" "$prompt" \
       2>"$OUT/opencode.stderr"; echo $? >"$OUT/opencode.rc"; } \
     | tee "$OUT/events.jsonl" | progress &
 agent=$!
@@ -149,6 +224,7 @@ wait "$agent"
 rc=$(cat "$OUT/opencode.rc" 2>/dev/null || echo 1)
 set -e
 echo "opencode exited with $rc"
+run_with="model \`$model\`, thinking \`$thinking\`"
 
 # first() stops jq itself: piping into `head -n 1` killed jq with SIGPIPE,
 # and pipefail + set -e then ended the script (exit 141) before it reported.
@@ -166,7 +242,7 @@ fi
 
 # --- report -----------------------------------------------------------------
 if [ "$(sx git rev-list --count "$base..HEAD")" -eq 0 ]; then
-    note "Agent run for #$iid ended (exit $rc) without changes.${ARTIFACTS_URL:+ Transcript: $ARTIFACTS_URL}"
+    note "Agent run for #$iid ended (exit $rc; $run_with) without changes.${ARTIFACTS_URL:+ Transcript: $ARTIFACTS_URL}"
     relabel agent-doing agent-failed
     reported=1
     exit 1
@@ -179,7 +255,7 @@ last=$(sx git log -1 --format='%B')
 # description must not say "Closes", so the issue stays open until then.
 description="For #$iid. Draft for review: never merge, rewrite by hand.
 
-Opened by the lav-agent pipeline (opencode exit $rc).${ARTIFACTS_URL:+
+Opened by the lav-agent pipeline (opencode exit $rc; $run_with).${ARTIFACTS_URL:+
 Transcript: $ARTIFACTS_URL}"
 mr_out=$(sx lav-gitlab mr --branch "$branch" --title "Draft: Resolve #$iid: $title" \
          --description "$description" --message "$message")
@@ -189,6 +265,7 @@ mr_url=$(grep -o 'https://[^ ]*merge_requests/[0-9]*' <<<"$mr_out" | tail -n 1)
 note "$last
 
 ---
+Run with $run_with.
 MR: $mr_url${ARTIFACTS_URL:+
 Transcript: $ARTIFACTS_URL}"
 relabel agent-doing agent-review

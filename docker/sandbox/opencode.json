@@ -16,6 +16,12 @@
           "limit": {
             "context": {env:LAV_LLM_CONTEXT},
             "output": {env:LAV_LLM_OUTPUT}
+          },
+          "variants": {
+            "off": { "chat_template_kwargs": { "enable_thinking": false } },
+            "low": { "thinking_budget_tokens": 1024 },
+            "medium": { "thinking_budget_tokens": 4096 },
+            "high": { "thinking_budget_tokens": 16384 }
           }
         }
       }

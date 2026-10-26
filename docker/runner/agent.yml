@@ -30,12 +30,13 @@ solve:
   # Issues claimed per pipeline. The runner's `limit` caps how many sandboxes
   # run at once; extra jobs wait as pending.
   parallel: 1
-  timeout: 2h
+  # AGENT_TIMEOUT plus time to set up, open the MR and tear down.
+  timeout: 4h 30m
   variables:
     # Don't check the repo out on the host; the sandbox clones it itself.
     GIT_STRATEGY: none
     # How long opencode may work on one issue.
-    AGENT_TIMEOUT: 45m
+    AGENT_TIMEOUT: 4h
   script:
     # LAV_RUNNER_DIR comes from the runner's config.toml. It points at a
     # dedicated master checkout, never a working tree, so checking out an
