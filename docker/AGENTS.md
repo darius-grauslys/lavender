@@ -89,9 +89,49 @@ and `LAV_LLM_OUTPUT` (output defaults to 32000):
 
 List the default model there too to keep its limits in one place.
 
+With llama-swap, build it from the swap config: a model's `context` is its
+`--ctx-size` divided by its `--parallel`. Leave out models that don't set
+`--parallel` (their per-slot context depends on the llama-server build),
+embedding and image models, and models whose context per slot is too small
+for an agent session (under about 64k).
+
 The runner's `limit` still caps runs at once. Runs beyond the server's free
 slots (llama-server's `--parallel`) work, but wait for a slot on every
 request.
+
+The labels must exist in the target project before the issue list can
+apply them; `thinking::off|low|medium|high|max` exist on lavender. Create
+`model::<id>` labels as needed, one per model in use.
+
+## Updating a runner host
+
+1. Push to `master`; the include in the ops stub reads `agent.yml` from it.
+2. Fast-forward the runner clone (`LAV_RUNNER_DIR`), as the runner's user:
+   `git -C <clone> pull --ff-only`. It needs read access to the project; if
+   git asks, type a read-only token at the password prompt rather than
+   storing it in the clone's remote URL or a credential helper. Runs in
+   progress are unaffected: git replaces files instead of rewriting them, so
+   a running `solve.sh` keeps reading its old copy.
+3. Update the host files (`host.env`, `models.json`, …) if the change needs
+   them. They are read when a job starts.
+4. **Pending jobs keep the YAML of the pipeline that created them**,
+   including its variables (`AGENT_TIMEOUT`) and job `timeout`. Retrying a
+   job reuses that YAML too. After changing `agent.yml`, cancel the pending
+   jobs: a job claims an issue only when it starts, so nothing is lost, and
+   the schedule queues new ones with the new YAML.
+5. Check the next job's log for its `Claimed #N: … (model …, thinking …)`
+   line, or on the host:
+   `ps -eo etime,args | grep '[t]imeout .* opencode run'`.
+
+Other things to know when operating the runner:
+
+- The poller (`lav-agent-watch`) triggers a pipeline for every human change
+  to an opted-in issue, so bulk edits (closing or relabelling many issues)
+  queue a burst of jobs. Each claims the oldest `agent-todo` issue, so the
+  burst is harmless, but it does fill the queue.
+- An issue left on `agent-doing` with no job running on it (a run died
+  before reporting) is re-queued by relabelling it `agent-todo`. The next run
+  gets a new `Agent-<uuid>` branch, past any branch the dead run left.
 
 ## Picking `LAV_LLM_HOST`
 

@@ -33,6 +33,10 @@ merged. The human operator reads it, writes every line himself (possibly with
 changes), then closes it. So write for that reader: small commits, one logical
 step each, with messages that explain why.
 
+An issue can pick the model and thinking level its run uses with
+`model::<id>` and `thinking::<level>` labels; see `docker/AGENTS.md` for
+this and for operating the pipeline.
+
 ## Building
 
 Builds take `-e PLATFORM=<platform>` (`sdl`, `no_gui`, `nds`, …) and run from
