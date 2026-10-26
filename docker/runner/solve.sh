@@ -100,10 +100,24 @@ progress() {
         else empty end
     ) | gsub("\\s+"; " ") | .[0:240]'
 }
+# In the background, because bash runs a trap only once the foreground
+# command returns, so a cancel (SIGTERM from the runner) would wait for
+# opencode to finish. `wait` returns at once instead; exiting runs the EXIT
+# trap, and tearing the stack down ends opencode.
+# A cancelled job uploads no artifacts, so point at the job log instead.
+cancelled() {
+    note "Agent run for #$iid was cancelled.${CI_JOB_URL:+ Log: $CI_JOB_URL}" || true
+    relabel agent-doing agent-failed || true
+    exit 143
+}
+trap cancelled TERM INT
+rm -f "$OUT/opencode.rc"  # the build dir persists between jobs
 set +e
-sx timeout "$AGENT_TIMEOUT" opencode run --auto --format json "$prompt" \
-    2>"$OUT/opencode.stderr" | tee "$OUT/events.jsonl" | progress
-rc=${PIPESTATUS[0]}
+{ sx timeout "$AGENT_TIMEOUT" opencode run --auto --format json "$prompt" \
+      2>"$OUT/opencode.stderr"; echo $? >"$OUT/opencode.rc"; } \
+    | tee "$OUT/events.jsonl" | progress &
+wait $!
+rc=$(cat "$OUT/opencode.rc" 2>/dev/null || echo 1)
 set -e
 echo "opencode exited with $rc"
 
