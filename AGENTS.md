@@ -33,6 +33,23 @@ merged. The human operator reads it, writes every line himself (possibly with
 changes), then closes it. So write for that reader: small commits, one logical
 step each, with messages that explain why.
 
+## Building
+
+Builds take `-e PLATFORM=<platform>` (`sdl`, `no_gui`, `nds`, …) and run from
+the repo root with `LAVENDER_DIR` set to it (the agent sandbox sets it), e.g.
+`make -j4 -e PLATFORM=sdl`. Use `-j` with the machine's
+CPU count; the agent sandbox has 4.
+
+`compile_commands.json` (clang tooling, `graph_from_sources.py`) is generated
+and gitignored. Don't run a full build to get it:
+
+```bash
+make -e PLATFORM=sdl compile_commands_dry   # prints the compile commands, compiles nothing (~1s)
+```
+
+In the agent sandbox, `solve.sh` generates it before you start; rerun it after
+changing the build. Bash commands there time out after 5 minutes by default.
+
 ## Documentation
 
 Engine: **MkDocs + Material** (config in `mkdocs.yml` at the repo root).

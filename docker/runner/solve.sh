@@ -74,6 +74,12 @@ while :; do
 done
 sx git checkout -q -b "$branch"
 base=$(sx git rev-parse HEAD)
+# compile_commands.json is generated, so a fresh clone lacks it, and the
+# graph scripts and clang tooling need it. The dry run takes about a second;
+# without it the agent spends its run building one. Both outputs are
+# gitignored.
+sx make -e PLATFORM=sdl compile_commands_dry \
+    || echo "warning: compile_commands_dry failed; the agent will lack compile_commands.json"
 
 prompt="You are working on GitLab issue #$iid in the repository at /work/repo
 (branch $branch is checked out).

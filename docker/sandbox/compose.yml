@@ -84,6 +84,8 @@ services:
       LAV_LLM_HOST: *llm_host
       LAV_LLM_PORT: *llm_port
       LAV_LLM_MODEL: *llm_model
+      # opencode's bash tool default is 2 min (max 10); builds need longer.
+      OPENCODE_EXPERIMENTAL_BASH_DEFAULT_TIMEOUT_MS: "300000"
     volumes:
       # Public CA cert only. The key stays with iron-proxy.
       - ${HOME}/.config/lavender/iron-proxy/ca.crt:/etc/lav-proxy/ca.crt:ro

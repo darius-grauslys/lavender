@@ -12,7 +12,7 @@
 # "!="	-	Shell assignment. This will treat the RValue is a shell command and run it.
 # 			The output then becomes the RValue.
 
-.PHONY: test clean check-file compile_commands
+.PHONY: test clean check-file compile_commands compile_commands_dry
 
 export BASE_DIR := $(LAVENDER_DIR)
 
@@ -66,6 +66,21 @@ endif
 	$(SILENT)mkdir -p $(BUILD)
 	$(SILENT)bear --output $(BUILD)/compile_commands.json --force-preload \
 		-- make -B -f $(LAVENDER_DIR)/Makefile.build $(BUILD)
+	$(SILENT)ln -sf build/$(PLATFORM)/compile_commands.json $(GAME_DIR)/compile_commands.json
+
+# compile_commands_dry: Same output as compile_commands, but compiles nothing.
+# The inner make runs with -n -B, which prints every compile command without
+# running it, and a script turns those lines into the JSON. Takes under a
+# second instead of a full build, and needs no bear. Requires PLATFORM.
+compile_commands_dry:
+ifndef PLATFORM
+	$(error Usage: make compile_commands_dry -e PLATFORM=sdl)
+endif
+	$(SILENT)mkdir -p $(BUILD)
+	$(SILENT)make -n -B --no-print-directory -f $(LAVENDER_DIR)/Makefile.build -C $(BUILD) \
+		| python3 $(LAVENDER_DIR)/tools/compile_db_from_dry_run.py $(BUILD) \
+		> $(BUILD)/compile_commands.json.tmp
+	$(SILENT)mv $(BUILD)/compile_commands.json.tmp $(BUILD)/compile_commands.json
 	$(SILENT)ln -sf build/$(PLATFORM)/compile_commands.json $(GAME_DIR)/compile_commands.json
 
 # check-file: Spot-build a single module with -fsyntax-only for validation.
